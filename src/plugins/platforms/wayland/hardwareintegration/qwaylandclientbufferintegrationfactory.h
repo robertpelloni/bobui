@@ -1,9 +1,9 @@
 /****************************************************************************
 **
-** Copyright (C) 2012 Digia Plc and/or its subsidiary(-ies).
+** Copyright (C) 2013 Digia Plc and/or its subsidiary(-ies).
 ** Contact: http://www.qt-project.org/legal
 **
-** This file is part of the plugins of the Qt Toolkit.
+** This file is part of the QtGui module of the Qt Toolkit.
 **
 ** $QT_BEGIN_LICENSE:LGPL$
 ** Commercial License Usage
@@ -39,18 +39,23 @@
 **
 ****************************************************************************/
 
-#include "qwaylandglintegration.h"
+#ifndef QWAYLANDCLIENTBUFFERINTEGRATIONFACTORY_H
+#define QWAYLANDCLIENTBUFFERINTEGRATIONFACTORY_H
+
+#include <QtWaylandClient/qwaylandclientexport.h>
+#include <QtCore/QStringList>
 
 QT_BEGIN_NAMESPACE
 
-QWaylandGLIntegration::QWaylandGLIntegration()
+class QWaylandClientBufferIntegration;
+
+class Q_WAYLAND_CLIENT_EXPORT QWaylandClientBufferIntegrationFactory
 {
-
-}
-
-QWaylandGLIntegration::~QWaylandGLIntegration()
-{
-
-}
+public:
+    static QStringList keys(const QString &pluginPath = QString());
+    static QWaylandClientBufferIntegration *create(const QString &name, const QStringList &args, const QString &pluginPath = QString());
+};
 
 QT_END_NAMESPACE
+
+#endif // QWAYLANDCLIENTBUFFERINTEGRATIONFACTORY_H

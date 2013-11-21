@@ -39,69 +39,18 @@
 **
 ****************************************************************************/
 
-#ifndef QPLATFORMINTEGRATION_WAYLAND_H
-#define QPLATFORMINTEGRATION_WAYLAND_H
+#include "qwaylandclientbufferintegration.h"
 
-#include <qpa/qplatformintegration.h>
-
-#include <QtWaylandClient/qwaylandclientexport.h>
 QT_BEGIN_NAMESPACE
 
-class QWaylandBuffer;
-class QWaylandDisplay;
-class QWaylandClientBufferIntegration;
-
-class Q_WAYLAND_CLIENT_EXPORT QWaylandIntegration : public QPlatformIntegration
+QWaylandClientBufferIntegration::QWaylandClientBufferIntegration()
 {
-public:
-    QWaylandIntegration();
-    ~QWaylandIntegration();
 
-    bool hasCapability(QPlatformIntegration::Capability cap) const;
-    QPlatformWindow *createPlatformWindow(QWindow *window) const;
-    QPlatformOpenGLContext *createPlatformOpenGLContext(QOpenGLContext *context) const;
-    QPlatformBackingStore *createPlatformBackingStore(QWindow *window) const;
+}
 
-    QAbstractEventDispatcher *createEventDispatcher() const;
-    void initialize();
+QWaylandClientBufferIntegration::~QWaylandClientBufferIntegration()
+{
 
-    QPlatformFontDatabase *fontDatabase() const;
-
-    QPlatformNativeInterface *nativeInterface() const;
-
-    QPlatformClipboard *clipboard() const;
-
-    QPlatformDrag *drag() const;
-
-    QPlatformInputContext *inputContext() const;
-
-    QVariant styleHint(StyleHint hint) const;
-
-    QPlatformAccessibility *accessibility() const;
-
-    QPlatformServices *services() const;
-
-    QWaylandDisplay *display() const;
-
-    QStringList themeNames() const;
-
-    QPlatformTheme *createPlatformTheme(const QString &name) const;
-
-    virtual QWaylandClientBufferIntegration *clientBufferIntegration() const;
-protected:
-    QWaylandClientBufferIntegration *mClientBufferIntegration;
-private:
-    void initializeBufferIntegration();
-    QPlatformFontDatabase *mFontDb;
-    QPlatformClipboard *mClipboard;
-    QPlatformDrag *mDrag;
-    QWaylandDisplay *mDisplay;
-    QPlatformNativeInterface *mNativeInterface;
-    QScopedPointer<QPlatformInputContext> mInputContext;
-    QPlatformAccessibility *mAccessibility;
-    bool mClientBufferIntegrationInitialized;
-};
+}
 
 QT_END_NAMESPACE
-
-#endif

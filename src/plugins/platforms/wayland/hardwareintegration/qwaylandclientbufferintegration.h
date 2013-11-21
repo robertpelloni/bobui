@@ -39,8 +39,8 @@
 **
 ****************************************************************************/
 
-#ifndef QWAYLANDGLINTEGRATION_H
-#define QWAYLANDGLINTEGRATION_H
+#ifndef QWAYLANDCLIENTBUFFERINTEGRATION_H
+#define QWAYLANDCLIENTBUFFERINTEGRATION_H
 
 #include <QtCore/qglobal.h>
 #include <QtWaylandClient/qwaylandclientexport.h>
@@ -54,11 +54,11 @@ class QWindow;
 class QPlatformOpenGLContext;
 class QSurfaceFormat;
 
-class Q_WAYLAND_CLIENT_EXPORT QWaylandGLIntegration
+class Q_WAYLAND_CLIENT_EXPORT QWaylandClientBufferIntegration
 {
 public:
-    QWaylandGLIntegration();
-    virtual ~QWaylandGLIntegration();
+    QWaylandClientBufferIntegration();
+    virtual ~QWaylandClientBufferIntegration();
 
     virtual void initialize() = 0;
     virtual bool waitingForEvents() { return false; }
@@ -68,9 +68,9 @@ public:
     virtual QWaylandWindow *createEglWindow(QWindow *window) = 0;
     virtual QPlatformOpenGLContext *createPlatformOpenGLContext(const QSurfaceFormat &glFormat, QPlatformOpenGLContext *share) const = 0;
 
-    static QWaylandGLIntegration *createGLIntegration(QWaylandDisplay *waylandDisplay);
+    static QWaylandClientBufferIntegration *createGLIntegration(QWaylandDisplay *waylandDisplay);
 };
 
 QT_END_NAMESPACE
 
-#endif // QWAYLANDGLINTEGRATION_H
+#endif // QWAYLANDCLIENTBUFFERINTEGRATION_H

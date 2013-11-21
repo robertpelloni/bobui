@@ -1,9 +1,9 @@
 /****************************************************************************
 **
-** Copyright (C) 2012 Digia Plc and/or its subsidiary(-ies).
+** Copyright (C) 2013 Digia Plc and/or its subsidiary(-ies).
 ** Contact: http://www.qt-project.org/legal
 **
-** This file is part of the plugins of the Qt Toolkit.
+** This file is part of the QtGui module of the Qt Toolkit.
 **
 ** $QT_BEGIN_LICENSE:LGPL$
 ** Commercial License Usage
@@ -39,69 +39,31 @@
 **
 ****************************************************************************/
 
-#ifndef QPLATFORMINTEGRATION_WAYLAND_H
-#define QPLATFORMINTEGRATION_WAYLAND_H
-
-#include <qpa/qplatformintegration.h>
+#ifndef QWAYLANDCLIENTBUFFERINTEGRATIONPLUGIN_H
+#define QWAYLANDCLIENTBUFFERINTEGRATIONPLUGIN_H
 
 #include <QtWaylandClient/qwaylandclientexport.h>
+
+#include <QtCore/qplugin.h>
+#include <QtCore/qfactoryinterface.h>
+#include <QtCore/QObject>
+
 QT_BEGIN_NAMESPACE
 
-class QWaylandBuffer;
-class QWaylandDisplay;
 class QWaylandClientBufferIntegration;
 
-class Q_WAYLAND_CLIENT_EXPORT QWaylandIntegration : public QPlatformIntegration
+#define QWaylandClientBufferIntegrationFactoryInterface_iid "org.qt-project.Qt.WaylandClient.QWaylandClientBufferIntegrationFactoryInterface.5.1"
+
+class Q_WAYLAND_CLIENT_EXPORT QWaylandClientBufferIntegrationPlugin : public QObject
 {
+    Q_OBJECT
 public:
-    QWaylandIntegration();
-    ~QWaylandIntegration();
+    explicit QWaylandClientBufferIntegrationPlugin(QObject *parent = 0);
+    ~QWaylandClientBufferIntegrationPlugin();
 
-    bool hasCapability(QPlatformIntegration::Capability cap) const;
-    QPlatformWindow *createPlatformWindow(QWindow *window) const;
-    QPlatformOpenGLContext *createPlatformOpenGLContext(QOpenGLContext *context) const;
-    QPlatformBackingStore *createPlatformBackingStore(QWindow *window) const;
-
-    QAbstractEventDispatcher *createEventDispatcher() const;
-    void initialize();
-
-    QPlatformFontDatabase *fontDatabase() const;
-
-    QPlatformNativeInterface *nativeInterface() const;
-
-    QPlatformClipboard *clipboard() const;
-
-    QPlatformDrag *drag() const;
-
-    QPlatformInputContext *inputContext() const;
-
-    QVariant styleHint(StyleHint hint) const;
-
-    QPlatformAccessibility *accessibility() const;
-
-    QPlatformServices *services() const;
-
-    QWaylandDisplay *display() const;
-
-    QStringList themeNames() const;
-
-    QPlatformTheme *createPlatformTheme(const QString &name) const;
-
-    virtual QWaylandClientBufferIntegration *clientBufferIntegration() const;
-protected:
-    QWaylandClientBufferIntegration *mClientBufferIntegration;
-private:
-    void initializeBufferIntegration();
-    QPlatformFontDatabase *mFontDb;
-    QPlatformClipboard *mClipboard;
-    QPlatformDrag *mDrag;
-    QWaylandDisplay *mDisplay;
-    QPlatformNativeInterface *mNativeInterface;
-    QScopedPointer<QPlatformInputContext> mInputContext;
-    QPlatformAccessibility *mAccessibility;
-    bool mClientBufferIntegrationInitialized;
+    virtual QWaylandClientBufferIntegration *create(const QString &key, const QStringList &paramList) = 0;
 };
 
 QT_END_NAMESPACE
 
-#endif
+#endif // QWAYLANDCLIENTBUFFERINTEGRATIONPLUGIN_H
