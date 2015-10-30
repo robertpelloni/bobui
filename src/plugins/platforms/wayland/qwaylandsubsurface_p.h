@@ -68,9 +68,20 @@ public:
     QWaylandWindow *window() const { return m_window; }
     QWaylandWindow *parent() const { return m_parent; }
 
+    void setSync();
+    void setDeSync();
+    bool isSync() const { return m_synchronized; }
+
 private:
+
+    // Intentionally hide public methods from ::wl_subsurface
+    // to keep track of the sync state
+    void set_sync();
+    void set_desync();
     QWaylandWindow *m_window;
     QWaylandWindow *m_parent;
+    bool m_synchronized;
+
 };
 
 QT_END_NAMESPACE
