@@ -1,6 +1,7 @@
 /****************************************************************************
 **
 ** Copyright (C) 2015 The Qt Company Ltd.
+** Copyright (C) 2015 Giulio Camuffo.
 ** Contact: http://www.qt.io/licensing/
 **
 ** This file is part of the plugins of the Qt Toolkit.
@@ -31,57 +32,41 @@
 **
 ****************************************************************************/
 
-#ifndef QWAYLANDBUFFER_H
-#define QWAYLANDBUFFER_H
+#include "qwaylandbuffer_p.h"
 
-//
-//  W A R N I N G
-//  -------------
-//
-// This file is not part of the Qt API.  It exists purely as an
-// implementation detail.  This header file may change from version to
-// version without notice, or even be removed.
-//
-// We mean it.
-//
-
-#include <QtWaylandClient/private/qwaylandclientexport_p.h>
-
-#include <QtCore/QSize>
-#include <QtCore/QRect>
-
-#include <wayland-client.h>
-#include <wayland-client-protocol.h>
+#include <QDebug>
 
 QT_BEGIN_NAMESPACE
 
 namespace QtWaylandClient {
 
-class Q_WAYLAND_CLIENT_EXPORT QWaylandBuffer {
-public:
-    QWaylandBuffer();
-    virtual ~QWaylandBuffer();
-    void init(wl_buffer *buf);
+QWaylandBuffer::QWaylandBuffer()
+              : mBuffer(0)
+              , mBusy(false)
+{
+}
 
-    wl_buffer *buffer() {return mBuffer;}
-    virtual QSize size() const = 0;
-    virtual int scale() const { return 1; }
+QWaylandBuffer::~QWaylandBuffer()
+{
+    if (mBuffer)
+        wl_buffer_destroy(mBuffer);
+}
 
-    void setBusy() { mBusy = true; }
-    bool busy() const { return mBusy; }
+void QWaylandBuffer::init(wl_buffer *buf)
+{
+    mBuffer = buf;
+    wl_buffer_add_listener(buf, &listener, this);
+}
 
-protected:
-    struct wl_buffer *mBuffer;
+void QWaylandBuffer::release(void *data, wl_buffer *)
+{
+    static_cast<QWaylandBuffer *>(data)->mBusy = false;
+}
 
-private:
-    bool mBusy;
-
-    static void release(void *data, wl_buffer *);
-    static const wl_buffer_listener listener;
+const wl_buffer_listener QWaylandBuffer::listener = {
+    QWaylandBuffer::release
 };
 
 }
 
 QT_END_NAMESPACE
-
-#endif // QWAYLANDBUFFER_H
