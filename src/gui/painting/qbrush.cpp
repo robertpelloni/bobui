@@ -148,6 +148,10 @@ Q_GUI_EXPORT QImage qt_imageForBrush(int brushStyle, bool invert)
     return qt_brushPatternImageCache()->getImage(brushStyle, invert);
 }
 
+struct QBasicBrushData : public QBrushData
+{
+};
+
 struct QTexturedBrushData : public QBrushData
 {
     QTexturedBrushData() {
@@ -224,7 +228,8 @@ static void deleteData(QBrushData *d)
         delete static_cast<QGradientBrushData*>(d);
         break;
     default:
-        delete d;
+        delete static_cast<QBasicBrushData*>(d);
+        break;
     }
 }
 
@@ -318,8 +323,8 @@ void QBrushDataPointerDeleter::operator()(QBrushData *d) const noexcept
 class QNullBrushData
 {
 public:
-    QBrushData *brush;
-    QNullBrushData() : brush(new QBrushData)
+    QBasicBrushData *brush;
+    QNullBrushData() : brush(new QBasicBrushData)
     {
         brush->ref.storeRelaxed(1);
         brush->style = Qt::BrushStyle(0);
@@ -377,7 +382,7 @@ void QBrush::init(const QColor &color, Qt::BrushStyle style)
         d.reset(new QGradientBrushData);
         break;
     default:
-        d.reset(new QBrushData);
+        d.reset(new QBasicBrushData);
         break;
     }
     d->ref.storeRelaxed(1);
@@ -586,7 +591,7 @@ void QBrush::detach(Qt::BrushStyle newStyle)
         break;
         }
     default:
-        x.reset(new QBrushData);
+        x.reset(new QBasicBrushData);
         break;
     }
     x->ref.storeRelaxed(1); // must be first lest the QBrushDataPointerDeleter turns into a no-op
