@@ -227,7 +227,21 @@ static void deleteData(QBrushData *d)
     case Qt::ConicalGradientPattern:
         delete static_cast<QGradientBrushData*>(d);
         break;
-    default:
+    case Qt::NoBrush:
+    case Qt::SolidPattern:
+    case Qt::Dense1Pattern:
+    case Qt::Dense2Pattern:
+    case Qt::Dense3Pattern:
+    case Qt::Dense4Pattern:
+    case Qt::Dense5Pattern:
+    case Qt::Dense6Pattern:
+    case Qt::Dense7Pattern:
+    case Qt::HorPattern:
+    case Qt::VerPattern:
+    case Qt::CrossPattern:
+    case Qt::BDiagPattern:
+    case Qt::FDiagPattern:
+    case Qt::DiagCrossPattern:
         delete static_cast<QBasicBrushData*>(d);
         break;
     }
@@ -381,7 +395,20 @@ void QBrush::init(const QColor &color, Qt::BrushStyle style)
     case Qt::ConicalGradientPattern:
         d.reset(new QGradientBrushData);
         break;
-    default:
+    case Qt::SolidPattern:
+    case Qt::Dense1Pattern:
+    case Qt::Dense2Pattern:
+    case Qt::Dense3Pattern:
+    case Qt::Dense4Pattern:
+    case Qt::Dense5Pattern:
+    case Qt::Dense6Pattern:
+    case Qt::Dense7Pattern:
+    case Qt::HorPattern:
+    case Qt::VerPattern:
+    case Qt::CrossPattern:
+    case Qt::BDiagPattern:
+    case Qt::FDiagPattern:
+    case Qt::DiagCrossPattern:
         d.reset(new QBasicBrushData);
         break;
     }
@@ -590,7 +617,21 @@ void QBrush::detach(Qt::BrushStyle newStyle)
         x.reset(gbd);
         break;
         }
-    default:
+    case Qt::NoBrush:
+    case Qt::SolidPattern:
+    case Qt::Dense1Pattern:
+    case Qt::Dense2Pattern:
+    case Qt::Dense3Pattern:
+    case Qt::Dense4Pattern:
+    case Qt::Dense5Pattern:
+    case Qt::Dense6Pattern:
+    case Qt::Dense7Pattern:
+    case Qt::HorPattern:
+    case Qt::VerPattern:
+    case Qt::CrossPattern:
+    case Qt::BDiagPattern:
+    case Qt::FDiagPattern:
+    case Qt::DiagCrossPattern:
         x.reset(new QBasicBrushData);
         break;
     }
