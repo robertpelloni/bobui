@@ -37,8 +37,8 @@
 **
 ****************************************************************************/
 
-#ifndef QWAYLANDCLIENTEXPORT_H
-#define QWAYLANDCLIENTEXPORT_H
+#ifndef QWAYLANDCLIENTGLOBAL_H
+#define QWAYLANDCLIENTGLOBAL_H
 
 //
 //  W A R N I N G
@@ -51,7 +51,8 @@
 // We mean it.
 //
 
-#include <QtCore/qglobal.h>
+#include <QtGui/qtguiglobal.h>
+#include <QtWaylandClient/qtwaylandclient-config.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -65,5 +66,5 @@ QT_BEGIN_NAMESPACE
 
 QT_END_NAMESPACE
 
-#endif //QWAYLANDCLIENTEXPORT_H
+#endif //QWAYLANDCLIENTGLOBAL_H
 
