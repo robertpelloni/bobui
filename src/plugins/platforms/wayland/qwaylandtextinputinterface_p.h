@@ -39,6 +39,7 @@
 
 #ifndef QWAYLANDTEXTINPUTINTERFACE_P_H
 #define QWAYLANDTEXTINPUTINTERFACE_P_H
+
 //
 //  W A R N I N G
 //  -------------
@@ -68,8 +69,8 @@ public:
     virtual void disableSurface(::wl_surface *surface) = 0;
     virtual void enableSurface(::wl_surface *surface) = 0;
     virtual void updateState(Qt::InputMethodQueries queries, uint32_t flags) = 0;
-    virtual void showInputPanel() = 0;
-    virtual void hideInputPanel() = 0;
+    virtual void showInputPanel() {}
+    virtual void hideInputPanel() {}
     virtual bool isInputPanelVisible() const = 0;
     virtual QRectF keyboardRect() const = 0;
     virtual QLocale locale() const = 0;
