@@ -682,9 +682,9 @@ void *QMetaType::create(const void *copy) const
 
     std::unique_ptr<void, QMetaTypeDeleter> where(nullptr, {d_ptr});
     if (d_ptr->alignment > __STDCPP_DEFAULT_NEW_ALIGNMENT__)
-        where.reset(operator new(d_ptr->size, std::align_val_t(d_ptr->alignment)));
+        where.reset(operator new(d_ptr->size, std::align_val_t(d_ptr->alignment), std::nothrow_t{}));
     else
-        where.reset(operator new(d_ptr->size));
+        where.reset(operator new(d_ptr->size, std::nothrow_t{}));
 
     QtMetaTypePrivate::construct(d_ptr, where.get(), copy);
     return where.release();
