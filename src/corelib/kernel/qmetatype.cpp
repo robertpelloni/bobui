@@ -382,64 +382,64 @@ const char *QtMetaTypePrivate::typedefNameForType(const QtPrivate::QMetaTypeInte
     \omitvalue UInt128
     \value QObjectStar QObject *
 
-    \value QCursor QCursor
-    \value QDate QDate
-    \value QSize QSize
-    \value QTime QTime
-    \value QVariantList QVariantList
-    \value QPolygon QPolygon
-    \value QPolygonF QPolygonF
-    \value QColor QColor
-    \value QColorSpace QColorSpace (introduced in Qt 5.15)
-    \value QSizeF QSizeF
-    \value QRectF QRectF
-    \value QLine QLine
-    \value QTextLength QTextLength
-    \value QStringList QStringList
-    \value QVariantMap QVariantMap
-    \value QVariantHash QVariantHash
-    \value QVariantPair QVariantPair
-    \value QIcon QIcon
-    \value QPen QPen
-    \value QLineF QLineF
-    \value QTextFormat QTextFormat
-    \value QRect QRect
-    \value QPoint QPoint
-    \value QUrl QUrl
-    \value QRegularExpression QRegularExpression
-    \value QDateTime QDateTime
-    \value QPointF QPointF
-    \value QPalette QPalette
-    \value QFont QFont
-    \value QBrush QBrush
-    \value QRegion QRegion
     \value QBitArray QBitArray
-    \value QImage QImage
-    \value QKeySequence QKeySequence
-    \value QSizePolicy QSizePolicy
-    \value QPixmap QPixmap
-    \value QLocale QLocale
     \value QBitmap QBitmap
-    \value QTransform QTransform
-    \value QMatrix4x4 QMatrix4x4
-    \value QVector2D QVector2D
-    \value QVector3D QVector3D
-    \value QVector4D QVector4D
-    \value QQuaternion QQuaternion
-    \value QEasingCurve QEasingCurve
-    \value QJsonValue QJsonValue
-    \value QJsonObject QJsonObject
-    \value QJsonArray QJsonArray
-    \value QJsonDocument QJsonDocument
-    \value QCborValue QCborValue
+    \value QBrush QBrush
+    \value QByteArrayList QByteArrayList
     \value QCborArray QCborArray
     \value QCborMap QCborMap
     \value QCborSimpleType QCborSimpleType
+    \value QCborValue QCborValue
+    \value QColor QColor
+    \value QColorSpace QColorSpace (introduced in Qt 5.15)
+    \value QCursor QCursor
+    \value QDate QDate
+    \value QDateTime QDateTime
+    \value QEasingCurve QEasingCurve
+    \value QFont QFont
+    \value QIcon QIcon
+    \value QImage QImage
+    \value QJsonArray QJsonArray
+    \value QJsonDocument QJsonDocument
+    \value QJsonObject QJsonObject
+    \value QJsonValue QJsonValue
+    \value QKeySequence QKeySequence
+    \value QLine QLine
+    \value QLineF QLineF
+    \value QLocale QLocale
+    \value QMatrix4x4 QMatrix4x4
     \value QModelIndex QModelIndex
+    \value QPalette QPalette
+    \value QPen QPen
     \value QPersistentModelIndex QPersistentModelIndex (introduced in Qt 5.5)
+    \value QPixmap QPixmap
+    \value QPoint QPoint
+    \value QPointF QPointF
+    \value QPolygon QPolygon
+    \value QPolygonF QPolygonF
+    \value QQuaternion QQuaternion
+    \value QRect QRect
+    \value QRectF QRectF
+    \value QRegion QRegion
+    \value QRegularExpression QRegularExpression
+    \value QSize QSize
+    \value QSizeF QSizeF
+    \value QSizePolicy QSizePolicy
+    \value QStringList QStringList
+    \value QTextFormat QTextFormat
+    \value QTextLength QTextLength
+    \value QTime QTime
+    \value QTransform QTransform
+    \value QUrl QUrl
     \value QUuid QUuid
-    \value QByteArrayList QByteArrayList
     \value QVariant QVariant
+    \value QVariantHash QVariantHash
+    \value QVariantList QVariantList
+    \value QVariantMap QVariantMap
+    \value QVariantPair QVariantPair
+    \value QVector2D QVector2D
+    \value QVector3D QVector3D
+    \value QVector4D QVector4D
 
     \value User  Base value for user types
     \value UnknownType This is an invalid type id. It is returned from QMetaType for types that are not registered
