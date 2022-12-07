@@ -63,6 +63,13 @@ public:
         }
         return iface->fromUtf16(out, in, &state);
     }
+
+    using FinalizeResult = FinalizeResultChar<char>;
+    Q_REQUIRED_RESULT
+    Q_CORE_EXPORT FinalizeResult finalize(char *out, qsizetype maxlen);
+    Q_REQUIRED_RESULT
+    FinalizeResult finalize() { return finalize(nullptr, 0); }
+
 private:
     QByteArray encodeAsByteArray(QStringView in)
     {
@@ -127,6 +134,22 @@ public:
     }
     char16_t *appendToBuffer(char16_t *out, QByteArrayView ba)
     { return reinterpret_cast<char16_t *>(appendToBuffer(reinterpret_cast<QChar *>(out), ba)); }
+
+
+    using FinalizeResult = FinalizeResultChar<char16_t>;
+    using FinalizeResultQChar = FinalizeResultChar<QChar>;
+    FinalizeResultQChar finalize(QChar *out, qsizetype maxlen)
+    {
+        auto r = finalize(reinterpret_cast<char16_t *>(out), maxlen);
+        return { {}, reinterpret_cast<QChar *>(r.next), r.invalidChars, r.error };
+    }
+    Q_REQUIRED_RESULT
+    Q_CORE_EXPORT FinalizeResult finalize(char16_t *out, qsizetype maxlen);
+    Q_REQUIRED_RESULT
+    FinalizeResult finalize()
+    {
+        return finalize(static_cast<char16_t *>(nullptr), 0);
+    }
 
     Q_CORE_EXPORT static QStringDecoder decoderForHtml(QByteArrayView data);
 

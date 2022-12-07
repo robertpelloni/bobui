@@ -19,9 +19,13 @@ QByteArray encodedString = fromUtf16(string);
 auto toUtf16 = QStringDecoder(QStringDecoder::Utf8);
 
 QString string;
-while (new_data_available()) {
+while (new_data_available() && !toUtf16.hasError()) {
     QByteArray chunk = get_new_data();
     string += toUtf16(chunk);
+}
+auto result = toUtf16.finalize();
+if (result.error != QStringDecoder::FinalizeResult::NoError) {
+    // Handle error
 }
 //! [2]
 
@@ -29,9 +33,13 @@ while (new_data_available()) {
 auto fromUtf16 = QStringEncoder(QStringEncoder::Utf8);
 
 QByteArray encoded;
-while (new_data_available()) {
+while (new_data_available() && !fromUtf16.hasError()) {
     QString chunk = get_new_data();
     encoded += fromUtf16(chunk);
+}
+auto result = fromUtf16.finalize();
+if (result.error != QStringEncoder::FinalizeResult::NoError) {
+    // Handle error
 }
 //! [3]
 
