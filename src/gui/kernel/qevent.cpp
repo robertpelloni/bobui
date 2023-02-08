@@ -4211,7 +4211,8 @@ QDebug operator<<(QDebug dbg, const QEvent *e)
         const Qt::MouseButtons buttons = spe->buttons();
         dbg << eventClassName(type) << '(';
         QtDebugUtils::formatQEnum(dbg, type);
-        dbg << " ts=" << spe->timestamp();
+        if (dbg.verbosity() > QDebug::DefaultVerbosity)
+            dbg << " ts=" << spe->timestamp();
         if (isMouse) {
             if (type != QEvent::MouseMove && type != QEvent::NonClientAreaMouseMove) {
                 dbg << ' ';
@@ -4338,6 +4339,8 @@ QDebug operator<<(QDebug dbg, const QEvent *e)
         const QNativeGestureEvent *ne = static_cast<const QNativeGestureEvent *>(e);
         dbg << "QNativeGestureEvent(";
         QtDebugUtils::formatQEnum(dbg, ne->gestureType());
+        if (dbg.verbosity() > QDebug::DefaultVerbosity)
+            dbg << ", ts=" << ne->timestamp();
         dbg << ", fingerCount=" << ne->fingerCount() << ", localPos=";
         QtDebugUtils::formatQPoint(dbg, ne->position());
         if (!qIsNull(ne->value()))
