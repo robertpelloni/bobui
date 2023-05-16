@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 //#define QTEXTSTREAM_DEBUG
-static const int QTEXTSTREAM_BUFFERSIZE = 16384;
 
 /*!
     \class QTextStream
@@ -249,6 +248,8 @@ QT_BEGIN_NAMESPACE
 using namespace Qt::StringLiterals;
 using namespace QtMiscUtils;
 
+static const qsizetype QTEXTSTREAM_BUFFERSIZE = 16384;
+
 #ifndef QT_NO_QOBJECT
 QDeviceClosedNotifier::~QDeviceClosedNotifier()
     = default;
@@ -384,10 +385,11 @@ bool QTextStreamPrivate::fillReadBuffer(qint64 maxBytes)
 
 #if defined (QTEXTSTREAM_DEBUG)
     qDebug("QTextStreamPrivate::fillReadBuffer(), device->read(\"%s\", %d) == %d",
-           QtDebugUtils::toPrintable(buf, bytesRead, 32).constData(), int(sizeof(buf)), int(bytesRead));
+           QtDebugUtils::toPrintable(buf, bytesRead, 32).constData(),
+           int(sizeof(buf)), int(bytesRead));
 #endif
 
-    int oldReadBufferSize = readBuffer.size();
+    qsizetype oldReadBufferSize = readBuffer.size();
     readBuffer += toUtf16(QByteArrayView(buf, bytesRead));
 
     // remove all '\r\n' in the string.
@@ -397,7 +399,7 @@ bool QTextStreamPrivate::fillReadBuffer(qint64 maxBytes)
         QChar *readPtr = readBuffer.data() + oldReadBufferSize;
         QChar *endPtr = readBuffer.data() + readBuffer.size();
 
-        int n = oldReadBufferSize;
+        qsizetype n = oldReadBufferSize;
         if (readPtr < endPtr) {
             // Cut-off to avoid unnecessary self-copying.
             while (*readPtr++ != CR) {
@@ -421,8 +423,10 @@ bool QTextStreamPrivate::fillReadBuffer(qint64 maxBytes)
     }
 
 #if defined (QTEXTSTREAM_DEBUG)
-    qDebug("QTextStreamPrivate::fillReadBuffer() read %d bytes from device. readBuffer = [%s]", int(bytesRead),
-           QtDebugUtils::toPrintable(readBuffer.toLatin1(), readBuffer.size(), readBuffer.size()).constData());
+    qDebug("QTextStreamPrivate::fillReadBuffer() read %d bytes from device. readBuffer = [%s]",
+           int(bytesRead),
+           QtDebugUtils::toPrintable(readBuffer.toLatin1(), readBuffer.size(),
+                                     readBuffer.size()).constData());
 #endif
     return true;
 }
@@ -472,7 +476,8 @@ void QTextStreamPrivate::flushWriteBuffer()
     qint64 bytesWritten = device->write(data);
 #if defined (QTEXTSTREAM_DEBUG)
     qDebug("QTextStreamPrivate::flushWriteBuffer(), device->write(\"%s\") == %d",
-           QtDebugUtils::toPrintable(data.constData(), data.size(), 32).constData(), int(bytesWritten));
+           QtDebugUtils::toPrintable(data.constData(), data.size(), 32).constData(),
+           int(bytesWritten));
 #endif
 
 #if defined (Q_OS_WIN)
@@ -495,14 +500,13 @@ void QTextStreamPrivate::flushWriteBuffer()
 #endif
 
 #if defined (QTEXTSTREAM_DEBUG)
-    qDebug("QTextStreamPrivate::flushWriteBuffer() wrote %d bytes",
-           int(bytesWritten));
+    qDebug("QTextStreamPrivate::flushWriteBuffer() wrote %d bytes", int(bytesWritten));
 #endif
     if (!flushed || bytesWritten != qint64(data.size()))
         status = QTextStream::WriteFailed;
 }
 
-QString QTextStreamPrivate::read(int maxlen)
+QString QTextStreamPrivate::read(qsizetype maxlen)
 {
     QString ret;
     if (string) {
@@ -516,7 +520,8 @@ QString QTextStreamPrivate::read(int maxlen)
     consumeLastToken();
 
 #if defined (QTEXTSTREAM_DEBUG)
-    qDebug("QTextStreamPrivate::read() maxlen = %d, token length = %d", maxlen, ret.length());
+    qDebug("QTextStreamPrivate::read() maxlen = %d, token length = %d",
+           int(maxlen), int(ret.length()));
 #endif
     return ret;
 }
@@ -528,17 +533,18 @@ QString QTextStreamPrivate::read(int maxlen)
     first \a delimiter. Stores a pointer to the start offset of the
     token in \a ptr, and the length in QChars in \a length.
 */
-bool QTextStreamPrivate::scan(const QChar **ptr, int *length, int maxlen, TokenDelimiter delimiter)
+bool QTextStreamPrivate::scan(const QChar **ptr, qsizetype *length, qsizetype maxlen,
+                              TokenDelimiter delimiter)
 {
-    int totalSize = 0;
-    int delimSize = 0;
+    qsizetype totalSize = 0;
+    qsizetype delimSize = 0;
     bool consumeDelimiter = false;
     bool foundToken = false;
-    int startOffset = device ? readBufferOffset : stringOffset;
+    qsizetype startOffset = device ? readBufferOffset : stringOffset;
     QChar lastChar;
 
     do {
-        int endOffset;
+        qsizetype endOffset;
         const QChar *chPtr;
         if (device) {
             chPtr = readBuffer.constData();
@@ -611,7 +617,7 @@ bool QTextStreamPrivate::scan(const QChar **ptr, int *length, int maxlen, TokenD
 
 #if defined (QTEXTSTREAM_DEBUG)
     qDebug("QTextStreamPrivate::scan(%p, %p, %d, %x) token length = %d, delimiter = %d",
-           ptr, length, maxlen, (int)delimiter, totalSize - delimSize, delimSize);
+           ptr, length, int(maxlen), uint(delimiter), int(totalSize - delimSize), int(delimSize));
 #endif
     return true;
 }
@@ -640,10 +646,10 @@ inline void QTextStreamPrivate::consumeLastToken()
 /*!
     \internal
 */
-inline void QTextStreamPrivate::consume(int size)
+inline void QTextStreamPrivate::consume(qsizetype size)
 {
 #if defined (QTEXTSTREAM_DEBUG)
-    qDebug("QTextStreamPrivate::consume(%d)", size);
+    qDebug("QTextStreamPrivate::consume(%d)", int(size));
 #endif
     if (string) {
         stringOffset += size;
@@ -803,9 +809,9 @@ QTextStreamPrivate::PaddingResult QTextStreamPrivate::padding(qsizetype len) con
 {
     Q_ASSERT(params.fieldWidth > len); // calling padding() when no padding is needed is an error
 
-    int left = 0, right = 0;
+    qsizetype left = 0, right = 0;
 
-    const int padSize = params.fieldWidth - len;
+    const qsizetype padSize = params.fieldWidth - len;
 
     switch (params.fieldAlignment) {
     case QTextStream::AlignLeft:
@@ -1085,7 +1091,7 @@ bool QTextStream::seek(qint64 pos)
 
     // string
     if (d->string && pos <= d->string->size()) {
-        d->stringOffset = int(pos);
+        d->stringOffset = pos;
         return true;
     }
     return false;
@@ -1129,7 +1135,7 @@ qint64 QTextStream::pos() const
 
         // Rewind the device to get to the current position Ensure that
         // readBufferOffset is unaffected by fillReadBuffer()
-        int oldReadBufferOffset = d->readBufferOffset + d->readConverterSavedStateOffset;
+        qsizetype oldReadBufferOffset = d->readBufferOffset + d->readConverterSavedStateOffset;
         while (d->readBuffer.size() < oldReadBufferOffset) {
             if (!thatd->fillReadBuffer(1))
                 return qint64(-1);
@@ -1520,7 +1526,7 @@ QString QTextStream::readAll()
     Q_D(QTextStream);
     CHECK_VALID_STREAM(QString());
 
-    return d->read(INT_MAX);
+    return d->read(std::numeric_limits<qsizetype>::max());
 }
 
 /*!
@@ -1585,8 +1591,8 @@ bool QTextStream::readLineInto(QString *line, qint64 maxlen)
     }
 
     const QChar *readPtr;
-    int length;
-    if (!d->scan(&readPtr, &length, int(maxlen), QTextStreamPrivate::EndOfLine)) {
+    qsizetype length;
+    if (!d->scan(&readPtr, &length, qsizetype(maxlen), QTextStreamPrivate::EndOfLine)) {
         if (line && !line->isNull())
             line->resize(0);
         return false;
@@ -1614,7 +1620,7 @@ QString QTextStream::read(qint64 maxlen)
     if (maxlen <= 0)
         return QString::fromLatin1("");     // empty, not null
 
-    return d->read(int(maxlen));
+    return d->read(q26::saturate_cast<qsizetype>(maxlen));
 }
 
 /*!
@@ -1625,7 +1631,7 @@ QTextStreamPrivate::NumberParsingStatus QTextStreamPrivate::getNumber(qulonglong
     scan(nullptr, nullptr, 0, NotSpace);
     consumeLastToken();
 
-    // detect int encoding
+    // detect integer encoding
     int base = params.integerBase;
     if (base == 0) {
         QChar ch;
@@ -1672,7 +1678,7 @@ QTextStreamPrivate::NumberParsingStatus QTextStreamPrivate::getNumber(qulonglong
         if (!getChar(&pf2) || pf2.toLower() != u'b')
             return npsInvalidPrefix;
         // Parse digits
-        int ndigits = 0;
+        qsizetype ndigits = 0;
         while (getChar(&dig)) {
             char16_t n = dig.toLower().unicode();
             if (n == u'0' || n == u'1') {
@@ -1698,7 +1704,7 @@ QTextStreamPrivate::NumberParsingStatus QTextStreamPrivate::getNumber(qulonglong
         if (!getChar(&pf) || pf != u'0')
             return npsInvalidPrefix;
         // Parse digits
-        int ndigits = 0;
+        qsizetype ndigits = 0;
         while (getChar(&dig)) {
             char16_t n = dig.toLower().unicode();
             if (isOctalDigit(n)) {
@@ -1720,7 +1726,7 @@ QTextStreamPrivate::NumberParsingStatus QTextStreamPrivate::getNumber(qulonglong
     case 10: {
         // Parse sign (or first digit)
         QChar sign;
-        int ndigits = 0;
+        qsizetype ndigits = 0;
         if (!getChar(&sign))
             return npsMissingDigit;
         if (sign != locale.negativeSign() && sign != locale.positiveSign()) {
@@ -1763,7 +1769,7 @@ QTextStreamPrivate::NumberParsingStatus QTextStreamPrivate::getNumber(qulonglong
         if (!getChar(&pf2) || pf2.toLower() != u'x')
             return npsInvalidPrefix;
         // Parse digits
-        int ndigits = 0;
+        qsizetype ndigits = 0;
         while (getChar(&dig)) {
             const int h = fromHex(dig.unicode());
             if (h != -1) {
@@ -1851,9 +1857,9 @@ bool QTextStreamPrivate::getReal(double *f)
     scan(nullptr, nullptr, 0, NotSpace);
     consumeLastToken();
 
-    const int BufferSize = 128;
+    const qsizetype BufferSize = 128;
     char buf[BufferSize];
-    int i = 0;
+    qsizetype i = 0;
 
     QChar c;
     while (getChar(&c)) {
@@ -2125,7 +2131,7 @@ QTextStream &QTextStream::operator>>(QString &str)
     d->consumeLastToken();
 
     const QChar *ptr;
-    int length;
+    qsizetype length;
     if (!d->scan(&ptr, &length, 0, QTextStreamPrivate::Space)) {
         setStatus(ReadPastEnd);
         return *this;
@@ -2152,7 +2158,7 @@ QTextStream &QTextStream::operator>>(QByteArray &array)
     d->consumeLastToken();
 
     const QChar *ptr;
-    int length;
+    qsizetype length;
     if (!d->scan(&ptr, &length, 0, QTextStreamPrivate::Space)) {
         setStatus(ReadPastEnd);
         array.clear();
@@ -2188,7 +2194,7 @@ QTextStream &QTextStream::operator>>(char *c)
     d->consumeLastToken();
 
     const QChar *ptr;
-    int length;
+    qsizetype length;
     if (!d->scan(&ptr, &length, 0, QTextStreamPrivate::Space)) {
         setStatus(ReadPastEnd);
         return *this;
@@ -2475,7 +2481,7 @@ QTextStream &QTextStream::operator<<(QStringView string)
 {
     Q_D(QTextStream);
     CHECK_VALID_STREAM(*this);
-    d->putString(string.cbegin(), int(string.size()));
+    d->putString(string.cbegin(), string.size());
     return *this;
 }
 
