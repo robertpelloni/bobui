@@ -252,6 +252,7 @@ qt_internal_add_module(Core
         text/qvsnprintf.cpp
         thread/qatomic.h
         thread/qatomic_cxx11.h
+        thread/qatomicwait.cpp thread/qatomicwait_p.h
         thread/qbasicatomic.h
         thread/qgenericatomic.h
         thread/qlocking_p.h
