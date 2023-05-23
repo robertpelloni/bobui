@@ -28,12 +28,12 @@ class QLatch
 {
 public:
     constexpr explicit QLatch(int expected) noexcept
-        : counter(expected)
+        : counter(expected | NoWaiters)
     {}
 
     int pending() const noexcept
     {
-        return counter.loadAcquire();
+        return (counter.loadAcquire() & CounterMask);
     }
 
     void countDown(int n = 1) noexcept
@@ -53,7 +53,7 @@ public:
 
     void wait() noexcept // not const
     {
-        if (int current = counter.loadAcquire(); current != 0) {
+        if (int current = counter.loadAcquire(); (current & CounterMask) != 0) {
             waitInternal(current);
             QtTsan::latchWait(&counter);
         }
@@ -72,6 +72,9 @@ public:
     void arrive_and_wait(int n = 1) noexcept { arriveAndWait(n); }
 
 private:
+    static constexpr int NoWaitersBit = 31;
+    static constexpr int NoWaiters = 1 << NoWaitersBit;
+    static constexpr int CounterMask = ~NoWaiters;
     QBasicAtomicInt counter;
 
     Q_DISABLE_COPY_MOVE(QLatch)

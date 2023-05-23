@@ -59,6 +59,7 @@ namespace atomicwait = q20;
     \endcode
 
     In fact, the above is exactly what Qt::BlockingQueued connection does.
+
     \section3 Synchronizing execution
 
     For this use-case, multiple threads must reach a particular state before
@@ -84,6 +85,16 @@ namespace atomicwait = q20;
       \li count_down() is not \c{const} (libstdc++ implementation is).
     \endlist
 
+    \omit
+    \section2 Implementation details
+
+    countDown() must call wakeUp() if the latch counter reaches zero and there
+    are threads waiting to be woken up. Or, conversely, countDown() needs to do
+    nothing after decrementing if the latch counter is still non-zero or there
+    are no waiters. Therefore, we choose the bits so that a non-zero
+    \c{counter} member implies no action required.
+
+    \endomit
 */
 
 /*!
@@ -172,6 +183,26 @@ namespace atomicwait = q20;
 
 void QLatch::waitInternal(int current) noexcept
 {
+    // mark that there is a waiter -> clear the bit that there are no waiters
+    if (current & NoWaiters) {
+#if __has_builtin(__atomic_and_fetch)
+        // Modern GCC and Clang are able to generate loop-free code for this
+        // operation on x86-64, ARMv8.1 and RISC-V.
+        if (__atomic_and_fetch(reinterpret_cast<int *>(&counter._q_value), ~NoWaiters,
+                               int(std::memory_order_relaxed)) == 0)
+            return;
+#else
+        // Do it in two steps, which is usually better than a compare_exchange
+        // loop. This is not exactly the same as above (it's not atomic!) but
+        // is correct for our purposes because the counter never changes from 0
+        // once it reaches that.
+        counter.fetchAndAndRelaxed(~NoWaiters);
+        if (counter.loadRelaxed() == 0)
+            return;     // no need to wait!
+#endif
+    }
+    current &= ~NoWaiters;
+
     auto waitLoop = [&](auto waiter) {
         do {
             waiter(current);
