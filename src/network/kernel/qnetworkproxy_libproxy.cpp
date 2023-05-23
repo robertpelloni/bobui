@@ -10,6 +10,7 @@
 #include <QtCore/QMutex>
 #include <QtCore/QSemaphore>
 #include <QtCore/QUrl>
+#include <QtCore/private/qlatch_p.h>
 #include <QtCore/private/qeventdispatcher_unix_p.h>
 #include <QtCore/private/qthread_p.h>
 #include <QtCore/qapplicationstatic.h>
@@ -61,7 +62,7 @@ private:
         // we leave the conversion to/from QUrl to the calling thread
         const char *url;
         char **proxies;
-        QSemaphore replyReady;
+        QLatch replyReady{1};
     };
 
     void run() override;
@@ -119,7 +120,7 @@ QList<QUrl> QLibProxyWrapper::getProxies(const QUrl &url)
             requestReady.release();
 
             // wait for the reply
-            data.replyReady.acquire();
+            data.replyReady.wait();
         } else {
             // non-threaded mode
             data.proxies = px_proxy_factory_get_proxies(factory, data.url);
@@ -147,7 +148,7 @@ void QLibProxyWrapper::run()
         if (isInterruptionRequested())
             break;
         request->proxies = px_proxy_factory_get_proxies(factory, request->url);
-        request->replyReady.release();
+        request->replyReady.countDown();
     }
 
     px_proxy_factory_free(factory);

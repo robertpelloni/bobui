@@ -328,16 +328,13 @@ bool QObjectPrivate::disconnect(const typename QtPrivate::FunctionPointer< Func1
                           &SignalType::Object::staticMetaObject);
 }
 
-class QSemaphore;
+class QLatch;
 class Q_CORE_EXPORT QAbstractMetaCallEvent : public QEvent
 {
 public:
-    QAbstractMetaCallEvent(const QObject *sender, int signalId, QSemaphore *semaphore = nullptr)
-        : QEvent(MetaCall), signalId_(signalId), sender_(sender)
-#if QT_CONFIG(thread)
-        , semaphore_(semaphore)
-#endif
-    { Q_UNUSED(semaphore); }
+    QAbstractMetaCallEvent(const QObject *sender, int signalId, QLatch *latch = nullptr)
+        : QEvent(MetaCall), signalId_(signalId), sender_(sender), latch(latch)
+    {}
     ~QAbstractMetaCallEvent();
 
     virtual void placeMetaCall(QObject *object) = 0;
@@ -348,25 +345,23 @@ public:
 private:
     int signalId_;
     const QObject *sender_;
-#if QT_CONFIG(thread)
-    QSemaphore *semaphore_;
-#endif
+    QLatch *latch;
 };
 
 class Q_CORE_EXPORT QMetaCallEvent : public QAbstractMetaCallEvent
 {
 public:
-    // blocking queued with semaphore - args always owned by caller
+    // blocking queued with latch - args always owned by caller
     QMetaCallEvent(ushort method_offset, ushort method_relative,
                    QObjectPrivate::StaticMetaCallFunction callFunction,
                    const QObject *sender, int signalId,
-                   void **args, QSemaphore *semaphore);
+                   void **args, QLatch *latch);
     QMetaCallEvent(QtPrivate::QSlotObjectBase *slotObj,
                    const QObject *sender, int signalId,
-                   void **args, QSemaphore *semaphore);
+                   void **args, QLatch *latch);
     QMetaCallEvent(QtPrivate::SlotObjUniquePtr slotObj,
                    const QObject *sender, int signalId,
-                   void **args, QSemaphore *semaphore);
+                   void **args, QLatch *latch);
 
     // queued - args allocated by event, copied by caller
     QMetaCallEvent(ushort method_offset, ushort method_relative,

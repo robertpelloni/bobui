@@ -38,7 +38,7 @@
 #include <private/qfont_p.h>
 
 #if QT_CONFIG(qtgui_threadpool)
-#include <qsemaphore.h>
+#include <private/qlatch_p.h>
 #include <qthreadpool.h>
 #include <private/qthreadpool_p.h>
 #endif
@@ -5342,17 +5342,17 @@ void QImage::applyColorTransform(const QColorTransform &transform)
     segments = std::min(segments, height());
     QThreadPool *threadPool = QGuiApplicationPrivate::qtGuiThreadPool();
     if (segments > 1 && threadPool && !threadPool->contains(QThread::currentThread())) {
-        QSemaphore semaphore;
+        QLatch latch(segments);
         int y = 0;
         for (int i = 0; i < segments; ++i) {
             int yn = (height() - y) / (segments - i);
             threadPool->start([&, y, yn]() {
                 transformSegment(y, y + yn);
-                semaphore.release(1);
+                latch.countDown();
             });
             y += yn;
         }
-        semaphore.acquire(segments);
+        latch.wait();
     } else
 #endif
         transformSegment(0, height());
@@ -5832,17 +5832,17 @@ QImage QImage::colorTransformed(const QColorTransform &transform, QImage::Format
     segments = std::min(segments, height());
     QThreadPool *threadPool = QGuiApplicationPrivate::qtGuiThreadPool();
     if (segments > 1 && threadPool && !threadPool->contains(QThread::currentThread())) {
-        QSemaphore semaphore;
+        QLatch latch(segments);
         int y = 0;
         for (int i = 0; i < segments; ++i) {
             int yn = (height() - y) / (segments - i);
             threadPool->start([&, y, yn]() {
                 transformSegment(y, y + yn);
-                semaphore.release(1);
+                latch.countDown();
             });
             y += yn;
         }
-        semaphore.acquire(segments);
+        latch.wait();
     } else
 #endif
         transformSegment(0, height());

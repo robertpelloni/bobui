@@ -17,7 +17,7 @@
 #include <qthread.h>
 #include "private/qthread_p.h"
 #if QT_CONFIG(thread)
-#include <qsemaphore.h>
+#include "private/qlatch_p.h"
 #endif
 
 // for normalizeTypeInternal
@@ -1748,9 +1748,9 @@ bool QMetaObject::invokeMethodImpl(QObject *object, QtPrivate::QSlotObjectBase *
         if (receiverInSameThread)
             qWarning("QMetaObject::invokeMethod: Dead lock detected");
 
-        QSemaphore semaphore;
-        QCoreApplication::postEvent(object, new QMetaCallEvent(std::move(slot), nullptr, -1, argv, &semaphore));
-        semaphore.acquire();
+        QLatch latch(1);
+        QCoreApplication::postEvent(object, new QMetaCallEvent(std::move(slot), nullptr, -1, argv, &latch));
+        latch.wait();
 #endif // QT_CONFIG(thread)
     } else {
         qWarning("QMetaObject::invokeMethod: Unknown connection type");
@@ -2922,10 +2922,10 @@ auto QMetaMethodInvoker::invokeImpl(QMetaMethod self, void *target,
             return InvokeFailReason::DeadLockDetected;
         }
 
-        QSemaphore semaphore;
+        QLatch latch(1);
         QCoreApplication::postEvent(object, new QMetaCallEvent(idx_offset, idx_relative, callFunction,
-                                                        nullptr, -1, param, &semaphore));
-        semaphore.acquire();
+                                                               nullptr, -1, param, &latch));
+        latch.wait();
 #endif // QT_CONFIG(thread)
     }
     return {};

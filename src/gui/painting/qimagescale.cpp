@@ -11,7 +11,7 @@
 #include "qrgbafloat.h"
 
 #if QT_CONFIG(qtgui_threadpool)
-#include <qsemaphore.h>
+#include <private/qlatch_p.h>
 #include <qthreadpool.h>
 #include <private/qguiapplication_p.h>
 #include <private/qthreadpool_p.h>
@@ -290,17 +290,17 @@ static inline void multithread_pixels_function(QImageScaleInfo *isi, int dh, con
     segments = std::min(segments, dh);
     QThreadPool *threadPool = QGuiApplicationPrivate::qtGuiThreadPool();
     if (segments > 1 && threadPool && !threadPool->contains(QThread::currentThread())) {
-        QSemaphore semaphore;
+        QLatch latch(segments);
         int y = 0;
         for (int i = 0; i < segments; ++i) {
             int yn = (dh - y) / (segments - i);
             threadPool->start([&, y, yn]() {
                 scaleSection(y, y + yn);
-                semaphore.release(1);
+                latch.countDown();
             });
             y += yn;
         }
-        semaphore.acquire(segments);
+        latch.wait();
         return;
     }
 #else

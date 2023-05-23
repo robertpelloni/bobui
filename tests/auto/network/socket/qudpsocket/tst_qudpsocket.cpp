@@ -10,7 +10,7 @@
 #endif
 #include <QScopeGuard>
 #include <QVersionNumber>
-#include <QSemaphore>
+#include <private/qlatch_p.h>
 
 #include <qcoreapplication.h>
 #include <qfileinfo.h>
@@ -1926,13 +1926,13 @@ void tst_QUdpSocket::readyReadConnectionThrottling()
     QUdpSocket receiver;
     QVERIFY(receiver.bind(QHostAddress(QHostAddress::LocalHost), 0));
 
-    QSemaphore semaphore;
+    QLatch latch(1);
 
     // Repro-ing deterministically eludes me, so we are bruteforcing it:
     // The thread acts as a remote sender, flooding the receiver with datagrams,
     // and at some point the receiver would get into the broken state mentioned
     // earlier.
-    std::unique_ptr<QThread> thread(QThread::create([&semaphore, port = receiver.localPort()]() {
+    std::unique_ptr<QThread> thread(QThread::create([&latch, port = receiver.localPort()]() {
         QUdpSocket sender;
         sender.connectToHost(QHostAddress(QHostAddress::LocalHost), port);
         QCOMPARE(sender.state(), QUdpSocket::ConnectedState);
@@ -1940,7 +1940,7 @@ void tst_QUdpSocket::readyReadConnectionThrottling()
         constexpr qsizetype PayloadSize = 242;
         const QByteArray payload(PayloadSize, 'a');
 
-        semaphore.acquire(); // Wait for main thread to be ready
+        latch.wait(); // Wait for main thread to be ready
         while (true) {
             // We send 100 datagrams at a time, then sleep.
             // This is mostly to let the main thread catch up between bursts so
@@ -1975,7 +1975,7 @@ void tst_QUdpSocket::readyReadConnectionThrottling()
             },
             Qt::QueuedConnection);
 
-    semaphore.release();
+    latch.countDown();
     constexpr qsizetype MaxCount = 500;
     QVERIFY2(QTest::qWaitFor([&] { return count >= MaxCount; }, 10s),
              QByteArray::number(count).constData());

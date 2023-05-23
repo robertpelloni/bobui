@@ -27,7 +27,7 @@
 #include <qscopeguard.h>
 #include <qset.h>
 #if QT_CONFIG(thread)
-#include <qsemaphore.h>
+#include <private/qlatch_p.h>
 #endif
 
 #include <private/qorderedmutexlocker_p.h>
@@ -476,8 +476,8 @@ void QObjectPrivate::reinitBindingStorageAfterThreadMove()
 QAbstractMetaCallEvent::~QAbstractMetaCallEvent()
 {
 #if QT_CONFIG(thread)
-    if (semaphore_)
-        semaphore_->release();
+    if (latch)
+        latch->countDown();
 #endif
 }
 
@@ -506,8 +506,8 @@ inline void QMetaCallEvent::allocArgs()
 QMetaCallEvent::QMetaCallEvent(ushort method_offset, ushort method_relative,
                                QObjectPrivate::StaticMetaCallFunction callFunction,
                                const QObject *sender, int signalId,
-                               void **args, QSemaphore *semaphore)
-    : QAbstractMetaCallEvent(sender, signalId, semaphore),
+                               void **args, QLatch *latch)
+    : QAbstractMetaCallEvent(sender, signalId, latch),
       d({nullptr, args, callFunction, 0, method_offset, method_relative}),
       prealloc_()
 {
@@ -521,8 +521,8 @@ QMetaCallEvent::QMetaCallEvent(ushort method_offset, ushort method_relative,
  */
 QMetaCallEvent::QMetaCallEvent(QtPrivate::QSlotObjectBase *slotO,
                                const QObject *sender, int signalId,
-                               void **args, QSemaphore *semaphore)
-    : QAbstractMetaCallEvent(sender, signalId, semaphore),
+                               void **args, QLatch *latch)
+    : QAbstractMetaCallEvent(sender, signalId, latch),
       d({QtPrivate::SlotObjUniquePtr{slotO}, args, nullptr, 0, 0, ushort(-1)}),
       prealloc_()
 {
@@ -538,8 +538,8 @@ QMetaCallEvent::QMetaCallEvent(QtPrivate::QSlotObjectBase *slotO,
  */
 QMetaCallEvent::QMetaCallEvent(QtPrivate::SlotObjUniquePtr slotO,
                                const QObject *sender, int signalId,
-                               void **args, QSemaphore *semaphore)
-    : QAbstractMetaCallEvent(sender, signalId, semaphore),
+                               void **args, QLatch *latch)
+    : QAbstractMetaCallEvent(sender, signalId, latch),
       d{std::move(slotO), args, nullptr, 0, 0, ushort(-1)},
       prealloc_()
 {
@@ -4198,18 +4198,18 @@ void doActivate(QObject *sender, int signal_index, void **argv)
                 if (c->isSingleShot && !QObjectPrivate::removeConnection(c))
                     continue;
 
-                QSemaphore semaphore;
+                QLatch latch(1);
                 {
                     QMutexLocker locker(signalSlotLock(receiver));
                     if (!c->isSingleShot && !c->receiver.loadAcquire())
                         continue;
                     QMetaCallEvent *ev = c->isSlotObject ?
-                        new QMetaCallEvent(c->slotObj, sender, signal_index, argv, &semaphore) :
+                        new QMetaCallEvent(c->slotObj, sender, signal_index, argv, &latch) :
                         new QMetaCallEvent(c->method_offset, c->method_relative, c->callFunction,
-                                           sender, signal_index, argv, &semaphore);
+                                           sender, signal_index, argv, &latch);
                     QCoreApplication::postEvent(receiver, ev);
                 }
-                semaphore.acquire();
+                latch.wait();
                 continue;
 #endif
             }

@@ -6,6 +6,7 @@
 
 #include <qcoreapplication.h>
 #include <qelapsedtimer.h>
+#include <private/qlatch_p.h>
 #include <qloggingcategory.h>
 #include <qmetaobject.h>
 #include <qobject.h>
@@ -1530,8 +1531,8 @@ void QDBusConnectionPrivate::handleObjectCall(const QDBusMessage &msg)
     ObjectTreeNode result;
     int usedLength;
     QThread *objThread = nullptr;
-    QSemaphore sem;
-    bool semWait;
+    QLatch latch(1);
+    bool latchWait;
 
     {
         QDBusReadLocker locker(HandleObjectCallAction, this);
@@ -1569,16 +1570,16 @@ void QDBusConnectionPrivate::handleObjectCall(const QDBusMessage &msg)
             // synchronize with it
             postEventToThread(HandleObjectCallPostEventAction, result.obj,
                               new QDBusActivateObjectEvent(QDBusConnection(this), this, result,
-                                                           usedLength, msg, &sem));
-            semWait = true;
+                                                           usedLength, msg, &latch));
+            latchWait = true;
         } else {
             // looped-back message, targeting current thread
-            semWait = false;
+            latchWait = false;
         }
     } // release the lock
 
-    if (semWait)
-        SEM_ACQUIRE(HandleObjectCallSemaphoreAction, sem);
+    if (latchWait)
+        latch.wait();
     else
         activateObject(result, msg, usedLength);
 }
