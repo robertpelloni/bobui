@@ -758,6 +758,7 @@ qt_internal_extend_target(Core CONDITION QT_FEATURE_thread
     SOURCES
         thread/qatomic.cpp
         thread/qfutex_p.h
+        thread/qlatch.cpp thread/qlatch_p.h
         thread/qmutex.cpp thread/qmutex_p.h
         thread/qreadwritelock.cpp thread/qreadwritelock_p.h
         thread/qthreadstorage.cpp thread/qthreadstorage_p.h
