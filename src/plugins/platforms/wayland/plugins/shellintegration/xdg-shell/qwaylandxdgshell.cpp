@@ -697,107 +697,134 @@ void QWaylandXdgSurface::setWindowPosition(const QPoint &position)
     window()->updateExposure();
 }
 
+static QtWayland::xdg_positioner::gravity gravityFromEdge(Qt::Edges edges)
+{
+    switch (edges) {
+    case Qt::Edges():
+        return QtWayland::xdg_positioner::gravity_none;
+    case Qt::TopEdge:
+        return QtWayland::xdg_positioner::gravity_top;
+    case Qt::TopEdge | Qt::RightEdge:
+        return QtWayland::xdg_positioner::gravity_top_right;
+    case Qt::RightEdge:
+        return QtWayland::xdg_positioner::gravity_right;
+    case Qt::BottomEdge | Qt::RightEdge:
+        return QtWayland::xdg_positioner::gravity_bottom_right;
+    case Qt::BottomEdge:
+        return QtWayland::xdg_positioner::gravity_bottom;
+    case Qt::BottomEdge | Qt::LeftEdge:
+        return QtWayland::xdg_positioner::gravity_bottom_left;
+    case Qt::LeftEdge:
+        return QtWayland::xdg_positioner::gravity_left;
+    case Qt::TopEdge | Qt::LeftEdge:
+        return QtWayland::xdg_positioner::gravity_top_left;
+    }
+    qCWarning(lcQpaWayland) << "Cannot map positioner gravity " << edges;
+    return QtWayland::xdg_positioner::gravity_none;
+}
+
+static QtWayland::xdg_positioner::anchor anchorFromEdge(Qt::Edges edges)
+{
+    switch (edges) {
+    case Qt::Edges():
+        return QtWayland::xdg_positioner::anchor_none;
+    case Qt::TopEdge:
+        return QtWayland::xdg_positioner::anchor_top;
+    case Qt::TopEdge | Qt::RightEdge:
+        return QtWayland::xdg_positioner::anchor_top_right;
+    case Qt::RightEdge:
+        return QtWayland::xdg_positioner::anchor_right;
+    case Qt::BottomEdge | Qt::RightEdge:
+        return QtWayland::xdg_positioner::anchor_bottom_right;
+    case Qt::BottomEdge:
+        return QtWayland::xdg_positioner::anchor_bottom;
+    case Qt::BottomEdge | Qt::LeftEdge:
+        return QtWayland::xdg_positioner::anchor_bottom_left;
+    case Qt::LeftEdge:
+        return QtWayland::xdg_positioner::anchor_left;
+    case Qt::TopEdge | Qt::LeftEdge:
+        return QtWayland::xdg_positioner::anchor_top_left;
+    }
+    qCWarning(lcQpaWayland) << "Cannot map positioner anchor" << edges;
+    return QtWayland::xdg_positioner::anchor_none;
+}
+
 std::unique_ptr<QWaylandXdgSurface::Positioner> QWaylandXdgSurface::createPositioner(QWaylandWindow *parent)
 {
     std::unique_ptr<Positioner> positioner(new Positioner(m_shell));
+
+    // Default case, map the guessed global position to a relative position
+    QRect placementAnchor = QRect(m_window->geometry().topLeft() - parent->geometry().topLeft(), QSize(1,1));
+    Qt::Edges anchor = Qt::TopEdge | Qt::RightEdge;
+    Qt::Edges gravity = Qt::BottomEdge | Qt::RightEdge;
+    uint32_t constraintAdjustment = QtWayland::xdg_positioner::constraint_adjustment_slide_x | QtWayland::xdg_positioner::constraint_adjustment_slide_y;
+
+    // Override from window type
+    if (m_window->parentControlGeometry().isValid())
+        placementAnchor = m_window->parentControlGeometry();
+
+    switch (m_window->extendedWindowType()) {
+    case QNativeInterface::Private::QWaylandWindow::Menu:
+    case QNativeInterface::Private::QWaylandWindow::WindowType::ComboBox:
+        anchor = Qt::BottomEdge | Qt::LeftEdge;
+        gravity = Qt::BottomEdge | Qt::RightEdge;
+        constraintAdjustment = QtWayland::xdg_positioner::constraint_adjustment_slide_x |
+                QtWayland::xdg_positioner::constraint_adjustment_flip_y | QtWayland::xdg_positioner::constraint_adjustment_slide_y;
+        break;
+    case QNativeInterface::Private::QWaylandWindow::SubMenu:
+        anchor = Qt::TopEdge | Qt::RightEdge;
+        gravity = Qt::BottomEdge | Qt::RightEdge;
+        constraintAdjustment = QtWayland::xdg_positioner::constraint_adjustment_flip_x |
+                QtWayland::xdg_positioner::constraint_adjustment_slide_y;
+        break;
+    case QNativeInterface::Private::QWaylandWindow::ToolTip:
+        anchor = Qt::BottomEdge | Qt::RightEdge;
+        gravity = Qt::BottomEdge | Qt::RightEdge;
+        constraintAdjustment = QtWayland::xdg_positioner::constraint_adjustment_flip_x | QtWayland::xdg_positioner::constraint_adjustment_slide_x |
+                QtWayland::xdg_positioner::constraint_adjustment_flip_y | QtWayland::xdg_positioner::constraint_adjustment_slide_y;
+        break;
+    default:
+        break;
+    }
+
+    if (qApp->layoutDirection() == Qt::RightToLeft) {
+        if (anchor & (Qt::RightEdge | Qt::LeftEdge))
+            anchor ^= (Qt::RightEdge | Qt::LeftEdge);
+        if (gravity & (Qt::RightEdge | Qt::LeftEdge))
+            gravity ^= (Qt::RightEdge | Qt::LeftEdge);
+    }
+
+    // Override with properties fauxAPI
+    const QVariant placementAnchorVariant = m_window->window()->property("_q_waylandPopupAnchorRect");
+    if (placementAnchorVariant.isValid())
+        placementAnchor = placementAnchorVariant.toRect();
+    const QVariant anchorVariant = m_window->window()->property("_q_waylandPopupAnchor");
+    if (anchorVariant.isValid())
+        anchor = anchorVariant.value<Qt::Edges>();
+    const QVariant popupGravityVariant = m_window->window()->property("_q_waylandPopupGravity");
+    if (popupGravityVariant.isValid())
+        gravity = popupGravityVariant.value<Qt::Edges>();
+    const QVariant constraintAdjustmentVariant = m_window->window()->property("_q_waylandPopupConstraintAdjustment");
+    if (constraintAdjustmentVariant.isValid())
+        constraintAdjustment = constraintAdjustmentVariant.toUInt();
+
     // set_popup expects a position relative to the parent
     QRect windowGeometry = m_window->windowContentGeometry();
     QMargins windowMargins = m_window->windowContentMargins() - m_window->clientSideMargins();
     QMargins parentMargins = parent->windowContentMargins() - parent->clientSideMargins();
-
-    // These property overrides may be removed when public API becomes available
-    QRect placementAnchor = m_window->window()->property("_q_waylandPopupAnchorRect").toRect();
-    if (!placementAnchor.isValid()) {
-        placementAnchor = QRect(m_window->geometry().topLeft() - parent->geometry().topLeft(), QSize(1,1));
-    }
     placementAnchor.translate(windowMargins.left(), windowMargins.top());
     placementAnchor.translate(-parentMargins.left(), -parentMargins.top());
-
-    uint32_t anchor = QtWayland::xdg_positioner::anchor_top_left;
-    const QVariant anchorVariant = m_window->window()->property("_q_waylandPopupAnchor");
-    if (anchorVariant.isValid()) {
-        switch (anchorVariant.value<Qt::Edges>()) {
-        case Qt::Edges():
-            anchor = QtWayland::xdg_positioner::anchor_none;
-            break;
-        case Qt::TopEdge:
-            anchor = QtWayland::xdg_positioner::anchor_top;
-            break;
-        case Qt::TopEdge | Qt::RightEdge:
-            anchor = QtWayland::xdg_positioner::anchor_top_right;
-            break;
-        case Qt::RightEdge:
-            anchor = QtWayland::xdg_positioner::anchor_right;
-            break;
-        case Qt::BottomEdge | Qt::RightEdge:
-            anchor = QtWayland::xdg_positioner::anchor_bottom_right;
-            break;
-        case Qt::BottomEdge:
-            anchor = QtWayland::xdg_positioner::anchor_bottom;
-            break;
-        case Qt::BottomEdge | Qt::LeftEdge:
-            anchor = QtWayland::xdg_positioner::anchor_bottom_left;
-            break;
-        case Qt::LeftEdge:
-            anchor = QtWayland::xdg_positioner::anchor_left;
-            break;
-        case Qt::TopEdge | Qt::LeftEdge:
-            anchor = QtWayland::xdg_positioner::anchor_top_left;
-            break;
-        }
-    }
-
-    uint32_t gravity = QtWayland::xdg_positioner::gravity_bottom_right;
-    const QVariant popupGravityVariant = m_window->window()->property("_q_waylandPopupGravity");
-    if (popupGravityVariant.isValid()) {
-        switch (popupGravityVariant.value<Qt::Edges>()) {
-        case Qt::Edges():
-            gravity = QtWayland::xdg_positioner::gravity_none;
-            break;
-        case Qt::TopEdge:
-            gravity = QtWayland::xdg_positioner::gravity_top;
-            break;
-        case Qt::TopEdge | Qt::RightEdge:
-            gravity = QtWayland::xdg_positioner::gravity_top_right;
-            break;
-        case Qt::RightEdge:
-            gravity = QtWayland::xdg_positioner::gravity_right;
-            break;
-        case Qt::BottomEdge | Qt::RightEdge:
-            gravity = QtWayland::xdg_positioner::gravity_bottom_right;
-            break;
-        case Qt::BottomEdge:
-            gravity = QtWayland::xdg_positioner::gravity_bottom;
-            break;
-        case Qt::BottomEdge | Qt::LeftEdge:
-            gravity = QtWayland::xdg_positioner::gravity_bottom_left;
-            break;
-        case Qt::LeftEdge:
-            gravity = QtWayland::xdg_positioner::gravity_left;
-            break;
-        case Qt::TopEdge | Qt::LeftEdge:
-            gravity = QtWayland::xdg_positioner::gravity_top_left;
-            break;
-        }
-    }
-
-    uint32_t constraintAdjustment = QtWayland::xdg_positioner::constraint_adjustment_slide_x | QtWayland::xdg_positioner::constraint_adjustment_slide_y;
-    const QVariant constraintAdjustmentVariant = m_window->window()->property("_q_waylandPopupConstraintAdjustment");
-    if (constraintAdjustmentVariant.isValid()) {
-        constraintAdjustment = constraintAdjustmentVariant.toUInt();
-    }
 
     positioner->set_anchor_rect(placementAnchor.x(),
                                 placementAnchor.y(),
                                 placementAnchor.width(),
                                 placementAnchor.height());
-    positioner->set_anchor(anchor);
-    positioner->set_gravity(gravity);
+    positioner->set_anchor(anchorFromEdge(anchor));
+    positioner->set_gravity(gravityFromEdge(gravity));
     positioner->set_size(windowGeometry.width(), windowGeometry.height());
     positioner->set_constraint_adjustment(constraintAdjustment);
     return positioner;
 }
-
 
 void QWaylandXdgSurface::setIcon(const QIcon &icon)
 {

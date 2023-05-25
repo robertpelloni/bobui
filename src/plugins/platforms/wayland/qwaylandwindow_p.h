@@ -255,6 +255,11 @@ public:
     void setSessionRestoreId(const QString &role) override;
     QString sessionRestoreId() const;
 
+    void setExtendedWindowType(QNativeInterface::Private::QWaylandWindow::WindowType) override;
+    QNativeInterface::Private::QWaylandWindow::WindowType extendedWindowType() const;
+    void setParentControlGeometry(const QRect &parentAnchor) override;
+    QRect parentControlGeometry() const;
+
 public Q_SLOTS:
     void applyConfigure();
 
@@ -396,6 +401,11 @@ private:
     static const wl_callback_listener callbackListener;
     void handleFrameCallback(struct ::wl_callback* callback);
     const QPlatformWindow *lastParent = nullptr;
+
+    struct {
+        QRect parentControlGeometry;
+        QNativeInterface::Private::QWaylandWindow::WindowType extendedWindowType = QNativeInterface::Private::QWaylandWindow::Default;
+    } m_popupInfo;
 
     static QWaylandWindow *mMouseGrab;
     static QWaylandWindow *mTopPopup;

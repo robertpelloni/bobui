@@ -481,8 +481,9 @@ void QWaylandWindow::setGeometry(const QRect &r)
 
     if (mShellSurface && !mInResizeFromApplyConfigure) {
         const QRect frameGeometry = r.marginsAdded(clientSideMargins()).marginsRemoved(windowContentMargins());
-        if (qt_window_private(window())->positionAutomatic)
+        if (qt_window_private(window())->positionAutomatic || m_popupInfo.parentControlGeometry.isValid())
             mShellSurface->setWindowSize(frameGeometry.size());
+
         else
             mShellSurface->setWindowGeometry(frameGeometry);
     }
@@ -1943,6 +1944,27 @@ void QWaylandWindow::setSessionRestoreId(const QString &role)
 QString QWaylandWindow::sessionRestoreId() const
 {
     return mSessionRestoreId;
+}
+
+void QWaylandWindow::setExtendedWindowType(QNativeInterface::Private::QWaylandWindow::WindowType windowType) {
+    m_popupInfo.extendedWindowType = windowType;
+}
+
+QNativeInterface::Private::QWaylandWindow::WindowType QWaylandWindow::extendedWindowType() const
+{
+    return m_popupInfo.extendedWindowType;
+}
+
+void QWaylandWindow::setParentControlGeometry(const QRect &parentControlGeometry) {
+    m_popupInfo.parentControlGeometry = parentControlGeometry;
+    if (mExposed) {
+        mShellSurface->setWindowPosition(window()->position());
+    }
+}
+
+QRect QWaylandWindow::parentControlGeometry() const
+{
+    return m_popupInfo.parentControlGeometry;
 }
 
 }

@@ -40,6 +40,8 @@
 #include <private/qaction_p.h>
 #include <private/qguiapplication_p.h>
 #include <qpa/qplatformtheme.h>
+#include <qpa/qplatformwindow.h>
+#include <qpa/qplatformwindow_p.h>
 #include <private/qstyle_p.h>
 
 QT_BEGIN_NAMESPACE
@@ -2535,6 +2537,23 @@ void QMenuPrivate::popup(const QPoint &p, QAction *atAction, PositionFunction po
     }
     popupScreen = QGuiApplication::screenAt(pos);
     q->setGeometry(QRect(pos, size));
+
+#if QT_CONFIG(wayland)
+    q->create();
+    if (auto waylandWindow = dynamic_cast<QNativeInterface::Private::QWaylandWindow*>(q->windowHandle()->handle())) {
+        if (causedButton) {
+            waylandWindow->setExtendedWindowType(QNativeInterface::Private::QWaylandWindow::Menu);
+            waylandWindow->setParentControlGeometry(causedButton->geometry());
+        } else if (caused) {
+            waylandWindow->setExtendedWindowType(QNativeInterface::Private::QWaylandWindow::SubMenu);
+            waylandWindow->setParentControlGeometry(caused->d_func()->actionRect(caused->d_func()->currentAction));
+        } else if (auto menubar = qobject_cast<QMenuBar*>(causedPopup.widget)) {
+            waylandWindow->setExtendedWindowType(QNativeInterface::Private::QWaylandWindow::Menu);
+            waylandWindow->setParentControlGeometry(menubar->actionGeometry(causedPopup.action));
+        }
+    }
+#endif
+
 #if QT_CONFIG(effects)
     int hGuess = q->isRightToLeft() ? QEffects::LeftScroll : QEffects::RightScroll;
     int vGuess = QEffects::DownScroll;

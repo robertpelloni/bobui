@@ -7,6 +7,9 @@
 #include <qstylepainter.h>
 #include <qpa/qplatformtheme.h>
 #include <qpa/qplatformmenu.h>
+#include <qpa/qplatformwindow.h>
+#include <qpa/qplatformwindow_p.h>
+
 #include <qlineedit.h>
 #include <qapplication.h>
 #include <qlistview.h>
@@ -2868,6 +2871,17 @@ void QComboBox::showPopup()
             container->hide();
         }
     }
+
+#if QT_CONFIG(wayland)
+    if (auto waylandWindow = dynamic_cast<QNativeInterface::Private::QWaylandWindow*>(container->windowHandle()->handle())) {
+        const QRect popup(style->subControlRect(QStyle::CC_ComboBox, &opt,
+                                         QStyle::SC_ComboBoxListBoxPopup, this));
+        const QRect controlGeometry = QRect(mapTo(window(), popup.topLeft()), popup.size());
+        waylandWindow->setParentControlGeometry(controlGeometry);
+        waylandWindow->setExtendedWindowType(QNativeInterface::Private::QWaylandWindow::ComboBox);
+    }
+#endif
+
     container->show();
     if (!neededHorizontalScrollBar && needHorizontalScrollBar()) {
         listRect.adjust(0, 0, 0, sb->height());
