@@ -599,6 +599,7 @@ qt_internal_extend_target(Core CONDITION WIN32
         netapi32
         ntdll
         ole32
+        runtimeobject
         shell32
         user32
         uuid
@@ -888,11 +889,6 @@ qt_internal_extend_target(Core CONDITION QT_FEATURE_winsdkicu
 qt_internal_extend_target(Core CONDITION WASM
     SOURCES
         text/qlocale_wasm.cpp
-)
-
-qt_internal_extend_target(Core CONDITION MSVC
-    LIBRARIES
-        runtimeobject
 )
 
 qt_internal_extend_target(Core CONDITION MSVC AND CLANG
