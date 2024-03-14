@@ -3,6 +3,8 @@
 
 #include "qhttpheaders.h"
 
+#include <QtNetwork/private/qnetworkrequest_p.h>
+
 #include <private/qoffsetstringarray_p.h>
 
 #include <QtCore/qcompare.h>
@@ -11,6 +13,7 @@
 #include <QtCore/qmap.h>
 #include <QtCore/qset.h>
 #include <QtCore/qttypetraits.h>
+#include <QtCore/qxpfunctional.h>
 
 #include <q20algorithm.h>
 #include <string_view>
@@ -796,6 +799,9 @@ public:
     void combinedValue(const HeaderName &name, QByteArray &result) const;
     void values(const HeaderName &name, QList<QByteArray> &result) const;
     QByteArrayView value(const HeaderName &name, QByteArrayView defaultValue) const noexcept;
+    void forEachHeader(QAnyStringView name,
+                       qxp::function_ref<void(QByteArrayView)> yield);
+    std::optional<QByteArrayView> findValue(const HeaderName &name) const noexcept;
 
     QList<Header> headers;
 };
@@ -870,6 +876,24 @@ void QHttpHeadersPrivate::replaceOrAppend(Self &d, const HeaderName &name, QByte
         // Found nothing to replace => append
         d->headers.append(Header{name, std::move(value)});
     }
+}
+
+void QHttpHeadersPrivate::forEachHeader(QAnyStringView name,
+                                        qxp::function_ref<void(QByteArrayView)> yield)
+{
+    for (const auto &h : std::as_const(headers)) {
+        if (h.name.asView() == name)
+            yield(h.value);
+    }
+}
+
+std::optional<QByteArrayView> QHttpHeadersPrivate::findValue(const HeaderName &name) const noexcept
+{
+    for (const auto &h : headers) {
+        if (h.name == name)
+            return h.value;
+    }
+    return std::nullopt;
 }
 
 /*!
@@ -1408,6 +1432,163 @@ QByteArray QHttpHeaders::combinedValue(WellKnownHeader name) const
 
     d->combinedValue(HeaderName{name}, result);
     return result;
+}
+
+/*!
+    \since 6.10
+
+    Returns the value of the first valid header \a name interpreted as a
+    64-bit integer.
+    If the header does not exist or cannot be parsed as an integer, returns
+    \c std::nullopt.
+
+    \sa intValues(QAnyStringView name), intValueAt(qsizetype i)
+*/
+std::optional<qint64> QHttpHeaders::intValue(QAnyStringView name) const noexcept
+{
+    std::optional<QByteArrayView> v = d->findValue(HeaderName{name});
+    if (!v)
+        return std::nullopt;
+    bool ok = false;
+    const qint64 result = v->toLongLong(&ok);
+    if (ok)
+        return result;
+    return std::nullopt;
+}
+
+/*!
+    \since 6.10
+    \overload intValue(QAnyStringView)
+*/
+std::optional<qint64> QHttpHeaders::intValue(WellKnownHeader name) const noexcept
+{
+    return intValue(wellKnownHeaderName(name));
+}
+
+/*!
+    \since 6.10
+
+    Returns the values of the header \a name interpreted as 64-bit integer
+    in a list. If the header does not exist or cannot be parsed as an integer,
+    returns \c std::nullopt.
+
+    \sa intValue(QAnyStringView name), intValueAt(qsizetype i)
+*/
+std::optional<QList<qint64>> QHttpHeaders::intValues(QAnyStringView name) const
+{
+    QList<qint64> results;
+    d->forEachHeader(name, [&](QByteArrayView value) {
+        bool ok = false;
+        qint64 result = value.toLongLong(&ok);
+        if (ok)
+            results.append(result);
+    });
+    return results.isEmpty() ? std::nullopt :
+                               std::make_optional(std::move(results));
+}
+
+/*!
+    \since 6.10
+    \overload intValues(QAnyStringView)
+*/
+std::optional<QList<qint64>> QHttpHeaders::intValues(WellKnownHeader name) const
+{
+    return intValues(wellKnownHeaderName(name));
+}
+
+/*!
+    \since 6.10
+
+    Returns the header value interpreted as 64-bit integer at index \a i.
+    The index \a i must be valid.
+
+    \sa intValues(QAnyStringView name), intValue(QAnyStringView name)
+*/
+std::optional<qint64> QHttpHeaders::intValueAt(qsizetype i) const noexcept
+{
+    verify(i);
+    QByteArrayView v = valueAt(i);
+    if (v.isEmpty())
+        return std::nullopt;
+    bool ok = false;
+    const qint64 result = v.toLongLong(&ok);
+    return ok ? std::optional<qint64>(result) :
+                std::nullopt;
+}
+
+/*!
+    \since 6.10
+
+    Converts the first found header value of \a name to a QDateTime object, following
+    the standard HTTP date formats. If the header does not exist or contains an invalid
+    QDateTime, returns \c std::nullopt.
+
+    \sa dateTimeValues(QAnyStringView name), dateTimeValueAt(qsizetype i)
+*/
+std::optional<QDateTime> QHttpHeaders::dateTimeValue(QAnyStringView name) const
+{
+    std::optional<QByteArrayView> v = d->findValue(HeaderName{name});
+    if (!v)
+        return std::nullopt;
+    QDateTime dt = QNetworkHeadersPrivate::fromHttpDate(*v);
+    if (dt.isValid())
+        return std::move(dt);
+    return std::nullopt;
+}
+
+/*!
+    \since 6.10
+    \overload dateTimeValue(QAnyStringView)
+*/
+std::optional<QDateTime> QHttpHeaders::dateTimeValue(WellKnownHeader name) const
+{
+    return dateTimeValue(wellKnownHeaderName(name));
+}
+
+/*!
+    \since 6.10
+
+    Returns all the header values of \a name in a list of QDateTime objects, following
+    the standard HTTP date formats. If no valid date-time values are found, returns
+    \c std::nullopt.
+
+    \sa dateTimeValue(QAnyStringView name), dateTimeValueAt(qsizetype i)
+*/
+std::optional<QList<QDateTime>> QHttpHeaders::dateTimeValues(QAnyStringView name) const
+{
+    QList<QDateTime> results;
+    d->forEachHeader(name, [&](QByteArrayView value) {
+        QDateTime dt = QNetworkHeadersPrivate::fromHttpDate(value);
+        if (dt.isValid())
+            results.append(std::move(dt));
+    });
+    return results.isEmpty() ? std::nullopt :
+                               std::make_optional(std::move(results));
+}
+
+/*!
+    \since 6.10
+    \overload dateTimeValues(QAnyStringView)
+*/
+std::optional<QList<QDateTime>> QHttpHeaders::dateTimeValues(WellKnownHeader name) const
+{
+    return dateTimeValues(wellKnownHeaderName(name));
+}
+
+/*!
+    \since 6.10
+
+    Converts the header value at index \a i to a QDateTime object following the standard
+    HTTP date formats. The index \a i must be valid.
+
+    \sa dateTimeValue(QAnyStringView name), dateTimeValues(QAnyStringView name)
+*/
+std::optional<QDateTime> QHttpHeaders::dateTimeValueAt(qsizetype i) const
+{
+    verify(i);
+    QDateTime dt = QNetworkHeadersPrivate::fromHttpDate(valueAt(i));
+    return dt.isValid() ? std::make_optional(std::move(dt)) :
+                          std::nullopt;
 }
 
 /*!
