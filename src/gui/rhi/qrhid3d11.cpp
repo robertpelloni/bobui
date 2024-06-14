@@ -2392,6 +2392,7 @@ void QRhiD3D11::updateShaderResourceBindings(QD3D11ShaderResourceBindings *srbD,
     srbD->csSamplerBatches.clear();
 
     srbD->csUavBatches.clear();
+    srbD->fsUavBatches.clear();
 
     struct Stage {
         struct Buffer {
@@ -2587,8 +2588,15 @@ void QRhiD3D11::updateShaderResourceBindings(QD3D11ShaderResourceBindings *srbD,
                     if (uav)
                         res[RBM_COMPUTE].uavs.append({ nativeBinding.first, uav });
                 }
+            } else if (b->stage.testFlag(QRhiShaderResourceBinding::FragmentStage)) {
+                QPair<int, int> nativeBinding = mapBinding(b->binding, RBM_FRAGMENT, nativeResourceBindingMaps);
+                if (nativeBinding.first >= 0) {
+                    ID3D11UnorderedAccessView *uav = texD->unorderedAccessViewForLevel(b->u.simage.level);
+                    if (uav)
+                        res[RBM_FRAGMENT].uavs.append({ nativeBinding.first, uav });
+                }
             } else {
-                qWarning("Unordered access only supported at compute stage");
+                qWarning("Unordered access only supported at fragment/compute stage");
             }
         }
             break;
@@ -2650,6 +2658,7 @@ void QRhiD3D11::updateShaderResourceBindings(QD3D11ShaderResourceBindings *srbD,
     res[RBM_FRAGMENT].buildSamplerBatches(srbD->fsSamplerBatches);
     res[RBM_COMPUTE].buildSamplerBatches(srbD->csSamplerBatches);
 
+    res[RBM_FRAGMENT].buildUavBatches(srbD->fsUavBatches);
     res[RBM_COMPUTE].buildUavBatches(srbD->csUavBatches);
 }
 
@@ -2771,7 +2780,9 @@ static inline uint clampedResourceCount(uint startSlot, int countSlots, uint max
 
 void QRhiD3D11::bindShaderResources(QD3D11ShaderResourceBindings *srbD,
                                     const uint *dynOfsPairs, int dynOfsPairCount,
-                                    bool offsetOnlyChange)
+                                    bool offsetOnlyChange,
+                                    QD3D11RenderTargetData *rtD,
+                                    RenderTargetUavUpdateState &rtUavState)
 {
     UINT offsets[QD3D11CommandBuffer::MAX_DYNAMIC_OFFSET_COUNT];
 
@@ -2791,10 +2802,27 @@ void QRhiD3D11::bindShaderResources(QD3D11ShaderResourceBindings *srbD,
         SETSAMPLERBATCH(cs, CS)
 
         SETUAVBATCH(cs, CS)
+
+        if (srbD->fsUavBatches.present) {
+            for (const auto &batch : srbD->fsUavBatches.uavs.batches) {
+                const uint count = qMin(clampedResourceCount(batch.startBinding, batch.resources.count(),
+                                                        D3D11_1_UAV_SLOT_COUNT, "fs UAV"),
+                                        uint(QD3D11RenderTargetData::MAX_COLOR_ATTACHMENTS));
+                if (count) {
+                    if (rtUavState.update(rtD, batch.resources.constData(), count)) {
+                        context->OMSetRenderTargetsAndUnorderedAccessViews(UINT(rtD->colorAttCount), rtD->colorAttCount ? rtD->rtv : nullptr, rtD->dsv,
+                                                                           UINT(rtD->colorAttCount), count, batch.resources.constData(), nullptr);
+                    }
+                    contextState.fsHighestActiveUavBinding = qMax(contextState.fsHighestActiveUavBinding,
+                                                                  int(batch.startBinding + count) - 1);
+                }
+            }
+        }
     }
 }
 
-void QRhiD3D11::resetShaderResources()
+void QRhiD3D11::resetShaderResources(QD3D11RenderTargetData *rtD,
+                                     RenderTargetUavUpdateState &rtUavState)
 {
     // Output cannot be bound on input etc.
 
@@ -2855,6 +2883,11 @@ void QRhiD3D11::resetShaderResources()
         }
     }
 
+    if (contextState.fsHighestActiveUavBinding >= 0) {
+        rtUavState.update(rtD);
+        context->OMSetRenderTargetsAndUnorderedAccessViews(UINT(rtD->colorAttCount), rtD->colorAttCount ? rtD->rtv : nullptr, rtD->dsv, 0, 0, nullptr, nullptr);
+        contextState.fsHighestActiveUavBinding = -1;
+    }
     if (contextState.csHighestActiveUavBinding >= 0) {
         const int nulluavCount = contextState.csHighestActiveUavBinding + 1;
         QVarLengthArray<ID3D11UnorderedAccessView *,
@@ -2888,6 +2921,10 @@ void QRhiD3D11::executeCommandBuffer(QD3D11CommandBuffer *cbD)
     };
     int currentShaderMask = 0xFF;
 
+    // Track render target and uav updates during executeCommandBuffer.
+    // Prevents multiple identical OMSetRenderTargetsAndUnorderedAccessViews calls.
+    RenderTargetUavUpdateState rtUavState;
+
     for (auto it = cbD->commands.cbegin(), end = cbD->commands.cend(); it != end; ++it) {
         const QD3D11CommandBuffer::Command &cmd(*it);
         switch (cmd.cmd) {
@@ -2901,7 +2938,9 @@ void QRhiD3D11::executeCommandBuffer(QD3D11CommandBuffer *cbD)
                     // it around by issuing a semi-fake OMSetRenderTargets early and
                     // writing the first timestamp only afterwards.
                     QD3D11RenderTargetData *rtD = cmd.args.beginFrame.swapchainData;
+                    rtUavState.update(rtD);
                     context->OMSetRenderTargets(UINT(rtD->colorAttCount), rtD->colorAttCount ? rtD->rtv : nullptr, rtD->dsv);
+                    cbD->prevRtD = rtD;
                 }
                 context->End(cmd.args.beginFrame.tsQuery); // no Begin() for D3D11_QUERY_TIMESTAMP
             }
@@ -2913,12 +2952,14 @@ void QRhiD3D11::executeCommandBuffer(QD3D11CommandBuffer *cbD)
                 context->End(cmd.args.endFrame.tsDisjointQuery);
             break;
         case QD3D11CommandBuffer::Command::ResetShaderResources:
-            resetShaderResources();
+            resetShaderResources(cbD->prevRtD, rtUavState);
             break;
         case QD3D11CommandBuffer::Command::SetRenderTarget:
         {
             QD3D11RenderTargetData *rtD = rtData(cmd.args.setRenderTarget.rt);
-            context->OMSetRenderTargets(UINT(rtD->colorAttCount), rtD->colorAttCount ? rtD->rtv : nullptr, rtD->dsv);
+            if (rtUavState.update(rtD))
+                context->OMSetRenderTargets(UINT(rtD->colorAttCount), rtD->colorAttCount ? rtD->rtv : nullptr, rtD->dsv);
+            cbD->prevRtD = rtD;
         }
             break;
         case QD3D11CommandBuffer::Command::Clear:
@@ -2995,7 +3036,9 @@ void QRhiD3D11::executeCommandBuffer(QD3D11CommandBuffer *cbD)
             bindShaderResources(cmd.args.bindShaderResources.srb,
                                 cmd.args.bindShaderResources.dynamicOffsetPairs,
                                 cmd.args.bindShaderResources.dynamicOffsetCount,
-                                cmd.args.bindShaderResources.offsetOnlyChange);
+                                cmd.args.bindShaderResources.offsetOnlyChange,
+                                cbD->prevRtD,
+                                rtUavState);
             break;
         case QD3D11CommandBuffer::Command::StencilRef:
             stencilRef = cmd.args.stencilRef.ref;
@@ -5546,5 +5589,32 @@ bool QD3D11SwapChain::createOrResize()
 
     return true;
 }
+
+bool RenderTargetUavUpdateState::update(QD3D11RenderTargetData *data, ID3D11UnorderedAccessView *const *uavs, int count)
+{
+    bool ret = false;
+    if (dsv != data->dsv) {
+        dsv = data->dsv;
+        ret = true;
+    }
+    for (int i = 0; i < data->colorAttCount; i++) {
+        ret |= rtv[i] != data->rtv[i];
+        rtv[i] = data->rtv[i];
+    }
+    for (int i = data->colorAttCount; i < QD3D11RenderTargetData::MAX_COLOR_ATTACHMENTS; i++) {
+        ret |= rtv[i] != nullptr;
+        rtv[i] = nullptr;
+    }
+    for (int i = 0; i < count; i++) {
+        ret |= uav[i] != uavs[i];
+        uav[i] = uavs[i];
+    }
+    for (int i = count; i < QD3D11RenderTargetData::MAX_COLOR_ATTACHMENTS; i++) {
+        ret |= uav[i] != nullptr;
+        uav[i] = nullptr;
+    }
+    return ret;
+}
+
 
 QT_END_NAMESPACE
