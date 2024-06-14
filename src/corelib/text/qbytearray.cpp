@@ -4838,6 +4838,15 @@ std::string QByteArray::toStdString() const
 }
 
 /*!
+    \fn QByteArray::operator std::string_view() const noexcept
+    \since 6.10
+
+    Converts this QByteArray object to a \c{std::string_view} object.
+    The returned string view will span over the entirety of the byte
+    array.
+*/
+
+/*!
     \since 4.4
 
     Returns a URI/URL-style percent-encoded copy of this byte array. The

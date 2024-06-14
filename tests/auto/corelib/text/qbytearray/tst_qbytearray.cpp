@@ -148,6 +148,7 @@ private slots:
     void length();
     void length_data();
     void slice() const;
+    void std_stringview_conversion();
 };
 
 static const QByteArray::DataPointer staticStandard = {
@@ -3200,6 +3201,39 @@ void tst_QByteArray::slice() const
 
     a.slice(0, 0);
     QVERIFY(a.isEmpty());
+}
+
+void tst_QByteArray::std_stringview_conversion()
+{
+#ifdef QT_BYTEARRAY_CONVERTS_TO_STD_STRING_VIEW
+    static_assert(std::is_convertible_v<QByteArray, std::string_view>);
+
+    QByteArray ba;
+    std::string_view sv = ba;
+    QCOMPARE(sv, std::string_view());
+    sv = std::string_view(ba);
+    QCOMPARE(sv, std::string_view());
+
+    ba = ""_ba;
+    sv = ba;
+    QCOMPARE(ba.size(), 0);
+    QCOMPARE(sv.size(), size_t(0));
+    QCOMPARE(sv, std::string_view());
+
+    ba = "Hello"_ba;
+    sv = ba;
+    QCOMPARE(ba.size(), 5);
+    QCOMPARE(sv.size(), size_t(5));
+    QCOMPARE(sv, std::string_view("Hello"));
+
+    ba = "Hello\0world"_ba;
+    sv = ba;
+    QCOMPARE(ba.size(), 11);
+    QCOMPARE(sv.size(), size_t(11));
+    QCOMPARE(sv, std::string_view("Hello\0world", 11));
+#else
+    QSKIP("This compiler does not support QByteArray -> std::string_view implicit conversions");
+#endif
 }
 
 QTEST_MAIN(tst_QByteArray)

@@ -118,6 +118,18 @@ public:
     inline operator const char *() const;
     inline operator const void *() const;
 #endif
+
+    // Some compilers consider this conversion ambiguous, so
+    // we're not offering it there:
+    // * QCC 8.3 on QNX
+    // * GHS 2022.1.4 on INTEGRITY
+#if (!defined(Q_OS_QNX) || !defined(Q_CC_GNU_ONLY) || Q_CC_GNU_ONLY > 803) && \
+    (!defined(Q_CC_GHS) || !defined(__GHS_VERSION_NUMBER) || __GHS_VERSION_NUMBER > 202214)
+# define QT_BYTEARRAY_CONVERTS_TO_STD_STRING_VIEW
+    Q_IMPLICIT operator std::string_view() const noexcept
+    { return std::string_view(data(), std::size_t(size())); }
+#endif
+
     inline char *data();
     inline const char *data() const noexcept;
     const char *constData() const noexcept { return data(); }
