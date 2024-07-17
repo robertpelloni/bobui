@@ -348,7 +348,10 @@ static inline QByteArray cacheKey(Args &&...args)
     return (QByteArrayView(":") + ... + QByteArrayView(args));
 }
 
-typedef QHash<QByteArray, jclass> JClassHash;
+struct JClassHash : QHash<QByteArray, jclass>
+{
+    jmethodID loadClassMethod = 0;
+};
 Q_GLOBAL_STATIC(JClassHash, cachedClasses)
 Q_GLOBAL_STATIC(QReadWriteLock, cachedClassesLock)
 
@@ -391,29 +394,22 @@ bool QJniObjectPrivate::isJString(JNIEnv *env) const
 */
 static QJniObject getCleanJniObject(jobject object, JNIEnv *env)
 {
-    if (QJniEnvironment::checkAndClearExceptions(env) || !object) {
-        if (object)
-            env->DeleteLocalRef(object);
+    if (!object || env->ExceptionCheck())
         return QJniObject();
-    }
 
-    QJniObject res(object);
-    env->DeleteLocalRef(object);
-    return res;
+    return QJniObject::fromLocalRef(object);
 }
 
-/*!
-    \internal
-    \a className must be slash-encoded
-*/
-jclass QtAndroidPrivate::findClass(const char *className, JNIEnv *env)
+namespace {
+
+jclass loadClassHelper(const QByteArray &className, JNIEnv *env)
 {
     Q_ASSERT(env);
     QByteArray classNameArray(className);
 #ifdef QT_DEBUG
     if (classNameArray.contains('.')) {
         qWarning("QtAndroidPrivate::findClass: className '%s' should use slash separators!",
-                 className);
+                 className.constData());
     }
 #endif
     classNameArray.replace('.', '/');
@@ -442,21 +438,40 @@ jclass QtAndroidPrivate::findClass(const char *className, JNIEnv *env)
 
     if (!clazz) {
         // Wrong class loader, try our own
-        QJniObject classLoader(QtAndroidPrivate::classLoader());
-        if (!classLoader.isValid())
+        jobject classLoader = QtAndroidPrivate::classLoader();
+        if (!classLoader)
             return nullptr;
+
+        if (!cachedClasses->loadClassMethod) {
+            jclass classLoaderClass = env->GetObjectClass(classLoader);
+            if (!classLoaderClass)
+                return nullptr;
+            cachedClasses->loadClassMethod =
+                env->GetMethodID(classLoaderClass,
+                                 "loadClass", "(Ljava/lang/String;)Ljava/lang/Class;");
+            env->DeleteLocalRef(classLoaderClass);
+            if (!cachedClasses->loadClassMethod) {
+                qCritical("Couldn't find the 'loadClass' method in the Qt class loader");
+                return nullptr;
+            }
+        }
 
         // ClassLoader::loadClass on the other hand wants the binary name of the class,
         // e.g. dot-separated. In testing it works also with /, but better to stick to
         // the specification.
         const QString binaryClassName = QString::fromLatin1(className).replace(u'/', u'.');
-        jstring classNameObject = env->NewString(reinterpret_cast<const jchar*>(binaryClassName.constData()),
-                                                                                binaryClassName.length());
-        QJniObject classObject = classLoader.callMethod<jclass>("loadClass", classNameObject);
+        jstring classNameObject = env->NewString(binaryClassName.utf16(), binaryClassName.length());
+        jobject classObject = env->CallObjectMethod(classLoader,
+                                                    cachedClasses->loadClassMethod,
+                                                    classNameObject);
         env->DeleteLocalRef(classNameObject);
 
-        if (!QJniEnvironment::checkAndClearExceptions(env) && classObject.isValid())
-            clazz = static_cast<jclass>(env->NewGlobalRef(classObject.object()));
+        if (classObject && !env->ExceptionCheck()) {
+            clazz = static_cast<jclass>(env->NewGlobalRef(classObject));
+            env->DeleteLocalRef(classObject);
+        }
+        // Clearing the exception is the caller's responsibility (see
+        // QtAndroidPrivate::findClass()) and QJniObject::loadClass{KeepExceptions}
     }
 
     if (clazz)
@@ -465,10 +480,31 @@ jclass QtAndroidPrivate::findClass(const char *className, JNIEnv *env)
     return clazz;
 }
 
+} // unnamed namespace
+
+/*!
+    \internal
+    \a className must be slash-encoded
+*/
+jclass QtAndroidPrivate::findClass(const char *className, JNIEnv *env)
+{
+    jclass clazz = loadClassHelper(className, env);
+    if (!clazz)
+        QJniEnvironment::checkAndClearExceptions(env);
+    return clazz;
+}
+
 jclass QJniObject::loadClass(const QByteArray &className, JNIEnv *env)
 {
     return QtAndroidPrivate::findClass(className, env);
 }
+
+jclass QJniObject::loadClassKeepExceptions(const QByteArray &className, JNIEnv *env)
+{
+    return loadClassHelper(className, env);
+}
+
+
 
 typedef QHash<QByteArray, jmethodID> JMethodIDHash;
 Q_GLOBAL_STATIC(JMethodIDHash, cachedMethodID)
@@ -482,9 +518,6 @@ jmethodID QJniObject::getMethodID(JNIEnv *env,
 {
     jmethodID id = isStatic ? env->GetStaticMethodID(clazz, name, signature)
                             : env->GetMethodID(clazz, name, signature);
-
-    if (QJniEnvironment::checkAndClearExceptions(env))
-        return nullptr;
 
     return id;
 }
@@ -525,7 +558,8 @@ jmethodID QJniObject::getCachedMethodID(JNIEnv *env,
 
         jmethodID id = getMethodID(env, clazz, name, signature, isStatic);
 
-        cachedMethodID->insert(key, id);
+        if (id)
+            cachedMethodID->insert(key, id);
         return id;
     }
 }
@@ -548,9 +582,6 @@ jfieldID QJniObject::getFieldID(JNIEnv *env,
 {
     jfieldID id = isStatic ? env->GetStaticFieldID(clazz, name, signature)
                            : env->GetFieldID(clazz, name, signature);
-
-    if (QJniEnvironment::checkAndClearExceptions(env))
-        return nullptr;
 
     return id;
 }
@@ -583,7 +614,8 @@ jfieldID QJniObject::getCachedFieldID(JNIEnv *env,
 
         jfieldID id = getFieldID(env, clazz, name, signature, isStatic);
 
-        cachedFieldID->insert(key, id);
+        if (id)
+            cachedFieldID->insert(key, id);
         return id;
     }
 }
@@ -1008,15 +1040,15 @@ QJniObject QJniObject::callObjectMethod(const char *methodName, const char *sign
 {
     JNIEnv *env = jniEnv();
     jmethodID id = getCachedMethodID(env, methodName, signature);
-    if (id) {
-        va_list args;
-        va_start(args, signature);
-        QJniObject res = getCleanJniObject(env->CallObjectMethodV(d->m_jobject, id, args), env);
-        va_end(args);
-        return res;
-    }
+    va_list args;
+    va_start(args, signature);
+    // can't go back from variadic arguments to variadic templates
+    jobject object = id ? jniEnv()->CallObjectMethodV(javaObject(), id, args) : nullptr;
+    QJniObject res = getCleanJniObject(object, env);
+    va_end(args);
 
-    return QJniObject();
+    QJniEnvironment::checkAndClearExceptions(env);
+    return res;
 }
 
 /*!
@@ -1150,7 +1182,7 @@ QJniObject QJniObject::callStaticObjectMethod(jclass clazz, jmethodID methodId, 
 */
 
 /*!
-    \fn template <typename T> void QJniObject::setStaticField(const char *className, const char *fieldName, const char *signature, T value);
+    \fn template <typename Ret, typename Type> auto QJniObject::setStaticField(const char *className, const char *fieldName, const char *signature, Type value);
 
     Sets the static field \a fieldName on the class \a className to \a value
     using the setter with \a signature.
@@ -1158,7 +1190,7 @@ QJniObject QJniObject::callStaticObjectMethod(jclass clazz, jmethodID methodId, 
 */
 
 /*!
-    \fn template <typename T> void QJniObject::setStaticField(jclass clazz, const char *fieldName, const char *signature, T value);
+    \fn template <typename Ret, typename Type> auto QJniObject::setStaticField(jclass clazz, const char *fieldName, const char *signature, Type value);
 
     Sets the static field \a fieldName on the class \a clazz to \a value using
     the setter with \a signature.
@@ -1196,19 +1228,19 @@ QJniObject QJniObject::callStaticObjectMethod(jclass clazz, jmethodID methodId, 
 */
 
 /*!
-    \fn template <typename T> void QJniObject::setStaticField(const char *className, const char *fieldName, T value)
+    \fn template <typename Ret, typename Type> auto QJniObject::setStaticField(const char *className, const char *fieldName, Type value)
 
     Sets the static field \a fieldName of the class \a className to \a value.
 */
 
 /*!
-    \fn template <typename T> void QJniObject::setStaticField(jclass clazz, const char *fieldName, T value)
+    \fn template <typename Ret, typename Type> auto QJniObject::setStaticField(jclass clazz, const char *fieldName, Type value)
 
     Sets the static field \a fieldName of the class \a clazz to \a value.
 */
 
 /*!
-    \fn template <typename Klass, typename T> auto QJniObject::setStaticField(const char *fieldName, T value)
+    \fn template <typename Klass, typename Ret, typename Type> auto QJniObject::setStaticField(const char *fieldName, Type value)
 
     Sets the static field \a fieldName of the class \c Klass to \a value.
 
@@ -1263,11 +1295,16 @@ QJniObject QJniObject::getStaticObjectField(jclass clazz, const char *fieldName,
 {
     JNIEnv *env = QJniEnvironment::getJniEnv();
     jfieldID id = getFieldID(env, clazz, fieldName, signature, true);
-    return getCleanJniObject(env->GetStaticObjectField(clazz, id), env);
+
+    const auto clearExceptions = qScopeGuard([env]{
+        QJniEnvironment::checkAndClearExceptions(env);
+    });
+
+    return getCleanJniObject(getStaticObjectFieldImpl(env, clazz, id), env);
 }
 
 /*!
-    \fn template <typename T> void QJniObject::setField(const char *fieldName, const char *signature, T value)
+    \fn template <typename Ret, typename Type> void QJniObject::setField(const char *fieldName, const char *signature, Type value)
 
     Sets the value of \a fieldName with \a signature to \a value.
 
@@ -1304,14 +1341,16 @@ QJniObject QJniObject::getObjectField(const char *fieldName, const char *signatu
 {
     JNIEnv *env = jniEnv();
     jfieldID id = getCachedFieldID(env, fieldName, signature);
-    if (!id)
-        return QJniObject();
 
-    return getCleanJniObject(env->GetObjectField(d->m_jobject, id), env);
+    const auto clearExceptions = qScopeGuard([env]{
+        QJniEnvironment::checkAndClearExceptions(env);
+    });
+
+    return getCleanJniObject(getObjectFieldImpl(env, id), env);
 }
 
 /*!
-    \fn template <typename T> void QJniObject::setField(const char *fieldName, T value)
+    \fn template <typename Ret, typename Type> void QJniObject::setField(const char *fieldName, Type value)
 
     Sets the value of \a fieldName to \a value.
 
