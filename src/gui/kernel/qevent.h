@@ -633,7 +633,8 @@ public:
        Cursor,
        Language,
        Ruby,
-       Selection
+       Selection,
+       MimeData
     };
     class Attribute {
     public:

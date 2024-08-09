@@ -2250,6 +2250,11 @@ QContextMenuEvent::QContextMenuEvent(Reason reason, const QPoint &pos)
     variable can be used to set a selection starting from that point.
     The value is unused.
 
+    \value MimeData
+    If set, the variant contains a QMimeData object representing the
+    committed text. The commitString() still provides the plain text
+    representation of the committed text.
+
     \sa Attribute
 */
 
