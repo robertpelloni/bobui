@@ -11,7 +11,7 @@ class tst_QCalendar : public QObject
 {
     Q_OBJECT
 private:
-    void checkYear(const QCalendar &cal, int year, bool normal=false);
+    void checkYear(const QCalendar &cal, int year);
 
 private slots:
     void basic_data();
@@ -75,7 +75,7 @@ static void checkCenturyResolution(const QCalendar &cal, const QCalendar::YearMo
 }
 
 // Support for basic():
-void tst_QCalendar::checkYear(const QCalendar &cal, int year, bool normal)
+void tst_QCalendar::checkYear(const QCalendar &cal, int year)
 {
     const int moons = cal.monthsInYear(year);
     // Months are numbered from 1 to moons:
@@ -103,8 +103,8 @@ void tst_QCalendar::checkYear(const QCalendar &cal, int year, bool normal)
         QVERIFY(cal.isDateValid(year, i, last));
         QVERIFY(!cal.isDateValid(year, i, 0));
         QVERIFY(!cal.isDateValid(year, i, last + 1));
-        if (normal) // Unspecified year gets same daysInMonth():
-            QCOMPARE(cal.daysInMonth(i), last);
+        // Unspecified year gets max daysInMonth():
+        QCOMPARE_GE(cal.daysInMonth(i), last);
 
         checkCenturyResolution(cal, {year, i, (last + 1) / 2});
         if (QTest::currentTestFailed())
@@ -114,11 +114,7 @@ void tst_QCalendar::checkYear(const QCalendar &cal, int year, bool normal)
     QCOMPARE(sum, days);
 }
 
-#define CHECKYEAR(cal, year) checkYear(cal, year);   \
-    if (QTest::currentTestFailed()) \
-        return
-
-#define NORMALYEAR(cal, year) checkYear(cal, year, true); \
+#define CHECKYEAR(cal, year) checkYear(cal, year); \
     if (QTest::currentTestFailed()) \
         return
 
@@ -177,7 +173,7 @@ void tst_QCalendar::basic()
     }
     // Either year is non-leap or we have a decade of leap years together;
     // expect daysInMonth() to treat year the same as unspecified.
-    NORMALYEAR(cal, year);
+    CHECKYEAR(cal, year);
 }
 
 void tst_QCalendar::unspecified()
@@ -189,15 +185,18 @@ void tst_QCalendar::unspecified()
     const int thisYear = today.year();
     QCOMPARE(cal.monthsInYear(QCalendar::Unspecified), cal.maximumMonthsInYear());
     for (int month = cal.maximumMonthsInYear(); month > 0; month--) {
-        const int days = cal.daysInMonth(month);
-        int count = 0;
+        const int maxDays = cal.daysInMonth(month);
+        bool hitMax = false;
         // 19 years = one Metonic cycle (used by some lunar calendars)
         for (int i = 19; i > 0; --i) {
-            if (cal.daysInMonth(month, thisYear - i) == days)
-                count++;
+            int days = cal.daysInMonth(month, thisYear - i);
+            if (days == maxDays)
+                hitMax = true;
+            else
+                QCOMPARE_LT(days, maxDays);
         }
         // Require a majority of the years tested:
-        QVERIFY2(count > 9, "Default daysInMonth() should be for a normal year");
+        QVERIFY2(hitMax, "Default daysInMonth() should be the longest that month gets");
     }
 }
 

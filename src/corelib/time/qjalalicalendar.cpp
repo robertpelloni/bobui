@@ -156,7 +156,8 @@ QCalendar::YearMonthDay QJalaliCalendar::julianDayToDate(qint64 jd) const
 int QJalaliCalendar::daysInMonth(int month, int year) const
 {
     if (year && month > 0 && month <= 12)
-        return month < 7 ? 31 : month < 12 || isLeapYear(year) ? 30 : 29;
+        return month < 7 ? 31 : (month < 12 || year == QCalendar::Unspecified
+                                 || isLeapYear(year)) ? 30 : 29;
 
     return 0;
 }
