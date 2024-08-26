@@ -45,6 +45,8 @@
 
 QT_BEGIN_NAMESPACE
 
+extern void qt_scrollRectInImage(QImage &, const QRect &, const QPoint &);
+
 namespace QtWaylandClient {
 
 QWaylandShmBuffer::QWaylandShmBuffer(QWaylandDisplay *display,
@@ -208,6 +210,40 @@ void QWaylandShmBackingStore::endPaint()
     mPainting = false;
     if (mPendingFlush)
         flush(window(), mPendingRegion, QPoint());
+}
+
+// Inspired by QCALayerBackingStore.
+bool QWaylandShmBackingStore::scroll(const QRegion &region, int dx, int dy)
+{
+    if (!mBackBuffer)
+        return false;
+
+    QImage *backBufferImage = mBackBuffer->image();
+    const qreal devicePixelRatio = backBufferImage->devicePixelRatio();
+
+    // On Wayland, the window can have a device pixel ratio different from
+    // the window/screen, therefore we cannot rely on QHighDpi here, cf. QBackingStore::scroll.
+    // With fractional scaling we cannot easily scroll the existing pixels.
+    if (!qFuzzyIsNull(devicePixelRatio - static_cast<int>(devicePixelRatio)))
+        return false;
+
+    const QPoint scrollDelta(dx, dy);
+    const QMargins margins = windowDecorationMargins();
+    const QRegion adjustedRegion = region.translated(margins.left(), margins.top());
+
+    const QRect boundingRect = adjustedRegion.boundingRect();
+    const QPoint devicePixelDelta = scrollDelta * devicePixelRatio;
+
+    qt_scrollRectInImage(*backBufferImage,
+                         QRect(boundingRect.topLeft() * devicePixelRatio,
+                               boundingRect.size() * devicePixelRatio),
+                         devicePixelDelta);
+
+    // We do not mark the source region as dirty, even though it technically has "moved".
+    // This matches the behavior of other backingstore implementations using qt_scrollRectInImage.
+    updateDirtyStates(adjustedRegion.translated(scrollDelta));
+
+    return true;
 }
 
 void QWaylandShmBackingStore::flush(QWindow *window, const QRegion &region, const QPoint &offset)

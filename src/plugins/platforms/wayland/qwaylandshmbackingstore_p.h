@@ -66,6 +66,7 @@ public:
     void resize(const QSize &size, const QRegion &staticContents) override;
     void beginPaint(const QRegion &region) override;
     void endPaint() override;
+    bool scroll(const QRegion &region, int dx, int dy) override;
 
     QWaylandAbstractDecoration *windowDecoration() const;
 
