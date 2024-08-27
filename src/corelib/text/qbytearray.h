@@ -408,7 +408,7 @@ public:
     [[nodiscard]] static QByteArray number(double, char format = 'g', int precision = 6);
     [[nodiscard]] static QByteArray fromRawData(const char *data, qsizetype size)
     {
-        return QByteArray(DataPointer(nullptr, const_cast<char *>(data), size));
+        return QByteArray(DataPointer::fromRawData(data, size));
     }
 
     class FromBase64Result;

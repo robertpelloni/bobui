@@ -784,8 +784,9 @@ public:
     static QString fromUcs4(const char32_t *, qsizetype size = -1);
     static QString fromRawData(const char16_t *unicode, qsizetype size)
     {
-        return QString(DataPointer(nullptr, const_cast<char16_t *>(unicode), size));
+        return QString(DataPointer::fromRawData(unicode, size));
     }
+    QT_CORE_INLINE_SINCE(6, 10)
     static QString fromRawData(const QChar *, qsizetype size);
 
 #if QT_DEPRECATED_SINCE(6, 0)
@@ -1649,6 +1650,12 @@ qsizetype QString::indexOf(QChar ch, qsizetype from, Qt::CaseSensitivity cs) con
 qsizetype QString::lastIndexOf(QChar ch, qsizetype from, Qt::CaseSensitivity cs) const
 {
     return qToStringViewIgnoringNull(*this).lastIndexOf(ch, from, cs);
+}
+#endif
+#if QT_CORE_INLINE_IMPL_SINCE(6, 10)
+QString QString::fromRawData(const QChar *unicode, qsizetype size)
+{
+    return fromRawData(reinterpret_cast<const char16_t *>(unicode), size);
 }
 #endif
 

@@ -9411,10 +9411,6 @@ QString::iterator QString::erase(QString::const_iterator first, QString::const_i
     \fn QString QString::fromRawData(const QChar *unicode, qsizetype size)
     \overload
 */
-QString QString::fromRawData(const QChar *unicode, qsizetype size)
-{
-    return QString(DataPointer::fromRawData(const_cast<char16_t *>(reinterpret_cast<const char16_t *>(unicode)), size));
-}
 
 /*!
     \since 4.7

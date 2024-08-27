@@ -1427,6 +1427,7 @@ QNoDebug QMessageLogger::noDebug() const noexcept
     return QNoDebug();
 }
 
+#include "qstring.h" // inlined API
 
 // #include "qotherheader.h"
 // // implement removed functions from qotherheader.h
