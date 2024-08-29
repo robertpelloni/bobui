@@ -35,8 +35,8 @@ class QVectorPathConverter;
 class QVectorPathConverter
 {
 public:
-    QVectorPathConverter(const QList<QPainterPath::Element> &path, uint fillRule, bool convex)
-        : pathData(path, fillRule, convex),
+    QVectorPathConverter(const QList<QPainterPath::Element> &path, bool hasWindingFill, bool convex)
+        : pathData(path, hasWindingFill, convex),
           path(pathData.points.data(), path.size(), pathData.elements.data(), pathData.flags)
     {
     }
@@ -46,7 +46,7 @@ public:
     }
 
     struct QVectorPathData {
-        QVectorPathData(const QList<QPainterPath::Element> &path, uint fillRule, bool convex)
+        QVectorPathData(const QList<QPainterPath::Element> &path, bool hasWindingFill, bool convex)
             : elements(path.size()), points(path.size() * 2), flags(0)
         {
             int ptsPos = 0;
@@ -65,7 +65,7 @@ public:
                 isLines = isLines && e.type == (QPainterPath::ElementType) (i%2);
             }
 
-            if (fillRule == Qt::WindingFill)
+            if (hasWindingFill)
                 flags |= QVectorPath::WindingFill;
             else
                 flags |= QVectorPath::OddEvenFill;
@@ -107,43 +107,38 @@ public:
 
     QPainterPathPrivate() noexcept
         : QSharedData(),
-          cStart(0),
-          fillRule(Qt::OddEvenFill),
           require_moveTo(false),
           dirtyBounds(false),
           dirtyControlBounds(false),
           convex(false),
-          pathConverter(nullptr)
+          hasWindingFill(false)
     {
     }
 
     QPainterPathPrivate(QPointF startPoint)
         : QSharedData(),
           elements{ { startPoint.x(), startPoint.y(), QPainterPath::MoveToElement } },
-          cStart(0),
-          fillRule(Qt::OddEvenFill),
           bounds(startPoint, QSizeF(0, 0)),
           controlBounds(startPoint, QSizeF(0, 0)),
           require_moveTo(false),
           dirtyBounds(false),
           dirtyControlBounds(false),
           convex(false),
-          pathConverter(nullptr)
+          hasWindingFill(false)
     {
     }
 
     QPainterPathPrivate(const QPainterPathPrivate &other) noexcept
         : QSharedData(other),
           elements(other.elements),
-          cStart(other.cStart),
-          fillRule(other.fillRule),
           bounds(other.bounds),
           controlBounds(other.controlBounds),
+          cStart(other.cStart),
           require_moveTo(false),
           dirtyBounds(other.dirtyBounds),
           dirtyControlBounds(other.dirtyControlBounds),
           convex(other.convex),
-          pathConverter(nullptr)
+          hasWindingFill(other.hasWindingFill)
     {
     }
 
@@ -157,25 +152,23 @@ public:
 
     const QVectorPath &vectorPath() {
         if (!pathConverter)
-            pathConverter.reset(new QVectorPathConverter(elements, fillRule, convex));
+            pathConverter.reset(new QVectorPathConverter(elements, hasWindingFill, convex));
         return pathConverter->path;
     }
 
 private:
     QList<QPainterPath::Element> elements;
-
-    int cStart;
-    Qt::FillRule fillRule;
-
+    std::unique_ptr<QVectorPathConverter> pathConverter;
     QRectF bounds;
     QRectF controlBounds;
 
-    uint require_moveTo : 1;
-    uint dirtyBounds : 1;
-    uint dirtyControlBounds : 1;
-    uint convex : 1;
+    int cStart = 0;
 
-    std::unique_ptr<QVectorPathConverter> pathConverter;
+    bool require_moveTo : 1;
+    bool dirtyBounds : 1;
+    bool dirtyControlBounds : 1;
+    bool convex : 1;
+    bool hasWindingFill : 1;
 };
 
 class QPainterPathStrokerPrivate
@@ -218,10 +211,7 @@ inline const QPainterPath QVectorPath::convertToPainterPath() const
             }
         }
 
-        if (m_hints & OddEvenFill)
-            data->fillRule = Qt::OddEvenFill;
-        else
-            data->fillRule = Qt::WindingFill;
+        data->hasWindingFill = !(m_hints & OddEvenFill);
         return path;
 }
 

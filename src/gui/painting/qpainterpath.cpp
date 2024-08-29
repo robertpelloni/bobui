@@ -1302,7 +1302,7 @@ void QPainterPath::addRegion(const QRegion &region)
 */
 Qt::FillRule QPainterPath::fillRule() const
 {
-    return !d_func() ? Qt::OddEvenFill : d_func()->fillRule;
+    return d_func() && d_func()->hasWindingFill ? Qt::WindingFill : Qt::OddEvenFill;
 }
 
 /*!
@@ -1325,11 +1325,12 @@ Qt::FillRule QPainterPath::fillRule() const
 void QPainterPath::setFillRule(Qt::FillRule fillRule)
 {
     ensureData();
-    if (d_func()->fillRule == fillRule)
+    const bool isWindingRequested = (fillRule == Qt::WindingFill);
+    if (d_func()->hasWindingFill == isWindingRequested)
         return;
     detach();
 
-    d_func()->fillRule = fillRule;
+    d_func()->hasWindingFill = isWindingRequested;
 }
 
 #define QT_BEZIER_A(bezier, coord) 3 * (-bezier.coord##1 \
@@ -1835,7 +1836,7 @@ bool QPainterPath::contains(const QPointF &pt) const
     if (last_pt != last_start)
         qt_painterpath_isect_line(last_pt, last_start, pt, &winding_number);
 
-    return (d->fillRule == Qt::WindingFill
+    return (d->hasWindingFill
             ? (winding_number != 0)
             : ((winding_number % 2) != 0));
 }
@@ -2257,13 +2258,13 @@ bool QPainterPath::operator==(const QPainterPath &path) const
     if (other_d == d) {
         return true;
     } else if (!d || !other_d) {
-        if (!other_d && isEmpty() && elementAt(0) == QPointF() && d->fillRule == Qt::OddEvenFill)
+        if (!other_d && isEmpty() && elementAt(0) == QPointF() && !d->hasWindingFill)
             return true;
-        if (!d && path.isEmpty() && path.elementAt(0) == QPointF() && other_d->fillRule == Qt::OddEvenFill)
+        if (!d && path.isEmpty() && path.elementAt(0) == QPointF() && !other_d->hasWindingFill)
             return true;
         return false;
     }
-    else if (d->fillRule != other_d->fillRule)
+    else if (d->hasWindingFill != other_d->hasWindingFill)
         return false;
     else if (d->elements.size() != other_d->elements.size())
         return false;
@@ -2419,7 +2420,7 @@ QDataStream &operator<<(QDataStream &s, const QPainterPath &p)
         s << double(e.x) << double(e.y);
     }
     s << p.d_func()->cStart;
-    s << int(p.d_func()->fillRule);
+    s << int(p.fillRule());
     return s;
 }
 
@@ -2467,7 +2468,7 @@ QDataStream &operator>>(QDataStream &s, QPainterPath &p)
     int fillRule;
     s >> fillRule;
     Q_ASSERT(fillRule == Qt::OddEvenFill || fillRule == Qt::WindingFill);
-    p.d_func()->fillRule = Qt::FillRule(fillRule);
+    p.d_func()->hasWindingFill = (Qt::FillRule(fillRule) == Qt::WindingFill);
     if (errorDetected || p.d_func()->elements.isEmpty())
         p = QPainterPath();  // Better than to return path with possibly corrupt datastructure, which would likely cause crash
     return s;
