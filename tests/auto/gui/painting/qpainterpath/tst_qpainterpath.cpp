@@ -55,7 +55,8 @@ private slots:
 
     void pointAtPercent_data();
     void pointAtPercent();
-
+    void lengths_data();
+    void lengths();
     void angleAtPercent();
 
     void arcWinding_data();
@@ -1105,6 +1106,37 @@ void tst_QPainterPath::pointAtPercent_data()
     path.moveTo(100, 100);
     QTest::newRow("Case 18") << path << qreal(0.0) << QPointF(100, 100);
     QTest::newRow("Case 19") << path << qreal(1.0) << QPointF(100, 100);
+
+    path.clear();
+    path.lineTo(100, 0);
+    path.moveTo(0, 100);
+    path.lineTo(100, 100);
+    QTest::newRow("Case 20") << path << qreal(0.25) << QPointF(50, 0);
+    QTest::newRow("Case 21") << path << qreal(0.5) << QPointF(100, 0);
+    QTest::newRow("Case 22") << path << qreal(0.75) << QPointF(50, 100);
+    QTest::newRow("Case 23") << path << qreal(1.0) << QPointF(100, 100);
+
+    path.clear();
+    path.moveTo(100, 100);
+    path.lineTo(0, 100);
+    path.moveTo(100, 0);
+    path.lineTo(0, 0);
+    QTest::newRow("Case 24") << path << qreal(0.25) << QPointF(50, 100);
+    QTest::newRow("Case 25") << path << qreal(0.5) << QPointF(0, 100);
+    QTest::newRow("Case 26") << path << qreal(0.75) << QPointF(50, 0);
+    QTest::newRow("Case 27") << path << qreal(1.0) << QPointF(0, 0);
+
+    path.clear();
+    path.lineTo(0, 100);
+    path.cubicTo(QPointF(5, 0), QPointF(90, 100), QPointF(100, 100));
+    path.cubicTo(QPointF(80, 80), QPointF(80, 80), QPointF(100, 20));
+    path.closeSubpath();
+    path.addPath(path);
+    QTest::newRow("Case 28") << path << qreal(0.5) << QPointF(0, 0);
+    QTest::newRow("Case 29") << path << qreal(0.05) << path.pointAtPercent(0.5 + 0.05);
+    QTest::newRow("Case 30") << path << qreal(0.2) << path.pointAtPercent(0.5 + 0.2);
+    QTest::newRow("Case 31") << path << qreal(0.4) << path.pointAtPercent(0.5 + 0.4);
+    QTest::newRow("Case 32") << path << qreal(0.45) << path.pointAtPercent(0.5 + 0.45);
 }
 
 void tst_QPainterPath::pointAtPercent()
@@ -1114,8 +1146,55 @@ void tst_QPainterPath::pointAtPercent()
     QFETCH(QPointF, point);
 
     QPointF result = path.pointAtPercent(percent);
+
     QVERIFY(pathFuzzyCompare(point.x() , result.x()));
     QVERIFY(pathFuzzyCompare(point.y() , result.y()));
+}
+
+void tst_QPainterPath::lengths_data()
+{
+    QTest::addColumn<QPainterPath>("path");
+    QTest::addColumn<qreal>("length");
+    QTest::addColumn<qreal>("lenAt25");
+    QTest::addColumn<qreal>("lenAt50");
+    QTest::addColumn<qreal>("lenAt75");
+
+    QPainterPath p;
+    p.addRect(50, 50, 200, 100);
+    qreal len = 2 * 200 + 2 * 100;
+    QTest::newRow("rect") << p << len << len * 0.25 << len * 0.5 << len * 0.75;
+
+    p.clear();
+    p.addEllipse(50, 50, 100, 100);
+    len = M_PI * 100;
+    QTest::newRow("circle") << p << len << len * 0.25 << len * 0.5 << len * 0.75;
+
+    p.addEllipse(60, 60, 100, 100);
+    p.addEllipse(70, 70, 100, 100);
+    len *= 3;
+    QTest::newRow("three_circles") << p << len << len * 0.25 << len * 0.5 << len * 0.75;
+
+    p.clear();
+    p.lineTo(0, 100);
+    p.cubicTo(QPointF(5, 0), QPointF(90, 100), QPointF(100, 100));
+    p.cubicTo(QPointF(80, 80), QPointF(80, 80), QPointF(100, 20));
+    len = 332.113;
+    QTest::newRow("asymmetric") << p << len << len * 0.25 << 173.85 << 248.77;
+}
+
+void tst_QPainterPath::lengths()
+{
+    QFETCH(QPainterPath, path);
+    QFETCH(qreal, length);
+    QFETCH(qreal, lenAt25);
+    QFETCH(qreal, lenAt50);
+    QFETCH(qreal, lenAt75);
+
+    QVERIFY(pathFuzzyCompare(path.length() / 1000, length / 1000));
+    QVERIFY(pathFuzzyCompare(path.percentAtLength(lenAt25), qreal(0.25)));
+    QVERIFY(pathFuzzyCompare(path.percentAtLength(lenAt50), qreal(0.50)));
+    QVERIFY(pathFuzzyCompare(path.percentAtLength(lenAt75), qreal(0.75)));
+    QVERIFY(pathFuzzyCompare(path.percentAtLength(length), qreal(1)));
 }
 
 void tst_QPainterPath::setElementPositionAt()
