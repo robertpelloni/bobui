@@ -15,8 +15,12 @@ public:
 private slots:
     void initTestCase_data();
 
+    void general_data();
+    void length_data() { general_data(); }
     void length();
+    void percentAtLength_data() { general_data(); }
     void percentAtLength();
+    void pointAtPercent_data() { general_data(); }
     void pointAtPercent();
 
 };
@@ -62,11 +66,19 @@ void tst_QPainterPath::initTestCase_data()
     QTest::newRow("2k_text") << p;
 }
 
+void tst_QPainterPath::general_data()
+{
+    QTest::addColumn<bool>("caching");
+
+    QTest::newRow("Uncached") << false;
+    QTest::newRow("Cached") << true;
+}
+
 void tst_QPainterPath::length()
 {
     QFETCH_GLOBAL(QPainterPath, path);
-
-    //const qreal len = path.length() * 0.72;
+    QFETCH(bool, caching);
+    path.setCachingEnabled(caching);
 
     QBENCHMARK {
         path.length();
@@ -76,6 +88,8 @@ void tst_QPainterPath::length()
 void tst_QPainterPath::percentAtLength()
 {
     QFETCH_GLOBAL(QPainterPath, path);
+    QFETCH(bool, caching);
+    path.setCachingEnabled(caching);
 
     const qreal len = path.length() * 0.72;
 
@@ -87,6 +101,8 @@ void tst_QPainterPath::percentAtLength()
 void tst_QPainterPath::pointAtPercent()
 {
     QFETCH_GLOBAL(QPainterPath, path);
+    QFETCH(bool, caching);
+    path.setCachingEnabled(caching);
 
     const qreal t = 0.72;
 

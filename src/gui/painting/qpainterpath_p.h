@@ -24,6 +24,7 @@
 
 #include <private/qvectorpath_p.h>
 #include <private/qstroker_p.h>
+#include <private/qbezier_p.h>
 
 #include <memory>
 
@@ -111,7 +112,8 @@ public:
           dirtyBounds(false),
           dirtyControlBounds(false),
           convex(false),
-          hasWindingFill(false)
+          hasWindingFill(false),
+          cacheEnabled(false)
     {
     }
 
@@ -124,21 +126,25 @@ public:
           dirtyBounds(false),
           dirtyControlBounds(false),
           convex(false),
-          hasWindingFill(false)
+          hasWindingFill(false),
+          cacheEnabled(false)
     {
     }
 
     QPainterPathPrivate(const QPainterPathPrivate &other) noexcept
         : QSharedData(other),
           elements(other.elements),
+          m_runLengths(other.m_runLengths),
           bounds(other.bounds),
           controlBounds(other.controlBounds),
           cStart(other.cStart),
           require_moveTo(false),
           dirtyBounds(other.dirtyBounds),
           dirtyControlBounds(other.dirtyControlBounds),
+          dirtyRunLengths(other.dirtyRunLengths),
           convex(other.convex),
-          hasWindingFill(other.hasWindingFill)
+          hasWindingFill(other.hasWindingFill),
+          cacheEnabled(other.cacheEnabled)
     {
     }
 
@@ -149,6 +155,10 @@ public:
     inline void close();
     inline void maybeMoveTo();
     inline void clear();
+    void computeRunLengths();
+    int elementAtT(qreal t);
+    QBezier bezierAtT(const QPainterPath &path, qreal t, qreal *startingLength,
+                      qreal *bezierLength) const;
 
     const QVectorPath &vectorPath() {
         if (!pathConverter)
@@ -159,6 +169,7 @@ public:
 private:
     QList<QPainterPath::Element> elements;
     std::unique_ptr<QVectorPathConverter> pathConverter;
+    QList<qreal> m_runLengths;
     QRectF bounds;
     QRectF controlBounds;
 
@@ -167,8 +178,10 @@ private:
     bool require_moveTo : 1;
     bool dirtyBounds : 1;
     bool dirtyControlBounds : 1;
+    bool dirtyRunLengths : 1;
     bool convex : 1;
     bool hasWindingFill : 1;
+    bool cacheEnabled : 1;
 };
 
 class QPainterPathStrokerPrivate
@@ -257,6 +270,7 @@ inline void QPainterPathPrivate::clear()
     Q_ASSERT(ref.loadRelaxed() == 1);
 
     elements.clear();
+    m_runLengths.clear();
 
     cStart = 0;
     bounds = {};
@@ -265,12 +279,23 @@ inline void QPainterPathPrivate::clear()
     require_moveTo = false;
     dirtyBounds = false;
     dirtyControlBounds = false;
+    dirtyRunLengths = false;
     convex = false;
 
     pathConverter.reset();
 }
-#define KAPPA qreal(0.5522847498)
 
+inline int QPainterPathPrivate::elementAtT(qreal t)
+{
+    Q_ASSERT(cacheEnabled);
+    if (dirtyRunLengths)
+        computeRunLengths();
+    qreal len = t * m_runLengths.constLast();
+    const auto it = std::lower_bound(m_runLengths.constBegin(), m_runLengths.constEnd(), len);
+    return (it == m_runLengths.constEnd()) ? m_runLengths.size() - 1 : int(it - m_runLengths.constBegin());
+}
+
+#define KAPPA qreal(0.5522847498)
 
 QT_END_NAMESPACE
 

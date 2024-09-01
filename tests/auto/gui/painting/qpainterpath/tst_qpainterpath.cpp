@@ -1145,10 +1145,16 @@ void tst_QPainterPath::pointAtPercent()
     QFETCH(qreal, percent);
     QFETCH(QPointF, point);
 
+    QVERIFY(!path.isCachingEnabled());
     QPointF result = path.pointAtPercent(percent);
-
     QVERIFY(pathFuzzyCompare(point.x() , result.x()));
     QVERIFY(pathFuzzyCompare(point.y() , result.y()));
+
+    path.setCachingEnabled(true);
+    QVERIFY(path.isCachingEnabled());
+    result = path.pointAtPercent(percent);
+    QVERIFY2(pathFuzzyCompare(point.x() , result.x()), "caching");
+    QVERIFY2(pathFuzzyCompare(point.y() , result.y()), "caching");
 }
 
 void tst_QPainterPath::lengths_data()
@@ -1190,11 +1196,20 @@ void tst_QPainterPath::lengths()
     QFETCH(qreal, lenAt50);
     QFETCH(qreal, lenAt75);
 
+    QVERIFY(!path.isCachingEnabled());
     QVERIFY(pathFuzzyCompare(path.length() / 1000, length / 1000));
     QVERIFY(pathFuzzyCompare(path.percentAtLength(lenAt25), qreal(0.25)));
     QVERIFY(pathFuzzyCompare(path.percentAtLength(lenAt50), qreal(0.50)));
     QVERIFY(pathFuzzyCompare(path.percentAtLength(lenAt75), qreal(0.75)));
     QVERIFY(pathFuzzyCompare(path.percentAtLength(length), qreal(1)));
+
+    path.setCachingEnabled(true);
+    QVERIFY(path.isCachingEnabled());
+    QVERIFY2(pathFuzzyCompare(path.length() / 1000, length / 1000), "caching");
+    QVERIFY2(pathFuzzyCompare(path.percentAtLength(lenAt25), qreal(0.25)), "caching");
+    QVERIFY2(pathFuzzyCompare(path.percentAtLength(lenAt50), qreal(0.50)), "caching");
+    QVERIFY2(pathFuzzyCompare(path.percentAtLength(lenAt75), qreal(0.75)), "caching");
+    QVERIFY2(pathFuzzyCompare(path.percentAtLength(length), qreal(1)), "caching");
 }
 
 void tst_QPainterPath::setElementPositionAt()
@@ -1226,6 +1241,11 @@ void tst_QPainterPath::angleAtPercent()
         path.moveTo(line.p1());
         path.lineTo(line.p2());
 
+        QVERIFY(!path.isCachingEnabled());
+        QCOMPARE(path.angleAtPercent(0.5), line.angle());
+
+        path.setCachingEnabled(true);
+        QVERIFY(path.isCachingEnabled());
         QCOMPARE(path.angleAtPercent(0.5), line.angle());
     }
 }

@@ -2821,6 +2821,44 @@ QPolygonF QPainterPath::toFillPolygon(const QTransform &matrix) const
     return polygon;
 }
 
+/*!
+    Returns true if caching is enabled; otherwise returns false.
+
+    \since 6.10
+    \sa setCachingEnabled()
+*/
+bool QPainterPath::isCachingEnabled() const
+{
+    Q_D(QPainterPath);
+    return d && d->cacheEnabled;
+}
+
+/*!
+    Enables or disables length caching according to the value of \a enabled.
+
+    Enabling caching speeds up repeated calls to the member functions involving path length
+    and percentage values, such as length(), percentAtLength(), pointAtPercent() etc., at the cost
+    of some extra memory usage for storage of intermediate calculations. By default it is disabled.
+
+    Disabling caching will release any allocated cache memory.
+
+    \since 6.10
+    \sa isCachingEnabled(), length(), percentAtLength(), pointAtPercent()
+*/
+void QPainterPath::setCachingEnabled(bool enabled)
+{
+    ensureData();
+    if (d_func()->cacheEnabled == enabled)
+        return;
+    detach();
+    QPainterPathPrivate *d = d_func();
+    d->cacheEnabled = enabled;
+    if (!enabled) {
+        d->m_runLengths.clear();
+        d->m_runLengths.squeeze();
+    }
+}
+
 //derivative of the equation
 static inline qreal slopeAt(qreal t, qreal a, qreal b, qreal c, qreal d)
 {
@@ -2835,6 +2873,11 @@ qreal QPainterPath::length() const
     Q_D(QPainterPath);
     if (isEmpty())
         return 0;
+    if (d->cacheEnabled) {
+        if (d->dirtyRunLengths)
+            d->computeRunLengths();
+        return d->m_runLengths.last();
+    }
 
     qreal len = 0;
     for (int i=1; i<d->elements.size(); ++i) {
@@ -2883,6 +2926,32 @@ qreal QPainterPath::percentAtLength(qreal len) const
     if (len > totalLength)
         return 1;
 
+    if (d->cacheEnabled) {
+        const int ei = qMax(d->elementAtT(len / totalLength), 1); // Skip initial MoveTo
+        qreal res = 0;
+        const QPainterPath::Element &e = d->elements[ei];
+        switch (e.type) {
+        case QPainterPath::LineToElement:
+            res = len / totalLength;
+            break;
+        case CurveToElement:
+        {
+            QBezier b = QBezier::fromPoints(d->elements.at(ei-1),
+                                            e,
+                                            d->elements.at(ei+1),
+                                            d->elements.at(ei+2));
+            qreal prevLen = d->m_runLengths[ei - 1];
+            qreal blen = d->m_runLengths[ei] - prevLen;
+            qreal elemRes = b.tAtLength(len - prevLen);
+            res = (elemRes * blen + prevLen) / totalLength;
+            break;
+        }
+        default:
+            Q_UNREACHABLE();
+        }
+        return res;
+    }
+
     qreal curLen = 0;
     for (int i=1; i<d->elements.size(); ++i) {
         const Element &e = d->elements.at(i);
@@ -2927,7 +2996,8 @@ qreal QPainterPath::percentAtLength(qreal len) const
     return 0;
 }
 
-static inline QBezier bezierAtT(const QPainterPath &path, qreal t, qreal *startingLength, qreal *bezierLength)
+static inline QBezier uncached_bezierAtT(const QPainterPath &path, qreal t, qreal *startingLength,
+                                         qreal *bezierLength)
 {
     *startingLength = 0;
     if (t > 1)
@@ -2981,6 +3051,35 @@ static inline QBezier bezierAtT(const QPainterPath &path, qreal t, qreal *starti
     return QBezier();
 }
 
+QBezier QPainterPathPrivate::bezierAtT(const QPainterPath &path, qreal t, qreal *startingLength,
+                                       qreal *bezierLength) const
+{
+    Q_ASSERT(t >= 0 && t <= 1);
+    QPainterPathPrivate *d = path.d_func();
+    if (!path.isEmpty() && d->cacheEnabled) {
+        const int ei = qMax(d->elementAtT(t), 1); // Avoid the initial MoveTo element
+        const qreal prevRunLength = d->m_runLengths[ei - 1];
+        *startingLength = prevRunLength;
+        *bezierLength = d->m_runLengths[ei] - prevRunLength;
+        const QPointF prev = d->elements[ei - 1];
+        const QPainterPath::Element &e = d->elements[ei];
+        switch (e.type) {
+        case QPainterPath::LineToElement:
+        {
+            QPointF delta = (e - prev) / 3;
+            return QBezier::fromPoints(prev, prev + delta, prev + 2 * delta, e);
+        }
+        case QPainterPath::CurveToElement:
+            return QBezier::fromPoints(prev, e, elements[ei + 1], elements[ei + 2]);
+            break;
+        default:
+            Q_UNREACHABLE();
+        }
+    }
+
+    return uncached_bezierAtT(path, t, startingLength, bezierLength);
+}
+
 /*!
     Returns the point at at the percentage \a t of the current path.
     The argument \a t has to be between 0 and 1.
@@ -3006,7 +3105,7 @@ QPointF QPainterPath::pointAtPercent(qreal t) const
     qreal totalLength = length();
     qreal curLen = 0;
     qreal bezierLen = 0;
-    QBezier b = bezierAtT(*this, t, &curLen, &bezierLen);
+    QBezier b = d_ptr->bezierAtT(*this, t, &curLen, &bezierLen);
     qreal realT = (totalLength * t - curLen) / bezierLen;
 
     return b.pointAt(qBound(qreal(0), realT, qreal(1)));
@@ -3034,7 +3133,7 @@ qreal QPainterPath::angleAtPercent(qreal t) const
     qreal totalLength = length();
     qreal curLen = 0;
     qreal bezierLen = 0;
-    QBezier bez = bezierAtT(*this, t, &curLen, &bezierLen);
+    QBezier bez = d_ptr->bezierAtT(*this, t, &curLen, &bezierLen);
     qreal realT = (totalLength * t - curLen) / bezierLen;
 
     qreal m1 = slopeAt(realT, bez.x1, bez.x2, bez.x3, bez.x4);
@@ -3063,7 +3162,7 @@ qreal QPainterPath::slopeAtPercent(qreal t) const
     qreal totalLength = length();
     qreal curLen = 0;
     qreal bezierLen = 0;
-    QBezier bez = bezierAtT(*this, t, &curLen, &bezierLen);
+    QBezier bez = d_ptr->bezierAtT(*this, t, &curLen, &bezierLen);
     qreal realT = (totalLength * t - curLen) / bezierLen;
 
     qreal m1 = slopeAt(realT, bez.x1, bez.x2, bez.x3, bez.x4);
@@ -3283,9 +3382,10 @@ bool QPainterPath::contains(const QPainterPath &p) const
 
 void QPainterPath::setDirty(bool dirty)
 {
+    d_func()->pathConverter.reset();
     d_func()->dirtyBounds        = dirty;
     d_func()->dirtyControlBounds = dirty;
-    d_func()->pathConverter.reset();
+    d_func()->dirtyRunLengths = dirty;
     d_func()->convex = false;
 }
 
@@ -3356,6 +3456,43 @@ void QPainterPath::computeControlPointRect() const
         else if (e.y < miny) miny = e.y;
     }
     d->controlBounds = QRectF(minx, miny, maxx - minx, maxy - miny);
+}
+
+void QPainterPathPrivate::computeRunLengths()
+{
+    Q_ASSERT(!elements.isEmpty());
+
+    m_runLengths.clear();
+    const int numElems = elements.size();
+    m_runLengths.reserve(numElems);
+
+    QPointF runPt = elements[0];
+    qreal runLen = 0.0;
+    for (int i = 0; i < numElems; i++) {
+        QPainterPath::Element e = elements[i];
+        switch (e.type) {
+        case QPainterPath::LineToElement:
+            runLen += QLineF(runPt, e).length();
+            runPt = e;
+            break;
+        case QPainterPath::CurveToElement: {
+            Q_ASSERT(i < numElems - 2);
+            QPainterPath::Element ee = elements[i + 2];
+            runLen += QBezier::fromPoints(runPt, e, elements[i + 1], ee).length();
+            runPt = ee;
+            break;
+        }
+        case QPainterPath::MoveToElement:
+            runPt = e;
+            break;
+        case QPainterPath::CurveToDataElement:
+            break;
+        }
+        m_runLengths.append(runLen);
+    }
+    Q_ASSERT(m_runLengths.size() == elements.size());
+
+    dirtyRunLengths = false;
 }
 
 #ifndef QT_NO_DEBUG_STREAM

@@ -134,8 +134,10 @@ public:
     QPainterPath::Element elementAt(int i) const;
     void setElementPositionAt(int i, qreal x, qreal y);
 
+    bool isCachingEnabled() const;
+    void setCachingEnabled(bool enabled);
     qreal   length() const;
-    qreal   percentAtLength(qreal t) const;
+    qreal   percentAtLength(qreal len) const;
     QPointF pointAtPercent(qreal t) const;
     qreal   angleAtPercent(qreal t) const;
     qreal   slopeAtPercent(qreal t) const;
@@ -174,6 +176,7 @@ private:
 
     friend class QPainterPathStroker;
     friend class QPainterPathStrokerPrivate;
+    friend class QPainterPathPrivate;
     friend class QTransform;
     friend class QVectorPath;
     friend Q_GUI_EXPORT const QVectorPath &qtVectorPathForPath(const QPainterPath &);
