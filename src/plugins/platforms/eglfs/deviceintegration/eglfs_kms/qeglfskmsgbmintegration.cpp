@@ -11,6 +11,7 @@
 #include "private/qeglfscursor_p.h"
 
 #include <QtCore/QLoggingCategory>
+#include <QtCore/QFileSystemWatcher>
 #include <QtGui/QScreen>
 #include <QtDeviceDiscoverySupport/private/qdevicediscovery_p.h>
 
@@ -21,6 +22,10 @@ QT_BEGIN_NAMESPACE
 QEglFSKmsGbmIntegration::QEglFSKmsGbmIntegration()
 {
     qCDebug(qLcEglfsKmsDebug, "New DRM/KMS via GBM integration created");
+}
+
+QEglFSKmsGbmIntegration::~QEglFSKmsGbmIntegration()
+{
 }
 
 #ifndef EGL_EXT_platform_base
@@ -94,20 +99,51 @@ void QEglFSKmsGbmIntegration::presentBuffer(QPlatformSurface *surface)
 
 QKmsDevice *QEglFSKmsGbmIntegration::createDevice()
 {
+
+    m_deviceDiscovery = std::unique_ptr<QDeviceDiscovery>(QDeviceDiscovery::create(QDeviceDiscovery::Device_VideoMask));
+    m_kmsConfigWatcher = std::unique_ptr<QFileSystemWatcher>(new QFileSystemWatcher());
+
     QString path = screenConfig()->devicePath();
     if (!path.isEmpty()) {
         qCDebug(qLcEglfsKmsDebug) << "GBM: Using DRM device" << path << "specified in config file";
     } else {
-        QDeviceDiscovery *d = QDeviceDiscovery::create(QDeviceDiscovery::Device_VideoMask);
-        const QStringList devices = d->scanConnectedDevices();
+        const QStringList devices = m_deviceDiscovery->scanConnectedDevices();
         qCDebug(qLcEglfsKmsDebug) << "Found the following video devices:" << devices;
-        d->deleteLater();
 
         if (Q_UNLIKELY(devices.isEmpty()))
             qFatal("Could not find DRM device!");
 
         path = devices.first();
         qCDebug(qLcEglfsKmsDebug) << "Using" << path;
+    }
+
+    bool hotreload = !qEnvironmentVariable("QT_QPA_EGLFS_HOTPLUG_ENABLED").isEmpty();
+    if (hotreload) {
+        qCWarning(qLcEglfsKmsDebug) << "EGLFS/KMS: Hot-Reload on KMS-events enabled, be aware that"
+                                    << "this requires actions in UI code for proper functionallity"
+                                    << "(e.g. close/open windows on screen's disconnect/connect)";
+        QObject::connect(m_deviceDiscovery.get(), &QDeviceDiscovery::deviceChanged,
+                         m_deviceDiscovery.get(), [this](const QString &deviceNode) {
+                             qCDebug(qLcEglfsKmsDebug) << "KMS device changed:" << deviceNode;
+                             m_device->checkConnectedScreens();
+                         });
+    }
+
+    QString json = qEnvironmentVariable("QT_QPA_EGLFS_KMS_CONFIG");
+    if (json.isEmpty())
+        json = qEnvironmentVariable("QT_QPA_KMS_CONFIG");
+
+    if (!json.isEmpty()) {
+        m_kmsConfigWatcher->addPath(json);
+        QObject::connect(m_kmsConfigWatcher.get(), &QFileSystemWatcher::fileChanged,
+                         m_kmsConfigWatcher.get(), [this, json]() {
+                             qCDebug(qLcEglfsKmsDebug) << "KMS config-file has changed! path:"
+                                                       << json;
+                             m_screenConfig->refreshConfig();
+                             m_device->updateScreens();
+                             m_kmsConfigWatcher->addPath(json); // as per QFileSystemWatcher doc we have to re-add
+                                                                // the path in case it's a new file
+                         });
     }
 
     return new QEglFSKmsGbmDevice(screenConfig(), path);

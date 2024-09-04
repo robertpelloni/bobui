@@ -51,6 +51,7 @@ public:
                         bool isPrimary,
                         const QPoint &virtualPos,
                         const QList<QPlatformScreen *> &virtualSiblings) override;
+    void unregisterScreen(QPlatformScreen *screen) override;
 
     bool usesEventReader() const;
     QEglFSKmsEventReader *eventReader() { return &m_eventReader; }
