@@ -96,6 +96,8 @@ constexpr O reversed(O o) noexcept
            /*else*/ o ;
 }
 
+template <typename O> constexpr auto toUnderlying(O o) noexcept;
+
 } // namespace QtOrderingPrivate
 
 QT_WARNING_PUSH
@@ -271,6 +273,7 @@ public:
 private:
     friend class weak_ordering;
     friend class strong_ordering;
+    template <typename O> friend constexpr auto QtOrderingPrivate::toUnderlying(O o) noexcept;
 
     constexpr explicit partial_ordering(QtPrivate::Ordering order) noexcept
         : m_order(static_cast<QtPrivate::CompareUnderlyingType>(order))
@@ -460,6 +463,7 @@ public:
 
 private:
     friend class strong_ordering;
+    template <typename O> friend constexpr auto QtOrderingPrivate::toUnderlying(O o) noexcept;
 
     constexpr explicit weak_ordering(QtPrivate::Ordering order) noexcept
         : m_order(static_cast<QtPrivate::CompareUnderlyingType>(order))
@@ -654,7 +658,9 @@ public:
     { return lhs != static_cast<std::strong_ordering>(rhs); }
 #endif // __cpp_lib_three_way_comparison
 
-    private:
+private:
+    template <typename O> friend constexpr auto QtOrderingPrivate::toUnderlying(O o) noexcept;
+
     constexpr explicit strong_ordering(QtPrivate::Ordering order) noexcept
         : m_order(static_cast<QtPrivate::CompareUnderlyingType>(order))
     {}
@@ -677,6 +683,17 @@ inline constexpr strong_ordering strong_ordering::greater(QtPrivate::Ordering::G
 } // namespace Qt
 
 QT_WARNING_POP
+
+namespace QtOrderingPrivate {
+template<> constexpr auto toUnderlying<Qt::partial_ordering>(Qt::partial_ordering o) noexcept
+{ return o.m_order; }
+
+template<> constexpr auto toUnderlying<Qt::weak_ordering>(Qt::weak_ordering o) noexcept
+{ return o.m_order; }
+
+template<> constexpr auto toUnderlying<Qt::strong_ordering>(Qt::strong_ordering o) noexcept
+{ return o.m_order; }
+}
 
 QT_BEGIN_INCLUDE_NAMESPACE
 
