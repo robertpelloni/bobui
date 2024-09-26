@@ -5969,16 +5969,16 @@ QIcon QCommonStylePrivate::iconFromResourceTheme(QCommonStyle::StandardPixmap st
                                                     : QStyle::SP_ArrowLeft,
                                         option, widget);
     case QStyle::SP_ArrowLeft:
-        addIconFiles(u"left-", pngIconSizes, icon);
+        addIconFiles(u"arrow-left-", pngIconSizes, icon);
         break;
     case QStyle::SP_ArrowRight:
-        addIconFiles(u"right-", pngIconSizes, icon);
+        addIconFiles(u"arrow-right-", pngIconSizes, icon);
         break;
     case QStyle::SP_ArrowUp:
-        addIconFiles(u"up-", pngIconSizes, icon);
+        addIconFiles(u"arrow-up-", pngIconSizes, icon);
         break;
     case QStyle::SP_ArrowDown:
-        addIconFiles(u"down-", pngIconSizes, icon);
+        addIconFiles(u"arrow-down-", pngIconSizes, icon);
         break;
    case QStyle::SP_DirHomeIcon:
    case QStyle::SP_DirIcon:
