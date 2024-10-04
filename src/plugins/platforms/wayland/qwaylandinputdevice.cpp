@@ -371,20 +371,6 @@ QWaylandInputDevice::~QWaylandInputDevice()
 void QWaylandInputDevice::seat_capabilities(uint32_t caps)
 {
     mCaps = caps;
-    maybeRegisterInputDevices();
-}
-
-void QWaylandInputDevice::seat_name(const QString &name)
-{
-    mSeatName = name;
-    mSeatNameKnown = true;
-    maybeRegisterInputDevices();
-}
-
-void QWaylandInputDevice::maybeRegisterInputDevices()
-{
-    if (!mSeatNameKnown)
-        return; // too early
 
     if (mCaps & WL_SEAT_CAPABILITY_KEYBOARD && !mKeyboard) {
         mKeyboard.reset(createKeyboard(this));
@@ -428,6 +414,11 @@ void QWaylandInputDevice::maybeRegisterInputDevices()
     } else if (!(mCaps & WL_SEAT_CAPABILITY_TOUCH) && mTouch) {
         mTouch.reset();
     }
+}
+
+void QWaylandInputDevice::seat_name(const QString &name)
+{
+    mSeatName = name;
 }
 
 QWaylandInputDevice::Keyboard *QWaylandInputDevice::createKeyboard(QWaylandInputDevice *device)
