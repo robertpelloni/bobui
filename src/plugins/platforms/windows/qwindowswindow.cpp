@@ -3454,6 +3454,18 @@ bool QWindowsWindow::handleNonClientHitTest(const QPoint &globalPos, LRESULT *re
     return false;
 }
 
+bool QWindowsWindow::handleNonClientActivate(LRESULT *result) const
+{
+    // If this window is frameless we choose to consume the event,
+    // since the default logic causes the window title to appear.
+    // QTBUG-127116
+    if (m_data.flags & Qt::FramelessWindowHint) {
+        *result = true;
+        return true;
+    }
+    return false;
+}
+
 static void _q_drawCustomTitleBarButton(QPainter& p, const QRectF& r)
 {
     QPainterPath path(QPointF(r.x(), r.y()));

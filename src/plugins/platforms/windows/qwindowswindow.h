@@ -314,6 +314,7 @@ public:
     void releaseDC();
     void getSizeHints(MINMAXINFO *mmi) const;
     bool handleNonClientHitTest(const QPoint &globalPos, LRESULT *result) const;
+    bool handleNonClientActivate(LRESULT *result) const;
     void updateCustomTitlebar();
 
 #ifndef QT_NO_CURSOR

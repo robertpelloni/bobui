@@ -1172,6 +1172,8 @@ bool QWindowsContext::windowsProc(HWND hwnd, UINT message,
             platformWindow->updateCustomTitlebar();
         return platformWindow->handleNonClientHitTest(QPoint(msg.pt.x, msg.pt.y), result);
     }
+    case QtWindows::NonClientActivate:
+        return platformWindow->handleNonClientActivate(result);
     case QtWindows::GeometryChangingEvent:
         return platformWindow->handleGeometryChanging(&msg);
     case QtWindows::ExposeEvent:
