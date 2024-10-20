@@ -69,7 +69,7 @@ void QListModel::insert(int row, QListWidgetItem *item)
     if (!item)
         return;
 
-    item->view = qobject_cast<QListWidget*>(QObject::parent());
+    item->view = this->view();
     if (item->view && item->view->isSortingEnabled()) {
         // sorted insertion
         QList<QListWidgetItem*>::iterator it;
@@ -93,7 +93,7 @@ void QListModel::insert(int row, const QStringList &labels)
     const int count = labels.size();
     if (count <= 0)
         return;
-    QListWidget *view = qobject_cast<QListWidget*>(QObject::parent());
+    QListWidget *view = this->view();
     if (view && view->isSortingEnabled()) {
         // sorted insertion
         for (int i = 0; i < count; ++i) {
@@ -109,7 +109,7 @@ void QListModel::insert(int row, const QStringList &labels)
         for (int i = 0; i < count; ++i) {
             QListWidgetItem *item = new QListWidgetItem(labels.at(i));
             item->d->theid = row;
-            item->view = qobject_cast<QListWidget*>(QObject::parent());
+            item->view = this->view();
             items.insert(row++, item);
         }
         endInsertRows();
@@ -223,7 +223,7 @@ bool QListModel::insertRows(int row, int count, const QModelIndex &parent)
         return false;
 
     beginInsertRows(QModelIndex(), row, row + count - 1);
-    QListWidget *view = qobject_cast<QListWidget*>(QObject::parent());
+    QListWidget *view = this->view();
     QListWidgetItem *itm = nullptr;
 
     for (int r = row; r < row + count; ++r) {
@@ -387,7 +387,7 @@ void QListModel::itemChanged(QListWidgetItem *item, const QList<int> &roles)
 
 QStringList QListModel::mimeTypes() const
 {
-    const QListWidget *view = qobject_cast<const QListWidget*>(QObject::parent());
+    const QListWidget *view = this->view();
     if (view)
         return view->mimeTypes();
     return {};
@@ -405,10 +405,9 @@ QMimeData *QListModel::mimeData(const QModelIndexList &indexes) const
     itemlist.reserve(indexesCount);
     for (int i = 0; i < indexesCount; ++i)
         itemlist << at(indexes.at(i).row());
-    const QListWidget *view = qobject_cast<const QListWidget*>(QObject::parent());
 
     cachedIndexes = indexes;
-    QMimeData *mimeData = view->mimeData(itemlist);
+    QMimeData *mimeData = view()->mimeData(itemlist);
     cachedIndexes.clear();
     return mimeData;
 }
@@ -418,19 +417,17 @@ bool QListModel::dropMimeData(const QMimeData *data, Qt::DropAction action,
                               int row, int column, const QModelIndex &index)
 {
     Q_UNUSED(column);
-    QListWidget *view = qobject_cast<QListWidget*>(QObject::parent());
     if (index.isValid())
         row = index.row();
     else if (row == -1)
         row = items.size();
 
-    return view->dropMimeData(row, data, action);
+    return view()->dropMimeData(row, data, action);
 }
 
 Qt::DropActions QListModel::supportedDropActions() const
 {
-    const QListWidget *view = qobject_cast<const QListWidget*>(QObject::parent());
-    return view->supportedDropActions();
+    return view()->supportedDropActions();
 }
 #endif // QT_CONFIG(draganddrop)
 

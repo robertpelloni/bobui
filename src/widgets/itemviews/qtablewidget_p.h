@@ -58,6 +58,8 @@ public:
     QTableModel(int rows, int columns, QTableWidget *parent);
     ~QTableModel();
 
+    inline QTableWidget *view() const { return qobject_cast<QTableWidget *>(QObject::parent()); }
+
     bool insertRows(int row, int count = 1, const QModelIndex &parent = QModelIndex()) override;
     bool insertColumns(int column, int count = 1, const QModelIndex &parent = QModelIndex()) override;
 

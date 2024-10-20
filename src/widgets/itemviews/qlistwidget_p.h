@@ -50,6 +50,8 @@ public:
     QListModel(QListWidget *parent);
     ~QListModel();
 
+    inline QListWidget *view() const { return qobject_cast<QListWidget *>(QObject::parent()); }
+
     void clear();
     QListWidgetItem *at(int row) const;
     void insert(int row, QListWidgetItem *item);
