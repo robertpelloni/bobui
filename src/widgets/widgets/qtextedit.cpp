@@ -170,8 +170,9 @@ void QTextEditPrivate::init(const QString &html)
     if (!html.isEmpty())
         control->setHtml(html);
 
-    hbar->setSingleStep(20);
-    vbar->setSingleStep(20);
+    const auto singleStep = defaultSingleStep();
+    hbar->setSingleStep(singleStep);
+    vbar->setSingleStep(singleStep);
 
     viewport->setBackgroundRole(QPalette::Base);
     q->setMouseTracking(true);

@@ -158,6 +158,10 @@ QT_BEGIN_NAMESPACE
     \value MouseCursorSize (QSize) Size of the mouse cursor.
            This enum value has been added in Qt 6.5.
 
+    \value ScrollSingleStepDistance (int) The distance in logical pixels that scrollable
+           controls should scroll in response to a single step (e.g. scroll-bar arrow click,
+           mouse wheel line).
+
     \sa themeHint(), QStyle::pixelMetric()
 */
 
@@ -710,6 +714,8 @@ QVariant QPlatformTheme::defaultThemeHint(ThemeHint hint)
         return false;
     case MenuSelectionWraps:
         return true;
+    case ScrollSingleStepDistance:
+        return 20;
     }
 
     return QVariant();
