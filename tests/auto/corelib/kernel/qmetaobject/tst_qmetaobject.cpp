@@ -354,6 +354,10 @@ private slots:
 
     void notifySignalsInParentClass();
 
+    void connectByMetaMethodToPMF();
+    void connectByMetaMethodToFunctor();
+    void connectByMetaMethodToFreeFunction();
+
 signals:
     void value6Changed();
     void value7Changed(const QString &);
@@ -561,6 +565,7 @@ signals:
     QString sig1(QString s1);
     void sig10(QString s1, QString s2, QString s3, QString s4, QString s5, QString s6, QString s7,
                QString s8, QString s9, QString s10);
+    void sigWithOneUnregisteredParameterType(QString a1, const MyForwardDeclaredType &a2);
 
 protected:
     QtTestObject(QVariant) {}
@@ -3037,6 +3042,125 @@ void tst_QMetaObject::notifySignalsInParentClass()
 
     QTest::ignoreMessage(QtWarningMsg, "QMetaProperty::notifySignal: cannot find the NOTIFY signal thisIsNotASignal in class MyNamespace::ClassWithChangedSignalNewValue for property 'value3'");
     obj2.metaObject()->property(obj2.metaObject()->indexOfProperty("value3")).notifySignal();
+}
+
+void tst_QMetaObject::connectByMetaMethodToPMF()
+{
+    QtTestObject o;
+    QObject::disconnect(&o, nullptr, nullptr, nullptr);
+    QMetaMethod sig0Signal = QMetaMethod::fromSignal(&QtTestObject::sig0);
+
+    QMetaObject::Connection connection = QMetaObject::connect(&o, sig0Signal, &o, &QtTestObject::sl0);
+    QVERIFY(connection);
+
+    QVERIFY(o.slotResult.isEmpty());
+    emit o.sig0();
+    QCOMPARE(o.slotResult, u"sl0"_s);
+
+    QVERIFY(QObject::disconnect(connection));
+    o.slotResult = QString();
+    emit o.sig0();
+    QVERIFY(o.slotResult.isEmpty());
+
+    QMetaMethod sig1Signal = QMetaMethod::fromSignal(&QtTestObject::sig1);
+    connection = QMetaObject::connect(&o, sig1Signal, &o, &QtTestObject::sl1);
+    QVERIFY(connection);
+    QCOMPARE(emit o.sig1(u"toto"_s), u"yessir"_s);
+    QCOMPARE(o.slotResult, u"sl1:toto"_s);
+
+    QVERIFY(QObject::disconnect(connection));
+    o.slotResult = QString();
+    QCOMPARE(emit o.sig1(u"tata"_s), QString());
+    QVERIFY(o.slotResult.isEmpty());
+
+    connection = QMetaObject::connect(&o, sig0Signal, &o, qOverload<>(&QtTestObject::overloadedSlot));
+    QVERIFY(connection);
+    emit o.sig0();
+    QCOMPARE(o.slotResult, u"overloadedSlot"_s);
+
+    o.slotResult = QString();
+    connection = QMetaObject::connect(&o, sig1Signal, &o, &QtTestObject::sl1, Qt::QueuedConnection);
+    QVERIFY(connection);
+    QCOMPARE(emit o.sig1(u"titi"_s), QString());
+    QVERIFY(o.slotResult.isEmpty());
+
+    qApp->processEvents(QEventLoop::AllEvents);
+    QCOMPARE(o.slotResult, u"sl1:titi"_s);
+    QVERIFY(QObject::disconnect(connection));
+
+    QMetaMethod sigWithOneUnregisteredParameterTypeSignal = QMetaMethod::fromSignal(&QtTestObject::sigWithOneUnregisteredParameterType);
+    connection = QMetaObject::connect(&o, sigWithOneUnregisteredParameterTypeSignal, &o, &QtTestObject::slotWithOneUnregisteredParameterType);
+    QVERIFY(connection);
+    emit o.sigWithOneUnregisteredParameterType(u"tutu"_s, getForwardDeclaredType());
+    QCOMPARE(o.slotResult, u"slotWithUnregisteredReturnType-tutu"_s);
+    QVERIFY(QObject::disconnect(connection));
+}
+
+void tst_QMetaObject::connectByMetaMethodToFunctor()
+{
+    QtTestObject o;
+    QObject::disconnect(&o, nullptr, nullptr, nullptr);
+    QMetaMethod sig0Signal = QMetaMethod::fromSignal(&QtTestObject::sig0);
+
+    int called = 0;
+
+    QMetaObject::Connection connection = QMetaObject::connect(&o, sig0Signal, &o, [&called]() { ++called; });
+    QVERIFY(connection);
+
+    emit o.sig0();
+    QCOMPARE(called, 1);
+
+    QVERIFY(QObject::disconnect(connection));
+
+    emit o.sig0();
+    QCOMPARE(called, 1);
+
+    QMetaMethod sig1Signal = QMetaMethod::fromSignal(&QtTestObject::sig1);
+    QString receivedValue;
+    connection = QMetaObject::connect(&o, sig1Signal, &o, [&receivedValue](QString s1) { receivedValue = s1; return s1; });
+    QVERIFY(connection);
+    QString returnValue = emit o.sig1(u"foo"_s);
+    QCOMPARE(receivedValue, u"foo"_s);
+    QCOMPARE(returnValue, u"foo"_s);
+
+    QVERIFY(QObject::disconnect(connection));
+    receivedValue = QString();
+    returnValue = emit o.sig1(u"bar"_s);
+    QVERIFY(receivedValue.isEmpty());
+    QVERIFY(returnValue.isEmpty());
+
+    connection = QMetaObject::connect(&o, sig1Signal, &o, [&receivedValue](QString s1) { receivedValue = s1; return s1; }, Qt::QueuedConnection);
+    QVERIFY(connection);
+    returnValue = emit o.sig1(u"baz"_s);
+    QVERIFY(receivedValue.isEmpty());
+    QVERIFY(returnValue.isEmpty());
+
+    qApp->processEvents(QEventLoop::AllEvents);
+    QCOMPARE(receivedValue, u"baz"_s);
+}
+
+QString freeFunction(const QString &s)
+{
+    return s + s;
+}
+
+void tst_QMetaObject::connectByMetaMethodToFreeFunction()
+{
+    QtTestObject o;
+    QObject::disconnect(&o, nullptr, nullptr, nullptr);
+    QMetaMethod sig0Signal = QMetaMethod::fromSignal(&QtTestObject::sig0);
+
+    QMetaObject::Connection connection = QMetaObject::connect(&o, sig0Signal, &o, &QtTestObject::staticFunction0);
+    QVERIFY(connection);
+
+    emit o.sig0();
+    QCOMPARE(o.staticResult, u"staticFunction0"_s);
+    QVERIFY(QObject::disconnect(connection));
+
+    QMetaMethod sig1Signal = QMetaMethod::fromSignal(&QtTestObject::sig1);
+    connection = QMetaObject::connect(&o, sig1Signal, &o, freeFunction);
+    QVERIFY(connection);
+    QCOMPARE(emit o.sig1(u"foo"_s), u"foofoo"_s);
 }
 
 QTEST_MAIN(tst_QMetaObject)

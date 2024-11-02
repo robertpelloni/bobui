@@ -3911,6 +3911,96 @@ void QMetaObject::connectSlotsByName(QObject *o)
 }
 
 /*!
+    \fn template<typename PointerToMemberFunction> QMetaObject::Connection QMetaObject::connect(const QObject *sender, const QMetaMethod &signal, const QObject *receiver, PointerToMemberFunction method, Qt::ConnectionType type)
+
+    \threadsafe
+    \overload connect()
+
+    \since 6.10
+
+    Creates a connection of the given \a type from the \a signal in
+    the \a sender object to the \a method in the \a receiver object.
+    Returns a handle to the connection that can be used to disconnect
+    it later.
+
+    The Connection handle will be invalid if it cannot create the
+    connection, for example, the parameters were invalid.
+    You can check if the QMetaObject::Connection is valid by casting
+    it to a bool.
+    Pass the returned handle to QObject::disconnect() to disconnect
+    the connection.
+
+    A slot can be connected to a given signal if the signal has at
+    least as many arguments as the slot. There must be an exact match
+    between the corresponding signal and slot arguments, implicit
+    conversions and type checking are not handled by this function.
+    Overloaded slots need to be explicitly be resolved with
+    help of \l qOverload.
+
+    \sa QObject::connect(), QObject::disconnect()
+ */
+
+/*!
+    \fn template<typename Functor> QMetaObject::Connection QMetaObject::connect(const QObject *sender, const QMetaMethod &signal, const QObject *context, Functor functor, Qt::ConnectionType type)
+
+    \threadsafe
+    \overload connect()
+
+    \since 6.10
+
+    Creates a connection of a given \a type from \a signal in
+    \a sender object to \a functor to be placed in a specific event
+    loop of \a context.
+    Returns a handle to the connection that can be used to disconnect
+    it later.
+    This can be useful for connecting a signal retrieved from
+    meta-object introspection to a lambda capturing local variables.
+
+    \note Qt::UniqueConnections do not work for lambdas, non-member
+    functions and functors; they only apply to member functions.
+
+    The slot function can be any function or functor with with equal
+    or fewer arguments than the signal. There must be an exact match
+    between the corresponding signal and slot arguments, implicit
+    conversions and type checking are not handled by this function.
+    Overloaded functors need to be explicitly be resolved with
+    help of \l qOverload.
+
+    The connection will automatically disconnect if the sender or
+    the context is destroyed.
+    However, you should take care that any objects used within
+    the functor are still alive when the signal is emitted.
+
+    \sa QObject::connect(), QObject::disconnect()
+ */
+QMetaObject::Connection QMetaObject::connectImpl(const QObject *sender, const QMetaMethod &signal,
+                                             const QObject *receiver, void **slot,
+                                             QtPrivate::QSlotObjectBase *slotObjRaw, Qt::ConnectionType type)
+{
+    QtPrivate::SlotObjUniquePtr slotObj(slotObjRaw);
+
+    if (!signal.isValid() || signal.methodType() != QMetaMethod::Signal) {
+        qCWarning(lcConnect, "QObject::connect: invalid signal parameter");
+        return QMetaObject::Connection();
+    }
+
+    int signal_index;
+    {
+        int dummy;
+        QMetaObjectPrivate::memberIndexes(sender, signal, &signal_index, &dummy);
+    }
+
+    const QMetaObject *senderMetaObject = sender->metaObject();
+    if (signal_index == -1) {
+        qCWarning(lcConnect, "QObject::connect: Can't find signal %s on instance of class %s",
+                  signal.methodSignature().constData(), senderMetaObject->className());
+        return QMetaObject::Connection();
+    }
+
+    return QObjectPrivate::connectImpl(sender, signal_index, receiver, slot, slotObj.release(), type, nullptr, senderMetaObject);
+}
+
+/*!
      \internal
      A small RAII helper for QSlotObjectBase.
      Calls ref on construction and destroyLastRef in its dtor.

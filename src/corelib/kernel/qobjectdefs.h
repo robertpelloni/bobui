@@ -292,6 +292,19 @@ struct Q_CORE_EXPORT QMetaObject
     // internal slot-name based connect
     static void connectSlotsByName(QObject *o);
 
+#ifdef Q_QDOC
+    template<typename PointerToMemberFunction>
+    static QMetaObject::Connection connect(const QObject *sender, PointerToMemberFunction signal, const QObject *receiver, PointerToMemberFunction method, Qt::ConnectionType type = Qt::AutoConnection);
+    template<typename PointerToMemberFunction, typename Functor>
+    static QMetaObject::Connection connect(const QObject *sender, PointerToMemberFunction signal, const QObject *context, Functor functor, Qt::ConnectionType type = Qt::AutoConnection);
+#else
+    template <typename Func>
+    static inline Connection
+        connect(const QObject *sender, const QMetaMethod &signal,
+                const typename QtPrivate::ContextTypeForFunctor<Func>::ContextType *context, Func &&slot,
+                Qt::ConnectionType type = Qt::AutoConnection);
+#endif // Q_QDOC
+
     // internal index-based signal activation
     static void activate(QObject *sender, int signal_index, void **argv);
     static void activate(QObject *sender, const QMetaObject *, int local_signal_index, void **argv);
@@ -647,6 +660,11 @@ private:
     static QObject *newInstanceImpl(const QMetaObject *mobj, qsizetype parameterCount,
                                     const void **parameters, const char **typeNames,
                                     const QtPrivate::QMetaTypeInterface **metaTypes);
+
+    static QMetaObject::Connection connectImpl(const QObject *sender, const QMetaMethod& signal,
+                                            const QObject *receiver, void **slotPtr,
+                                            QtPrivate::QSlotObjectBase *slot, Qt::ConnectionType type);
+
     friend class QTimer;
     friend class QChronoTimer;
 };
@@ -676,6 +694,32 @@ public:
     QT_MOVE_ASSIGNMENT_OPERATOR_IMPL_VIA_PURE_SWAP(Connection)
     void swap(Connection &other) noexcept { qt_ptr_swap(d_ptr, other.d_ptr); }
 };
+
+template <typename Func>
+QMetaObject::Connection
+    QMetaObject::connect(const QObject *sender, const QMetaMethod &signal,
+                         const typename QtPrivate::ContextTypeForFunctor<Func>::ContextType *context, Func &&slot,
+                         Qt::ConnectionType type)
+{
+    using Slot = std::decay_t<Func>;
+    using FunctionSlotType = QtPrivate::FunctionPointer<Slot>;
+    void **pSlot = nullptr;
+    QtPrivate::QSlotObjectBase *slotObject;
+    if constexpr (FunctionSlotType::ArgumentCount != -1) {
+        slotObject = new QtPrivate::QCallableObject<Slot, typename FunctionSlotType::Arguments, typename FunctionSlotType::ReturnType>(std::forward<Func>(slot));
+        if constexpr (FunctionSlotType::IsPointerToMemberFunction) {
+            pSlot = const_cast<void **>(reinterpret_cast<void *const *>(&slot));
+        } else {
+            Q_ASSERT_X((type & Qt::UniqueConnection) == 0, "",
+                "QObject::connect: Unique connection requires the slot to be a pointer to "
+                "a member function of a QObject subclass.");
+        }
+    } else {
+        using FunctorSlotType = QtPrivate::FunctionPointer<decltype(&Slot::operator())>;
+        slotObject = new QtPrivate::QCallableObject<Slot, typename FunctorSlotType::Arguments, typename FunctorSlotType::ReturnType>(std::forward<Func>(slot));
+    }
+    return QMetaObject::connectImpl(sender, signal, context, pSlot, slotObject, type);
+}
 
 inline void swap(QMetaObject::Connection &lhs, QMetaObject::Connection &rhs) noexcept
 {
