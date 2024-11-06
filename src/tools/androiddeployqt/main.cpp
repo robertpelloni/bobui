@@ -1580,8 +1580,11 @@ bool copyAndroidTemplate(const Options &options)
     if (options.verbose)
         fprintf(stdout, "Copying Android package template.\n");
 
-    if (!copyGradleTemplate(options))
-        return false;
+    if (!options.auxMode) {
+        // Gradle is not configured and is not running in aux mode
+        if (!copyGradleTemplate(options))
+            return false;
+    }
 
     if (!copyAndroidTemplate(options, "/src/android/templates"_L1))
         return false;

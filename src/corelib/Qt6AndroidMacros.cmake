@@ -519,18 +519,6 @@ function(qt6_android_add_apk_target target)
         ">"
     )
 
-    # Make global apk and aab targets depend on the current apk target.
-    if(TARGET aab)
-        add_dependencies(aab ${target}_make_aab)
-    endif()
-    if(TARGET aar)
-        add_dependencies(aar ${target}_make_aar)
-    endif()
-    if(TARGET apk)
-        add_dependencies(apk ${target}_make_apk)
-        _qt_internal_create_global_apk_all_target_if_needed()
-    endif()
-
     _qt_internal_android_get_deployment_tool(deployment_tool)
 
     # No need to use genex for the BINARY_DIR since it's read-only.
@@ -718,6 +706,10 @@ function(qt6_android_add_apk_target target)
         ${uses_terminal}
     )
     add_dependencies(${target}_make_aab ${target}_prepare_apk_dir)
+
+    # Make global apk, aab, and aar targets depend on the respective targets.
+    _qt_internal_android_add_global_package_dependencies(${target})
+    _qt_internal_create_global_apk_all_target_if_needed()
 
     if(QT_IS_ANDROID_MULTI_ABI_EXTERNAL_PROJECT)
         # When building per-ABI external projects we only need to copy ABI-specific libraries and
@@ -1666,7 +1658,15 @@ function(_qt_internal_android_executable_finalizer target)
 
     _qt_internal_configure_android_multiabi_target("${target}")
     qt6_android_generate_deployment_settings("${target}")
-    qt6_android_add_apk_target("${target}")
+    if(QT_USE_ANDROID_MODERN_BUNDLE)
+        _qt_internal_android_prepare_gradle_build("${target}")
+        _qt_internal_android_add_aux_deployment("${target}")
+
+        _qt_internal_collect_apk_dependencies_defer()
+        _qt_internal_collect_apk_imported_dependencies_defer("${target}")
+    else()
+        qt6_android_add_apk_target("${target}")
+    endif()
     _qt_internal_android_create_runner_wrapper("${target}")
 endfunction()
 
@@ -1754,6 +1754,11 @@ function(_qt_internal_android_get_target_android_build_dir out_build_dir target)
     endif()
 endfunction()
 
+function(_qt_internal_android_get_target_deployment_dir out_deploy_dir target)
+    _qt_internal_android_get_target_android_build_dir(build_dir ${target})
+    set(${out_deploy_dir} "${build_dir}/app" PARENT_SCOPE)
+endfunction()
+
 function(_qt_internal_expose_android_package_source_dir_to_ide target)
     get_target_property(android_package_source_dir ${target} QT_ANDROID_PACKAGE_SOURCE_DIR)
     if(android_package_source_dir)
@@ -1776,6 +1781,69 @@ function(_qt_internal_expose_android_package_source_dir_to_ide target)
             _qt_internal_expose_source_file_to_ide(${target} "${f}")
         endforeach()
     endif()
+endfunction()
+
+function(_qt_internal_android_add_aux_deployment target)
+    cmake_parse_arguments(arg "" "OUTPUT_TARGET_NAME;DEPLOYMENT_DIRECTORY" "EXTRA_ARGS" ${ARGN})
+    _qt_internal_validate_all_args_are_parsed(arg)
+
+    string(JOIN "" deployment_file
+        "$<GENEX_EVAL:"
+            "$<TARGET_PROPERTY:${target},QT_ANDROID_DEPLOYMENT_SETTINGS_FILE>"
+        ">"
+    )
+
+    _qt_internal_android_get_deployment_tool(deployment_tool)
+    if(arg_DEPLOYMENT_DIRECTORY)
+        set(deployment_dir "${arg_DEPLOYMENT_DIRECTORY}")
+    else()
+        _qt_internal_android_get_target_deployment_dir(deployment_dir ${target})
+    endif()
+
+    set(android_manifest "${deployment_dir}/AndroidManifest.xml")
+
+    cmake_policy(PUSH)
+    if(POLICY CMP0116)
+        # Without explicitly setting this policy to NEW, we get a warning
+        # even though we ensure there's actually no problem here.
+        # See https://gitlab.kitware.com/cmake/cmake/-/issues/21959
+        cmake_policy(SET CMP0116 NEW)
+        set(relative_to_dir ${CMAKE_CURRENT_BINARY_DIR})
+    else()
+        set(relative_to_dir ${CMAKE_BINARY_DIR})
+    endif()
+
+    set(target_file_copy_relative_path
+        "libs/${CMAKE_ANDROID_ARCH_ABI}/$<TARGET_FILE_NAME:${target}>")
+    _qt_internal_copy_file_if_different_command(copy_command
+        "$<TARGET_FILE:${target}>"
+        "${deployment_dir}/${target_file_copy_relative_path}"
+    )
+
+    _qt_internal_android_get_use_terminal_for_deployment(uses_terminal)
+
+    add_custom_command(OUTPUT "${android_manifest}"
+        COMMAND ${copy_command}
+        COMMAND "${deployment_tool}"
+            --input "${deployment_file}"
+            --output "${deployment_dir}"
+            --builddir "${relative_to_dir}"
+            --aux-mode
+            ${arg_EXTRA_ARGS}
+            #TODO: Support signing
+        COMMENT "Deploying Android artifacts for ${target}"
+        DEPENDS "${target}" "${deployment_file}"
+        VERBATIM
+        ${uses_terminal}
+    )
+
+    if(NOT arg_OUTPUT_TARGET_NAME)
+        set(arg_OUTPUT_TARGET_NAME ${target}_android_deploy_aux)
+    endif()
+
+    add_custom_target(${arg_OUTPUT_TARGET_NAME} DEPENDS "${android_manifest}")
+
+    cmake_policy(POP)
 endfunction()
 
 # Enables the terminal usage for the add_custom_command calls when verbose deployment is enabled.
@@ -1820,6 +1888,28 @@ function(_qt_internal_android_get_deployment_type_option out_var release_flag de
     else()
         set(${out_var} "${debug_flag}" PARENT_SCOPE)
     endif()
+endfunction()
+
+# Returns the path to the android template directory, that are used by CMake
+# deployment procedures.
+function(_qt_internal_android_template_dir out_var)
+    if(PROJECT_NAME STREQUAL "QtBase" OR QT_SUPERBUILD)
+        set(${out_var} "${QtBase_SOURCE_DIR}/src/android/templates_cmake" PARENT_SCOPE)
+    else()
+        set(${out_var}
+            "${QT6_INSTALL_PREFIX}/${QT6_INSTALL_DATA}/src/android/templates_cmake" PARENT_SCOPE)
+    endif()
+endfunction()
+
+# Add target_make_<apk|aab> as the depednecy for the respective global apk/aab
+# target.
+function(_qt_internal_android_add_global_package_dependencies target)
+    foreach(type apk aab aar)
+        # Make global apk and aab targets depend on the current apk target.
+        if(TARGET ${type} AND TARGET ${target}_make_${type})
+            add_dependencies(${type} ${target}_make_${type})
+        endif()
+    endforeach()
 endfunction()
 
 function(_qt_internal_android_get_target_abis out_abis target)

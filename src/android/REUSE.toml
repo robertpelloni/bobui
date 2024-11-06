@@ -1,7 +1,7 @@
 version = 1
 
 [[annotations]]
-path = ["jar/build.gradle", "jar/settings.gradle", "templates/build.gradle"]
+path = ["jar/build.gradle", "jar/settings.gradle", "templates/build.gradle", "templates_cmake/**"]
 precedence = "closest"
 comment = "double check"
 SPDX-FileCopyrightText = "Copyright (C) 2024 The Qt Company Ltd."

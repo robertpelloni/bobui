@@ -124,6 +124,12 @@ function(qt_internal_android_test_runner_arguments target out_test_runner out_te
         "--make" "\"${CMAKE_COMMAND}\" --build ${CMAKE_BINARY_DIR} --target ${target}_make_apk"
         "--apk" "${android_build_dir}/${target}.apk"
         "--ndk-stack" "${ANDROID_NDK_ROOT}/ndk-stack"
-        PARENT_SCOPE
     )
+
+    if(QT_USE_ANDROID_MODERN_BUNDLE)
+        _qt_internal_android_get_target_deployment_dir(target_deployment_dir ${target})
+        list(APPEND ${out_test_arguments} "--manifest" "${target_deployment_dir}/AndroidManifest.xml")
+    endif()
+
+    set(${out_test_arguments} "${${out_test_arguments}}" PARENT_SCOPE)
 endfunction()
