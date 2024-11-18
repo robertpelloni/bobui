@@ -1832,6 +1832,7 @@
     \value Key_Settings
     \value Key_MicVolumeUp
     \value Key_MicVolumeDown
+    \value Key_Keyboard
     \value Key_New
     \value Key_Open
     \value Key_Find

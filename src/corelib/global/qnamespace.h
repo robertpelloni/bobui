@@ -1012,6 +1012,8 @@ namespace Qt {
         Key_MicVolumeUp   = 0x0100011d,
         Key_MicVolumeDown = 0x0100011e,
 
+        Key_Keyboard = 0x0100011f,
+
         Key_New      = 0x01000120,
         Key_Open     = 0x01000121,
         Key_Find     = 0x01000122,
