@@ -539,6 +539,26 @@ static void convertLineOffset(QAccessibleTextInterface *text, int *line, int *of
     return nil;
 }
 
+- (id) accessibilityTitleUIElement {
+    QAccessibleInterface *iface = self.qtInterface;
+    if (!iface)
+        return nil;
+
+    const auto labelRelations = iface->relations(QAccessible::Label);
+    if (labelRelations.empty())
+        return nil;
+
+    QAccessibleInterface *label = labelRelations.first().first;
+    if (!label)
+        return nil;
+
+    QMacAccessibilityElement *accessibleElement = [QMacAccessibilityElement elementWithInterface:label];
+    if (!accessibleElement)
+        return nil;
+
+    return NSAccessibilityUnignoredAncestor(accessibleElement);
+}
+
 - (NSString*) accessibilityIdentifier {
     if (QAccessibleInterface *iface = self.qtInterface)
         return QAccessibleBridgeUtils::accessibleId(iface).toNSString();
