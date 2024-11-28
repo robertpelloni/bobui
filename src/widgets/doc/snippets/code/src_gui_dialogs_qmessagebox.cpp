@@ -12,7 +12,7 @@ int ret = QMessageBox::warning(this, tr("My Application"),
 
 
 //! [2]
-QMessageBox msgBox;
+QMessageBox msgBox(this);
 QPushButton *connectButton = msgBox.addButton(tr("Connect"), QMessageBox::ActionRole);
 QPushButton *abortButton = msgBox.addButton(QMessageBox::Abort);
 
@@ -53,13 +53,13 @@ int main(int argc, char *argv[])
 //! [4]
 
 //! [5]
-QMessageBox msgBox;
+QMessageBox msgBox(this);
 msgBox.setText("The document has been modified.");
 msgBox.exec();
 //! [5]
 
 //! [6]
-QMessageBox msgBox;
+QMessageBox msgBox(this);
 msgBox.setText("The document has been modified.");
 msgBox.setInformativeText("Do you want to save your changes?");
 msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
