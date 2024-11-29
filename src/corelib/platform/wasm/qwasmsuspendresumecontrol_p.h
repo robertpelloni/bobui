@@ -8,6 +8,7 @@
 #include <emscripten/val.h>
 #include <map>
 #include <functional>
+#include <chrono>
 
 //
 //  W A R N I N G
@@ -44,6 +45,39 @@ private:
 
     static QWasmSuspendResumeControl *s_suspendResumeControl;
     std::map<int, std::function<void(emscripten::val)>> m_eventHandlers;
+};
+
+class Q_CORE_EXPORT QWasmEventHandler
+{
+public:
+    QWasmEventHandler() = default;
+    ~QWasmEventHandler();
+    QWasmEventHandler(QWasmEventHandler const&) = delete;
+    QWasmEventHandler& operator=(QWasmEventHandler const&) = delete;
+    QWasmEventHandler(emscripten::val element, const std::string &name,
+                      std::function<void(emscripten::val)> fn);
+
+private:
+    emscripten::val m_element;
+    emscripten::val m_name;
+    uint32_t m_eventHandlerIndex = 0;
+};
+
+class QWasmTimer
+{
+public:
+    QWasmTimer(QWasmSuspendResumeControl* suspendResume, std::function<void()> handler);
+    ~QWasmTimer();
+    QWasmTimer(QWasmTimer const&) = delete;
+    QWasmTimer& operator=(QWasmTimer const&) = delete;
+    void setTimeout(std::chrono::milliseconds timeout);
+    bool hasTimeout();
+    void clearTimeout();
+
+private:
+    QWasmSuspendResumeControl *m_suspendResume;
+    uint32_t m_handlerIndex;
+    uint64_t m_timerId = 0;
 };
 
 #endif

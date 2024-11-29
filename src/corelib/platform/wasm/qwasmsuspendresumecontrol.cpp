@@ -164,3 +164,71 @@ void qtSendPendingEvents()
 EMSCRIPTEN_BINDINGS(qtSuspendResumeControl) {
     emscripten::function("qtSendPendingEvents", qtSendPendingEvents QT_WASM_EMSCRIPTEN_ASYNC);
 }
+
+//
+// The EventCallback class registers a callback function for an event on an html element.
+//
+QWasmEventHandler::QWasmEventHandler(emscripten::val element, const std::string &name, std::function<void(emscripten::val)> handler)
+:m_element(element)
+,m_name(name)
+{
+    QWasmSuspendResumeControl *suspendResume = QWasmSuspendResumeControl::get();
+    Q_ASSERT(suspendResume); // must construct the event dispatcher or platform integration first
+    m_eventHandlerIndex = suspendResume->registerEventHandler(std::move(handler));
+    m_element.call<void>("addEventListener", m_name, suspendResume->jsEventHandlerAt(m_eventHandlerIndex));
+}
+
+QWasmEventHandler::~QWasmEventHandler()
+{
+    QWasmSuspendResumeControl *suspendResume = QWasmSuspendResumeControl::get();
+    Q_ASSERT(suspendResume);
+    m_element.call<void>("removeEventListener", m_name, suspendResume->jsEventHandlerAt(m_eventHandlerIndex));
+    suspendResume->removeEventHandler(m_eventHandlerIndex);
+}
+
+//
+// The QWasmTimer class creates a native single-shot timer. The event handler is provided in the
+// constructor and can be reused: each call setTimeout() sets a new timeout, though with the
+// limitiation that there can be only one timeout at a time. (Setting a new timer clears the
+// previous one).
+//
+QWasmTimer::QWasmTimer(QWasmSuspendResumeControl *suspendResume, std::function<void()> handler)
+    :m_suspendResume(suspendResume)
+{
+    auto wrapper = [handler = std::move(handler), this](val argument) {
+        Q_UNUSED(argument); // no argument for timers
+        Q_ASSERT(m_timerId);
+        m_timerId = 0;
+        handler();
+    };
+
+    m_handlerIndex = m_suspendResume->registerEventHandler(std::move(wrapper));
+}
+
+QWasmTimer::~QWasmTimer()
+{
+    clearTimeout();
+    m_suspendResume->removeEventHandler(m_handlerIndex);
+}
+
+void QWasmTimer::setTimeout(std::chrono::milliseconds timeout)
+{
+    if (hasTimeout())
+        clearTimeout();
+    val jsHandler = QWasmSuspendResumeControl::get()->jsEventHandlerAt(m_handlerIndex);
+    using ArgType = double; // emscripten::val::call() does not support int64_t
+    ArgType timoutValue = static_cast<ArgType>(timeout.count());
+    ArgType timerId = val::global("window").call<ArgType>("setTimeout", jsHandler, timoutValue);
+    m_timerId = static_cast<int64_t>(std::round(timerId));
+}
+
+bool QWasmTimer::hasTimeout()
+{
+    return m_timerId > 0;
+}
+
+void QWasmTimer::clearTimeout()
+{
+    val::global("window").call<void>("clearTimeout", double(m_timerId));
+    m_timerId = 0;
+}
