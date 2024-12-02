@@ -22,6 +22,7 @@
 #include <QtCore/qcoreapplication.h>
 #include <qpa/qplatforminputcontextfactory_p.h>
 #include <qpa/qwindowsysteminterface_p.h>
+#include "private/qwasmsuspendresumecontrol_p.h"
 
 #include <emscripten/bind.h>
 #include <emscripten/val.h>
@@ -94,6 +95,7 @@ QWasmIntegration::QWasmIntegration()
 #if QT_CONFIG(accessibility)
     , m_accessibility(new QWasmAccessibility)
 #endif
+    , m_suspendResume(std::make_shared<QWasmSuspendResumeControl>()) // create early in order to register event handlers at startup
 {
     s_instance = this;
 
@@ -264,7 +266,7 @@ QPlatformFontDatabase *QWasmIntegration::fontDatabase() const
 
 QAbstractEventDispatcher *QWasmIntegration::createEventDispatcher() const
 {
-    return new QWasmEventDispatcher;
+    return new QWasmEventDispatcher(m_suspendResume);
 }
 
 QVariant QWasmIntegration::styleHint(QPlatformIntegration::StyleHint hint) const

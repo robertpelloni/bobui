@@ -9,8 +9,9 @@
 #include <QtCore/qfile.h>
 #include <QtCore/qmimedata.h>
 
-#include <emscripten/bind.h>
 #include <emscripten/emscripten.h>
+#include <emscripten/bind.h>
+#include <emscripten/val.h>
 #include <emscripten/html5.h>
 #include <emscripten/threading.h>
 
@@ -22,6 +23,7 @@
 QT_BEGIN_NAMESPACE
 
 using namespace Qt::Literals::StringLiterals;
+using emscripten::val;
 
 namespace qstdweb {
 
@@ -717,45 +719,11 @@ emscripten::val Uint8Array::constructor_()
     return emscripten::val::global("Uint8Array");
 }
 
-class EventListener {
-public:
-    EventListener(uintptr_t handler)
-        :m_handler(handler)
-    {
-
-    }
-
-    // Special function - addEventListender() allows adding an object with a
-    // handleEvent() function which eceives the event.
-    void handleEvent(emscripten::val event) {
-        auto handlerPtr = reinterpret_cast<std::function<void(emscripten::val)> *>(m_handler);
-        (*handlerPtr)(event);
-    }
-
-    uintptr_t m_handler;
-};
-
-// Registers a callback function for a named event on the given element. The event
-// name must be the name as returned by the Event.type property: e.g. "load", "error".
-EventCallback::~EventCallback()
+EventCallback::EventCallback(emscripten::val element, const std::string &name,
+                             const std::function<void(emscripten::val)> &fn)
+  :QWasmEventHandler(element, name, fn)
 {
-    m_element.call<void>("removeEventListener", m_eventName, m_eventListener);
-}
 
-EventCallback::EventCallback(emscripten::val element, const std::string &name, const std::function<void(emscripten::val)> &handler)
-    :m_element(element)
-    ,m_eventName(name)
-    ,m_handler(std::make_unique<std::function<void(emscripten::val)>>(handler))
-{
-    uintptr_t handlerUint = reinterpret_cast<uintptr_t>(m_handler.get()); // FIXME: pass pointer directly instead
-    m_eventListener = emscripten::val::module_property("QtEventListener").new_(handlerUint);
-    m_element.call<void>("addEventListener", m_eventName, m_eventListener);
-}
-
-EMSCRIPTEN_BINDINGS(qtStdwebCalback) {
-    emscripten::class_<EventListener>("QtEventListener")
-        .constructor<uintptr_t>()
-        .function("handleEvent", &EventListener::handleEvent);
 }
 
 namespace Promise {

@@ -20,6 +20,8 @@
 #include <emscripten/html5.h>
 #include <emscripten/val.h>
 
+#include <memory>
+
 QT_BEGIN_NAMESPACE
 
 class QWasmEventTranslator;
@@ -33,6 +35,7 @@ class QWasmClipboard;
 class QWasmAccessibility;
 class QWasmServices;
 class QWasmDrag;
+class QWasmSuspendResumeControl;
 
 class QWasmIntegration : public QObject, public QPlatformIntegration
 {
@@ -104,6 +107,7 @@ private:
     static QWasmIntegration *s_instance;
 
     QWasmInputContext *m_wasmInputContext = nullptr;
+    std::shared_ptr<QWasmSuspendResumeControl> m_suspendResume;
 
 #if QT_CONFIG(draganddrop)
     std::unique_ptr<QWasmDrag> m_drag;

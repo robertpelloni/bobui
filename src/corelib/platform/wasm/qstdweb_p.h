@@ -19,6 +19,7 @@
 #include <QtCore/qglobal.h>
 #include "QtCore/qhash.h"
 #include "QtCore/qiodevice.h"
+#include "QtCore/private/qwasmsuspendresumecontrol_p.h"
 
 #include <emscripten/val.h>
 
@@ -196,21 +197,15 @@ namespace qstdweb {
         emscripten::val m_uint8Array = emscripten::val::undefined();
     };
 
-    class Q_CORE_EXPORT EventCallback
+    // EventCallback here for source compatibility; prefer using QWasmEventHandler directly
+    class Q_CORE_EXPORT EventCallback : public QWasmEventHandler
     {
     public:
         EventCallback() = default;
-        ~EventCallback();
         EventCallback(EventCallback const&) = delete;
         EventCallback& operator=(EventCallback const&) = delete;
         EventCallback(emscripten::val element, const std::string &name,
                       const std::function<void(emscripten::val)> &fn);
-
-    private:
-        emscripten::val m_element = emscripten::val::undefined();
-        std::string m_eventName;
-        std::unique_ptr<std::function<void(emscripten::val)>> m_handler;
-        emscripten::val m_eventListener = emscripten::val::undefined();
     };
 
     struct PromiseCallbacks
