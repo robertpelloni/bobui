@@ -19,7 +19,11 @@
 #include <unicode/ucnv_cb.h>
 #include <unicode/ucnv_err.h>
 #include <unicode/ustring.h>
-#endif
+#define QT_USE_ICU_CODECS
+#elif QT_CONFIG(winsdkicu)
+#include <icu.h>
+#define QT_USE_ICU_CODECS
+#endif // QT_CONFIG(icu) || QT_CONFIG(winsdkicu)
 
 #ifdef Q_OS_WIN
 #include <qt_windows.h>
@@ -1836,7 +1840,7 @@ void QStringConverter::State::clear() noexcept
 void QStringConverter::State::reset() noexcept
 {
     if (flags & Flag::UsesIcu) {
-#if QT_CONFIG(icu)
+#if defined(QT_USE_ICU_CODECS)
         UConverter *converter = static_cast<UConverter *>(d[0]);
         if (converter)
             ucnv_reset(converter);
@@ -2152,7 +2156,7 @@ static bool nameMatch(const char *a, QAnyStringView b)
 */
 
 
-#if QT_CONFIG(icu)
+#if defined(QT_USE_ICU_CODECS)
 // only derives from QStringConverter to get access to protected types
 struct QStringConverterICU : QStringConverter
 {
@@ -2418,7 +2422,7 @@ QStringConverter::QStringConverter(QAnyStringView name, Flags f)
     auto e = encodingForName(name);
     if (e)
         iface = encodingInterfaces + int(*e);
-#if QT_CONFIG(icu)
+#if defined(QT_USE_ICU_CODECS)
     else
         iface = QStringConverterICU::make_icu_converter(&state, name);
 #endif
@@ -2430,7 +2434,7 @@ const char *QStringConverter::name() const noexcept
     if (!iface)
         return nullptr;
     if (state.flags & QStringConverter::Flag::UsesIcu) {
-#if QT_CONFIG(icu)
+#if defined(QT_USE_ICU_CODECS)
         return static_cast<const char*>(state.d[1]);
 #else
         return nullptr;
@@ -2610,7 +2614,7 @@ std::optional<QStringConverter::Encoding> QStringConverter::encodingForHtml(QByt
 
 static qsizetype availableCodecCount()
 {
-#if !QT_CONFIG(icu)
+#if !defined(QT_USE_ICU_CODECS)
     return QStringConverter::Encoding::LastEncoding;
 #else
     /* icu contains also the names of what Qt provides
@@ -2637,7 +2641,7 @@ QStringList QStringConverter::availableCodecs()
 {
     auto availableCodec = [](qsizetype index) -> QString
     {
-    #if !QT_CONFIG(icu)
+    #if !defined(QT_USE_ICU_CODECS)
         return QString::fromLatin1(encodingInterfaces[index].name);
     #else
         if (index == 0) // "Locale", not provided by icu

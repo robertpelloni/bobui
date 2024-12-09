@@ -871,6 +871,11 @@ qt_internal_extend_target(Core CONDITION WIN32
         text/qlocale_win.cpp
 )
 
+qt_internal_extend_target(Core CONDITION QT_FEATURE_winsdkicu
+    LIBRARIES
+        icu
+)
+
 qt_internal_extend_target(Core CONDITION WASM
     SOURCES
         text/qlocale_wasm.cpp

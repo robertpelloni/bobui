@@ -94,5 +94,6 @@
 #define QT_NO_TRANSLATION
 #define QT_FEATURE_translation -1
 #define QT_NO_VARIANT -1
+#define QT_FEATURE_winsdkicu -1
 
 #endif // QT_BOOTSTRAPPED

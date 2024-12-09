@@ -515,6 +515,21 @@ renameat2(AT_FDCWD, argv[1], AT_FDCWD, argv[2], RENAME_NOREPLACE | RENAME_WHITEO
 }
 ")
 
+qt_config_compile_test(winsdkicu
+    LABEL "Windows SDK: ICU"
+    LIBRARIES icu
+    CODE
+"#include <icu.h>
+
+int main(void)
+{
+    /* BEGIN TEST: */
+    /* END TEST: */
+    return 0;
+}
+"
+)
+
 # cpp_winrt
 qt_config_compile_test(cpp_winrt
     LABEL "cpp/winrt"
@@ -665,6 +680,12 @@ qt_feature("icu" PRIVATE
     LABEL "ICU"
     AUTODETECT NOT WIN32
     CONDITION ICU_FOUND
+)
+qt_feature("winsdkicu" PRIVATE
+    LABEL "ICU (Windows SDK)"
+    AUTODETECT WIN32
+    CONDITION TEST_winsdkicu
+    DISABLE QT_FEATURE_icu
 )
 qt_feature("inotify" PUBLIC PRIVATE
     LABEL "inotify"
