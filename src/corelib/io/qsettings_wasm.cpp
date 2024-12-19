@@ -11,6 +11,7 @@
 #endif // QT_NO_QOBJECT
 #include <QDebug>
 #include <QtCore/private/qstdweb_p.h>
+#include <QtCore/private/qwasmglobal_p.h>
 
 #include <QFileInfo>
 #include <QDir>
@@ -109,7 +110,7 @@ void QWasmLocalStorageSettingsPrivate::remove(const QString &key)
 {
     const std::string removed = QString(m_keyPrefixes.first() + key).toStdString();
 
-    qstdweb::runTaskOnMainThread<void>([this, &removed, &key]() {
+    qwasmglobal::runTaskOnMainThread<void>([this, &removed, &key]() {
         std::vector<std::string> children = { removed };
         const int length = val::global("window")["localStorage"]["length"].as<int>();
         for (int i = 0; i < length; ++i) {
@@ -131,7 +132,7 @@ void QWasmLocalStorageSettingsPrivate::remove(const QString &key)
 
 void QWasmLocalStorageSettingsPrivate::set(const QString &key, const QVariant &value)
 {
-    qstdweb::runTaskOnMainThread<void>([this, &key, &value]() {
+    qwasmglobal::runTaskOnMainThread<void>([this, &key, &value]() {
         const std::string keyString = QString(m_keyPrefixes.first() + key).toStdString();
         const std::string valueString = QSettingsPrivate::variantToString(value).toStdString();
         val::global("window")["localStorage"].call<void>("setItem", keyString, valueString);
@@ -140,7 +141,7 @@ void QWasmLocalStorageSettingsPrivate::set(const QString &key, const QVariant &v
 
 std::optional<QVariant> QWasmLocalStorageSettingsPrivate::get(const QString &key) const
 {
-    return qstdweb::runTaskOnMainThread<std::optional<QVariant>>(
+    return qwasmglobal::runTaskOnMainThread<std::optional<QVariant>>(
             [this, &key]() -> std::optional<QVariant> {
                 for (const auto &prefix : m_keyPrefixes) {
                     const std::string keyString = QString(prefix + key).toStdString();
@@ -160,7 +161,7 @@ std::optional<QVariant> QWasmLocalStorageSettingsPrivate::get(const QString &key
 
 QStringList QWasmLocalStorageSettingsPrivate::children(const QString &prefix, ChildSpec spec) const
 {
-    return qstdweb::runTaskOnMainThread<QStringList>([this, &prefix, &spec]() -> QStringList {
+    return qwasmglobal::runTaskOnMainThread<QStringList>([this, &prefix, &spec]() -> QStringList {
         QSet<QString> nodes;
         // Loop through all keys on window.localStorage, return Qt keys belonging to
         // this application, with the correct prefix, and according to ChildSpec.
@@ -192,7 +193,7 @@ QStringList QWasmLocalStorageSettingsPrivate::children(const QString &prefix, Ch
 
 void QWasmLocalStorageSettingsPrivate::clear()
 {
-    qstdweb::runTaskOnMainThread<void>([this]() {
+    qwasmglobal::runTaskOnMainThread<void>([this]() {
         // Get all Qt keys from window.localStorage
         const int length = val::global("window")["localStorage"]["length"].as<int>();
         QStringList keys;
@@ -347,7 +348,7 @@ QSettingsPrivate *QSettingsPrivate::create(QSettings::Format format, QSettings::
 
     // Check if cookies are enabled (required for using persistent storage)
 
-    const bool cookiesEnabled = qstdweb::runTaskOnMainThread<bool>(
+    const bool cookiesEnabled = qwasmglobal::runTaskOnMainThread<bool>(
             []() { return val::global("navigator")["cookieEnabled"].as<bool>(); });
 
     constexpr QLatin1StringView cookiesWarningMessage(
