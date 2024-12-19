@@ -1821,6 +1821,8 @@ void QObjectPrivate::setThreadData_helper(QThreadData *currentData, QThreadData 
     startTimer(std::chrono::milliseconds{interval}, timerType);
     \endcode
 
+    \include timers-common.qdocinc negative-intervals-not-allowed
+
     \sa timerEvent(), killTimer(), QChronoTimer, QBasicTimer
 */
 
@@ -1842,6 +1844,8 @@ int QObject::startTimer(int interval, Qt::TimerType timerType)
     is called. If \a interval is equal to \c{std::chrono::duration::zero()},
     then the timer event occurs once every time there are no more window
     system events to process.
+
+    \include timers-common.qdocinc negative-intervals-not-allowed
 
     The virtual timerEvent() function is called with the QTimerEvent
     event parameter class when a timer event occurs. Reimplement this
@@ -1887,9 +1891,10 @@ int QObject::startTimer(std::chrono::nanoseconds interval, Qt::TimerType timerTy
 
     using namespace std::chrono_literals;
 
-    if (Q_UNLIKELY(interval < 0ns)) {
-        qWarning("QObject::startTimer: Timers cannot have negative intervals");
-        return 0;
+    if (interval < 0ns) {
+        qWarning("QObject::startTimer: negative intervals aren't allowed; the "
+                 "interval will be set to 1ms.");
+        interval = 1ms;
     }
 
     auto thisThreadData = d->threadData.loadRelaxed();

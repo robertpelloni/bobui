@@ -145,6 +145,8 @@ QT_BEGIN_NAMESPACE
 
     The given \a object will receive timer events.
 
+    \include timers-common.qdocinc negative-intervals-not-allowed
+
 //! [start-nanoseconds-note]
     \note Starting from Qt 6.9 this method takes std::chrono::nanoseconds,
           before that it took std::chrono::milliseconds. This change is
@@ -170,6 +172,8 @@ QT_BEGIN_NAMESPACE
     given \a timerType. See Qt::TimerType for information on the different
     timer types.
 
+    \include timers-common.qdocinc negative-intervals-not-allowed
+
     \a obj will receive timer events.
 
     \include qbasictimer.cpp start-nanoseconds-note
@@ -179,9 +183,10 @@ QT_BEGIN_NAMESPACE
 void QBasicTimer::start(Duration duration, Qt::TimerType timerType, QObject *obj)
 {
     QAbstractEventDispatcher *eventDispatcher = QAbstractEventDispatcher::instance();
-    if (Q_UNLIKELY(duration < 0ns)) {
-        qWarning("QBasicTimer::start: Timers cannot have negative timeouts");
-        return;
+    if (duration < 0ns) {
+        qWarning("QBasicTimer::start: negative intervals aren't allowed; the "
+                 "interval will be set to 1ms.");
+        duration = 1ms;
     }
     if (Q_UNLIKELY(!eventDispatcher)) {
         qWarning("QBasicTimer::start: QBasicTimer can only be used with threads started with QThread");

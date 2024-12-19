@@ -1090,14 +1090,15 @@ void tst_QChronoTimer::bindToTimer()
 
     auto ignoreMsg = [] {
         QTest::ignoreMessage(QtWarningMsg,
-                             "QObject::startTimer: Timers cannot have negative intervals");
+                             "QChronoTimer::setInterval: negative intervals aren't allowed; the "
+                             "interval will be set to 1ms.");
     };
 
     ignoreMsg();
     timer.setInterval(-100ms);
-    ignoreMsg();
     timer.start();
-    QVERIFY(!active);
+    QVERIFY(active);
+    QCOMPARE(timer.interval(), 1ms);
 
     timer.setInterval(100ms);
     timer.start();
@@ -1105,9 +1106,9 @@ void tst_QChronoTimer::bindToTimer()
 
     ignoreMsg();
     timer.setInterval(-100ms);
-    ignoreMsg();
     timer.start();
-    QVERIFY(!active);
+    QVERIFY(active);
+    QCOMPARE(timer.interval(), 1ms);
 }
 
 void tst_QChronoTimer::bindTimer()
@@ -1196,30 +1197,24 @@ void tst_QChronoTimer::negativeInterval()
 
     auto ignoreMsg = [] {
         QTest::ignoreMessage(QtWarningMsg,
-                             "QObject::startTimer: Timers cannot have negative intervals");
+                             "QChronoTimer::setInterval: negative intervals aren't allowed; the "
+                             "interval will be set to 1ms.");
     };
 
     ignoreMsg();
-    // Setting a negative interval does not change the active state.
     timer.setInterval(-100ms);
-    ignoreMsg();
     timer.start();
-    QVERIFY(!timer.isActive());
+    QVERIFY(timer.isActive());
+    QCOMPARE(timer.interval(), 1ms);
 
-    // Starting a timer that has a positive interval, the active state is changed
     timer.setInterval(100ms);
     timer.start();
     QVERIFY(timer.isActive());
 
     ignoreMsg();
-    // Setting a negative interval on an already running timer...
     timer.setInterval(-100ms);
-    // ... the timer is stopped and the active state is changed
-    QVERIFY(!timer.isActive());
-
-    // Calling start on a timer that has a negative interval, does not change the active state
-    timer.start();
-    QVERIFY(!timer.isActive());
+    QVERIFY(timer.isActive());
+    QCOMPARE(timer.interval(), 1ms);
 }
 
 class OrderHelper : public QObject

@@ -39,6 +39,7 @@
 
 #include <math.h>
 
+using namespace std::chrono_literals;
 using namespace Qt::StringLiterals;
 
 class tst_QObject : public QObject
@@ -156,6 +157,7 @@ private slots:
     void declarativeData();
     void asyncCallbackHelper();
     void disconnectQueuedConnection_pendingEventsAreDelivered();
+    void timerWithNegativeInterval();
 };
 
 struct QObjectCreatedOnShutdown
@@ -8965,6 +8967,16 @@ void tst_QObject::disconnectQueuedConnection_pendingEventsAreDelivered()
     QObject::disconnect(&sender, &SenderObject::signal1, &receiver, &ReceiverObject::slot1);
     QCOMPARE(receiver.count_slot1, 0);
     QTRY_COMPARE(receiver.count_slot1, 1);
+}
+
+void tst_QObject::timerWithNegativeInterval()
+{
+    QObject obj;
+    QTest::ignoreMessage(QtWarningMsg,
+                         "QObject::startTimer: negative intervals aren't allowed; the "
+                         "interval will be set to 1ms.");
+    int id = obj.startTimer(-100ms);
+    QCOMPARE_NE(Qt::TimerId{id}, Qt::TimerId::Invalid);
 }
 
 QTEST_MAIN(tst_QObject)

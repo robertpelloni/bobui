@@ -233,6 +233,8 @@ void QTimer::start()
         timer.start();
     \endcode
 
+    \include timers-common.qdocinc negative-intervals-not-allowed
+
     \note   Keeping the event loop busy with a zero-timer is bound to
             cause trouble and highly erratic behavior of the UI.
 */
@@ -241,9 +243,40 @@ void QTimer::start(int msec)
     start(msec * 1ms);
 }
 
+static std::chrono::milliseconds
+checkInterval(const char *caller, std::chrono::milliseconds interval)
+{
+    if (interval < 0ms) {
+        qWarning("%s: negative intervals aren't allowed; the interval will be set to 1ms.", caller);
+        interval = 1ms;
+    }
+    return interval;
+}
+
+/*!
+    \since 5.8
+    \overload
+
+    Starts or restarts the timer with a timeout of duration \a interval milliseconds.
+
+    \include qtimer.cpp stop-restart-timer
+
+    \include qtimer.cpp singleshot-activation
+    This is equivalent to:
+
+    \code
+        timer.setInterval(interval);
+        timer.start();
+    \endcode
+
+    \include timers-common.qdocinc negative-intervals-not-allowed
+*/
 void QTimer::start(std::chrono::milliseconds interval)
 {
     Q_D(QTimer);
+
+    interval = checkInterval("QTimer::start", interval);
+
     // This could be narrowing as the interval is stored in an `int` QProperty,
     // and the type can't be changed in Qt6.
     const int msec = interval.count();
@@ -370,6 +403,8 @@ void QTimer::singleShotImpl(std::chrono::nanoseconds ns, Qt::TimerType timerType
     The \a receiver is the receiving object and the \a member is the
     slot. The time interval is \a msec milliseconds.
 
+    \include timers-common.qdocinc negative-intervals-not-allowed
+
     \sa start()
 */
 
@@ -388,6 +423,8 @@ void QTimer::singleShotImpl(std::chrono::nanoseconds ns, Qt::TimerType timerType
     time interval is \a msec milliseconds. The \a timerType affects the
     accuracy of the timer.
 
+    \include timers-common.qdocinc negative-intervals-not-allowed
+
     \sa start()
 */
 
@@ -395,8 +432,9 @@ void QTimer::singleShot(std::chrono::nanoseconds ns, Qt::TimerType timerType,
                         const QObject *receiver, const char *member)
 {
     if (ns < 0ns) {
-        qWarning("QTimer::singleShot: Timers cannot have negative timeouts");
-        return;
+        qWarning("QTimer::singleShot: negative intervals aren't allowed; the "
+                 "interval will be set to 1ms.");
+        ns = 1ms;
     }
     if (receiver && member) {
         if (ns == 0ns) {
@@ -440,6 +478,8 @@ void QTimer::singleShot(std::chrono::nanoseconds ns, Qt::TimerType timerType,
     The \a interval parameter can be an \c int (interpreted as a millisecond
     count) or a \c std::chrono type that implicitly converts to nanoseconds.
 
+    \include timers-common.qdocinc negative-intervals-not-allowed
+
     \note In Qt versions prior to 6.8, the chrono overloads took chrono::milliseconds,
     not chrono::nanoseconds. The compiler will automatically convert for you,
     but the conversion may overflow for extremely large milliseconds counts.
@@ -461,6 +501,8 @@ void QTimer::singleShot(std::chrono::nanoseconds ns, Qt::TimerType timerType,
 
     The \a receiver is the receiving object and the \a member is the slot. The
     time interval is given in the duration object \a nsec.
+
+    \include timers-common.qdocinc negative-intervals-not-allowed
 
 //! [qtimer-ns-overflow]
     \note In Qt versions prior to 6.8, this function took chrono::milliseconds,
@@ -486,6 +528,9 @@ void QTimer::singleShot(std::chrono::nanoseconds ns, Qt::TimerType timerType,
     The \a receiver is the receiving object and the \a member is the slot. The
     time interval is given in the duration object \a nsec. The \a timerType affects the
     accuracy of the timer.
+
+
+    \include timers-common.qdocinc negative-intervals-not-allowed
 
     \include qtimer.cpp qtimer-ns-overflow
 
@@ -524,24 +569,6 @@ void QTimer::singleShot(std::chrono::nanoseconds ns, Qt::TimerType timerType,
     \endcode
 
     \sa QObject::connect(), timeout()
-*/
-
-/*!
-    \fn void QTimer::start(std::chrono::milliseconds msec)
-    \since 5.8
-    \overload
-
-    Starts or restarts the timer with a timeout of duration \a msec milliseconds.
-
-    \include qtimer.cpp stop-restart-timer
-
-    \include qtimer.cpp singleshot-activation
-    This is equivalent to:
-
-    \code
-        timer.setInterval(msec);
-        timer.start();
-    \endcode
 */
 
 /*!
@@ -604,6 +631,8 @@ QBindable<bool> QTimer::bindableSingleShot()
     stop() and then start() the timer, and acquire a new id().
     If the timer is not running, only the interval is changed.
 
+    \include timers-common.qdocinc negative-intervals-not-allowed
+
     \sa singleShot
 */
 void QTimer::setInterval(int msec)
@@ -614,6 +643,9 @@ void QTimer::setInterval(int msec)
 void QTimer::setInterval(std::chrono::milliseconds interval)
 {
     Q_D(QTimer);
+
+    interval = checkInterval("QTimer::setInterval", interval);
+
     // This could be narrowing as the interval is stored in an `int` QProperty,
     // and the type can't be changed in Qt6.
     const int msec = interval.count();
