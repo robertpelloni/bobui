@@ -173,7 +173,7 @@ struct MultiNode
     {}
 
     MultiNode(MultiNode &&other)
-        : key(other.key),
+        : key(std::move(other.key)),
           value(std::exchange(other.value, nullptr))
     {
     }
