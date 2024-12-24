@@ -2343,6 +2343,12 @@ void QWindows11Style::polish(QPalette& result)
 
     if (highContrastTheme)
         result.setColor(QPalette::Active, QPalette::HighlightedText, result.windowText().color());
+
+    auto *d = const_cast<QWindows11StylePrivate *>(d_func());
+    d->m_titleBarMinIcon = QIcon();
+    d->m_titleBarMaxIcon = QIcon();
+    d->m_titleBarCloseIcon = QIcon();
+    d->m_titleBarNormalIcon = QIcon();
 }
 
 QBrush QWindows11Style::buttonFillBrush(const QStyleOption *option)
