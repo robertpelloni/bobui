@@ -4090,10 +4090,15 @@ void tst_QRhi::renderToWindowSimple()
     const int asyncReadbackFrames = rhi->resourceLimit(QRhi::MaxAsyncReadbackFrames);
     // one frame issues the readback, then we do MaxAsyncReadbackFrames more to ensure the readback completes
     const int FRAME_COUNT = asyncReadbackFrames + 1;
+
     bool readCompleted = false;
     QRhiReadbackResult readResult;
     QImage result;
     int readbackWidth = 0;
+
+    bool readCompletedPartial = false;
+    QRhiReadbackResult readResultPartial;
+    QImage resultPartial;
 
     for (int frameNo = 0; frameNo < FRAME_COUNT; ++frameNo) {
         QVERIFY(rhi->beginFrame(swapChain.data()) == QRhi::FrameOpSuccess);
@@ -4115,6 +4120,7 @@ void tst_QRhi::renderToWindowSimple()
         cb->draw(3);
 
         if (frameNo == 0) {
+            QRhiResourceUpdateBatch *readbackBatch = rhi->nextResourceUpdateBatch();
             readResult.completed = [&readCompleted, &readResult, &result, &rhi] {
                 readCompleted = true;
                 QImage wrapperImage(reinterpret_cast<const uchar *>(readResult.data.constData()),
@@ -4127,9 +4133,26 @@ void tst_QRhi::renderToWindowSimple()
                 else
                     result = wrapperImage.copy();
             };
-            QRhiResourceUpdateBatch *readbackBatch = rhi->nextResourceUpdateBatch();
-            readbackBatch->readBackTexture({}, &readResult); // read back the current backbuffer
+            QRhiReadbackDescription readbackDescription;
+            QVERIFY(!readbackDescription.rect().isValid());
+            readbackBatch->readBackTexture(readbackDescription, &readResult); // read back the current backbuffer
             readbackWidth = outputSize.width();
+            readResultPartial.completed = [&readCompletedPartial, &readResultPartial, &resultPartial, &rhi] {
+                readCompletedPartial = true;
+                QImage wrapperImage(reinterpret_cast<const uchar *>(readResultPartial.data.constData()),
+                                    readResultPartial.pixelSize.width(), readResultPartial.pixelSize.height(),
+                                    QImage::Format_ARGB32_Premultiplied);
+                if (readResultPartial.format == QRhiTexture::RGBA8)
+                    wrapperImage = wrapperImage.rgbSwapped();
+                if (rhi->isYUpInFramebuffer() == rhi->isYUpInNDC())
+                    resultPartial = wrapperImage.flipped();
+                else
+                    resultPartial = wrapperImage.copy();
+            };
+            QRhiReadbackDescription partialReadbackDescription;
+            partialReadbackDescription.setRect({100, 100, 1, 1});
+            QVERIFY(partialReadbackDescription.rect().isValid());
+            readbackBatch->readBackTexture(partialReadbackDescription, &readResultPartial); // read back one pixel at 100,100 of the current backbuffer
             cb->endPass(readbackBatch);
         } else {
             cb->endPass();
@@ -4166,6 +4189,13 @@ void tst_QRhi::renderToWindowSimple()
 
     QCOMPARE(redCount + blueCount, readbackWidth);
     QVERIFY(redCount < blueCount);
+
+    // Verify the backbuffer single-pixel readback
+    QVERIFY(readCompletedPartial);
+    QCOMPARE(readResultPartial.pixelSize, QSize(1, 1));
+    if (rhi->isYUpInFramebuffer() == rhi->isYUpInNDC())
+        result.flip();
+    QCOMPARE(resultPartial.pixelColor(0, 0), result.pixelColor(100, 100));
 }
 
 void tst_QRhi::continuousReadbackFromWindow_data()

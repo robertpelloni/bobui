@@ -999,7 +999,7 @@ public:
         VkBuffer stagingBuf;
         QVkAlloc stagingAlloc;
         quint32 byteSize;
-        QSize pixelSize;
+        QRect rect;
         QRhiTexture::Format format;
     };
     QVarLengthArray<TextureReadback, 2> activeTextureReadbacks;

@@ -1990,7 +1990,7 @@ void QRhiD3D11::enqueueResourceUpdates(QRhiCommandBuffer *cb, QRhiResourceUpdate
 
             ID3D11Resource *src;
             DXGI_FORMAT dxgiFormat;
-            QSize pixelSize;
+            QRect rect;
             QRhiTexture::Format format;
             UINT subres = 0;
             QD3D11Texture *texD = QRHI_RES(QD3D11Texture, u.rb.texture());
@@ -2004,7 +2004,10 @@ void QRhiD3D11::enqueueResourceUpdates(QRhiCommandBuffer *cb, QRhiResourceUpdate
                 }
                 src = texD->textureResource();
                 dxgiFormat = texD->dxgiFormat;
-                pixelSize = q->sizeForMipLevel(u.rb.level(), texD->m_pixelSize);
+                if (u.rb.rect().isValid())
+                    rect = u.rb.rect();
+                else
+                    rect = QRect({0, 0}, q->sizeForMipLevel(u.rb.level(), texD->m_pixelSize));
                 format = texD->m_format;
                 is3D = texD->m_flags.testFlag(QRhiTexture::ThreeDimensional);
                 subres = D3D11CalcSubresource(UINT(u.rb.level()), UINT(is3D ? 0 : u.rb.layer()), texD->mipLevelCount);
@@ -2024,18 +2027,21 @@ void QRhiD3D11::enqueueResourceUpdates(QRhiCommandBuffer *cb, QRhiResourceUpdate
                 }
                 src = swapChainD->backBufferTex;
                 dxgiFormat = swapChainD->colorFormat;
-                pixelSize = swapChainD->pixelSize;
+                if (u.rb.rect().isValid())
+                    rect = u.rb.rect();
+                else
+                    rect = QRect({0, 0}, swapChainD->pixelSize);
                 format = swapchainReadbackTextureFormat(dxgiFormat, nullptr);
                 if (format == QRhiTexture::UnknownFormat)
                     continue;
             }
             quint32 byteSize = 0;
             quint32 bpl = 0;
-            textureFormatInfo(format, pixelSize, &bpl, &byteSize, nullptr);
+            textureFormatInfo(format, rect.size(), &bpl, &byteSize, nullptr);
 
             D3D11_TEXTURE2D_DESC desc = {};
-            desc.Width = UINT(pixelSize.width());
-            desc.Height = UINT(pixelSize.height());
+            desc.Width = UINT(rect.width());
+            desc.Height = UINT(rect.height());
             desc.MipLevels = 1;
             desc.ArraySize = 1;
             desc.Format = dxgiFormat;
@@ -2059,22 +2065,22 @@ void QRhiD3D11::enqueueResourceUpdates(QRhiCommandBuffer *cb, QRhiResourceUpdate
             cmd.args.copySubRes.dstZ = 0;
             cmd.args.copySubRes.src = src;
             cmd.args.copySubRes.srcSubRes = subres;
-            if (is3D) {
-                D3D11_BOX srcBox = {};
-                srcBox.front = UINT(u.rb.layer());
-                srcBox.right = desc.Width; // exclusive
-                srcBox.bottom = desc.Height;
-                srcBox.back = srcBox.front + 1;
-                cmd.args.copySubRes.hasSrcBox = true;
-                cmd.args.copySubRes.srcBox = srcBox;
-            } else {
-                cmd.args.copySubRes.hasSrcBox = false;
-            }
+
+            D3D11_BOX srcBox = {};
+            srcBox.left = UINT(rect.left());
+            srcBox.top = UINT(rect.top());
+            srcBox.front = is3D ? UINT(u.rb.layer()) : 0u;
+            // back, right, bottom are exclusive
+            srcBox.right = srcBox.left + desc.Width;
+            srcBox.bottom = srcBox.top + desc.Height;
+            srcBox.back = srcBox.front + 1;
+            cmd.args.copySubRes.hasSrcBox = true;
+            cmd.args.copySubRes.srcBox = srcBox;
 
             readback.stagingTex = stagingTex;
             readback.byteSize = byteSize;
             readback.bpl = bpl;
-            readback.pixelSize = pixelSize;
+            readback.pixelSize = rect.size();
             readback.format = format;
 
             activeTextureReadbacks.append(readback);

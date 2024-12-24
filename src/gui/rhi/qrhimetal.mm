@@ -2914,7 +2914,7 @@ void QRhiMetal::enqueueResourceUpdates(QRhiCommandBuffer *cb, QRhiResourceUpdate
             QMetalTexture *texD = QRHI_RES(QMetalTexture, u.rb.texture());
             QMetalSwapChain *swapChainD = nullptr;
             id<MTLTexture> src;
-            QSize srcSize;
+            QRect rect;
             bool is3D = false;
             if (texD) {
                 if (texD->samples > 1) {
@@ -2922,22 +2922,27 @@ void QRhiMetal::enqueueResourceUpdates(QRhiCommandBuffer *cb, QRhiResourceUpdate
                     continue;
                 }
                 is3D = texD->m_flags.testFlag(QRhiTexture::ThreeDimensional);
-                readback.pixelSize = q->sizeForMipLevel(u.rb.level(), texD->m_pixelSize);
+                if (u.rb.rect().isValid())
+                    rect = u.rb.rect();
+                else
+                    rect = QRect({0, 0}, q->sizeForMipLevel(u.rb.level(), texD->m_pixelSize));
                 readback.format = texD->m_format;
                 src = texD->d->tex;
-                srcSize = readback.pixelSize;
                 texD->lastActiveFrameSlot = currentFrameSlot;
             } else {
                 Q_ASSERT(currentSwapChain);
                 swapChainD = QRHI_RES(QMetalSwapChain, currentSwapChain);
-                readback.pixelSize = swapChainD->pixelSize;
+                if (u.rb.rect().isValid())
+                    rect = u.rb.rect();
+                else
+                    rect = QRect({0, 0}, swapChainD->pixelSize);
                 readback.format = swapChainD->d->rhiColorFormat;
                 // Multisample swapchains need nothing special since resolving
                 // happens when ending a renderpass.
                 const QMetalRenderTargetData::ColorAtt &colorAtt(swapChainD->rtWrapper.d->fb.colorAtt[0]);
                 src = colorAtt.resolveTex ? colorAtt.resolveTex : colorAtt.tex;
-                srcSize = swapChainD->rtWrapper.d->pixelSize;
             }
+            readback.pixelSize = rect.size();
 
             quint32 bpl = 0;
             textureFormatInfo(readback.format, readback.pixelSize, &bpl, &readback.bufSize, nullptr);
@@ -2947,8 +2952,8 @@ void QRhiMetal::enqueueResourceUpdates(QRhiCommandBuffer *cb, QRhiResourceUpdate
             [blitEnc copyFromTexture: src
                                       sourceSlice: NSUInteger(is3D ? 0 : u.rb.layer())
                                       sourceLevel: NSUInteger(u.rb.level())
-                                      sourceOrigin: MTLOriginMake(0, 0, is3D ? u.rb.layer() : 0)
-                                      sourceSize: MTLSizeMake(NSUInteger(srcSize.width()), NSUInteger(srcSize.height()), 1)
+                                      sourceOrigin: MTLOriginMake(NSUInteger(rect.x()), NSUInteger(rect.y()), NSUInteger(is3D ? u.rb.layer() : 0))
+                                      sourceSize: MTLSizeMake(NSUInteger(rect.width()), NSUInteger(rect.height()), 1)
                                       toBuffer: readback.buf
                                       destinationOffset: 0
                                       destinationBytesPerRow: bpl

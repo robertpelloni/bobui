@@ -3703,6 +3703,7 @@ void QRhiD3D12::enqueueResourceUpdates(QD3D12CommandBuffer *cbD, QRhiResourceUpd
             readback.result = u.result;
 
             QD3D12ObjectHandle srcHandle;
+            QRect rect;
             bool is3D = false;
             if (u.rb.texture()) {
                 QD3D12Texture *texD = QRHI_RES(QD3D12Texture, u.rb.texture());
@@ -3711,17 +3712,24 @@ void QRhiD3D12::enqueueResourceUpdates(QD3D12CommandBuffer *cbD, QRhiResourceUpd
                     continue;
                 }
                 is3D = texD->m_flags.testFlag(QRhiTexture::ThreeDimensional);
-                readback.pixelSize = q->sizeForMipLevel(u.rb.level(), texD->m_pixelSize);
+                if (u.rb.rect().isValid())
+                    rect = u.rb.rect();
+                else
+                    rect = QRect({0, 0}, q->sizeForMipLevel(u.rb.level(), texD->m_pixelSize));
                 readback.format = texD->m_format;
                 srcHandle = texD->handle;
             } else {
                 Q_ASSERT(currentSwapChain);
-                readback.pixelSize = currentSwapChain->pixelSize;
+                if (u.rb.rect().isValid())
+                    rect = u.rb.rect();
+                else
+                    rect = QRect({0, 0}, currentSwapChain->pixelSize);
                 readback.format = swapchainReadbackTextureFormat(currentSwapChain->colorFormat, nullptr);
                 if (readback.format == QRhiTexture::UnknownFormat)
                     continue;
                 srcHandle = currentSwapChain->colorBuffers[currentSwapChain->currentBackBufferIndex];
             }
+            readback.pixelSize = rect.size();
 
             textureFormatInfo(readback.format,
                               readback.pixelSize,
@@ -3774,13 +3782,15 @@ void QRhiD3D12::enqueueResourceUpdates(QD3D12CommandBuffer *cbD, QRhiResourceUpd
             src.SubresourceIndex = subresource;
 
             D3D12_BOX srcBox = {};
-            if (is3D) {
-                srcBox.front = UINT(u.rb.layer());
-                srcBox.back = srcBox.front + 1;
-                srcBox.right = readback.pixelSize.width(); // exclusive
-                srcBox.bottom = readback.pixelSize.height();
-            }
-            cbD->cmdList->CopyTextureRegion(&dst, 0, 0, 0, &src, is3D ? &srcBox : nullptr);
+            srcBox.left = UINT(rect.left());
+            srcBox.top = UINT(rect.top());
+            srcBox.front = is3D ? UINT(u.rb.layer()) : 0u;
+            // back, right, bottom are exclusive
+            srcBox.right = srcBox.left + UINT(rect.width());
+            srcBox.bottom = srcBox.top + UINT(rect.height());
+            srcBox.back = srcBox.front + 1;
+
+            cbD->cmdList->CopyTextureRegion(&dst, 0, 0, 0, &src, &srcBox);
             activeReadbacks.append(readback);
         } else if (u.type == QRhiResourceUpdateBatchPrivate::TextureOp::GenMips) {
             QD3D12Texture *texD = QRHI_RES(QD3D12Texture, u.dst);

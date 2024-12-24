@@ -2759,9 +2759,19 @@ void QRhiGles2::enqueueResourceUpdates(QRhiCommandBuffer *cb, QRhiResourceUpdate
             cmd.args.readPixels.texture = texD ? texD->texture : 0;
             cmd.args.readPixels.slice3D = -1;
             if (texD) {
-                const QSize readImageSize = q->sizeForMipLevel(u.rb.level(), texD->m_pixelSize);
-                cmd.args.readPixels.w = readImageSize.width();
-                cmd.args.readPixels.h = readImageSize.height();
+                if (u.rb.rect().isValid()) {
+                    cmd.args.readPixels.x = u.rb.rect().x();
+                    cmd.args.readPixels.y = u.rb.rect().y();
+                    cmd.args.readPixels.w = u.rb.rect().width();
+                    cmd.args.readPixels.h = u.rb.rect().height();
+                }
+                else {
+                    const QSize readImageSize = q->sizeForMipLevel(u.rb.level(), texD->m_pixelSize);
+                    cmd.args.readPixels.x = 0;
+                    cmd.args.readPixels.y = 0;
+                    cmd.args.readPixels.w = readImageSize.width();
+                    cmd.args.readPixels.h = readImageSize.height();
+                }
                 cmd.args.readPixels.format = texD->m_format;
                 if (texD->m_flags.testFlag(QRhiTexture::ThreeDimensional)
                     || texD->m_flags.testFlag(QRhiTexture::TextureArray))
@@ -2774,6 +2784,20 @@ void QRhiGles2::enqueueResourceUpdates(QRhiCommandBuffer *cb, QRhiResourceUpdate
                     cmd.args.readPixels.readTarget = faceTargetBase + uint(u.rb.layer());
                 }
                 cmd.args.readPixels.level = u.rb.level();
+            }
+            else { // swapchain
+                if (u.rb.rect().isValid()) {
+                    cmd.args.readPixels.x = u.rb.rect().x();
+                    cmd.args.readPixels.y = u.rb.rect().y();
+                    cmd.args.readPixels.w = u.rb.rect().width();
+                    cmd.args.readPixels.h = u.rb.rect().height();
+                }
+                else {
+                    cmd.args.readPixels.x = 0;
+                    cmd.args.readPixels.y = 0;
+                    cmd.args.readPixels.w = currentSwapChain->pixelSize.width();
+                    cmd.args.readPixels.h = currentSwapChain->pixelSize.height();
+                }
             }
         } else if (u.type == QRhiResourceUpdateBatchPrivate::TextureOp::GenMips) {
             QGles2Texture *texD = QRHI_RES(QGles2Texture, u.dst);
@@ -3600,8 +3624,8 @@ void QRhiGles2::executeCommandBuffer(QRhiCommandBuffer *cb)
             GLuint tex = cmd.args.readPixels.texture;
             GLuint fbo = 0;
             int mipLevel = 0;
+            result->pixelSize = QSize(cmd.args.readPixels.w, cmd.args.readPixels.h);
             if (tex) {
-                result->pixelSize = QSize(cmd.args.readPixels.w, cmd.args.readPixels.h);
                 result->format = cmd.args.readPixels.format;
                 mipLevel = cmd.args.readPixels.level;
                 if (mipLevel == 0 || caps.nonBaseLevelFramebufferTexture) {
@@ -3619,12 +3643,13 @@ void QRhiGles2::executeCommandBuffer(QRhiCommandBuffer *cb)
                     }
                 }
             } else {
-                result->pixelSize = currentSwapChain->pixelSize;
                 result->format = QRhiTexture::RGBA8;
                 // readPixels handles multisample resolving implicitly
             }
-            const int w = result->pixelSize.width();
-            const int h = result->pixelSize.height();
+            const int x = cmd.args.readPixels.x;
+            const int y = cmd.args.readPixels.y;
+            const int w = cmd.args.readPixels.w;
+            const int h = cmd.args.readPixels.h;
             if (mipLevel == 0 || caps.nonBaseLevelFramebufferTexture) {
                 // With GLES, GL_RGBA is the only mandated readback format, so stick with it.
                 // (and that's why we return false for the ReadBackAnyTextureFormat feature)
@@ -3632,7 +3657,7 @@ void QRhiGles2::executeCommandBuffer(QRhiCommandBuffer *cb)
                     result->data.resize(w * h);
                     QByteArray tmpBuf;
                     tmpBuf.resize(w * h * 4);
-                    f->glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, tmpBuf.data());
+                    f->glReadPixels(x, y, w, h, GL_RGBA, GL_UNSIGNED_BYTE, tmpBuf.data());
                     const quint8 *srcBase = reinterpret_cast<const quint8 *>(tmpBuf.constData());
                     quint8 *dstBase = reinterpret_cast<quint8 *>(result->data.data());
                     const int componentIndex = isFeatureSupported(QRhi::RedOrAlpha8IsRed) ? 0 : 3;
@@ -3652,27 +3677,27 @@ void QRhiGles2::executeCommandBuffer(QRhiCommandBuffer *cb)
                     // not, there's nothing we can do.
                     case QRhiTexture::RGBA16F:
                         result->data.resize(w * h * 8);
-                        f->glReadPixels(0, 0, w, h, GL_RGBA, GL_HALF_FLOAT, result->data.data());
+                        f->glReadPixels(x, y, w, h, GL_RGBA, GL_HALF_FLOAT, result->data.data());
                         break;
                     case QRhiTexture::R16F:
                         result->data.resize(w * h * 2);
-                        f->glReadPixels(0, 0, w, h, GL_RED, GL_HALF_FLOAT, result->data.data());
+                        f->glReadPixels(x, y, w, h, GL_RED, GL_HALF_FLOAT, result->data.data());
                         break;
                     case QRhiTexture::R32F:
                         result->data.resize(w * h * 4);
-                        f->glReadPixels(0, 0, w, h, GL_RED, GL_FLOAT, result->data.data());
+                        f->glReadPixels(x, y, w, h, GL_RED, GL_FLOAT, result->data.data());
                         break;
                     case QRhiTexture::RGBA32F:
                         result->data.resize(w * h * 16);
-                        f->glReadPixels(0, 0, w, h, GL_RGBA, GL_FLOAT, result->data.data());
+                        f->glReadPixels(x, y, w, h, GL_RGBA, GL_FLOAT, result->data.data());
                         break;
                     case QRhiTexture::RGB10A2:
                         result->data.resize(w * h * 4);
-                        f->glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_INT_2_10_10_10_REV, result->data.data());
+                        f->glReadPixels(x, y, w, h, GL_RGBA, GL_UNSIGNED_INT_2_10_10_10_REV, result->data.data());
                         break;
                     default:
                         result->data.resize(w * h * 4);
-                        f->glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, result->data.data());
+                        f->glReadPixels(x, y, w, h, GL_RGBA, GL_UNSIGNED_BYTE, result->data.data());
                         break;
                     }
                 }

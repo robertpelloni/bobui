@@ -793,10 +793,14 @@ public:
     int level() const { return m_level; }
     void setLevel(int level) { m_level = level; }
 
+    QRect rect() const { return m_rect; }
+    void setRect(const QRect &rectangle) { m_rect = rectangle; }
+
 private:
     QRhiTexture *m_texture = nullptr;
     int m_layer = 0;
     int m_level = 0;
+    QRect m_rect;
 };
 
 Q_DECLARE_TYPEINFO(QRhiReadbackDescription, Q_RELOCATABLE_TYPE);

@@ -3468,6 +3468,22 @@ QRhiReadbackDescription::QRhiReadbackDescription(QRhiTexture *texture)
  */
 
 /*!
+    \fn const QRect &QRhiReadbackDescription::rect() const
+    \since 6.10
+
+    \return the rectangle to read back. Defaults to an invalid rectangle.
+
+    If invalid, the entire texture or swapchain backbuffer is read back.
+ */
+
+/*!
+    \fn void QRhiReadbackDescription::setRect(const QRect &rectangle)
+    \since 6.10
+
+    Sets the \a rectangle to read back.
+ */
+
+/*!
     \class QRhiReadbackResult
     \inmodule QtGuiPrivate
     \inheaderfile rhi/qrhi.h

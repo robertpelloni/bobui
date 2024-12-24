@@ -4321,7 +4321,10 @@ void QRhiVulkan::enqueueResourceUpdates(QVkCommandBuffer *cbD, QRhiResourceUpdat
                     continue;
                 }
                 is3D = texD->m_flags.testFlag(QRhiTexture::ThreeDimensional);
-                readback.pixelSize = q->sizeForMipLevel(u.rb.level(), texD->m_pixelSize);
+                if (u.rb.rect().isValid())
+                    readback.rect = u.rb.rect();
+                else
+                    readback.rect = QRect({0, 0}, q->sizeForMipLevel(u.rb.level(), texD->m_pixelSize));
                 readback.format = texD->m_format;
                 texD->lastActiveFrameSlot = currentFrameSlot;
             } else {
@@ -4331,7 +4334,10 @@ void QRhiVulkan::enqueueResourceUpdates(QVkCommandBuffer *cbD, QRhiResourceUpdat
                     qWarning("Swapchain does not support readback");
                     continue;
                 }
-                readback.pixelSize = swapChainD->pixelSize;
+                if (u.rb.rect().isValid())
+                    readback.rect = u.rb.rect();
+                else
+                    readback.rect = QRect({0, 0}, swapChainD->pixelSize);
                 readback.format = swapchainReadbackTextureFormat(swapChainD->colorFormat, nullptr);
                 if (readback.format == QRhiTexture::UnknownFormat)
                     continue;
@@ -4339,7 +4345,7 @@ void QRhiVulkan::enqueueResourceUpdates(QVkCommandBuffer *cbD, QRhiResourceUpdat
                 // Multisample swapchains need nothing special since resolving
                 // happens when ending a renderpass.
             }
-            textureFormatInfo(readback.format, readback.pixelSize, nullptr, &readback.byteSize, nullptr);
+            textureFormatInfo(readback.format, readback.rect.size(), nullptr, &readback.byteSize, nullptr);
 
             // Create a host visible readback buffer.
             VkBufferCreateInfo bufferInfo = {};
@@ -4367,10 +4373,12 @@ void QRhiVulkan::enqueueResourceUpdates(QVkCommandBuffer *cbD, QRhiResourceUpdat
             copyDesc.imageSubresource.mipLevel = uint32_t(u.rb.level());
             copyDesc.imageSubresource.baseArrayLayer = is3D ? 0 : uint32_t(u.rb.layer());
             copyDesc.imageSubresource.layerCount = 1;
+            copyDesc.imageOffset.x = readback.rect.x();
+            copyDesc.imageOffset.y = readback.rect.y();
             if (is3D)
                 copyDesc.imageOffset.z = u.rb.layer();
-            copyDesc.imageExtent.width = uint32_t(readback.pixelSize.width());
-            copyDesc.imageExtent.height = uint32_t(readback.pixelSize.height());
+            copyDesc.imageExtent.width = uint32_t(readback.rect.width());
+            copyDesc.imageExtent.height = uint32_t(readback.rect.height());
             copyDesc.imageExtent.depth = 1;
 
             if (texD) {
@@ -4634,7 +4642,7 @@ void QRhiVulkan::finishActiveReadbacks(bool forced)
         const QRhiVulkan::TextureReadback &readback(activeTextureReadbacks[i]);
         if (forced || currentFrameSlot == readback.activeFrameSlot || readback.activeFrameSlot < 0) {
             readback.result->format = readback.format;
-            readback.result->pixelSize = readback.pixelSize;
+            readback.result->pixelSize = readback.rect.size();
             VmaAllocation a = toVmaAllocation(readback.stagingAlloc);
             void *p = nullptr;
             VkResult err = vmaMapMemory(toVmaAllocator(allocator), a, &p);
