@@ -1290,6 +1290,9 @@ QWindowsVistaStyle::QWindowsVistaStyle() : QWindowsVistaStyle(*new QWindowsVista
 */
 QWindowsVistaStyle::QWindowsVistaStyle(QWindowsVistaStylePrivate &dd) : QWindowsStyle(dd)
 {
+    Q_D(QWindowsVistaStyle);
+    d->assetFont = QFont("Segoe MDL2 Assets"_L1);
+    d->assetFont.setStyleStrategy(QFont::NoFontMerging);
 }
 
 /*!
@@ -4864,18 +4867,17 @@ QPixmap QWindowsVistaStyle::standardPixmap(StandardPixmap standardPixmap, const 
     }
 
     switch (standardPixmap) {
+    case SP_TitleBarMinButton:
     case SP_TitleBarMaxButton:
     case SP_TitleBarCloseButton:
-        if (qstyleoption_cast<const QStyleOptionDockWidget *>(option)) {
-            if (widget && widget->isWindow()) {
-                QWindowsThemeData theme(widget, nullptr, QWindowsVistaStylePrivate::WindowTheme, WP_SMALLCLOSEBUTTON, CBS_NORMAL);
-                if (theme.isValid()) {
-                    const QSize size = (theme.size() * QWindowsStylePrivate::nativeMetricScaleFactor(widget)).toSize();
-                    return QIcon(QWindowsStyle::standardPixmap(standardPixmap, option, widget)).pixmap(size);
-                }
-            }
+    case SP_TitleBarNormalButton: {
+        QWindowsThemeData theme(widget, nullptr, QWindowsVistaStylePrivate::WindowTheme, WP_SMALLCLOSEBUTTON, CBS_NORMAL);
+        if (theme.isValid()) {
+            const QSize size = (theme.size() * QWindowsStylePrivate::nativeMetricScaleFactor(widget)).toSize();
+            return standardIcon(standardPixmap, option, widget).pixmap(size);
         }
         break;
+    }
 
     default:
         break;
@@ -4898,109 +4900,25 @@ QIcon QWindowsVistaStyle::standardIcon(StandardPixmap standardIcon,
     auto *d = const_cast<QWindowsVistaStylePrivate*>(d_func());
 
     switch (standardIcon) {
+    case SP_TitleBarMinButton:
+        if (d->m_titleBarMinIcon.isNull())
+            d->m_titleBarMinIcon = QIcon(new WinFontIconEngine(QChar(0xE921), d->assetFont));
+        return d->m_titleBarMinIcon;
+
     case SP_TitleBarMaxButton:
-        if (qstyleoption_cast<const QStyleOptionDockWidget *>(option)) {
-            if (d->m_titleBarMaxIcon.isNull()) {
-                QWindowsThemeData themeSize(nullptr, nullptr, QWindowsVistaStylePrivate::WindowTheme,
-                                    WP_SMALLCLOSEBUTTON, CBS_NORMAL);
-                QWindowsThemeData theme(nullptr, nullptr, QWindowsVistaStylePrivate::WindowTheme,
-                                WP_MAXBUTTON, MAXBS_NORMAL);
-                if (theme.isValid()) {
-                    const QSize size = (themeSize.size() * QWindowsStylePrivate::nativeMetricScaleFactor(widget)).toSize();
-                    QPixmap pm(size);
-                    pm.fill(Qt::transparent);
-                    QPainter p(&pm);
-                    theme.painter = &p;
-                    theme.rect = QRect(QPoint(0, 0), size);
-                    d->drawBackground(theme);
-                    d->m_titleBarMaxIcon.addPixmap(pm, QIcon::Normal, QIcon::Off);    // Normal
-                    pm.fill(Qt::transparent);
-                    theme.stateId = MAXBS_PUSHED;
-                    d->drawBackground(theme);
-                    d->m_titleBarMaxIcon.addPixmap(pm, QIcon::Normal, QIcon::On);     // Pressed
-                    pm.fill(Qt::transparent);
-                    theme.stateId = MAXBS_HOT;
-                    d->drawBackground(theme);
-                    d->m_titleBarMaxIcon.addPixmap(pm, QIcon::Active, QIcon::Off);    // Hover
-                    pm.fill(Qt::transparent);
-                    theme.stateId = MAXBS_INACTIVE;
-                    d->drawBackground(theme);
-                    d->m_titleBarMaxIcon.addPixmap(pm, QIcon::Disabled, QIcon::Off);  // Disabled
-                }
-            }
-            if (widget && widget->isWindow())
-                return d->m_titleBarMaxIcon;
-        }
-        break;
+        if (d->m_titleBarMaxIcon.isNull())
+            d->m_titleBarMaxIcon = QIcon(new WinFontIconEngine(QChar(0xE922), d->assetFont));
+        return d->m_titleBarMaxIcon;
 
     case SP_TitleBarCloseButton:
-        if (qstyleoption_cast<const QStyleOptionDockWidget *>(option)) {
-            if (d->m_titleBarCloseIcon.isNull()) {
-                QWindowsThemeData theme(nullptr, nullptr, QWindowsVistaStylePrivate::WindowTheme,
-                                WP_SMALLCLOSEBUTTON, CBS_NORMAL);
-                if (theme.isValid()) {
-                    const QSize size = (theme.size() * QWindowsStylePrivate::nativeMetricScaleFactor(widget)).toSize();
-                    QPixmap pm(size);
-                    pm.fill(Qt::transparent);
-                    QPainter p(&pm);
-                    theme.painter = &p;
-                    theme.partId = WP_CLOSEBUTTON; // ####
-                    theme.rect = QRect(QPoint(0, 0), size);
-                    d->drawBackground(theme);
-                    d->m_titleBarCloseIcon.addPixmap(pm, QIcon::Normal, QIcon::Off);    // Normal
-                    pm.fill(Qt::transparent);
-                    theme.stateId = CBS_PUSHED;
-                    d->drawBackground(theme);
-                    d->m_titleBarCloseIcon.addPixmap(pm, QIcon::Normal, QIcon::On);     // Pressed
-                    pm.fill(Qt::transparent);
-                    theme.stateId = CBS_HOT;
-                    d->drawBackground(theme);
-                    d->m_titleBarCloseIcon.addPixmap(pm, QIcon::Active, QIcon::Off);    // Hover
-                    pm.fill(Qt::transparent);
-                    theme.stateId = CBS_INACTIVE;
-                    d->drawBackground(theme);
-                    d->m_titleBarCloseIcon.addPixmap(pm, QIcon::Disabled, QIcon::Off);  // Disabled
-                }
-            }
-            if (widget && widget->isWindow())
-                return d->m_titleBarCloseIcon;
-        }
-        break;
+        if (d->m_titleBarCloseIcon.isNull())
+            d->m_titleBarCloseIcon = QIcon(new WinFontIconEngine(QChar(0xE8BB), d->assetFont));
+        return d->m_titleBarCloseIcon;
 
     case SP_TitleBarNormalButton:
-        if (qstyleoption_cast<const QStyleOptionDockWidget *>(option)) {
-            if (d->m_titleBarNormalIcon.isNull()) {
-                QWindowsThemeData themeSize(nullptr, nullptr, QWindowsVistaStylePrivate::WindowTheme,
-                                    WP_SMALLCLOSEBUTTON, CBS_NORMAL);
-                QWindowsThemeData theme(nullptr, nullptr, QWindowsVistaStylePrivate::WindowTheme,
-                                WP_RESTOREBUTTON, RBS_NORMAL);
-                if (theme.isValid()) {
-                    const QSize size = (themeSize.size() * QWindowsStylePrivate::nativeMetricScaleFactor(widget)).toSize();
-                    QPixmap pm(size);
-                    pm.fill(Qt::transparent);
-                    QPainter p(&pm);
-                    theme.painter = &p;
-                    theme.rect = QRect(QPoint(0, 0), size);
-                    d->drawBackground(theme);
-                    d->m_titleBarNormalIcon.addPixmap(pm, QIcon::Normal, QIcon::Off);    // Normal
-                    pm.fill(Qt::transparent);
-                    theme.stateId = RBS_PUSHED;
-                    d->drawBackground(theme);
-                    d->m_titleBarNormalIcon.addPixmap(pm, QIcon::Normal, QIcon::On);     // Pressed
-                    pm.fill(Qt::transparent);
-                    theme.stateId = RBS_HOT;
-                    d->drawBackground(theme);
-                    d->m_titleBarNormalIcon.addPixmap(pm, QIcon::Active, QIcon::Off);    // Hover
-                    pm.fill(Qt::transparent);
-                    theme.stateId = RBS_INACTIVE;
-                    d->drawBackground(theme);
-                    d->m_titleBarNormalIcon.addPixmap(pm, QIcon::Disabled, QIcon::Off);  // Disabled
-                }
-            }
-            if (widget && widget->isWindow())
-                return d->m_titleBarNormalIcon;
-        }
-        break;
+        if (d->m_titleBarNormalIcon.isNull())
+            d->m_titleBarNormalIcon = QIcon(new WinFontIconEngine(QChar(0xE923), d->assetFont));
+        return d->m_titleBarNormalIcon;
 
     case SP_CommandLink: {
         QWindowsThemeData theme(nullptr, nullptr, QWindowsVistaStylePrivate::ButtonTheme,
@@ -5040,6 +4958,63 @@ QIcon QWindowsVistaStyle::standardIcon(StandardPixmap standardIcon,
     }
 
     return QWindowsStyle::standardIcon(standardIcon, option, widget);
+}
+
+
+WinFontIconEngine::WinFontIconEngine(const QChar &glyph, const QFont &font)
+    : QFontIconEngine({}, font)
+    , m_font(font)
+    , m_glyph(glyph)
+{
+}
+
+QString WinFontIconEngine::key() const
+{
+    return "WinFontIconEngine"_L1;
+}
+
+QIconEngine *WinFontIconEngine::clone() const
+{
+    return new WinFontIconEngine(*this);
+}
+
+QString WinFontIconEngine::string() const
+{
+    return m_glyph;
+}
+
+void WinFontIconEngine::paint(QPainter *painter, const QRect &rect, QIcon::Mode mode,
+                              QIcon::State)
+{
+    // we can't use QFontIconEngine because
+    //  - the text is drawn too large
+    //  - the palette from the widget is not used
+    const QPaintDevice *paintDevice = painter->device();
+    const bool isWidget = paintDevice->devType() == QInternal::Widget;
+    const auto palette = isWidget ? static_cast<const QWidget *>(paintDevice)->palette()
+                                  : qApp->palette();
+    QColor color = Qt::black;
+    switch (mode) {
+    case QIcon::Active:
+        color = palette.color(QPalette::Active, QPalette::Text);
+        break;
+    case QIcon::Normal:
+        color = palette.color(QPalette::Active, QPalette::Text);
+        break;
+    case QIcon::Disabled:
+        color = palette.color(QPalette::Disabled, QPalette::Text);
+        break;
+    case QIcon::Selected:
+        color = palette.color(QPalette::Active, QPalette::HighlightedText);
+        break;
+    }
+    QFont renderFont(m_font);
+    renderFont.setPixelSize(rect.height() * 0.7f);
+    painter->save();
+    painter->setFont(renderFont);
+    painter->setPen(color);
+    painter->drawText(rect, Qt::AlignCenter, m_glyph);
+    painter->restore();
 }
 
 QT_END_NAMESPACE

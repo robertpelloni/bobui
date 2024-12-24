@@ -18,6 +18,7 @@
 #include <QtWidgets/private/qtwidgetsglobal_p.h>
 #include "qwindowsvistastyle_p.h"
 #include "qwindowsthemedata_p.h"
+#include <private/qfonticonengine_p.h>
 #include <private/qpaintengine_raster_p.h>
 #include <qpaintengine.h>
 #include <qwidget.h>
@@ -155,6 +156,8 @@ public:
     bool transitionsEnabled() const;
 
 protected:
+    QFont assetFont;
+    QIcon m_titleBarMinIcon;
     QIcon m_titleBarMaxIcon;
     QIcon m_titleBarCloseIcon;
     QIcon m_titleBarNormalIcon;
@@ -175,6 +178,21 @@ private:
     int bufferH = 0;
 
     static QVarLengthFlatMap<const QScreen *, HWND, 4> m_vistaTreeViewHelpers;
+};
+
+class WinFontIconEngine : public QFontIconEngine
+{
+public:
+    WinFontIconEngine(const QChar &glyph, const QFont &font);
+
+    QString key() const override;
+    QIconEngine *clone() const override;
+    QString string() const override;
+    void paint(QPainter *painter, const QRect &rect, QIcon::Mode mode, QIcon::State state) override;
+
+protected:
+    QFont m_font;
+    QChar m_glyph;
 };
 
 QT_END_NAMESPACE
