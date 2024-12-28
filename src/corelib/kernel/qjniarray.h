@@ -325,7 +325,6 @@ private:
 
 template <typename T> // need to specialize traits for it, so can't be nested
 struct QJniArrayMutableValueRef {
-    using refwrapper = T;
     T value;
     QJniArrayMutableIterator<T> back = {-1, nullptr};
 
@@ -466,11 +465,17 @@ public:
     // forward-iterable container, so explicitly remove that from the overload
     // set so that the copy constructors get used instead.
     // Used also in the deduction guide, so must be public
+    template <typename C>
+    using IsSequentialOrContiguous = std::bool_constant<
+                                        IsSequentialContainerHelper<C>::isForwardIterable
+                                || (isContiguousContainer<C> && ElementTypeHelper<C>::isPrimitive)
+                                >;
     template <typename CRef, typename C = q20::remove_cvref_t<CRef>>
-    static constexpr bool isCompatibleSourceContainer =
-        (IsSequentialContainerHelper<C>::isForwardIterable
-         || (isContiguousContainer<C> && ElementTypeHelper<C>::isPrimitive))
-        && !std::is_base_of_v<QJniArrayBase, C>;
+    static constexpr bool isCompatibleSourceContainer = std::conjunction_v<
+        std::negation<std::is_same<QString, C>>,
+        IsSequentialOrContiguous<C>,
+        std::negation<std::is_base_of<QJniArrayBase, C>>
+    >;
 
     template <typename C>
     using if_compatible_source_container = std::enable_if_t<isCompatibleSourceContainer<C>, bool>;
@@ -963,29 +968,70 @@ auto QJniArrayBase::makeObjectArray(List &&list)
 
 namespace QtJniTypes
 {
-template <typename T> struct IsJniArray: std::false_type {};
-template <typename T> struct IsJniArray<QJniArray<T>> : std::true_type {};
-template <typename T> struct Traits<QJniArray<T>> {
+template <typename T> struct Traits<QJniArray<T>>
+{
     template <IfValidFieldType<T> = true>
     static constexpr auto signature()
     {
         return CTString("[") + Traits<T>::signature();
+    }
+    static auto convertToJni(JNIEnv *, const QJniArray<T> &value)
+    {
+        return value.arrayObject();
+    }
+    static auto convertFromJni(QJniObject &&object)
+    {
+        return QJniArray<T>(std::move(object));
     }
 };
 
 template <typename T> struct Traits<QJniArrayMutableValueRef<T>> : public Traits<T> {};
 
-template <typename T> struct Traits<QList<T>> {
-    template <IfValidFieldType<T> = true>
+template<typename T> struct Traits<T, std::enable_if_t<QJniArrayBase::isCompatibleSourceContainer<T>>>
+{
+    // QByteArray::value_type is char, which maps to 'C'; we need 'B', i.e. jbyte
+    using ElementType = std::conditional_t<std::is_same_v<T, QByteArray>,
+                                           jbyte, typename T::value_type>;
+
+    template <typename U = ElementType, IfValidFieldType<U> = true>
     static constexpr auto signature()
     {
-        return CTString("[") + Traits<T>::signature();
+        return CTString("[") + Traits<ElementType>::signature();
+    }
+
+    static auto convertToJni(JNIEnv *env, const T &value)
+    {
+        using QJniArrayType = decltype(QJniArrayBase::fromContainer(value));
+        using ArrayType = decltype(std::declval<QJniArrayType>().arrayObject());
+        return static_cast<ArrayType>(env->NewLocalRef(QJniArray(value).arrayObject()));
+    }
+
+    static auto convertFromJni(QJniObject &&object)
+    {
+        // if we were to create a QJniArray from Type...
+        using QJniArrayType = decltype(QJniArrayBase::fromContainer(std::declval<T>()));
+        // then that QJniArray would have elements of type
+        using ArrayType = typename QJniArrayType::Type;
+        // construct a QJniArray from a jobject pointer of that type
+        return QJniArray<ArrayType>(object.template object<jarray>()).toContainer();
     }
 };
-template <> struct Traits<QByteArray> {
+
+template<typename T> struct Traits<T, std::enable_if_t<std::is_array_v<T>>>
+{
+    using ElementType = std::remove_extent_t<T>;
+
+    template <typename U = ElementType, IfValidFieldType<U> = true>
     static constexpr auto signature()
     {
-        return CTString("[B");
+        static_assert(!std::is_array_v<ElementType>,
+                    "Traits::signature() does not handle multi-dimensional arrays");
+        return CTString("[") + Traits<U>::signature();
+    }
+
+    static constexpr auto convertFromJni(QJniObject &&object)
+    {
+        return QJniArray<ElementType>(std::move(object));
     }
 };
 }

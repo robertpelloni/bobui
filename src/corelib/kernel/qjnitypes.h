@@ -8,6 +8,7 @@
 
 #include <QtCore/qjnitypes_impl.h>
 #include <QtCore/qjniobject.h>
+#include <QtCore/qjniarray.h>
 
 #if 0
 // This is needed for generating the QtJniTypes forward header
@@ -140,8 +141,7 @@ namespace Detail {
 template <typename Arg>
 struct JNITypeForArgImpl
 {
-    using LocalFrame = QtJniTypes::Detail::LocalFrame<void>;
-    using JNIType = decltype(std::declval<LocalFrame>().convertToJni(std::declval<Arg>()));
+    using JNIType = decltype(QtJniTypes::Traits<Arg>::convertToJni(nullptr, {}));
     static Arg fromVarArg(JNIType t) // JNIType is always POD
     {
         // Special case: if convertToJni doesn't do anything, don't do anything
@@ -150,8 +150,7 @@ struct JNITypeForArgImpl
         if constexpr (std::is_same_v<JNIType, Arg>) {
             return t;
         } else {
-            LocalFrame frame;
-            return frame.template convertFromJni<Arg>(t);
+            return QtJniTypes::Traits<Arg>::convertFromJni(t);
         }
     }
 };
