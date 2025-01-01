@@ -279,6 +279,13 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
         "$<$<AND:${not_disabled},${is_xcode15}>:LINKER:-no_warn_duplicate_libraries>")
 endif()
 
+if(CYGWIN)
+    # CYGWIN doesn't define _GNU_SOURCE by default for better support with W32API
+    target_compile_definitions(PlatformCommonInternal INTERFACE
+        "_GNU_SOURCE"
+    )
+endif()
+
 if(MSVC)
     target_compile_definitions(PlatformCommonInternal INTERFACE
         "_CRT_SECURE_NO_WARNINGS"
