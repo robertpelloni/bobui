@@ -689,6 +689,10 @@ inline bool globalUsingVfork() noexcept
     // why: without the tools to investigate why it happens, we didn't bother.
     return false;
 #endif
+#if defined(Q_OS_CYGWIN)
+    // Fails to link Qt6Core, so we avoid that..
+    return false;
+#endif
 
     // Dynamically detect whether libasan or libtsan are loaded into the
     // process' memory. We need this because the user's code may be compiled
