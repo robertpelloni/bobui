@@ -881,6 +881,7 @@ static const char *applyProcessParameters(const QProcess::UnixProcessParameters 
     // Disconnect from the controlling TTY. This probably won't fail. Must be
     // done after the session settings from above.
     if (params.flags.testFlag(QProcess::UnixProcessFlag::DisconnectControllingTerminal)) {
+#ifdef TIOCNOTTY
         if (int fd = open(_PATH_TTY, O_RDONLY | O_NOCTTY); fd >= 0) {
             // we still have a controlling TTY; give it up
             int r = ioctl(fd, TIOCNOTTY);
@@ -891,6 +892,7 @@ static const char *applyProcessParameters(const QProcess::UnixProcessParameters 
                 return "ioctl";
             }
         }
+#endif
     }
 
     // Disable core dumps near the end. This isn't expected to fail.
