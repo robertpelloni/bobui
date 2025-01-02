@@ -83,6 +83,8 @@ public:
     {
 #ifdef Q_OS_WIN
         return {};
+#elif defined(Q_OS_CYGWIN)
+        return u"cyg";
 #else
         return u"lib";
 #endif

@@ -304,7 +304,7 @@ inline void QFactoryLoaderPrivate::updateSinglePath(const QString &path)
     qCDebug(lcFactoryLoader) << "checking directory path" << path << "...";
 
     QDirListing plugins(path,
-#if defined(Q_OS_WIN)
+#if defined(Q_OS_WIN) || defined(Q_OS_CYGWIN)
                 QStringList(QStringLiteral("*.dll")),
 #elif defined(Q_OS_ANDROID)
                 QStringList("libplugins_%1_*.so"_L1.arg(suffix)),

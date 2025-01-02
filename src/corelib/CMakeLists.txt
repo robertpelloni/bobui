@@ -561,6 +561,11 @@ qt_internal_extend_target(Core CONDITION QT_FEATURE_thread AND WIN32
         synchronization
 )
 
+qt_internal_extend_target(Core CONDITION CYGWIN
+    SOURCES
+        global/qt_windows.h
+)
+
 qt_internal_extend_target(Core CONDITION WIN32
     SOURCES
         global/qoperatingsystemversion_win.cpp global/qoperatingsystemversion_win_p.h
@@ -1186,6 +1191,10 @@ qt_internal_extend_target(Core CONDITION QT_FEATURE_stringlistmodel
 qt_internal_extend_target(Core CONDITION QT_FEATURE_library
     SOURCES
         plugin/qlibrary.cpp plugin/qlibrary.h plugin/qlibrary_p.h
+)
+qt_internal_extend_target(Core CONDITION QT_FEATURE_library AND CYGWIN
+    SOURCES
+        plugin/qcoffpeparser.cpp plugin/qcoffpeparser_p.h
 )
 qt_internal_extend_target(Core CONDITION QT_FEATURE_library AND WIN32
     SOURCES
