@@ -936,8 +936,8 @@ private:
 
 #define VERIFY_NO_ERRORS(proc) do { \
         auto &&p = proc; \
-        const QByteArray stderr = p.readAllStandardError(); \
-        QVERIFY2(stderr.isEmpty(), stderr.data()); \
+        const QByteArray standardError = p.readAllStandardError(); \
+        QVERIFY2(standardError.isEmpty(), standardError.data()); \
         QCOMPARE(p.exitCode(), 0); \
     } while (false)
 
