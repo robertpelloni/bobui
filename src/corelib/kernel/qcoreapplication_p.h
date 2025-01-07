@@ -132,7 +132,6 @@ public:
     bool consoleAllocated = false;
     static void *mainInstanceHandle;    // HINSTANCE without <windows.h>
 #endif
-    void appendApplicationPathToLibraryPaths(void);
 
     Type application_type = Tty;
 

@@ -534,20 +534,6 @@ void QCoreApplicationPrivate::checkReceiverThread(QObject *receiver)
 
 #endif // QT_NO_QOBJECT
 
-void QCoreApplicationPrivate::appendApplicationPathToLibraryPaths()
-{
-#if QT_CONFIG(library)
-    QStringList *app_libpaths = &coreappdata->app_libpaths;
-    QString app_location = QCoreApplication::applicationFilePath();
-    app_location.truncate(app_location.lastIndexOf(u'/'));
-    app_location = QDir(app_location).canonicalPath();
-    if (QFile::exists(app_location) && !app_libpaths->contains(app_location))
-        app_libpaths->append(app_location);
-    else if (app_libpaths->isEmpty())
-        app_libpaths->reserve(1);   // detach from null
-#endif
-}
-
 QString qAppName()
 {
     if (!QCoreApplicationPrivate::checkInstance("qAppName"))
@@ -3025,7 +3011,13 @@ QStringList QCoreApplication::libraryPathsLocked()
 
         // If QCoreApplication is not yet instantiated,
         // make sure we add the application path when we construct the QCoreApplication
-        if (self) self->d_func()->appendApplicationPathToLibraryPaths();
+        if (qApp) {
+            QString app_location = QCoreApplication::applicationFilePath();
+            app_location.truncate(app_location.lastIndexOf(u'/'));
+            app_location = QDir(app_location).canonicalPath();
+            if (QFile::exists(app_location) && !app_libpaths->contains(app_location))
+                app_libpaths->append(app_location);
+        }
         if (app_libpaths->isEmpty())
             app_libpaths->reserve(1);   // detach from null
         Q_ASSERT(d->libPathsInitialized());
