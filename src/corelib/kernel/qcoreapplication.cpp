@@ -2921,6 +2921,8 @@ void QCoreApplication::requestPermission(const QPermission &requestedPermission,
 #endif // QT_CONFIG(permissions)
 
 #if QT_CONFIG(library)
+static QStringList libraryPathsLocked();
+
 /*!
     Returns a list of paths that the application will search when
     dynamically loading libraries.
@@ -2959,7 +2961,7 @@ QStringList QCoreApplication::libraryPaths()
 /*!
     \internal
 */
-QStringList QCoreApplication::libraryPathsLocked()
+static QStringList libraryPathsLocked()
 {
     QCoreApplicationData *d = coreappdata;
     if (d->libPathsManuallySet())

@@ -229,9 +229,6 @@ private:
     static bool notifyInternal2(QObject *receiver, QEvent *);
     static bool forwardEvent(QObject *receiver, QEvent *event, QEvent *originatingEvent = nullptr);
 #endif
-#if QT_CONFIG(library)
-    static QStringList libraryPathsLocked();
-#endif
 
 #if QT_VERSION >= QT_VERSION_CHECK(7, 0, 0)
     static QBasicAtomicPointer<QCoreApplication> self;
