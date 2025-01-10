@@ -18,7 +18,7 @@
 
 #include "QtCore/qlibrary.h"
 
-#include "QtCore/private/qfactoryloader_p.h"
+#include "QtCore/private/qplugin_p.h"
 #include "QtCore/qloggingcategory.h"
 #include "QtCore/qmutex.h"
 #include "QtCore/qplugin.h"
