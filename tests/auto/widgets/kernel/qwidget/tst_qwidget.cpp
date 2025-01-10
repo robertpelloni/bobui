@@ -292,6 +292,7 @@ private slots:
     void setLocale();
     void propagateLocale();
     void deleteStyle();
+    void dontCrashOnSetStyle();
     void multipleToplevelFocusCheck();
     void setFocus();
 #ifndef QT_NO_CURSOR
@@ -6793,6 +6794,37 @@ void tst_QWidget::deleteStyle()
     widget.show();
     delete widget.style();
     QCoreApplication::processEvents();
+}
+
+class TestStyle : public QCommonStyle
+{
+    void polish(QWidget *w) override
+    {
+        w->setWindowFlag(Qt::NoDropShadowWindowHint, true);
+    }
+    void unpolish(QWidget *w) override
+    {
+        w->setWindowFlag(Qt::NoDropShadowWindowHint, false);
+    }
+};
+
+void tst_QWidget::dontCrashOnSetStyle()
+{
+    const auto oldStyleName = qApp->style()->name();
+    const auto resetStyleHelper = qScopeGuard([&] {
+        qApp->setStyleSheet({});
+        qApp->setStyle(QStyleFactory::create(oldStyleName));
+    });
+    {
+        qApp->setStyle(new TestStyle);
+        qApp->setStyleSheet("blub");
+        QComboBox w;
+        w.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&w));
+        // this created an infinite loop / stack overflow inside setStyle_helper()
+        // directly call polish instead waiting for the polish event
+        qApp->style()->polish(&w);
+    }
 }
 
 class TopLevelFocusCheck: public QWidget
