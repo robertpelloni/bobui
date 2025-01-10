@@ -261,6 +261,7 @@ public:
     ~QFactoryLoaderPrivate();
     QDuplicateTracker<QString> loadedPaths;
     std::vector<QLibraryPrivate::UniquePtr> libraries;
+    mutable QList<bool> loadedLibraries;
     std::map<QString, QLibraryPrivate*> keyMap;
     QString suffix;
     QString extraSearchPath;
@@ -391,6 +392,8 @@ inline void QFactoryLoaderPrivate::updateSinglePath(const QString &path)
             libraries.push_back(std::move(library));
         }
     };
+
+    loadedLibraries.resize(libraries.size());
 }
 
 void QFactoryLoader::update()
@@ -419,10 +422,22 @@ void QFactoryLoader::update()
 
 QFactoryLoader::~QFactoryLoader()
 {
+    Q_D(QFactoryLoader);
+
     if (!qt_factoryloader_global.isDestroyed()) {
         QMutexLocker locker(&qt_factoryloader_global->mutex);
         qt_factoryloader_global->loaders.removeOne(this);
     }
+
+#if QT_CONFIG(library)
+    for (qsizetype i = 0; i < d->loadedLibraries.size(); ++i) {
+        if (d->loadedLibraries.at(i)) {
+            auto &plugin = d->libraries.at(i);
+            delete plugin->inst.data();
+            plugin->unload();
+        }
+    }
+#endif
 }
 
 #if defined(Q_OS_UNIX) && !defined (Q_OS_DARWIN)
@@ -489,6 +504,13 @@ void QFactoryLoader::setExtraSearchPath(const QString &path)
         d->updateSinglePath(d->extraSearchPath);
     } else {
         // must re-scan everything
+        for (qsizetype i = 0; i < d->loadedLibraries.size(); ++i) {
+            if (d->loadedLibraries.at(i)) {
+                auto &plugin = d->libraries.at(i);
+                delete plugin->inst.data();
+            }
+        }
+        d->loadedLibraries.fill(false);
         d->loadedPaths.clear();
         d->libraries.clear();
         d->keyMap.clear();
@@ -573,6 +595,7 @@ inline QObject *QFactoryLoader::instanceHelper_locked(int index) const
 #if QT_CONFIG(library)
     if (size_t(index) < d->libraries.size()) {
         QLibraryPrivate *library = d->libraries[index].get();
+        d->loadedLibraries[index] = true;
         return library->pluginInstance();
     }
     // we know d->libraries.size() <= index <= numeric_limits<decltype(index)>::max() → no overflow
