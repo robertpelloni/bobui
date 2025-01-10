@@ -20,19 +20,22 @@
 #ifndef QT_NO_QOBJECT
 
 #include "QtCore/private/qplugin_p.h"
-#include "QtCore/qcbormap.h"
-#include "QtCore/qcborvalue.h"
+#include "QtCore/private/qduplicatetracker_p.h"
 #include "QtCore/qcoreapplication.h"
 #include "QtCore/qmap.h"
+#include "QtCore/qmutex.h"
 #include "QtCore/qobject.h"
 #include "QtCore/qplugin.h"
+
+#if QT_CONFIG(library)
+#  include "QtCore/private/qlibrary_p.h"
+#endif
 
 QT_BEGIN_NAMESPACE
 
 class QJsonObject;
 class QLibraryPrivate;
 
-class QFactoryLoaderPrivate;
 class Q_CORE_EXPORT QFactoryLoader
 {
     Q_DECLARE_TR_FUNCTIONS(QFactoryLoader);
@@ -64,7 +67,25 @@ public:
     QObject *instance(int index) const;
 
 private:
-    std::unique_ptr<QFactoryLoaderPrivate> d;
+    struct Private {
+        QByteArray iid;
+        mutable QMutex mutex;
+        mutable QList<QtPluginInstanceFunction> usedStaticInstances;
+#if QT_CONFIG(library)
+        QDuplicateTracker<QString> loadedPaths;
+        std::vector<QLibraryPrivate::UniquePtr> libraries;
+        mutable QList<bool> loadedLibraries;
+        std::map<QString, QLibraryPrivate*> keyMap;
+        QString suffix;
+        QString extraSearchPath;
+        Qt::CaseSensitivity cs;
+        void updateSinglePath(const QString &pluginDir);
+#endif
+
+        // for compat when we d was a pointer
+        auto operator->() { return this; }
+        auto operator->() const { return this; }
+    } d;
 
     inline QObject *instanceHelper_locked(int index) const;
 };

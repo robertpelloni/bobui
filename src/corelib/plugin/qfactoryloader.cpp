@@ -5,7 +5,6 @@
 #include "qfactoryloader_p.h"
 
 #include "private/qcoreapplication_p.h"
-#include "private/qduplicatetracker_p.h"
 #include "private/qloggingregistry_p.h"
 #include "qcborarray.h"
 #include "qcbormap.h"
@@ -16,19 +15,10 @@
 #include "qjsonarray.h"
 #include "qjsondocument.h"
 #include "qjsonobject.h"
-#include "qmutex.h"
 #include "qplugin.h"
-#include "qplugin_p.h"
 #include "qpluginloader.h"
 
-#if QT_CONFIG(library)
-#  include "qlibrary_p.h"
-#endif
-
 #include <qtcore_tracepoints_p.h>
-
-#include <map>
-#include <vector>
 
 QT_BEGIN_NAMESPACE
 
@@ -247,28 +237,6 @@ QJsonObject QPluginParsedMetaData::toJson() const
     return o;
 }
 
-class QFactoryLoaderPrivate
-{
-    Q_DISABLE_COPY_MOVE(QFactoryLoaderPrivate)
-public:
-    QFactoryLoaderPrivate() { }
-    QByteArray iid;
-    mutable QMutex mutex;
-    mutable QList<QtPluginInstanceFunction> usedStaticInstances;
-#if QT_CONFIG(library)
-    ~QFactoryLoaderPrivate();
-    QDuplicateTracker<QString> loadedPaths;
-    std::vector<QLibraryPrivate::UniquePtr> libraries;
-    mutable QList<bool> loadedLibraries;
-    std::map<QString, QLibraryPrivate*> keyMap;
-    QString suffix;
-    QString extraSearchPath;
-    Qt::CaseSensitivity cs;
-
-    void updateSinglePath(const QString &pluginDir);
-#endif
-};
-
 #if QT_CONFIG(library)
 
 Q_STATIC_LOGGING_CATEGORY_WITH_ENV_OVERRIDE(lcFactoryLoader, "QT_DEBUG_PLUGINS",
@@ -286,10 +254,7 @@ struct QFactoryLoaderGlobals
 
 Q_GLOBAL_STATIC(QFactoryLoaderGlobals, qt_factoryloader_global)
 
-QFactoryLoaderPrivate::~QFactoryLoaderPrivate()
-    = default;
-
-inline void QFactoryLoaderPrivate::updateSinglePath(const QString &path)
+inline void QFactoryLoader::Private::updateSinglePath(const QString &path)
 {
     struct LibraryReleaser {
         void operator()(QLibraryPrivate *library)
@@ -462,7 +427,6 @@ void QFactoryLoader::refreshAll()
 QFactoryLoader::QFactoryLoader(const char *iid,
                                const QString &suffix,
                                Qt::CaseSensitivity cs)
-    : d(new QFactoryLoaderPrivate)
 {
     Q_ASSERT_X(suffix.startsWith(u'/'), "QFactoryLoader",
                "For historical reasons, the suffix must start with '/' (and it can't be empty)");
