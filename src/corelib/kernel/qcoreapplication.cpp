@@ -200,8 +200,6 @@ QString QCoreApplicationPrivate::appVersion() const
 }
 #endif // !Q_OS_WIN || QT_BOOTSTRAPPED
 
-Q_CONSTINIT QString *QCoreApplicationPrivate::cachedApplicationFilePath = nullptr;
-
 bool QCoreApplicationPrivate::checkInstance(const char *function)
 {
     bool b = (qApp != nullptr);
@@ -467,7 +465,6 @@ QCoreApplicationPrivate::~QCoreApplicationPrivate()
 #if defined(Q_OS_WIN) && !defined(QT_BOOTSTRAPPED)
     cleanupDebuggingConsole();
 #endif
-    QCoreApplicationPrivate::clearApplicationFilePath();
 }
 
 #ifndef QT_NO_QOBJECT
@@ -2340,20 +2337,6 @@ QString QCoreApplication::translate(const char *context, const char *sourceText,
 #endif //QT_NO_TRANSLATION
 
 #ifndef QT_BOOTSTRAPPED
-// Makes it possible to point QCoreApplication to a custom location to ensure
-// the directory is added to the patch, and qt.conf and deployed plugins are
-// found from there. This is for use cases in which QGuiApplication is
-// instantiated by a library and not by an application executable, for example,
-// Active X servers.
-
-void QCoreApplicationPrivate::setApplicationFilePath(const QString &path)
-{
-    if (QCoreApplicationPrivate::cachedApplicationFilePath)
-        *QCoreApplicationPrivate::cachedApplicationFilePath = path;
-    else
-        QCoreApplicationPrivate::cachedApplicationFilePath = new QString(path);
-}
-
 /*!
     Returns the directory that contains the application executable.
 
@@ -2443,13 +2426,13 @@ QString QCoreApplication::applicationFilePath()
         static QByteArray procName = QByteArray(d->argv[0]);
         if (procName != QByteArrayView(d->argv[0])) {
             // clear the cache if the procname changes, so we reprocess it.
-            QCoreApplicationPrivate::clearApplicationFilePath();
+            d->cachedApplicationFilePath = QString();
             procName.assign(d->argv[0]);
         }
     }
 
-    if (QCoreApplicationPrivate::cachedApplicationFilePath)
-        return *QCoreApplicationPrivate::cachedApplicationFilePath;
+    if (!d->cachedApplicationFilePath.isNull())
+        return d->cachedApplicationFilePath;
 
     QString absPath = qAppFileName();
     if (absPath.isEmpty() && !arguments().isEmpty()) {
@@ -2478,8 +2461,7 @@ QString QCoreApplication::applicationFilePath()
 
     absPath = QFileInfo(absPath).canonicalFilePath();
     if (!absPath.isEmpty()) {
-        QCoreApplicationPrivate::setApplicationFilePath(absPath);
-        return *QCoreApplicationPrivate::cachedApplicationFilePath;
+        return d->cachedApplicationFilePath = absPath;
     }
     return QString();
 }

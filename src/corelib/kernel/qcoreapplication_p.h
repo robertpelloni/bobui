@@ -135,11 +135,6 @@ public:
 
     Type application_type = Tty;
 
-    QString cachedApplicationDirPath;
-    static QString *cachedApplicationFilePath;
-    static void setApplicationFilePath(const QString &path);
-    static inline void clearApplicationFilePath() { delete cachedApplicationFilePath; cachedApplicationFilePath = nullptr; }
-
 #ifndef QT_NO_QOBJECT
     void execCleanup();
 
@@ -162,6 +157,8 @@ public:
     static inline bool testAttribute(uint flag) { return attribs & (1 << flag); }
 
     void processCommandLineArguments();
+    QString cachedApplicationDirPath;
+    QString cachedApplicationFilePath;
     QString qmljs_debug_arguments; // a string containing arguments for js/qml debugging.
     inline QString qmljsDebugArgumentsString() const { return qmljs_debug_arguments; }
 
