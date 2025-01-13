@@ -38,6 +38,7 @@
 #  include "qjsonobject.h"
 #  include "qjsonvalue.h"
 #  include "qline.h"
+#  include "qloggingcategory.h"
 #  include "qmetaobject.h"
 #  include "qobject.h"
 #  include "qpoint.h"
@@ -57,6 +58,10 @@
 #include <cstring>
 
 QT_BEGIN_NAMESPACE
+
+#ifndef QT_BOOTSTRAPPED
+Q_STATIC_LOGGING_CATEGORY(lcMetatypeDeprecated, "qt.core.qmetatype.deprecated");
+#endif
 
 #define NS(x) QT_PREPEND_NAMESPACE(x)
 
@@ -3265,6 +3270,13 @@ QMetaType::QMetaType(int typeId) : QMetaType(interfaceForType(typeId)) {}
 */
 
 namespace QtPrivate {
+#if !defined(QT_BOOTSTRAPPED)
+void QMetaTypeCopyTraits::warnAboutDeprecatedCopy(const char *name)
+{
+    qCWarning(lcMetatypeDeprecated, "QMetaType: copy construction of type '%s' is deprecated", name);
+}
+#endif
+
 #if !defined(QT_BOOTSTRAPPED) && !defined(Q_CC_MSVC) && !defined(Q_OS_INTEGRITY)
 
 // Explicit instantiation definition

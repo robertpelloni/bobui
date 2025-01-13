@@ -28,7 +28,7 @@
 #include <map>
 #include <functional>
 #include <optional>
-#include <QtCore/q20type_traits.h>
+#include <QtCore/qxptype_traits.h>
 
 #ifdef Bool
 #error qmetatype.h must be included before any header file that defines Bool
@@ -2408,6 +2408,20 @@ struct QDataStreamOperatorForType <T, true>
 #  pragma GCC visibility push(hidden)
 #endif
 
+// ### Qt 7: consider removing this infrastructure if nothing uses it
+// (see also getCopyCtr())
+namespace QMetaTypeCopyTraits
+{
+    // Hack to suppress deprecation warnings from types
+    // with deprecated copy operations, cf. QTBUG-132752
+    template <typename T>
+    using HasDeprecatedCopyConstructorTest = typename T::_q_hasDeprecatedCopyConstructor;
+
+#if !defined(QT_BOOTSTRAPPED)
+    Q_CORE_EXPORT void warnAboutDeprecatedCopy(const char *name);
+#endif
+} // namespace QMetaTypeCopyTraits
+
 template<typename S>
 class QMetaTypeForType
 {
@@ -2465,7 +2479,14 @@ public:
     {
         if constexpr (std::is_copy_constructible_v<S> && !std::is_trivially_copy_constructible_v<S>) {
             return [](const QMetaTypeInterface *, void *addr, const void *other) {
-                new (addr) S(*reinterpret_cast<const S *>(other));
+                if constexpr (qxp::is_detected_v<QMetaTypeCopyTraits::HasDeprecatedCopyConstructorTest, S>) {
+#if !defined(QT_BOOTSTRAPPED)
+                    QMetaTypeCopyTraits::warnAboutDeprecatedCopy(getName());
+#endif
+                    QT_IGNORE_DEPRECATIONS(new (addr) S(*reinterpret_cast<const S *>(other));)
+                } else {
+                    new (addr) S(*reinterpret_cast<const S *>(other));
+                }
             };
         } else {
             return nullptr;
