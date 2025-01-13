@@ -287,12 +287,16 @@ void QColorDialogStaticData::writeSettings() const
 
 Q_GLOBAL_STATIC(QColorDialogStaticData, qColorDialogStaticData)
 
-class QColorDialogOptionsPrivate : public QSharedData
+class QColorDialogOptionsPrivate
 {
 public:
     QColorDialogOptionsPrivate() = default;
     // Write out settings around destruction of dialogs
     ~QColorDialogOptionsPrivate() { qColorDialogStaticData()->writeSettings(); }
+    QColorDialogOptionsPrivate(const QColorDialogOptionsPrivate &) = default;
+    QColorDialogOptionsPrivate(QColorDialogOptionsPrivate &&) = default;
+    QColorDialogOptionsPrivate &operator=(const QColorDialogOptionsPrivate &) = delete;
+    QColorDialogOptionsPrivate &operator=(QColorDialogOptionsPrivate &&) = delete;
 
     QColorDialogOptions::ColorDialogOptions options;
     QString windowTitle;
