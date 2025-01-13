@@ -881,6 +881,11 @@ function(qt_internal_generate_user_facing_tools_info)
     qt_path_join(tool_link_base_dir "${CMAKE_INSTALL_PREFIX}" "${INSTALL_PUBLICBINDIR}")
     get_property(user_facing_tool_targets GLOBAL PROPERTY QT_USER_FACING_TOOL_TARGETS)
     set(lines "")
+    set(cmake_install_script "${PROJECT_BINARY_DIR}/install_user_facing_tool_links.cmake")
+    set(cmake_install_script_content
+"execute_process(COMMAND \"\${CMAKE_COMMAND}\" -E make_directory
+    \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${INSTALL_PUBLICBINDIR}\")
+")
     foreach(target ${user_facing_tool_targets})
         get_target_property(filename ${target} OUTPUT_NAME)
         if(NOT filename)
@@ -897,9 +902,17 @@ function(qt_internal_generate_user_facing_tools_info)
         qt_path_join(tool_link_path "${INSTALL_PUBLICBINDIR}" "${linkname}${PROJECT_VERSION_MAJOR}")
         _qt_internal_relative_path(tool_target_path BASE_DIRECTORY ${tool_link_base_dir})
         list(APPEND lines "${tool_target_path} ${tool_link_path}")
+        string(APPEND cmake_install_script_content
+"execute_process(COMMAND \"\${CMAKE_COMMAND}\" -E create_symlink
+    \"${tool_target_path}\" \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${tool_link_path}\")
+")
     endforeach()
     string(REPLACE ";" "\n" content "${lines}")
     string(APPEND content "\n")
     set(out_file "${PROJECT_BINARY_DIR}/user_facing_tool_links.txt")
     file(WRITE "${out_file}" "${content}")
+    qt_configure_file(OUTPUT "${cmake_install_script}"
+        CONTENT "${cmake_install_script_content}"
+    )
+    install(SCRIPT ${cmake_install_script})
 endfunction()
