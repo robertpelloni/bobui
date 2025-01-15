@@ -149,30 +149,54 @@ static int checked_var_value(const char *varname)
     return (ok && value >= 0) ? value : 1;
 }
 
-static bool is_fatal_count_down(QAtomicInt &n)
+static bool isFatalCountDown(const char *varname, QBasicAtomicInt &n)
 {
-    // it's fatal if the current value is exactly 1,
-    // otherwise decrement if it's non-zero
+    static const int Uninitialized = -1;
+    static const int NeverFatal = 0;
+    static const int ImmediatelyFatal = 1;
 
     int v = n.loadRelaxed();
-    while (v > 1 && !n.testAndSetRelaxed(v, v - 1, v))
-        qYieldCpu();
-    return v == 1; // we exited the loop, so either v == 0 or CAS succeeded to set n from v to v-1
-}
-
-static bool isFatal(QtMsgType msgType)
-{
-    if (msgType == QtFatalMsg)
-        return true;
-
-    if (msgType == QtCriticalMsg) {
-        static QAtomicInt fatalCriticals = checked_var_value("QT_FATAL_CRITICALS");
-        return is_fatal_count_down(fatalCriticals);
+    if (v == Uninitialized) {
+        // first, initialize from the environment
+        const int env = checked_var_value(varname);
+        if (env == NeverFatal) {
+            // not fatal, now or in the future, so use a fast path
+            n.storeRelaxed(NeverFatal);
+            return false;
+        } else if (env == ImmediatelyFatal) {
+            return true;
+        } else if (n.testAndSetRelaxed(Uninitialized, env - 1, v)) {
+            return false;       // not yet fatal
+        } else {
+            // some other thread initialized before we did
+        }
     }
 
-    if (msgType == QtWarningMsg || msgType == QtCriticalMsg) {
-        static QAtomicInt fatalWarnings = checked_var_value("QT_FATAL_WARNINGS");
-        return is_fatal_count_down(fatalWarnings);
+    while (v > ImmediatelyFatal && !n.testAndSetRelaxed(v, v - 1, v))
+        qYieldCpu();
+
+    // We exited the loop, so either v already was ImmediatelyFatal or we
+    // succeeded to set n from v to v-1.
+    return v == ImmediatelyFatal;
+}
+
+Q_CONSTINIT static QBasicAtomicInt fatalCriticalsCount = { -1 };
+Q_CONSTINIT static QBasicAtomicInt fatalWarningsCount = { -1 };
+static bool isFatal(QtMsgType msgType)
+{
+    switch (msgType){
+    case QtFatalMsg:
+        return true;    // always fatal
+
+    case QtCriticalMsg:
+        return isFatalCountDown("QT_FATAL_CRITICALS", fatalCriticalsCount);
+
+    case QtWarningMsg:
+        return isFatalCountDown("QT_FATAL_WARNINGS", fatalWarningsCount);
+
+    case QtDebugMsg:
+    case QtInfoMsg:
+        break;  // never fatal
     }
 
     return false;
