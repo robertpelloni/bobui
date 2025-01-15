@@ -127,10 +127,7 @@ Q_TRACE_POINT(qtcore, qt_message_print, int type, const char *category, const ch
 */
 
 template <typename String>
-#if !defined(Q_CC_MSVC_ONLY)
-Q_NORETURN
-#endif
-static void qt_message_fatal(QtMsgType, const QMessageLogContext &context, String &&message);
+static void qt_maybe_message_fatal(QtMsgType, const QMessageLogContext &context, String &&message);
 static void qt_message_print(QtMsgType, const QMessageLogContext &context, const QString &message);
 static void preformattedMessageHandler(QtMsgType type, const QMessageLogContext &context,
                                        const QString &formattedMessage);
@@ -337,9 +334,7 @@ static void qt_message(QtMsgType msgType, const QMessageLogContext &context, con
 {
     QString buf = QString::vasprintf(msg, ap);
     qt_message_print(msgType, context, buf);
-
-    if (isFatal(msgType))
-        qt_message_fatal(msgType, context, buf);
+    qt_maybe_message_fatal(msgType, context, buf);
 }
 
 /*!
@@ -2031,9 +2026,11 @@ static void qt_message_print(QtMsgType msgType, const QMessageLogContext &contex
     }
 }
 
-template <typename String>
-static void qt_message_fatal(QtMsgType, const QMessageLogContext &context, String &&message)
+template <typename String> static void
+qt_maybe_message_fatal(QtMsgType msgType, const QMessageLogContext &context, String &&message)
 {
+    if (!isFatal(msgType))
+        return;
 #if defined(Q_CC_MSVC_ONLY) && defined(QT_DEBUG) && defined(_DEBUG) && defined(_CRT_ERROR)
     wchar_t contextFileL[256];
     // we probably should let the compiler do this for us, by declaring QMessageLogContext::file to
@@ -2069,8 +2066,7 @@ void qt_message_output(QtMsgType msgType, const QMessageLogContext &context, con
 {
     QInternalMessageLogContext ctx(context);
     qt_message_print(msgType, ctx, message);
-    if (isFatal(msgType))
-        qt_message_fatal(msgType, ctx, message);
+    qt_maybe_message_fatal(msgType, ctx, message);
 }
 
 void qErrnoWarning(const char *msg, ...)
