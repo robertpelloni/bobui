@@ -378,24 +378,21 @@ inline ulong getTimeStamp(UIEvent *event)
                     (localViewPosition - localViewPositionI);
             qreal pressure = cTouch.force / cTouch.maximumPossibleForce;
             // azimuth unit vector: +x to the right, +y going downwards
-            CGVector azimuth = [cTouch azimuthUnitVectorInView: self];
-            // azimuthAngle given in radians, zero when the stylus points towards +x axis; converted to degrees with 0 pointing straight up
-            qreal azimuthAngle = qRadiansToDegrees([cTouch azimuthAngleInView: self]) + 90;
+            CGVector azimuth = [cTouch azimuthUnitVectorInView:self];
             // altitudeAngle given in radians, pi / 2 is with the stylus perpendicular to the iPad, smaller values mean more tilted, but never negative.
             // Convert to degrees with zero being perpendicular.
             qreal altitudeAngle = 90 - qRadiansToDegrees(cTouch.altitudeAngle);
+            qreal xTilt = qBound(-60.0, altitudeAngle * azimuth.dx, 60.0);
+            qreal yTilt = qBound(-60.0, altitudeAngle * azimuth.dy, 60.0);
             qCDebug(lcQpaTablet) << i << ":" << timeStamp << localViewPosition << pressure << state << "azimuth" << azimuth.dx << azimuth.dy
-                     << "angle" << azimuthAngle << "altitude" << cTouch.altitudeAngle
-                     << "xTilt" << qBound(-60.0, altitudeAngle * azimuth.dx, 60.0) << "yTilt" << qBound(-60.0, altitudeAngle * azimuth.dy, 60.0);
+                    << "altitude" << cTouch.altitudeAngle << "xTilt" << xTilt << "yTilt" << yTilt;
             QWindowSystemInterface::handleTabletEvent(self.platformWindow->window(), timeStamp,
                     // device, local, global
                     iosIntegration->pencilDevice(), localViewPosition, globalScreenPosition,
                     // buttons
                     state == QEventPoint::State::Released ? Qt::NoButton : Qt::LeftButton,
-                    // pressure, xTilt, yTilt
-                    pressure, qBound(-60.0, altitudeAngle * azimuth.dx, 60.0), qBound(-60.0, altitudeAngle * azimuth.dy, 60.0),
-                    // tangentialPressure, rotation, z, modifiers
-                    0, 0, 0, Qt::NoModifier);
+                    // pressure, xTilt, yTilt, tangentialPressure, rotation, z, modifiers
+                    pressure, xTilt, yTilt, 0, 0, 0, Qt::NoModifier);
             ++i;
         }
     }
