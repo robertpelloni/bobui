@@ -14,6 +14,7 @@
 
 #include "qcoreapplication.h"
 
+#include "private/qcoreapplication_p.h"
 #include "private/qfilesystementry_p.h"
 #include "archdetect.cpp"
 #include "qconfig.cpp"
@@ -389,7 +390,9 @@ static QString getRelocatablePrefix(QLibraryInfoPrivate::UsageMode usageMode)
     DWORD pathSize = GetModuleFileName(hModule, buffer, kBufferSize);
     const QString qtCoreFilePath = QString::fromWCharArray(buffer, int(pathSize));
     const QString qtCoreDirPath = QFileInfo(qtCoreFilePath).absolutePath();
-    pathSize = GetModuleFileName(NULL, buffer, kBufferSize);
+
+    hModule = reinterpret_cast<HMODULE>(QCoreApplicationPrivate::mainInstanceHandle);
+    pathSize = GetModuleFileName(hModule, buffer, kBufferSize);
     const QString exeDirPath = QFileInfo(QString::fromWCharArray(buffer, int(pathSize))).absolutePath();
     if (QFileInfo(exeDirPath) == QFileInfo(qtCoreDirPath)) {
         // QtCore DLL is next to the executable. This is either a windeployqt'ed executable or an
