@@ -97,10 +97,10 @@ QT_WARNING_DISABLE_INTEL(103)
 #include <intrin.h>
 #endif
 
-#define QT_COMPILER_SUPPORTS(x)     (QT_COMPILER_SUPPORTS_ ## x - 0)
+#define QT_COMPILER_SUPPORTS(x)     (defined QT_COMPILER_SUPPORTS_##x && QT_COMPILER_SUPPORTS_##x)
 
 #if defined(Q_PROCESSOR_ARM_64)
-#  define QT_COMPILER_SUPPORTS_HERE(x)    ((__ARM_FEATURE_ ## x) || (__ ## x ## __) || QT_COMPILER_SUPPORTS(x))
+#  define QT_COMPILER_SUPPORTS_HERE(x)    ((defined __ARM_FEATURE_##x && __ARM_FEATURE_##x) || (defined __##x##__ && __##x##__) || QT_COMPILER_SUPPORTS(x))
 #  if defined(Q_CC_GNU) || defined(Q_CC_CLANG)
      /* GCC requires attributes for a function */
 #    define QT_FUNCTION_TARGET(x)  __attribute__((__target__(QT_FUNCTION_TARGET_STRING_ ## x)))
@@ -109,10 +109,10 @@ QT_WARNING_DISABLE_INTEL(103)
 #  endif
 #elif defined(Q_PROCESSOR_ARM_32)
    /* We do not support for runtime CPU feature switching on ARM32 */
-#  define QT_COMPILER_SUPPORTS_HERE(x)    ((__ARM_FEATURE_ ## x) || (__ ## x ## __))
+#  define QT_COMPILER_SUPPORTS_HERE(x)    ((defined __ARM_FEATURE_##x && __ARM_FEATURE_##x) || (defined __##x##__ && __##x##__))
 #  define QT_FUNCTION_TARGET(x)
 #elif defined(Q_PROCESSOR_MIPS)
-#  define QT_COMPILER_SUPPORTS_HERE(x)    (__ ## x ## __)
+#  define QT_COMPILER_SUPPORTS_HERE(x)    (defined __##x##__ && __##x##__)
 #  define QT_FUNCTION_TARGET(x)
 #  if !defined(__MIPS_DSP__) && defined(__mips_dsp) && defined(Q_PROCESSOR_MIPS_32)
 #    define __MIPS_DSP__
@@ -125,9 +125,9 @@ QT_WARNING_DISABLE_INTEL(103)
 #  define QT_FUNCTION_TARGET(x)
 #elif defined(Q_PROCESSOR_X86)
 #  if defined(Q_CC_CLANG) && defined(Q_CC_MSVC) && (Q_CC_CLANG < 1900)
-#    define QT_COMPILER_SUPPORTS_HERE(x)    (__ ## x ## __)
+#    define QT_COMPILER_SUPPORTS_HERE(x)    (defined __##x##__ && __##x##__)
 #  else
-#    define QT_COMPILER_SUPPORTS_HERE(x)    ((__ ## x ## __) || QT_COMPILER_SUPPORTS(x))
+#    define QT_COMPILER_SUPPORTS_HERE(x)    ((defined __##x##__ && __##x##__) || QT_COMPILER_SUPPORTS(x))
 #  endif
 #  if defined(Q_CC_GNU) || defined(Q_CC_CLANG)
      /* GCC requires attributes for a function */
@@ -136,7 +136,7 @@ QT_WARNING_DISABLE_INTEL(103)
 #    define QT_FUNCTION_TARGET(x)
 #  endif
 #else
-#  define QT_COMPILER_SUPPORTS_HERE(x)    (__ ## x ## __)
+#  define QT_COMPILER_SUPPORTS_HERE(x)    (defined __##x##__ && __##x##__)
 #  define QT_FUNCTION_TARGET(x)
 #endif
 
