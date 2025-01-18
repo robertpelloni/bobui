@@ -493,7 +493,8 @@ static bool isProxyError(QAbstractSocket::SocketError error)
 
     Constructs a QAbstractSocketPrivate. Initializes all members.
 */
-QAbstractSocketPrivate::QAbstractSocketPrivate()
+QAbstractSocketPrivate::QAbstractSocketPrivate(decltype(QObjectPrivateVersion) version)
+    : QIODevicePrivate(version)
 {
     writeBufferChunkSize = QABSTRACTSOCKET_BUFFERSIZE;
 }

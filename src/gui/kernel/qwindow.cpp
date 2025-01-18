@@ -205,8 +205,9 @@ QWindow::~QWindow()
     d->isWindow = false;
 }
 
-QWindowPrivate::QWindowPrivate()
-    = default;
+QWindowPrivate::QWindowPrivate(decltype(QObjectPrivateVersion) version)
+    : QObjectPrivate(version)
+{}
 
 QWindowPrivate::~QWindowPrivate()
     = default;

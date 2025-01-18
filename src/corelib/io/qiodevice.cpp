@@ -129,8 +129,12 @@ static void checkWarnMessage(const QIODevice *device, const char *function, cons
 /*!
     \internal
  */
-QIODevicePrivate::QIODevicePrivate()
+QIODevicePrivate::QIODevicePrivate(decltype(QObjectPrivateVersion) version)
+#ifndef QT_NO_QOBJECT
+    : QObjectPrivate(version)
+#endif
 {
+    Q_UNUSED(version);
 }
 
 /*!
