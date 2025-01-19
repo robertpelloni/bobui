@@ -48,6 +48,16 @@ inline bool qt_no_assert_x(bool, const char *, const char *) noexcept { return f
 #  endif
 #endif
 
+#ifndef Q_PRE
+# define Q_PRE(cond) \
+    Q_ASSERT(cond) /* for now... */
+#endif
+
+#ifndef Q_PRE_X
+# define Q_PRE_X(cond, what) \
+    Q_ASSERT_X(cond, Q_FUNC_INFO, what) /* for now... */
+#endif
+
 Q_NORETURN Q_CORE_EXPORT void qt_check_pointer(const char *, int) noexcept;
 Q_NORETURN Q_DECL_COLD_FUNCTION
 Q_CORE_EXPORT void qBadAlloc();
