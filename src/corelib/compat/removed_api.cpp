@@ -1380,6 +1380,23 @@ QUuid::Version QUuid::version() const noexcept
 
 #if QT_CORE_REMOVED_SINCE(6, 10)
 
+#include "qdir.h"
+
+bool QDir::mkdir(const QString &dirName) const
+{
+    return mkdir(dirName, std::nullopt);
+}
+
+bool QDir::mkdir(const QString &dirName, QFile::Permissions permissions) const
+{
+    return mkdir(dirName, std::optional{permissions});
+}
+
+bool QDir::mkpath(const QString &dirPath) const
+{
+    return mkpath(dirPath, std::nullopt);
+}
+
 #if QT_CONFIG(future)
 #include "qfuture.h" // for ContinuationWrapper
 #include "qfutureinterface.h"
