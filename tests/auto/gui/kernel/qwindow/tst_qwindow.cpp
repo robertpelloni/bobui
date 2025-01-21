@@ -11,6 +11,7 @@
 #include <QtGui/QPainter>
 
 #include <QTest>
+#include <QtTest/private/qtesthelpers_p.h>
 #include <QSignalSpy>
 #include <QEvent>
 #include <QStyleHints>
@@ -1237,6 +1238,7 @@ void tst_QWindow::testInputEvents()
     window.setGeometry(QRect(m_availableTopLeft + QPoint(80, 80), m_testWindowSize));
     window.showNormal();
     QTRY_VERIFY(window.isActive());
+    QVERIFY(QTestPrivate::ensurePositionTopLeft(&window));
 
     QTest::keyClick(&window, Qt::Key_A, Qt::NoModifier);
     QCoreApplication::processEvents();
