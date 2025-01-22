@@ -38,6 +38,11 @@ struct QSqlDatabaseDefaultConnectionName
 {
     // separate class because of the static inline constexpr variable
     static constexpr const char defaultConnection[] = "qt_sql_default_connection";
+    static QString defaultConnectionName() noexcept
+    {
+        using namespace Qt::StringLiterals;
+        return u"qt_sql_default_connection"_s;
+    }
 };
 
 class Q_SQL_EXPORT QSqlDatabase : public QSqlDatabaseDefaultConnectionName
@@ -98,15 +103,15 @@ public:
 #endif
 
     static QSqlDatabase addDatabase(const QString& type,
-                                 const QString& connectionName = QLatin1StringView(defaultConnection));
+                                 const QString &connectionName = defaultConnectionName());
     static QSqlDatabase addDatabase(QSqlDriver* driver,
-                                 const QString& connectionName = QLatin1StringView(defaultConnection));
-    static QSqlDatabase cloneDatabase(const QSqlDatabase &other, const QString& connectionName);
-    static QSqlDatabase cloneDatabase(const QString &other, const QString& connectionName);
-    static QSqlDatabase database(const QString& connectionName = QLatin1StringView(defaultConnection),
+                                 const QString &connectionName = defaultConnectionName());
+    static QSqlDatabase cloneDatabase(const QSqlDatabase &other, const QString &connectionName);
+    static QSqlDatabase cloneDatabase(const QString &other, const QString &connectionName);
+    static QSqlDatabase database(const QString &connectionName = defaultConnectionName(),
                                  bool open = true);
-    static void removeDatabase(const QString& connectionName);
-    static bool contains(const QString& connectionName = QLatin1StringView(defaultConnection));
+    static void removeDatabase(const QString &connectionName);
+    static bool contains(const QString &connectionName = defaultConnectionName());
     static QStringList drivers();
     static QStringList connectionNames();
     static void registerSqlDriver(const QString &name, QSqlDriverCreatorBase *creator);
