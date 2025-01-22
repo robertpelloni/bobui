@@ -11,7 +11,6 @@
 #if QT_CONFIG(settings)
 #include <QtCore/QSettings>
 #endif
-#include <QtCore/QSharedData>
 #include <QtCore/QUrl>
 #include <QtCore/QVariant>
 #include <QtGui/QColor>
@@ -145,7 +144,7 @@ QVariant  QPlatformDialogHelper::defaultStyleHint(QPlatformDialogHelper::StyleHi
 
 // Font dialog
 
-class QFontDialogOptionsPrivate : public QSharedData
+class QFontDialogOptionsPrivate
 {
 public:
     QFontDialogOptionsPrivate() = default;
@@ -428,7 +427,7 @@ void QPlatformColorDialogHelper::setOptions(const QSharedPointer<QColorDialogOpt
 
 // File dialog
 
-class QFileDialogOptionsPrivate : public QSharedData
+class QFileDialogOptionsPrivate
 {
 public:
     QFileDialogOptions::FileDialogOptions options;
@@ -762,7 +761,7 @@ QStringList QPlatformFileDialogHelper::cleanFilterList(const QString &filter)
 
 // Message dialog
 
-class QMessageDialogOptionsPrivate : public QSharedData
+class QMessageDialogOptionsPrivate
 {
 public:
     QMessageDialogOptionsPrivate() :
