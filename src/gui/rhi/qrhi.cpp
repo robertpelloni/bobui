@@ -9479,7 +9479,9 @@ bool QRhiResourceUpdateBatch::hasOptimalCapacity() const
 
     The region is specified \a offset and \a size. The actual bytes to write
     are specified by \a data which must have at least \a size bytes available.
-    \a data can safely be destroyed or changed once this function returns.
+
+    \a data is copied and can safely be destroyed or changed once this function
+    returns.
 
     \note If host writes are involved, which is the case with
     updateDynamicBuffer() typically as such buffers are backed by host visible
@@ -9505,12 +9507,35 @@ void QRhiResourceUpdateBatch::updateDynamicBuffer(QRhiBuffer *buf, quint32 offse
 }
 
 /*!
+    \overload
+    \since 6.10
+
+    Enqueues updating a region of a QRhiBuffer \a buf created with the type
+    QRhiBuffer::Dynamic.
+
+    \a data is moved into the batch instead of copied with this overload.
+ */
+void QRhiResourceUpdateBatch::updateDynamicBuffer(QRhiBuffer *buf, quint32 offset, QByteArray data)
+{
+    if (!data.isEmpty()) {
+        const int idx = d->activeBufferOpCount++;
+        const int opListSize = d->bufferOps.size();
+        if (idx < opListSize)
+            QRhiResourceUpdateBatchPrivate::BufferOp::changeToDynamicUpdate(&d->bufferOps[idx], buf, offset, std::move(data));
+        else
+            d->bufferOps.append(QRhiResourceUpdateBatchPrivate::BufferOp::dynamicUpdate(buf, offset, std::move(data)));
+    }
+}
+
+/*!
     Enqueues updating a region of a QRhiBuffer \a buf created with the type
     QRhiBuffer::Immutable or QRhiBuffer::Static.
 
     The region is specified \a offset and \a size. The actual bytes to write
     are specified by \a data which must have at least \a size bytes available.
-    \a data can safely be destroyed or changed once this function returns.
+
+    \a data is copied and can safely be destroyed or changed once this function
+    returns.
  */
 void QRhiResourceUpdateBatch::uploadStaticBuffer(QRhiBuffer *buf, quint32 offset, quint32 size, const void *data)
 {
@@ -9520,6 +9545,26 @@ void QRhiResourceUpdateBatch::uploadStaticBuffer(QRhiBuffer *buf, quint32 offset
             QRhiResourceUpdateBatchPrivate::BufferOp::changeToStaticUpload(&d->bufferOps[idx], buf, offset, size, data);
         else
             d->bufferOps.append(QRhiResourceUpdateBatchPrivate::BufferOp::staticUpload(buf, offset, size, data));
+    }
+}
+
+/*!
+    \overload
+    \since 6.10
+
+    Enqueues updating a region of a QRhiBuffer \a buf created with the type
+    QRhiBuffer::Immutable or QRhiBuffer::Static.
+
+    \a data is moved into the batch instead of copied with this overload.
+ */
+void QRhiResourceUpdateBatch::uploadStaticBuffer(QRhiBuffer *buf, quint32 offset, QByteArray data)
+{
+    if (!data.isEmpty()) {
+        const int idx = d->activeBufferOpCount++;
+        if (idx < d->bufferOps.size())
+            QRhiResourceUpdateBatchPrivate::BufferOp::changeToStaticUpload(&d->bufferOps[idx], buf, offset, std::move(data));
+        else
+            d->bufferOps.append(QRhiResourceUpdateBatchPrivate::BufferOp::staticUpload(buf, offset, std::move(data)));
     }
 }
 
@@ -9537,6 +9582,28 @@ void QRhiResourceUpdateBatch::uploadStaticBuffer(QRhiBuffer *buf, const void *da
             QRhiResourceUpdateBatchPrivate::BufferOp::changeToStaticUpload(&d->bufferOps[idx], buf, 0, 0, data);
         else
             d->bufferOps.append(QRhiResourceUpdateBatchPrivate::BufferOp::staticUpload(buf, 0, 0, data));
+    }
+}
+
+/*!
+    \overload
+    \since 6.10
+
+    Enqueues updating the entire QRhiBuffer \a buf created with the type
+    QRhiBuffer::Immutable or QRhiBuffer::Static.
+
+    \a data is moved into the batch instead of copied with this overload.
+
+    \a data size must equal the size of \a buf.
+ */
+void QRhiResourceUpdateBatch::uploadStaticBuffer(QRhiBuffer *buf, QByteArray data)
+{
+    if (buf->size() > 0 && quint32(data.size()) == buf->size()) {
+        const int idx = d->activeBufferOpCount++;
+        if (idx < d->bufferOps.size())
+            QRhiResourceUpdateBatchPrivate::BufferOp::changeToStaticUpload(&d->bufferOps[idx], buf, 0, 0, std::move(data));
+        else
+            d->bufferOps.append(QRhiResourceUpdateBatchPrivate::BufferOp::staticUpload(buf, 0, 0, std::move(data)));
     }
 }
 

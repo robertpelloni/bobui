@@ -324,14 +324,12 @@ bool qrhi_toTopLeftRenderTargetRect(const QSize &outputSize, const std::array<T,
 struct QRhiBufferDataPrivate
 {
     Q_DISABLE_COPY_MOVE(QRhiBufferDataPrivate)
-    QRhiBufferDataPrivate() { }
-    ~QRhiBufferDataPrivate() { delete[] largeData; }
+    QRhiBufferDataPrivate() { } // don't value-initialize smallData
     int ref = 1;
     quint32 size = 0;
-    quint32 largeAlloc = 0;
-    char *largeData = nullptr;
+    QByteArray largeData;
     static constexpr quint32 SMALL_DATA_SIZE = 1024;
-    char data[SMALL_DATA_SIZE];
+    char smallData[SMALL_DATA_SIZE];
 };
 
 // no detach-with-contents, no atomic refcount, no shrink
@@ -363,7 +361,7 @@ public:
     }
     const char *constData() const
     {
-        return d ? (d->size <= QRhiBufferDataPrivate::SMALL_DATA_SIZE ? d->data : d->largeData) : nullptr;
+        return d ? (d->size <= QRhiBufferDataPrivate::SMALL_DATA_SIZE ? d->smallData : d->largeData.constData()) : nullptr;
     }
     quint32 size() const
     {
@@ -371,7 +369,7 @@ public:
     }
     quint32 largeAlloc() const
     {
-        return d ? d->largeAlloc : 0;
+        return d ? d->largeData.size() : 0;
     }
     void assign(const char *s, quint32 size)
     {
@@ -385,16 +383,28 @@ public:
         }
         d->size = size;
         if (size <= QRhiBufferDataPrivate::SMALL_DATA_SIZE) {
-            memcpy(d->data, s, size);
+            memcpy(d->smallData, s, size);
         } else {
-            if (d->largeAlloc < size) {
-                if (QRhiImplementation::rubLogEnabled)
-                    qDebug("[rub] QRhiBufferData %p/%p new large data allocation %u -> %u", this, d, d->largeAlloc, size);
-                delete[] d->largeData;
-                d->largeAlloc = size;
-                d->largeData = new char[size];
-            }
-            memcpy(d->largeData, s, size);
+            if (QRhiImplementation::rubLogEnabled && largeAlloc() < size)
+                qDebug("[rub] QRhiBufferData %p/%p new large data allocation %u -> %u", this, d, largeAlloc(), size);
+            d->largeData.assign(QByteArrayView(s, size)); // keeps capacity
+        }
+    }
+    void assign(QByteArray data)
+    {
+        if (!d) {
+            d = new QRhiBufferDataPrivate;
+        } else if (d->ref != 1) {
+            if (QRhiImplementation::rubLogEnabled)
+                qDebug("[rub] QRhiBufferData %p/%p new backing due to no-copy detach, ref was %d", this, d, d->ref);
+            d->ref -= 1;
+            d = new QRhiBufferDataPrivate;
+        }
+        d->size = data.size();
+        if (d->size <= QRhiBufferDataPrivate::SMALL_DATA_SIZE) {
+            memcpy(d->smallData, data.constData(), data.size());
+        } else {
+            d->largeData = std::move(data);
         }
     }
 private:
@@ -435,6 +445,21 @@ public:
             op->data.assign(reinterpret_cast<const char *>(data), effectiveSize);
         }
 
+        static BufferOp dynamicUpdate(QRhiBuffer *buf, quint32 offset, QByteArray data)
+        {
+            BufferOp op = {};
+            changeToDynamicUpdate(&op, buf, offset, std::move(data));
+            return op;
+        }
+
+        static void changeToDynamicUpdate(BufferOp *op, QRhiBuffer *buf, quint32 offset, QByteArray data)
+        {
+            op->type = DynamicUpdate;
+            op->buf = buf;
+            op->offset = offset;
+            op->data.assign(std::move(data));
+        }
+
         static BufferOp staticUpload(QRhiBuffer *buf, quint32 offset, quint32 size, const void *data)
         {
             BufferOp op = {};
@@ -449,6 +474,21 @@ public:
             op->offset = offset;
             const int effectiveSize = size ? size : buf->size();
             op->data.assign(reinterpret_cast<const char *>(data), effectiveSize);
+        }
+
+        static BufferOp staticUpload(QRhiBuffer *buf, quint32 offset, QByteArray data)
+        {
+            BufferOp op = {};
+            changeToStaticUpload(&op, buf, offset, std::move(data));
+            return op;
+        }
+
+        static void changeToStaticUpload(BufferOp *op, QRhiBuffer *buf, quint32 offset, QByteArray data)
+        {
+            op->type = StaticUpload;
+            op->buf = buf;
+            op->offset = offset;
+            op->data.assign(std::move(data));
         }
 
         static BufferOp read(QRhiBuffer *buf, quint32 offset, quint32 size, QRhiReadbackResult *result)

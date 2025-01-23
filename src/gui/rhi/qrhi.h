@@ -1774,8 +1774,11 @@ public:
     bool hasOptimalCapacity() const;
 
     void updateDynamicBuffer(QRhiBuffer *buf, quint32 offset, quint32 size, const void *data);
+    void updateDynamicBuffer(QRhiBuffer *buf, quint32 offset, QByteArray data);
     void uploadStaticBuffer(QRhiBuffer *buf, quint32 offset, quint32 size, const void *data);
+    void uploadStaticBuffer(QRhiBuffer *buf, quint32 offset, QByteArray data);
     void uploadStaticBuffer(QRhiBuffer *buf, const void *data);
+    void uploadStaticBuffer(QRhiBuffer *buf, QByteArray data);
     void readBackBuffer(QRhiBuffer *buf, quint32 offset, quint32 size, QRhiReadbackResult *result);
     void uploadTexture(QRhiTexture *tex, const QRhiTextureUploadDescription &desc);
     void uploadTexture(QRhiTexture *tex, const QImage &image);

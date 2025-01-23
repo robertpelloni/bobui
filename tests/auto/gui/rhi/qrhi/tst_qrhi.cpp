@@ -6509,10 +6509,11 @@ void tst_QRhi::tessellationInterfaceBlocks()
     u->updateDynamicBuffer(ubuf.data(), 0, 64, mvp.constData());
 
     QScopedPointer<QRhiBuffer> buffer(
-            rhi->newBuffer(QRhiBuffer::Static, QRhiBuffer::UsageFlag::StorageBuffer, 1024));
+            rhi->newBuffer(QRhiBuffer::Static, QRhiBuffer::UsageFlag::StorageBuffer, 2048));
     QVERIFY(buffer->create());
 
-    u->uploadStaticBuffer(buffer.data(), 0, 1024, QByteArray(1024, 0).constData());
+    // 2048 is a large buffer for RUB
+    u->uploadStaticBuffer(buffer.data(), QByteArray(2048, 0));
 
     QScopedPointer<QRhiShaderResourceBindings> srb(rhi->newShaderResourceBindings());
     srb->setBindings(
@@ -6825,7 +6826,7 @@ void tst_QRhi::storageBuffer()
         reinterpret_cast<float *>(&toGpuData.data()[toGpuMembers["_vec4"].offset])[2] = 9.0f;
         reinterpret_cast<float *>(&toGpuData.data()[toGpuMembers["_vec4"].offset])[3] = 10.0f;
 
-        u->uploadStaticBuffer(toGpuBuffer.data(), 0, toGpuData.size(), toGpuData.constData());
+        u->uploadStaticBuffer(toGpuBuffer.data(), std::move(toGpuData));
         u->uploadStaticBuffer(fromGpuBuffer.data(), 0, blocks["fromGpu"].knownSize, QByteArray(blocks["fromGpu"].knownSize, 0).constData());
 
         QScopedPointer<QRhiShaderResourceBindings> srb(rhi->newShaderResourceBindings());
