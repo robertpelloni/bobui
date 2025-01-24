@@ -824,11 +824,8 @@ QFile::copy(const QString &newName)
                     error = true;
 #else
                 QTemporaryFile out(fileTemplate.arg(QFileInfo(newName).path()));
-                if (!out.open()) {
-                    out.setFileTemplate(fileTemplate.arg(QDir::tempPath()));
-                    if (!out.open())
-                        error = true;
-                }
+                if (!out.open())
+                    error = true;
 #endif
                 if (error) {
                     d->setError(QFile::CopyError, tr("Cannot open for output: %1").arg(out.errorString()));
