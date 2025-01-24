@@ -2275,6 +2275,7 @@ void tst_QFile::longFileName_data()
     QTest::newRow( "148 chars" ) << QString::fromLatin1("longFileNamelongFileNamelongFileNamelongFileName"
                                                      "longFileNamelongFileNamelongFileNamelongFileName"
                                                      "longFileNamelongFileNamelongFileNamelongFileName.txt");
+#ifndef Q_OS_VXWORKS
     QTest::newRow( "244 chars" ) << QString::fromLatin1("longFileNamelongFileNamelongFileNamelongFileName"
                                                      "longFileNamelongFileNamelongFileNamelongFileName"
                                                      "longFileNamelongFileNamelongFileNamelongFileName"
@@ -2291,6 +2292,7 @@ void tst_QFile::longFileName_data()
                                                      "longFileNamelongFileNamelongFileNamelongFileName"
                                                      "longFileNamelongFileNamelongFileNamelongFileName"
                                                      "longFileNamelongFileNamelongFileNamelongFileName.txt");*/
+#endif
 }
 
 void tst_QFile::longFileName()

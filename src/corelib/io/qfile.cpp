@@ -5,14 +5,15 @@
 #include "qplatformdefs.h"
 #include "qdebug.h"
 #include "qfile.h"
-#include "qfsfileengine_p.h"
-#include "qtemporaryfile.h"
-#include "qtemporaryfile_p.h"
-#include "qlist.h"
 #include "qfileinfo.h"
+#include "qfsfileengine_p.h"
+#include "qlist.h"
+#include "qsavefile.h"
+#include "qtemporaryfile.h"
 #include "private/qiodevice_p.h"
 #include "private/qfile_p.h"
 #include "private/qfilesystemengine_p.h"
+#include "private/qsavefile_p.h"
 #include "private/qsystemerror_p.h"
 #include "private/qtemporaryfile_p.h"
 #if defined(QT_BUILD_CORE_LIB)
@@ -778,7 +779,72 @@ QFile::link(const QString &fileName, const QString &linkName)
     return QFile(fileName).link(linkName);
 }
 
-#ifndef QT_BOOTSTRAPPED // dangerous without QTemporaryFile
+#if QT_CONFIG(temporaryfile)    // dangerous without QTemporaryFile
+bool QFilePrivate::copy(const QString &newName)
+{
+    Q_Q(QFile);
+    Q_ASSERT(error == QFile::NoError);
+    Q_ASSERT(!q->isOpen());
+
+    // Some file engines can perform this copy more efficiently (e.g., Windows
+    // calling CopyFile).
+    if (engine()->copy(newName))
+        return true;
+
+    if (!q->open(QFile::ReadOnly | QFile::Unbuffered)) {
+        setError(QFile::CopyError, QFile::tr("Cannot open %1 for input").arg(fileName));
+        return false;
+    }
+
+    QSaveFile out(newName);
+    out.setDirectWriteFallback(true);
+    if (!out.open(QIODevice::WriteOnly | QIODevice::Unbuffered)) {
+        q->close();
+        setError(QFile::CopyError, QFile::tr("Cannot open for output: %1").arg(out.errorString()));
+        return false;
+    }
+
+    // Attempt to do an OS-level data copy
+    QAbstractFileEngine::TriStateResult r = engine()->cloneTo(out.d_func()->engine());
+    if (r == QAbstractFileEngine::TriStateResult::Failed) {
+        q->close();
+        setError(QFile::CopyError, QFile::tr("Could not copy to %1: %2")
+                 .arg(newName, engine()->errorString()));
+        return false;
+    }
+
+    while (r == QAbstractFileEngine::TriStateResult::NotSupported) {
+        // OS couldn't do it, so do a block-level copy
+        char block[4096];
+        qint64 in = q->read(block, sizeof(block));
+        if (in == 0)
+            break;      // eof
+        if (in < 0) {
+            // Unable to read from the source. Save the error from read() above.
+            QString s = std::move(errorString);
+            q->close();
+            setError(QFile::CopyError, std::move(s));
+            return false;
+        }
+        if (in != out.write(block, in)) {
+            q->close();
+            setError(QFile::CopyError, QFile::tr("Failure to write block: %1")
+                     .arg(out.errorString()));
+            return false;
+        }
+    }
+
+    // copy the permissions
+    out.setPermissions(q->permissions());
+    q->close();
+
+    // final step: commit the copy
+    if (out.commit())
+        return true;
+    setError(out.error(), out.errorString());
+    return false;
+}
+
 /*!
     Copies the file named fileName() to \a newName.
 
@@ -807,89 +873,8 @@ QFile::copy(const QString &newName)
     }
     unsetError();
     close();
-    if (error() == QFile::NoError) {
-        if (d->engine()->copy(newName)) {
-            unsetError();
-            return true;
-        } else {
-            bool error = false;
-            if (!open(QFile::ReadOnly | QFile::Unbuffered)) {
-                error = true;
-                d->setError(QFile::CopyError, tr("Cannot open %1 for input").arg(d->fileName));
-            } else {
-                const auto fileTemplate = "%1/qt_temp.XXXXXX"_L1;
-#if !QT_CONFIG(temporaryfile)
-                QFile out(fileTemplate.arg(QFileInfo(newName).path()));
-                if (!out.open(QIODevice::ReadWrite | QIODevice::Truncate))
-                    error = true;
-#else
-                QTemporaryFile out(fileTemplate.arg(QFileInfo(newName).path()));
-                if (!out.open())
-                    error = true;
-#endif
-                if (error) {
-                    d->setError(QFile::CopyError, tr("Cannot open for output: %1").arg(out.errorString()));
-                    out.close();
-                    close();
-                } else {
-                    QAbstractFileEngine::TriStateResult r = d->engine()->cloneTo(out.d_func()->engine());
-                    if (r == QAbstractFileEngine::TriStateResult::Failed) {
-                        d->setError(QFile::CopyError, tr("Could not copy to %1: %2")
-                                    .arg(newName, d->engine()->errorString()));
-                        error = true;
-                    } else if (r == QAbstractFileEngine::TriStateResult::NotSupported) {
-                        char block[4096];
-                        qint64 totalRead = 0;
-                        out.setOpenMode(ReadWrite | Unbuffered);
-                        while (!atEnd()) {
-                            qint64 in = read(block, sizeof(block));
-                            if (in <= 0)
-                                break;
-                            totalRead += in;
-                            if (in != out.write(block, in)) {
-                                close();
-                                d->setError(QFile::CopyError, tr("Failure to write block: %1")
-                                            .arg(out.errorString()));
-                                error = true;
-                                break;
-                            }
-                        }
-
-                        if (totalRead != size()) {
-                            // Unable to read from the source. The error string is
-                            // already set from read().
-                            error = true;
-                        }
-                    }
-
-                    if (!error) {
-                        // Sync to disk if possible. Ignore errors (e.g. not supported).
-                        out.d_func()->fileEngine->syncToDisk();
-
-                        if (!out.rename(newName)) {
-                            error = true;
-                            close();
-                            d->setError(QFile::CopyError, tr("Cannot create %1 for output: %2")
-                                        .arg(newName, out.errorString()));
-                        }
-                    }
-#if !QT_CONFIG(temporaryfile)
-                    if (error)
-                        out.remove();
-#else
-                    if (!error)
-                        out.setAutoRemove(false);
-#endif
-                }
-            }
-            if (!error) {
-                QFile::setPermissions(newName, permissions());
-                close();
-                unsetError();
-                return true;
-            }
-        }
-    }
+    if (error() == QFile::NoError)
+        return d->copy(newName);
     return false;
 }
 
@@ -911,7 +896,7 @@ QFile::copy(const QString &fileName, const QString &newName)
 {
     return QFile(fileName).copy(newName);
 }
-#endif // QT_BOOTSTRAPPED
+#endif // QT_CONFIG(temporaryfile)
 
 /*!
     Opens the file using \a mode flags, returning \c true if successful;

@@ -263,13 +263,15 @@ public:
     }
 #endif // QT_CONFIG(cxx17_filesystem)
 
+#if QT_CONFIG(temporaryfile)
     bool copy(const QString &newName);
     static bool copy(const QString &fileName, const QString &newName);
+#endif
 #ifdef Q_QDOC
     bool copy(const std::filesystem::path &newName);
     static bool copy(const std::filesystem::path &fileName,
                      const std::filesystem::path &newName);
-#elif QT_CONFIG(cxx17_filesystem)
+#elif QT_CONFIG(cxx17_filesystem) && QT_CONFIG(temporaryfile)
     template<typename T, QtPrivate::ForceFilesystemPath<T> = 0>
     bool copy(const T &newName)
     {

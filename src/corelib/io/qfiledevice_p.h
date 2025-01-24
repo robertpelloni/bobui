@@ -45,8 +45,10 @@ protected:
     QFileDevicePrivate();
     ~QFileDevicePrivate();
 
+public:
     virtual QAbstractFileEngine *engine() const;
 
+protected:
     inline bool ensureFlushed() const;
 
     bool putCharHelper(char c) override;
