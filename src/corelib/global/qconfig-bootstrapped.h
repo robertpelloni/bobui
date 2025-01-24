@@ -62,6 +62,7 @@
 #define QT_FEATURE_itemmodel -1
 #define QT_FEATURE_islamiccivilcalendar -1
 #define QT_FEATURE_jalalicalendar -1
+#define QT_FEATURE_jemalloc -1
 #define QT_FEATURE_journald -1
 #define QT_FEATURE_library -1
 #ifdef __linux__

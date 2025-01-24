@@ -17,6 +17,7 @@
 
 #include <QtGui/private/qtguiglobal_p.h>
 
+#include "QtCore/qalloc.h"
 #include "QtCore/qbytearray.h"
 #include "QtCore/qtypeinfo.h"
 
@@ -34,7 +35,7 @@ public:
         if (res) {
             QT_WARNING_PUSH
             QT_WARNING_DISABLE_GCC("-Walloc-size-larger-than=")
-            buffer = (Type*) malloc(capacity * sizeof(Type));
+            buffer = (Type*) QtPrivate::fittedMalloc(0, &capacity, sizeof(Type));
             QT_WARNING_POP
             Q_CHECK_PTR(buffer);
         } else {
@@ -47,7 +48,7 @@ public:
     {
         static_assert(!QTypeInfo<Type>::isComplex);
         if (buffer)
-            free(buffer);
+            QtPrivate::sizedFree(buffer, capacity, sizeof(Type));
     }
 
     inline void reset() { siz = 0; }
@@ -86,20 +87,21 @@ public:
                 capacity = 1;
             while (capacity < size)
                 capacity *= 2;
-            buffer = (Type*) realloc(static_cast<void*>(buffer), capacity * sizeof(Type));
+            buffer = (Type*) QtPrivate::fittedRealloc(static_cast<void*>(buffer), 0, &capacity, sizeof(Type));
             Q_CHECK_PTR(buffer);
         }
     }
 
     void shrink(qsizetype size) {
         Q_ASSERT(capacity >= size);
-        capacity = size;
         if (size) {
-            buffer = (Type*) realloc(static_cast<void*>(buffer), capacity * sizeof(Type));
+            capacity = size;
+            buffer = (Type*) QtPrivate::fittedRealloc(static_cast<void*>(buffer), 0, &capacity, sizeof(Type));
             Q_CHECK_PTR(buffer);
             siz = std::min(siz, size);
         } else {
-            free(buffer);
+            QtPrivate::sizedFree(buffer, capacity, sizeof(Type));
+            capacity = size;
             buffer = nullptr;
             siz = 0;
         }

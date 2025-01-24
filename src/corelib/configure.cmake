@@ -35,6 +35,7 @@ qt_find_package(ICU 50.1 COMPONENTS i18n uc data PROVIDED_TARGETS ICU::i18n ICU:
 if(QT_FEATURE_dlopen)
     qt_add_qmake_lib_dependency(icu libdl)
 endif()
+qt_find_package(JeMalloc PROVIDED_TARGETS PkgConfig::JeMalloc MODULE_NAME core QMAKE_LIB jemalloc)
 qt_find_package(Libsystemd PROVIDED_TARGETS PkgConfig::Libsystemd MODULE_NAME core QMAKE_LIB journald)
 qt_find_package(WrapAtomic PROVIDED_TARGETS WrapAtomic::WrapAtomic MODULE_NAME core QMAKE_LIB libatomic)
 qt_find_package(Libb2 PROVIDED_TARGETS Libb2::Libb2 MODULE_NAME core QMAKE_LIB libb2)
@@ -733,6 +734,11 @@ qt_feature("ipc_posix"
     )
 )
 qt_feature_definition("ipc_posix" "QT_POSIX_IPC")
+qt_feature("jemalloc" PUBLIC PRIVATE
+    LABEL "JeMalloc"
+    AUTODETECT OFF
+    CONDITION JeMalloc_FOUND
+)
 qt_feature("journald" PRIVATE
     LABEL "journald"
     AUTODETECT OFF
@@ -1172,6 +1178,7 @@ qt_configure_add_summary_entry(ARGS "system-doubleconversion")
 qt_configure_add_summary_entry(ARGS "forkfd_pidfd" CONDITION LINUX)
 qt_configure_add_summary_entry(ARGS "glib")
 qt_configure_add_summary_entry(ARGS "icu")
+qt_configure_add_summary_entry(ARGS "jemalloc")
 qt_configure_add_summary_entry(ARGS "timezone_tzdb")
 qt_configure_add_summary_entry(ARGS "system-libb2")
 qt_configure_add_summary_entry(ARGS "mimetype-database")

@@ -40,6 +40,7 @@ qt_internal_add_module(Core
         # Keep the rest alphabetical
         compat/removed_api.cpp
         global/archdetect.cpp
+        global/qalloc.cpp global/qalloc.h
         global/qassert.cpp global/qassert.h
         global/qcheckedint_impl.h
         global/qcompare_impl.h
@@ -920,6 +921,11 @@ qt_internal_extend_target(Core CONDITION MACOS AND NOT QT_FEATURE_icu
 qt_internal_extend_target(Core CONDITION UNIX AND NOT MACOS AND NOT QT_FEATURE_icu
     SOURCES
         text/qcollator_posix.cpp
+)
+
+qt_internal_extend_target(Core CONDITION QT_FEATURE_jemalloc
+    PUBLIC_LIBRARIES
+        PkgConfig::JeMalloc
 )
 
 qt_internal_extend_target(Core CONDITION QT_FEATURE_regularexpression

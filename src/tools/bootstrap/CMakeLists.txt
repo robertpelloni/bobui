@@ -17,6 +17,7 @@ qt_internal_add_sync_header_dependencies(Bootstrap Core)
 
 qt_internal_extend_target(Bootstrap
     SOURCES
+        ../../corelib/global/qalloc.cpp
         ../../corelib/global/qassert.cpp
         ../../corelib/global/qtenvironmentvariables.cpp
         ../../corelib/io/qabstractfileengine.cpp

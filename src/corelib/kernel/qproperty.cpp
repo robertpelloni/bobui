@@ -6,6 +6,7 @@
 
 #include <qscopedvaluerollback.h>
 #include <QScopeGuard>
+#include <QtCore/qalloc.h>
 #include <QtCore/qloggingcategory.h>
 #include <QThread>
 #include <QtCore/qmetaobject.h>
@@ -2212,7 +2213,8 @@ struct QBindingStoragePrivate
             }
         }
         // data has been moved, no need to call destructors on old Pairs
-        free(d);
+        const size_t oldAllocSize = sizeof(QBindingStorageData) + d->size*sizeof(Pair);
+        QtPrivate::sizedFree(d, oldAllocSize);
         d = newData;
     }
 
@@ -2269,7 +2271,8 @@ struct QBindingStoragePrivate
                 p->~Pair();
             ++p;
         }
-        free(d);
+        const size_t allocSize = sizeof(QBindingStorageData) + d->size*sizeof(Pair);
+        QtPrivate::sizedFree(d, allocSize);
     }
 };
 

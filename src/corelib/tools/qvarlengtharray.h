@@ -9,6 +9,7 @@
 #pragma qt_sync_stop_processing
 #endif
 
+#include <QtCore/qalloc.h>
 #include <QtCore/qcompare.h>
 #include <QtCore/qcontainerfwd.h>
 #include <QtCore/qglobal.h>
@@ -368,7 +369,7 @@ public:
         if constexpr (QTypeInfo<T>::isComplex)
             std::destroy_n(data(), size());
         if (data() != reinterpret_cast<T *>(this->array))
-            free(data());
+            QtPrivate::sizedFree(data(), capacity(), sizeof(T));
     }
     inline QVarLengthArray<T, Prealloc> &operator=(const QVarLengthArray<T, Prealloc> &other)
     {
@@ -729,9 +730,9 @@ Q_INLINE_TEMPLATE QVarLengthArray<T, Prealloc>::QVarLengthArray(qsizetype asize)
     // resize(asize) // this requires a movable or copyable T, can't use, need to do it by hand
 
     if (asize > Prealloc) {
-        this->ptr = malloc(asize * sizeof(T));
-        Q_CHECK_PTR(this->ptr);
         this->a = asize;
+        this->ptr = QtPrivate::fittedMalloc(0, &this->a, sizeof(T));
+        Q_CHECK_PTR(this->ptr);
     }
     if constexpr (QTypeInfo<T>::isComplex)
         std::uninitialized_default_construct_n(data(), asize);
@@ -877,7 +878,7 @@ Q_OUTOFLINE_TEMPLATE void QVLABase<T>::reallocate_impl(qsizetype prealloc, void 
         void *newPtr;
         qsizetype newA;
         if (aalloc > prealloc) {
-            newPtr = malloc(aalloc * sizeof(T));
+            newPtr = QtPrivate::fittedMalloc(0, &aalloc, sizeof(T));
             guard.reset(newPtr);
             Q_CHECK_PTR(newPtr); // could throw
             // by design: in case of QT_NO_EXCEPTIONS malloc must not fail or it crashes here
@@ -902,7 +903,7 @@ Q_OUTOFLINE_TEMPLATE void QVLABase<T>::reallocate_impl(qsizetype prealloc, void 
     }
 
     if (oldPtr != reinterpret_cast<T *>(array) && oldPtr != data())
-        free(oldPtr);
+        QtPrivate::sizedFree(oldPtr, osize, sizeof(T));
 }
 
 template <class T>
