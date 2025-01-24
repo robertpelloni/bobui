@@ -3026,6 +3026,11 @@ void tst_QFile::renameFallback()
     QFile::remove("file-rename-destination.txt");
 
     QVERIFY(!file.rename("file-rename-destination.txt"));
+#ifdef Q_OS_WIN
+    // wait for the file to disappear
+    QTRY_VERIFY_WITH_TIMEOUT(!QFile::exists("file-rename-destination.txt"),
+                             std::chrono::seconds(1));
+#endif
     QVERIFY(!QFile::exists("file-rename-destination.txt"));
     QVERIFY(!file.isOpen());
 }

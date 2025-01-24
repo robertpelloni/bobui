@@ -667,46 +667,30 @@ QFile::rename(const QString &newName)
             return false;
         }
 
-        QFile out(newName);
-        if (open(QIODevice::ReadOnly | QIODevice::Unbuffered)) {
-            if (out.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Unbuffered)) {
-                bool error = false;
-                char block[4096];
-                qint64 bytes;
-                while ((bytes = read(block, sizeof(block))) > 0) {
-                    if (bytes != out.write(block, bytes)) {
-                        d->setError(QFile::RenameError, out.errorString());
-                        error = true;
-                        break;
-                    }
-                }
-                if (bytes == -1) {
-                    d->setError(QFile::RenameError, errorString());
-                    error = true;
-                }
-                if (!error) {
-                    if (!remove()) {
-                        d->setError(QFile::RenameError, tr("Cannot remove source file"));
-                        error = true;
-                    }
-                }
-                if (error) {
-                    out.remove();
-                } else {
-                    d->fileEngine->setFileName(newName);
-                    setPermissions(permissions());
-                    unsetError();
-                    setFileName(newName);
-                }
-                close();
-                return !error;
+#if QT_CONFIG(temporaryfile)
+        // copy the file to the destination first
+        if (d->copy(newName)) {
+            // succeeded, remove the original
+            if (!remove()) {
+                d->setError(QFile::RenameError, tr("Cannot remove source file: %1").arg(errorString()));
+                QFile out(newName);
+                // set it back to writable so we can delete it
+                out.setPermissions(ReadUser | WriteUser);
+                out.remove(newName);
+                return false;
             }
-            close();
-            d->setError(QFile::RenameError,
-                        tr("Cannot open destination file: %1").arg(out.errorString()));
+            d->fileEngine->setFileName(newName);
+            unsetError();
+            setFileName(newName);
+            return true;
         } else {
+            // change the error type but keep the string
             d->setError(QFile::RenameError, errorString());
         }
+#else
+        // copy the error from the engine rename() above
+        d->setError(QFile::RenameError, d->fileEngine->errorString());
+#endif
     }
     return false;
 }
