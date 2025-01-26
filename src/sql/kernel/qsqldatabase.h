@@ -34,7 +34,13 @@ public:
     QSqlDriver *createObject() const override { return new T; }
 };
 
-class Q_SQL_EXPORT QSqlDatabase
+struct QSqlDatabaseDefaultConnectionName
+{
+    // separate class because of the static inline constexpr variable
+    static constexpr const char defaultConnection[] = "qt_sql_default_connection";
+};
+
+class Q_SQL_EXPORT QSqlDatabase : public QSqlDatabaseDefaultConnectionName
 {
     Q_GADGET
     Q_PROPERTY(QSql::NumericalPrecisionPolicy numericalPrecisionPolicy READ numericalPrecisionPolicy WRITE setNumericalPrecisionPolicy)
@@ -87,7 +93,9 @@ public:
 
     QSqlDriver* driver() const;
 
+#if QT_SQL_REMOVED_SINCE(6, 10)
     static const char *defaultConnection;
+#endif
 
     static QSqlDatabase addDatabase(const QString& type,
                                  const QString& connectionName = QLatin1StringView(defaultConnection));

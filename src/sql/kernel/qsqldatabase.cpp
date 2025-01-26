@@ -36,8 +36,6 @@ using namespace Qt::StringLiterals;
 Q_GLOBAL_STATIC_WITH_ARGS(QFactoryLoader, loader,
                           (QSqlDriverFactoryInterface_iid, "/sqldrivers"_L1))
 
-const char *QSqlDatabase::defaultConnection = "qt_sql_default_connection";
-
 namespace {
     struct QtSqlGlobals
     {
