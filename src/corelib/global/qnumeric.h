@@ -8,6 +8,7 @@
 #pragma qt_class(QtNumeric)
 #endif
 
+#include <QtCore/qassert.h>
 #include <QtCore/qtconfigmacros.h>
 #include <QtCore/qtcoreexports.h>
 #include <QtCore/qtypes.h>
@@ -334,7 +335,12 @@ template <auto V2, typename T> bool qMulOverflow(T v1, T *r)
 }
 
 template <typename T>
-constexpr inline T qAbs(const T &t) { return t >= 0 ? t : -t; }
+constexpr inline T qAbs(const T &t)
+{
+    if constexpr (std::is_integral_v<T> && std::is_signed_v<T>)
+        Q_ASSERT(t != std::numeric_limits<T>::min());
+    return t >= 0 ? t : -t;
+}
 
 namespace QtPrivate {
 template <typename T,
