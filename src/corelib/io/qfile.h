@@ -58,17 +58,19 @@ public:
 namespace QtPrivate {
 inline QString fromFilesystemPath(const std::filesystem::path &path)
 {
-#ifdef Q_OS_WIN
-    return QString::fromStdWString(path.native());
-#else
-    return QString::fromStdString(path.native());
-#endif
+    // we could use QAnyStringView, but this allows us to statically determine
+    // the correct toString() call
+    using View = std::conditional_t<sizeof(std::filesystem::path::value_type) == sizeof(char16_t),
+            QStringView, QUtf8StringView>;
+    return View(path.native()).toString();
 }
 
 inline std::filesystem::path toFilesystemPath(const QString &path)
 {
-    return std::filesystem::path(reinterpret_cast<const char16_t *>(path.cbegin()),
-                                 reinterpret_cast<const char16_t *>(path.cend()));
+    if constexpr (sizeof(std::filesystem::path::value_type) == sizeof(char16_t))
+        return std::u16string_view(QStringView(path));
+    else
+        return path.toStdString();
 }
 
 // Both std::filesystem::path and QString (without QT_NO_CAST_FROM_ASCII) can be implicitly
