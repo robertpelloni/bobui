@@ -164,6 +164,7 @@ public:
 #ifndef QFUTURE_TEST
 private:
 #endif
+    friend class QFutureInterfaceBasePrivate;
     QFutureInterfaceBasePrivate *d;
 
 private:
@@ -188,9 +189,21 @@ private:
     friend class QPromise;
 
 protected:
+    enum class ContinuationType : quint8
+    {
+        Unknown,
+        Then,
+        OnFailed,
+        OnCanceled,
+    };
+
     void setContinuation(std::function<void(const QFutureInterfaceBase &)> func);
     void setContinuation(std::function<void(const QFutureInterfaceBase &)> func,
                          QFutureInterfaceBasePrivate *continuationFutureData);
+    void setContinuation(std::function<void(const QFutureInterfaceBase &)> func,
+                         void *continuationFutureData, ContinuationType type);
+    void setContinuation(const QObject *context, std::function<void()> func,
+                         const QVariant &continuationFuture, ContinuationType type);
     void cleanContinuation();
     void runContinuation() const;
 

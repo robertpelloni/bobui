@@ -164,6 +164,8 @@ public:
     std::atomic<ContinuationState> continuationState { Default };
     bool continuationExecuted = false;
 
+    QFutureInterfaceBase::ContinuationType continuationType = QFutureInterfaceBase::ContinuationType::Unknown;
+
     inline QThreadPool *pool() const
     { return m_pool ? m_pool : QThreadPool::globalInstance(); }
 

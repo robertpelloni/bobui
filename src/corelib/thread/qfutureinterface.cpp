@@ -63,46 +63,17 @@ void QtPrivate::watchContinuationImpl(const QObject *context, QSlotObjectBase *s
 
     auto slot = SlotObjUniquePtr(slotObj);
 
-    auto *watcher = new QObjectContinuationWrapper;
-    watcher->moveToThread(context->thread());
-
-    // We need to protect acccess to the watcher. The context object (and in turn, the watcher)
-    // could be destroyed while the continuation that emits the signal is running. We have to
-    // prevent that.
-    // The mutex has to be recursive, because the continuation itself could delete the context
-    // object (and thus the watcher), which will try to lock the mutex from the same thread twice.
-    auto watcherMutex = std::make_shared<QRecursiveMutex>();
-    const auto destroyWatcher = [watcherMutex, watcher]() mutable {
-        QMutexLocker lock(watcherMutex.get());
-        delete watcher;
-    };
-
-    // ### we're missing a convenient way to `QObject::connect()` to a `QSlotObjectBase`...
-    QObject::connect(watcher, &QObjectContinuationWrapper::run,
-                     // for the following, cf. QMetaObject::invokeMethodImpl():
-                     // we know `slot` is a lambda returning `void`, so we can just
-                     // `call()` with `obj` and `args[0]` set to `nullptr`:
-                     context, [slot = std::move(slot)] {
-                         void *args[] = { nullptr }; // for `void` return value
-                         slot->call(nullptr, args);
-                     });
-    QObject::connect(watcher, &QObjectContinuationWrapper::run, watcher, destroyWatcher);
-
-    // We need to connect to destroyWatcher here, instead of delete or deleteLater().
-    // If the continuation is called from a separate thread, emit watcher->run() can't detect that
-    // the watcher has been deleted in the separate thread, causing a race condition and potential
-    // heap-use-after-free issue inside QObject::doActivate. destroyWatcher forces the deletion of
-    // the watcher to occur after emit watcher->run() completes and prevents the race condition.
-    QObject::connect(context, &QObject::destroyed, watcher, destroyWatcher);
-
-    fi.setContinuation([watcherMutex, watcher = QPointer(watcher)]
-                       (const QFutureInterfaceBase &parentData)
+    // That is now a double-inderection, because the setContinuation() overload
+    // also uses QSlotObjectBase approach. But that's a solution for backwards
+    // compatibility, so should be fine.
+    // We pass a default-constructed QVariant() and an Unknown type, because
+    // that's effectively the same as passing a nullptr continuationData, and
+    // that's what the old code was doing.
+    fi.setContinuation(context, ContinuationWrapper([slot = std::move(slot)]()
     {
-        Q_UNUSED(parentData);
-        QMutexLocker lock(watcherMutex.get());
-        if (watcher)
-            emit watcher->run();
-    });
+        void *args[] = { nullptr }; // for `void` return value
+        slot->call(nullptr, args);
+    }), QVariant(), QFutureInterfaceBase::ContinuationType::Unknown);
 }
 
 QFutureCallOutInterface::~QFutureCallOutInterface()
@@ -171,7 +142,7 @@ void QFutureInterfaceBase::cancel(QFutureInterfaceBase::CancelMode mode)
 
     // Cancel the continuations chain
     QFutureInterfaceBasePrivate *next = d->continuationData;
-    while (next) {
+    while (next && next->continuationType == ContinuationType::Then) {
         next->continuationState = QFutureInterfaceBasePrivate::Canceled;
         next = next->continuationData;
     }
@@ -883,6 +854,16 @@ void QFutureInterfaceBase::setContinuation(std::function<void(const QFutureInter
 void QFutureInterfaceBase::setContinuation(std::function<void(const QFutureInterfaceBase &)> func,
                                            QFutureInterfaceBasePrivate *continuationFutureData)
 {
+    // Backwards compatibility - the continuation data was used for
+    // then-continuations
+    setContinuation(std::move(func), continuationFutureData, ContinuationType::Then);
+}
+
+void QFutureInterfaceBase::setContinuation(std::function<void (const QFutureInterfaceBase &)> func,
+                                           void *continuationFutureData, ContinuationType type)
+{
+    auto *futureData = static_cast<QFutureInterfaceBasePrivate *>(continuationFutureData);
+
     QMutexLocker lock(&d->continuationMutex);
 
     // If the state is ready, run continuation immediately,
@@ -902,8 +883,89 @@ void QFutureInterfaceBase::setContinuation(std::function<void(const QFutureInter
                      "The existing continuation is overwritten.");
         }
         d->continuation = std::move(func);
-        d->continuationData = continuationFutureData;
+        if (futureData)
+            futureData->continuationType = type;
+        d->continuationData = futureData;
+        Q_ASSERT_X(!futureData || futureData->continuationType != ContinuationType::Unknown,
+                   "setContinuation", "Make sure to provide a correct continuation type!");
     }
+}
+
+/*
+    For continuations with context we expect all the needed data to be captured
+    directly by the continuation data, because this simplifies the slot
+    invocation. That's why func has no parameters.
+
+    We pass continuation data as a QVariant, because we need to keep the
+    QFutureInterface<T> for the entire lifetime of the continuation, but we
+    cannot pass a template type T as a parameter.
+*/
+void QFutureInterfaceBase::setContinuation(const QObject *context, std::function<void()> func,
+                                           const QVariant &continuationFuture,
+                                           ContinuationType type)
+{
+    Q_ASSERT(context);
+
+    using FuncType = void();
+    using Prototype = typename QtPrivate::Callable<FuncType>::Function;
+    auto slotObj = QtPrivate::makeCallableObject<Prototype>(std::move(func));
+
+    auto slot = QtPrivate::SlotObjUniquePtr(slotObj);
+
+    auto *watcher = new QObjectContinuationWrapper;
+    watcher->moveToThread(context->thread());
+
+   // We need to protect acccess to the watcher. The context object (and in turn, the watcher)
+   // could be destroyed while the continuation that emits the signal is running. We have to
+   // prevent that.
+   // The mutex has to be recursive, because the continuation itself could delete the context
+   // object (and thus the watcher), which will try to lock the mutex from the same thread twice.
+    auto watcherMutex = std::make_shared<QRecursiveMutex>();
+    const auto destroyWatcher = [watcherMutex, watcher]() mutable {
+        QMutexLocker lock(watcherMutex.get());
+        delete watcher;
+    };
+
+    // ### we're missing a convenient way to `QObject::connect()` to a `QSlotObjectBase`...
+    QObject::connect(watcher, &QObjectContinuationWrapper::run,
+                     // for the following, cf. QMetaObject::invokeMethodImpl():
+                     // we know `slot` is a lambda returning `void`, so we can just
+                     // `call()` with `obj` and `args[0]` set to `nullptr`:
+                     context, [slot = std::move(slot)] {
+                         void *args[] = { nullptr }; // for `void` return value
+                         slot->call(nullptr, args);
+                     });
+    QObject::connect(watcher, &QObjectContinuationWrapper::run, watcher, destroyWatcher);
+
+    // We need to connect to destroyWatcher here, instead of delete or deleteLater().
+    // If the continuation is called from a separate thread, emit watcher->run() can't detect that
+    // the watcher has been deleted in the separate thread, causing a race condition and potential
+    // heap-use-after-free issue inside QObject::doActivate. destroyWatcher forces the deletion of
+    // the watcher to occur after emit watcher->run() completes and prevents the race condition.
+    QObject::connect(context, &QObject::destroyed, watcher, destroyWatcher);
+
+    // Extract a QFutureInterfaceBasePrivate pointer from the QVariant. We rely
+    // on the fact that QVariant contains QFutureInterface<T>.
+    QFutureInterfaceBasePrivate *continuationFutureData = nullptr;
+    if (continuationFuture.isValid()) {
+        Q_ASSERT(QLatin1StringView(continuationFuture.typeName())
+                         .startsWith(QLatin1StringView("QFutureInterface")));
+        const auto continuationPtr =
+                static_cast<const QFutureInterfaceBase *>(continuationFuture.constData());
+        continuationFutureData = continuationPtr->d;
+    }
+
+    // Capture continuationFuture so that it lives as long as the continuation,
+    // and the continuation data remains valid.
+    setContinuation([watcherMutex, watcher = QPointer(watcher), continuationFuture]
+                    (const QFutureInterfaceBase &parentData)
+    {
+        Q_UNUSED(parentData);
+        Q_UNUSED(continuationFuture);
+        QMutexLocker lock(watcherMutex.get());
+        if (watcher)
+            emit watcher->run();
+    }, continuationFutureData, type);
 }
 
 void QFutureInterfaceBase::cleanContinuation()
