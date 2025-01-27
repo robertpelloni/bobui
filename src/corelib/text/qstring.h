@@ -1086,7 +1086,7 @@ public:
     }
 
     static inline QString fromStdString(const std::string &s);
-    inline std::string toStdString() const;
+    std::string toStdString() const;
     static inline QString fromStdWString(const std::wstring &s);
     inline std::wstring toStdWString() const;
 
@@ -1572,9 +1572,6 @@ QT_ASCII_CAST_WARN inline QString operator+(QString &&lhs, const QByteArray &rhs
 { QT_IGNORE_DEPRECATIONS(return std::move(lhs += rhs);) }
 #  endif // QT_NO_CAST_FROM_ASCII
 #endif // QT_USE_QSTRINGBUILDER
-
-std::string QString::toStdString() const
-{ return toUtf8().toStdString(); }
 
 QString QString::fromStdString(const std::string &s)
 { return fromUtf8(s.data(), qsizetype(s.size())); }

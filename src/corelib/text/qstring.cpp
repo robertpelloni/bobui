@@ -9374,6 +9374,26 @@ QString::iterator QString::erase(QString::const_iterator first, QString::const_i
 
     \sa toLatin1(), toUtf8(), toLocal8Bit(), QByteArray::toStdString()
 */
+std::string QString::toStdString() const
+{
+    std::string result;
+    if (isEmpty())
+        return result;
+
+    auto writeToBuffer = [this](char *out, size_t) {
+        char *last = QUtf8::convertFromUnicode(out, *this);
+        return last - out;
+    };
+    size_t maxSize = size() * 3;    // worst case for UTF-8
+#ifdef __cpp_lib_string_resize_and_overwrite
+    // C++23
+    result.resize_and_overwrite(maxSize, writeToBuffer);
+#else
+    result.resize(maxSize);
+    result.resize(writeToBuffer(result.data(), result.size()));
+#endif
+    return result;
+}
 
 /*!
     \fn QString QString::fromRawData(const char16_t *unicode, qsizetype size)

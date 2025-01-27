@@ -691,6 +691,14 @@ char *QUtf8::convertFromUnicode(char *out, QStringView in, OnErrorLambda &&onErr
     return reinterpret_cast<char *>(dst);
 }
 
+char *QUtf8::convertFromUnicode(char *dst, QStringView in) noexcept
+{
+    return convertFromUnicode(dst, in, [](auto *dst, ...) {
+        // encoding error - append '?'
+        *dst++ = '?';
+    });
+}
+
 QByteArray QUtf8::convertFromUnicode(QStringView in)
 {
     qsizetype len = in.size();
@@ -698,11 +706,7 @@ QByteArray QUtf8::convertFromUnicode(QStringView in)
     // create a QByteArray with the worst case scenario size
     QByteArray result(len * 3, Qt::Uninitialized);
     char *dst = const_cast<char *>(result.constData());
-    dst = convertFromUnicode(dst, in, [](auto *dst, ...) {
-        // encoding error - append '?'
-        *dst++ = '?';
-    });
-
+    dst = convertFromUnicode(dst, in);
     result.truncate(dst - result.constData());
     return result;
 }
