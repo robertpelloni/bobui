@@ -937,6 +937,11 @@ public:
 
         RGB10A2,
 
+        R8SI,
+        R32SI,
+        RG32SI,
+        RGBA32SI,
+
         R8UI,
         R32UI,
         RG32UI,

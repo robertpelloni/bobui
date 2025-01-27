@@ -3479,6 +3479,8 @@ static inline MTLPixelFormat toMetalTextureFormat(QRhiTexture::Format format, QR
 #else
         return srgb ? MTLPixelFormatR8Unorm_sRGB : MTLPixelFormatR8Unorm;
 #endif
+    case QRhiTexture::R8SI:
+        return MTLPixelFormatR8Sint;
     case QRhiTexture::R8UI:
         return MTLPixelFormatR8Uint;
     case QRhiTexture::RG8:
@@ -3506,10 +3508,16 @@ static inline MTLPixelFormat toMetalTextureFormat(QRhiTexture::Format format, QR
     case QRhiTexture::RGB10A2:
         return MTLPixelFormatRGB10A2Unorm;
 
+    case QRhiTexture::R32SI:
+        return MTLPixelFormatR32Sint;
     case QRhiTexture::R32UI:
         return MTLPixelFormatR32Uint;
+    case QRhiTexture::RG32SI:
+        return MTLPixelFormatRG32Sint;
     case QRhiTexture::RG32UI:
         return MTLPixelFormatRG32Uint;
+    case QRhiTexture::RGBA32SI:
+        return MTLPixelFormatRGBA32Sint;
     case QRhiTexture::RGBA32UI:
         return MTLPixelFormatRGBA32Uint;
 

@@ -162,16 +162,32 @@ QT_BEGIN_NAMESPACE
 #define GL_R8                             0x8229
 #endif
 
+#ifndef GL_R8I
+#define GL_R8I                            0x8231
+#endif
+
 #ifndef GL_R8UI
 #define GL_R8UI                           0x8232
+#endif
+
+#ifndef GL_R32I
+#define GL_R32I                           0x8235
 #endif
 
 #ifndef GL_R32UI
 #define GL_R32UI                          0x8236
 #endif
 
+#ifndef GL_RG32I
+#define GL_RG32I                          0x823B
+#endif
+
 #ifndef GL_RG32UI
 #define GL_RG32UI                         0x823C
+#endif
+
+#ifndef GL_RGBA32I
+#define GL_RGBA32I                        0x8D82
 #endif
 
 #ifndef GL_RGBA32UI
@@ -186,6 +202,10 @@ QT_BEGIN_NAMESPACE
 #define GL_RG                             0x8227
 #endif
 
+#ifndef GL_RG_INTEGER
+#define GL_RG_INTEGER                     0x8228
+#endif
+
 #ifndef GL_R16
 #define GL_R16                            0x822A
 #endif
@@ -196,6 +216,14 @@ QT_BEGIN_NAMESPACE
 
 #ifndef GL_RED
 #define GL_RED                            0x1903
+#endif
+
+#ifndef GL_RED_INTEGER
+#define GL_RED_INTEGER                    0x8D94
+#endif
+
+#ifndef GL_RGBA_INTEGER
+#define GL_RGBA_INTEGER                   0x8D99
 #endif
 
 #ifndef GL_RGBA8
@@ -1297,10 +1325,16 @@ static inline void toGlTextureFormat(QRhiTexture::Format format, const QRhiGles2
         *glformat = GL_RED;
         *gltype = GL_UNSIGNED_BYTE;
         break;
+    case QRhiTexture::R8SI:
+        *glintformat = GL_R8I;
+        *glsizedintformat = *glintformat;
+        *glformat = GL_RED_INTEGER;
+        *gltype = GL_BYTE;
+        break;
     case QRhiTexture::R8UI:
         *glintformat = GL_R8UI;
         *glsizedintformat = *glintformat;
-        *glformat = GL_RED;
+        *glformat = GL_RED_INTEGER;
         *gltype = GL_UNSIGNED_BYTE;
         break;
     case QRhiTexture::RG8:
@@ -1345,22 +1379,40 @@ static inline void toGlTextureFormat(QRhiTexture::Format format, const QRhiGles2
         *glformat = GL_RGBA;
         *gltype = GL_UNSIGNED_INT_2_10_10_10_REV;
         break;
+    case QRhiTexture::R32SI:
+        *glintformat = GL_R32I;
+        *glsizedintformat = *glintformat;
+        *glformat = GL_RED_INTEGER;
+        *gltype = GL_INT;
+        break;
     case QRhiTexture::R32UI:
         *glintformat = GL_R32UI;
         *glsizedintformat = *glintformat;
-        *glformat = GL_RGBA;
+        *glformat = GL_RED_INTEGER;
         *gltype = GL_UNSIGNED_INT;
+        break;
+    case QRhiTexture::RG32SI:
+        *glintformat = GL_RG32I;
+        *glsizedintformat = *glintformat;
+        *glformat = GL_RG_INTEGER;
+        *gltype = GL_INT;
         break;
     case QRhiTexture::RG32UI:
         *glintformat = GL_RG32UI;
         *glsizedintformat = *glintformat;
-        *glformat = GL_RGBA;
+        *glformat = GL_RG_INTEGER;
         *gltype = GL_UNSIGNED_INT;
+        break;
+    case QRhiTexture::RGBA32SI:
+        *glintformat = GL_RGBA32I;
+        *glsizedintformat = *glintformat;
+        *glformat = GL_RGBA_INTEGER;
+        *gltype = GL_INT;
         break;
     case QRhiTexture::RGBA32UI:
         *glintformat = GL_RGBA32UI;
         *glsizedintformat = *glintformat;
-        *glformat = GL_RGBA;
+        *glformat = GL_RGBA_INTEGER;
         *gltype = GL_UNSIGNED_INT;
         break;
     case QRhiTexture::D16:
@@ -1424,11 +1476,15 @@ bool QRhiGles2::isTextureFormatSupported(QRhiTexture::Format format, QRhiTexture
         return caps.bgraExternalFormat;
 
     case QRhiTexture::R8:
+    case QRhiTexture::R8SI:
     case QRhiTexture::R8UI:
         return caps.r8Format;
 
+    case QRhiTexture::R32SI:
     case QRhiTexture::R32UI:
+    case QRhiTexture::RG32SI:
     case QRhiTexture::RG32UI:
+    case QRhiTexture::RGBA32SI:
     case QRhiTexture::RGBA32UI:
         return caps.r32uiFormat;
 

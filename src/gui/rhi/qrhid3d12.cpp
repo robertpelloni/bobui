@@ -4060,6 +4060,8 @@ static inline DXGI_FORMAT toD3DTextureFormat(QRhiTexture::Format format, QRhiTex
         return srgb ? DXGI_FORMAT_B8G8R8A8_UNORM_SRGB : DXGI_FORMAT_B8G8R8A8_UNORM;
     case QRhiTexture::R8:
         return DXGI_FORMAT_R8_UNORM;
+    case QRhiTexture::R8SI:
+        return DXGI_FORMAT_R8_SINT;
     case QRhiTexture::R8UI:
         return DXGI_FORMAT_R8_UINT;
     case QRhiTexture::RG8:
@@ -4083,10 +4085,16 @@ static inline DXGI_FORMAT toD3DTextureFormat(QRhiTexture::Format format, QRhiTex
     case QRhiTexture::RGB10A2:
         return DXGI_FORMAT_R10G10B10A2_UNORM;
 
+    case QRhiTexture::R32SI:
+        return DXGI_FORMAT_R32_SINT;
     case QRhiTexture::R32UI:
         return DXGI_FORMAT_R32_UINT;
+    case QRhiTexture::RG32SI:
+        return DXGI_FORMAT_R32G32_SINT;
     case QRhiTexture::RG32UI:
         return DXGI_FORMAT_R32G32_UINT;
+    case QRhiTexture::RGBA32SI:
+        return DXGI_FORMAT_R32G32B32A32_SINT;
     case QRhiTexture::RGBA32UI:
         return DXGI_FORMAT_R32G32B32A32_UINT;
 

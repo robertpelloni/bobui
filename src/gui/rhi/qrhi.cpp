@@ -4504,6 +4504,11 @@ bool QRhiRenderBuffer::createFrom(NativeRenderBuffer src)
     \value [since 6.9] R32UI One component, unsigned 32-bit. (32 bits total)
     \value [since 6.9] RG32UI Two components, unsigned 32-bit. (64 bits total)
     \value [since 6.9] RGBA32UI Four components, unsigned 32-bit. (128 bits total)
+
+    \value [since 6.10] R8SI One component, signed 8-bit. (8 bits total)
+    \value [since 6.10] R32SI One component, signed 32-bit. (32 bits total)
+    \value [since 6.10] RG32SI Two components, signed 32-bit. (64 bits total)
+    \value [since 6.10] RGBA32SI Four components, signed 32-bit. (128 bits total)
  */
 
 // When adding new texture formats, update void tst_QRhi::textureFormats_data().
@@ -8554,15 +8559,19 @@ void QRhiImplementation::textureFormatInfo(QRhiTexture::Format format, const QSi
         bpc = 8;
         break;
 
+    case QRhiTexture::R8SI:
     case QRhiTexture::R8UI:
         bpc = 1;
         break;
+    case QRhiTexture::R32SI:
     case QRhiTexture::R32UI:
         bpc = 4;
         break;
+    case QRhiTexture::RG32SI:
     case QRhiTexture::RG32UI:
         bpc = 8;
         break;
+    case QRhiTexture::RGBA32SI:
     case QRhiTexture::RGBA32UI:
         bpc = 16;
         break;
