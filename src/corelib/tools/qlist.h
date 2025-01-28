@@ -438,9 +438,16 @@ public:
 #endif // Q_QDOC
 
     static constexpr qsizetype maxSize() { return Data::maxSize(); }
-    qsizetype size() const noexcept { return d->size; }
-    qsizetype count() const noexcept { return size(); }
-    qsizetype length() const noexcept { return size(); }
+    constexpr qsizetype size() const noexcept
+    {
+#if __has_cpp_attribute(assume)
+        constexpr size_t MaxSize = maxSize();
+        [[assume(size_t(d.size) <= MaxSize)]];
+#endif
+        return d.size;
+    }
+    constexpr qsizetype count() const noexcept { return size(); }
+    constexpr qsizetype length() const noexcept { return size(); }
 
     inline bool isEmpty() const noexcept { return d->size == 0; }
 

@@ -495,12 +495,19 @@ public:
         // -1 to deal with the NUL terminator
         return Data::maxSize() - 1;
     }
-    inline qsizetype size() const noexcept { return d.size; }
+    constexpr qsizetype size() const noexcept
+    {
+#if __has_cpp_attribute(assume)
+        constexpr size_t MaxSize = maxSize();
+        [[assume(size_t(d.size) <= MaxSize)]];
+#endif
+        return d.size;
+    }
 #if QT_DEPRECATED_SINCE(6, 4)
     QT_DEPRECATED_VERSION_X_6_4("Use size() or length() instead.")
-    inline qsizetype count() const noexcept { return size(); }
+    constexpr qsizetype count() const noexcept { return size(); }
 #endif
-    inline qsizetype length() const noexcept { return size(); }
+    constexpr qsizetype length() const noexcept { return size(); }
     QT_CORE_INLINE_SINCE(6, 4)
     bool isNull() const noexcept;
 
