@@ -63,6 +63,7 @@ public:
 
     void cancel() { d.cancel(); }
     bool isCanceled() const { return d.isCanceled(); }
+    void cancelChain() { d.cancelChain(); }
 
 #if QT_DEPRECATED_SINCE(6, 0)
     QT_DEPRECATED_VERSION_X_6_0("Use setSuspended() instead.")

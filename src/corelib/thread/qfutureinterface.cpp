@@ -95,46 +95,87 @@ static inline int switch_from_to(QAtomicInt &a, int from, int to)
     return value;
 }
 
+void QFutureInterfaceBasePrivate::cancelImpl(QFutureInterfaceBase::CancelMode mode,
+                                             CancelOptions options)
+{
+    QMutexLocker locker(&m_mutex);
+
+    const auto oldState = state.loadRelaxed();
+
+    switch (mode) {
+    case QFutureInterfaceBase::CancelMode::CancelAndFinish:
+        if ((oldState & QFutureInterfaceBase::Finished)
+            && (oldState & QFutureInterfaceBase::Canceled)) {
+            return;
+        }
+        switch_from_to(state, suspendingOrSuspended | QFutureInterfaceBase::Running,
+                       QFutureInterfaceBase::Canceled | QFutureInterfaceBase::Finished);
+        break;
+    case QFutureInterfaceBase::CancelMode::CancelOnly:
+        if (oldState & QFutureInterfaceBase::Canceled)
+            return;
+        switch_from_to(state, suspendingOrSuspended, QFutureInterfaceBase::Canceled);
+        break;
+    }
+
+    if (options & CancelOption::CancelContinuations) {
+        // Cancel the continuations chain
+        QMutexLocker continuationLocker(&continuationMutex);
+        QFutureInterfaceBasePrivate *next = continuationData;
+        while (next) {
+            QMutexLocker nextLocker(&next->continuationMutex);
+            if (next->continuationType == QFutureInterfaceBase::ContinuationType::Then) {
+                next->continuationState = QFutureInterfaceBasePrivate::Canceled;
+                next = next->continuationData;
+            } else {
+                break;
+            }
+        }
+    }
+
+    waitCondition.wakeAll();
+    pausedWaitCondition.wakeAll();
+
+    if (!(oldState & QFutureInterfaceBase::Canceled))
+        sendCallOut(QFutureCallOutEvent(QFutureCallOutEvent::Canceled));
+    if (mode == QFutureInterfaceBase::CancelMode::CancelAndFinish
+        && !(oldState & QFutureInterfaceBase::Finished)) {
+        sendCallOut(QFutureCallOutEvent(QFutureCallOutEvent::Finished));
+    }
+
+    isValid = false;
+}
+
 void QFutureInterfaceBase::cancel()
 {
     cancel(CancelMode::CancelOnly);
 }
 
+void QFutureInterfaceBase::cancelChain()
+{
+    cancelChain(CancelMode::CancelOnly);
+}
+
 void QFutureInterfaceBase::cancel(QFutureInterfaceBase::CancelMode mode)
 {
-    QMutexLocker locker(&d->m_mutex);
+    d->cancelImpl(mode, QFutureInterfaceBasePrivate::CancelOption::CancelContinuations);
+}
 
-    const auto oldState = d->state.loadRelaxed();
-
-    switch (mode) {
-    case CancelMode::CancelAndFinish:
-        if ((oldState & Finished) && (oldState & Canceled))
-            return;
-        switch_from_to(d->state, suspendingOrSuspended | Running, Canceled | Finished);
-        break;
-    case CancelMode::CancelOnly:
-        if (oldState & Canceled)
-            return;
-        switch_from_to(d->state, suspendingOrSuspended, Canceled);
-        break;
+void QFutureInterfaceBase::cancelChain(QFutureInterfaceBase::CancelMode mode)
+{
+    // go up through the list of continuations, cancelling each of them
+    {
+        QMutexLocker locker(&d->continuationMutex);
+        QFutureInterfaceBasePrivate *prev = d->nonConcludedParent;
+        while (prev) {
+            // Do not cancel continuations, because we're going bottom-to-top
+            prev->cancelImpl(mode, QFutureInterfaceBasePrivate::CancelOption::None);
+            QMutexLocker prevLocker(&prev->continuationMutex);
+            prev = prev->nonConcludedParent;
+        }
     }
-
-    // Cancel the continuations chain
-    QFutureInterfaceBasePrivate *next = d->continuationData;
-    while (next && next->continuationType == ContinuationType::Then) {
-        next->continuationState = QFutureInterfaceBasePrivate::Canceled;
-        next = next->continuationData;
-    }
-
-    d->waitCondition.wakeAll();
-    d->pausedWaitCondition.wakeAll();
-
-    if (!(oldState & Canceled))
-        d->sendCallOut(QFutureCallOutEvent(QFutureCallOutEvent::Canceled));
-    if (mode == CancelMode::CancelAndFinish && !(oldState & Finished))
-        d->sendCallOut(QFutureCallOutEvent(QFutureCallOutEvent::Finished));
-
-    d->isValid = false;
+    // finally, cancel self and all next continuations
+    d->cancelImpl(mode, QFutureInterfaceBasePrivate::CancelOption::CancelContinuations);
 }
 
 void QFutureInterfaceBase::setSuspended(bool suspend)
@@ -847,10 +888,14 @@ void QFutureInterfaceBase::setContinuation(std::function<void (const QFutureInte
         if (d->continuation) {
             qWarning("Adding a continuation to a future which already has a continuation. "
                      "The existing continuation is overwritten.");
+            if (d->continuationData)
+                d->continuationData->nonConcludedParent = nullptr;
         }
         d->continuation = std::move(func);
-        if (futureData)
+        if (futureData) {
             futureData->continuationType = type;
+            futureData->nonConcludedParent = d;
+        }
         d->continuationData = futureData;
         Q_ASSERT_X(!futureData || futureData->continuationType != ContinuationType::Unknown,
                    "setContinuation", "Make sure to provide a correct continuation type!");
@@ -949,6 +994,10 @@ void QFutureInterfaceBase::runContinuation() const
 {
     QMutexLocker lock(&d->continuationMutex);
     if (d->continuation && !d->continuationExecuted) {
+        // If we run the next continuation, then this future is concluded, so
+        // we wouldn't need to revisit it in the cancelChain()
+        if (d->continuationData)
+            d->continuationData->nonConcludedParent = nullptr;
         // Save the continuation in a local function, to avoid calling
         // a null std::function below, in case cleanContinuation() is
         // called from some other thread right after unlock() below.

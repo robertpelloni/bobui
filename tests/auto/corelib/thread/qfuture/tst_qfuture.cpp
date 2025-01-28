@@ -253,6 +253,11 @@ private slots:
 
     void unwrap();
 
+    void cancelChain();
+    void cancelChainWithContext_data();
+    void cancelChainWithContext();
+    void cancelChainOnAnOverwrittenFuture();
+
 private:
     using size_type = std::vector<int>::size_type;
 
@@ -5381,6 +5386,311 @@ void tst_QFuture::unwrap()
         QVERIFY(nestedInvoked);
         QVERIFY(doubleNestedInvoked);
     }
+}
+
+
+void tst_QFuture::cancelChain()
+{
+    // cancel immediately
+    {
+        QPromise<void> p;
+        p.start();
+
+        int thenCnt = 0;
+        int onCancelCnt = 0;
+
+        auto f = p.future()
+                         .then([&]() {
+                             ++thenCnt;
+                         })
+                         .then([&]() {
+                             ++thenCnt;
+                         })
+                         .then([&]{
+                             ++thenCnt;
+                         })
+                         .onCanceled([&] {
+                             ++onCancelCnt;
+                         })
+                         .then([&]{
+                             ++thenCnt;
+                         });
+
+        f.cancelChain();
+        p.finish();
+
+        QCOMPARE_EQ(thenCnt, 0);
+        QCOMPARE_EQ(onCancelCnt, 1);
+    }
+    // cancel when part of the chain is already done
+    {
+        QPromise<void> p1, p2;
+        p1.start();
+        p2.start();
+
+        int thenCnt = 0;
+        int onCancelCnt = 0;
+
+        auto f = QtFuture::makeReadyVoidFuture()
+                         .then([&, f = p1.future()]() {
+                             ++thenCnt;
+                             return f;
+                         }).unwrap()
+                         .then([&, f = p2.future()]() {
+                             ++thenCnt;
+                             return f;
+                         }).unwrap()
+                         .then([&]{
+                             ++thenCnt;
+                         })
+                         .onCanceled([&] {
+                             ++onCancelCnt;
+                         })
+                         .then([&]{
+                             ++thenCnt;
+                         });
+
+        p1.finish();
+        f.cancelChain();
+        p2.finish();
+
+        QCOMPARE_EQ(thenCnt, 2);
+        QCOMPARE_EQ(onCancelCnt, 1);
+    }
+    // calling once everything is done has no effect
+    {
+        int thenCnt = 0;
+        int onCancelCnt = 0;
+
+        auto f = QtFuture::makeReadyVoidFuture()
+                         .then([&]() {
+                             ++thenCnt;
+                         })
+                         .then([&]() {
+                             ++thenCnt;
+                         })
+                         .then([&]{
+                             ++thenCnt;
+                         })
+                         .onCanceled([&] {
+                             ++onCancelCnt;
+                         })
+                         .then([&]{
+                             ++thenCnt;
+                         });
+
+        f.cancelChain();
+
+        QCOMPARE_EQ(thenCnt, 4);
+        QCOMPARE_EQ(onCancelCnt, 0);
+    }
+}
+
+void tst_QFuture::cancelChainWithContext_data()
+{
+    QTest::addColumn<bool>("inOtherThread");
+    QTest::addRow("in-other-thread") << true;
+    QTest::addRow("in-main-thread") << false;
+}
+
+void tst_QFuture::cancelChainWithContext()
+{
+    QFETCH(const bool, inOtherThread);
+
+    auto tstThread = QThread::currentThread();
+    QThread *thread = inOtherThread ? new QThread
+                                    : tstThread;
+    auto context = new QObject();
+
+    const auto cleanupGuard = qScopeGuard([&] {
+        context->deleteLater();
+        if (thread != tstThread) {
+            thread->quit();
+            thread->wait();
+            delete thread;
+        }
+    });
+
+    if (inOtherThread) {
+        thread->start();
+        context->moveToThread(thread);
+    }
+
+    // cancel immediately
+    {
+        QPromise<void> p;
+        p.start();
+
+        int thenCnt = 0;
+        int onCancelCnt = 0;
+        bool unexpectedThread = false;
+
+        auto f = p.future()
+                         .then(context, [&]() {
+                             if (QThread::currentThread() != thread)
+                                 unexpectedThread = true;
+                             ++thenCnt;
+                         })
+                         .then([&]() {
+                             if (QThread::currentThread() != thread)
+                                 unexpectedThread = true;
+                             ++thenCnt;
+                         })
+                         .then([&]{
+                             if (QThread::currentThread() != thread)
+                                 unexpectedThread = true;
+                             ++thenCnt;
+                         })
+                         .onCanceled(context, [&] {
+                             if (QThread::currentThread() != thread)
+                                 unexpectedThread = true;
+                             ++onCancelCnt;
+                         })
+                         .then([&]{
+                             if (QThread::currentThread() != thread)
+                                 unexpectedThread = true;
+                             ++thenCnt;
+                         });
+
+        f.cancelChain();
+        p.finish();
+        f.waitForFinished();
+
+        QVERIFY(!unexpectedThread);
+        QCOMPARE_EQ(thenCnt, 0);
+        QCOMPARE_EQ(onCancelCnt, 1);
+    }
+    // cancel when part of the chain is already done
+    {
+        QPromise<void> p1, p2;
+        p1.start();
+        p2.start();
+
+        int thenCnt = 0;
+        int onCancelCnt = 0;
+        bool unexpectedThread = false;
+
+        auto f = p1.future()
+                         .then(context, [&]() {
+                             if (QThread::currentThread() != thread)
+                                 unexpectedThread = true;
+                             ++thenCnt;
+                         })
+                         .then([&, f = p2.future()]() {
+                             if (QThread::currentThread() != thread)
+                                 unexpectedThread = true;
+                             ++thenCnt;
+                             return f;
+                         }).unwrap()
+                         .then(context, [&]{
+                             if (QThread::currentThread() != thread)
+                                 unexpectedThread = true;
+                             ++thenCnt;
+                         })
+                         .onCanceled([&] {
+                             if (QThread::currentThread() != thread)
+                                 unexpectedThread = true;
+                             ++onCancelCnt;
+                         })
+                         .then(context, [&]{
+                             if (QThread::currentThread() != thread)
+                                 unexpectedThread = true;
+                             ++thenCnt;
+                         });
+
+        p1.finish();
+        f.cancelChain();
+        p2.finish();
+        f.waitForFinished();
+
+        QVERIFY(!unexpectedThread);
+        QCOMPARE_EQ(thenCnt, 2);
+        QCOMPARE_EQ(onCancelCnt, 1);
+    }
+    // calling once everything is done has no effect
+    {
+        QPromise<void> p;
+        p.start();
+
+        int thenCnt = 0;
+        int onCancelCnt = 0;
+        bool unexpectedThread = false;
+
+        auto f = p.future()
+                         .then(context, [&]() {
+                             if (QThread::currentThread() != thread)
+                                 unexpectedThread = true;
+                             ++thenCnt;
+                         })
+                         .then([&]() {
+                             if (QThread::currentThread() != thread)
+                                 unexpectedThread = true;
+                             ++thenCnt;
+                         })
+                         .then([&]{
+                             if (QThread::currentThread() != thread)
+                                 unexpectedThread = true;
+                             ++thenCnt;
+                         })
+                         .onCanceled(context, [&] {
+                             if (QThread::currentThread() != thread)
+                                 unexpectedThread = true;
+                             ++onCancelCnt;
+                         })
+                         .then([&]{
+                             if (QThread::currentThread() != thread)
+                                 unexpectedThread = true;
+                             ++thenCnt;
+                         });
+
+        p.finish();
+        f.waitForFinished();
+        f.cancelChain();
+
+        QVERIFY(!unexpectedThread);
+        QCOMPARE_EQ(thenCnt, 4);
+        QCOMPARE_EQ(onCancelCnt, 0);
+    }
+}
+
+void tst_QFuture::cancelChainOnAnOverwrittenFuture()
+{
+    QPromise<void> p;
+    p.start();
+
+    int thenCnt = 0;
+    int onCancelCnt = 0;
+
+    auto firstF = p.future()
+                     .then([&]() {
+                         ++thenCnt;
+                     })
+                     .then([&]() {
+                         ++thenCnt;
+                     })
+                     .then([&]{
+                         ++thenCnt;
+                     })
+                     .onCanceled([&] {
+                         ++onCancelCnt;
+                     });
+    auto overwrittenF = firstF
+                     .then([&]{
+                         thenCnt = -100; // should not happen
+                     });
+
+    suppressContinuationOverrideWarning();
+    auto anotherF = firstF
+                     .then([&]{
+                         ++thenCnt;
+                     });
+
+    // cancelling overwrittenF should have no effect on the chain at this point!
+    overwrittenF.cancelChain();
+    p.finish();
+
+    QCOMPARE_EQ(thenCnt, 4);
+    QCOMPARE_EQ(onCancelCnt, 0);
 }
 
 QTEST_MAIN(tst_QFuture)

@@ -127,6 +127,7 @@ public:
 
     void cancel();
     void cancelAndFinish() { cancel(CancelMode::CancelAndFinish); }
+    void cancelChain();
 
     void setSuspended(bool suspend);
     void toggleSuspended();
@@ -221,6 +222,7 @@ protected:
 
     enum class CancelMode { CancelOnly, CancelAndFinish };
     void cancel(CancelMode mode);
+    void cancelChain(CancelMode mode);
 };
 
 inline void swap(QFutureInterfaceBase &lhs, QFutureInterfaceBase &rhs) noexcept

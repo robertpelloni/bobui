@@ -142,6 +142,9 @@ public:
     // Wrapper for continuation
     std::function<void(const QFutureInterfaceBase &)> continuation;
     QFutureInterfaceBasePrivate *continuationData = nullptr;
+    // will reset back to nullptr when the parent future is done
+    // (finished, canceled, failed etc)
+    QFutureInterfaceBasePrivate *nonConcludedParent = nullptr;
 
     RefCount refCount = 1;
     QAtomicInt state; // reads and writes can happen unprotected, both must be atomic
@@ -183,6 +186,14 @@ public:
     void disconnectOutputInterface(QFutureCallOutInterface *iface);
 
     void setState(QFutureInterfaceBase::State state);
+
+    enum class CancelOption : quint32
+    {
+        None = 0x00,
+        CancelContinuations = 0x01,
+    };
+    Q_DECLARE_FLAGS(CancelOptions, CancelOption)
+    void cancelImpl(QFutureInterfaceBase::CancelMode mode, CancelOptions options);
 };
 
 QT_END_NAMESPACE
