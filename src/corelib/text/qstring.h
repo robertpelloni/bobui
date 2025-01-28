@@ -245,7 +245,7 @@ public:
     constexpr qsizetype count() const { return size(); }
 #endif
     constexpr qsizetype length() const noexcept { return size(); }
-    inline bool isEmpty() const noexcept { return d.size == 0; }
+    constexpr bool isEmpty() const noexcept { return size() == 0; }
     void resize(qsizetype size);
     void resize(qsizetype size, QChar fillChar);
     void resizeForOverwrite(qsizetype size);
@@ -1104,7 +1104,7 @@ public:
     emscripten::val toEcmaString() const;
 #endif
 
-    inline bool isNull() const { return d.isNull(); }
+    constexpr bool isNull() const { return d.isNull(); }
 
     bool isRightToLeft() const;
     [[nodiscard]] bool isValidUtf16() const noexcept

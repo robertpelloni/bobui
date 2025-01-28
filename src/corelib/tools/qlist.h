@@ -441,7 +441,7 @@ public:
     constexpr qsizetype count() const noexcept { return size(); }
     constexpr qsizetype length() const noexcept { return size(); }
 
-    inline bool isEmpty() const noexcept { return d->size == 0; }
+    constexpr bool isEmpty() const noexcept { return size() == 0; }
 
     void resize(qsizetype size)
     {

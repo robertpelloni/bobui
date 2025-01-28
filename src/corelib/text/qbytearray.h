@@ -103,7 +103,7 @@ public:
     inline void swap(QByteArray &other) noexcept
     { d.swap(other.d); }
 
-    bool isEmpty() const noexcept { return size() == 0; }
+    constexpr bool isEmpty() const noexcept { return size() == 0; }
     void resize(qsizetype size);
     void resize(qsizetype size, char c);
     void resizeForOverwrite(qsizetype size);
@@ -508,7 +508,7 @@ public:
     constexpr qsizetype count() const noexcept { return size(); }
 #endif
     constexpr qsizetype length() const noexcept { return size(); }
-    QT_CORE_INLINE_SINCE(6, 4)
+    QT_CORE_CONSTEXPR_INLINE_SINCE(6, 4)
     bool isNull() const noexcept;
 
     inline const DataPointer &data_ptr() const { return d; }
@@ -748,6 +748,7 @@ inline QByteArray &QByteArray::setNum(float n, char format, int precision)
 { return setNum(double(n), format, precision); }
 
 #if QT_CORE_INLINE_IMPL_SINCE(6, 4)
+QT_CORE_CONSTEXPR_INLINE_SINCE(6, 4)
 bool QByteArray::isNull() const noexcept
 {
     return d.isNull();
