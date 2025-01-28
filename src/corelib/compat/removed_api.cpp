@@ -1380,6 +1380,46 @@ QUuid::Version QUuid::version() const noexcept
 
 #if QT_CORE_REMOVED_SINCE(6, 10)
 
+#if QT_CONFIG(future)
+#include "qfuture.h" // for ContinuationWrapper
+#include "qfutureinterface.h"
+
+void QtPrivate::watchContinuationImpl(const QObject *context,
+                                      QtPrivate::QSlotObjectBase *slotObj,
+                                      QFutureInterfaceBase &fi)
+{
+    Q_ASSERT(context);
+    Q_ASSERT(slotObj);
+
+    auto slot = QtPrivate::SlotObjUniquePtr(slotObj);
+
+    // That is now a double-inderection, because the setContinuation() overload
+    // also uses QSlotObjectBase approach. But that's a solution for backwards
+    // compatibility, so should be fine.
+    // We pass a default-constructed QVariant() and an Unknown type, because
+    // that's effectively the same as passing a nullptr continuationData, and
+    // that's what the old code was doing.
+    fi.setContinuation(context, QtPrivate::ContinuationWrapper([slot = std::move(slot)]()
+    {
+        void *args[] = { nullptr }; // for `void` return value
+        slot->call(nullptr, args);
+    }), QVariant(), QFutureInterfaceBase::ContinuationType::Unknown);
+}
+
+void QFutureInterfaceBase::setContinuation(std::function<void(const QFutureInterfaceBase &)> func)
+{
+    setContinuation(std::move(func), nullptr);
+}
+
+void QFutureInterfaceBase::setContinuation(std::function<void(const QFutureInterfaceBase &)> func,
+                                           QFutureInterfaceBasePrivate *continuationFutureData)
+{
+    // Backwards compatibility - the continuation data was used for
+    // then-continuations
+    setContinuation(std::move(func), continuationFutureData, ContinuationType::Then);
+}
+#endif // QT_CONFIG(future)
+
 #include "qlogging.h"
 
 QNoDebug QMessageLogger::noDebug() const noexcept

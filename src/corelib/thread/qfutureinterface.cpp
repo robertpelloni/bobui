@@ -55,27 +55,6 @@ signals:
     void run();
 };
 
-void QtPrivate::watchContinuationImpl(const QObject *context, QSlotObjectBase *slotObj,
-                                      QFutureInterfaceBase &fi)
-{
-    Q_ASSERT(context);
-    Q_ASSERT(slotObj);
-
-    auto slot = SlotObjUniquePtr(slotObj);
-
-    // That is now a double-inderection, because the setContinuation() overload
-    // also uses QSlotObjectBase approach. But that's a solution for backwards
-    // compatibility, so should be fine.
-    // We pass a default-constructed QVariant() and an Unknown type, because
-    // that's effectively the same as passing a nullptr continuationData, and
-    // that's what the old code was doing.
-    fi.setContinuation(context, ContinuationWrapper([slot = std::move(slot)]()
-    {
-        void *args[] = { nullptr }; // for `void` return value
-        slot->call(nullptr, args);
-    }), QVariant(), QFutureInterfaceBase::ContinuationType::Unknown);
-}
-
 QFutureCallOutInterface::~QFutureCallOutInterface()
     = default;
 
@@ -844,19 +823,6 @@ void QFutureInterfaceBasePrivate::disconnectOutputInterface(QFutureCallOutInterf
 void QFutureInterfaceBasePrivate::setState(QFutureInterfaceBase::State newState)
 {
     state.storeRelaxed(newState);
-}
-
-void QFutureInterfaceBase::setContinuation(std::function<void(const QFutureInterfaceBase &)> func)
-{
-    setContinuation(std::move(func), nullptr);
-}
-
-void QFutureInterfaceBase::setContinuation(std::function<void(const QFutureInterfaceBase &)> func,
-                                           QFutureInterfaceBasePrivate *continuationFutureData)
-{
-    // Backwards compatibility - the continuation data was used for
-    // then-continuations
-    setContinuation(std::move(func), continuationFutureData, ContinuationType::Then);
 }
 
 void QFutureInterfaceBase::setContinuation(std::function<void (const QFutureInterfaceBase &)> func,
