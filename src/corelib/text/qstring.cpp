@@ -2066,9 +2066,7 @@ void qtWarnAboutInvalidRegularExpression(const QString &pattern, const char *whe
     \c{QStringBuilder}. This class is marked
     internal and does not appear in the documentation, because you
     aren't meant to instantiate it in your code. Its use will be
-    automatic, as described below. The class is found in
-    \c {src/corelib/tools/qstringbuilder.cpp} if you want to have a
-    look at it.
+    automatic, as described below.
 
     \c{QStringBuilder} uses expression templates and reimplements the
     \c{'%'} operator so that when you use \c{'%'} for string
