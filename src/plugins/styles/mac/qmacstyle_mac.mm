@@ -2526,9 +2526,6 @@ int QMacStyle::styleHint(StyleHint sh, const QStyleOption *opt, const QWidget *w
     case SH_DialogButtonBox_ButtonsHaveIcons:
         ret = 0;
         break;
-    case SH_Menu_SelectionWrap:
-        ret = false;
-        break;
     case SH_Menu_KeyboardSearch:
         ret = true;
         break;

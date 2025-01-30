@@ -466,6 +466,8 @@ QVariant QCocoaTheme::themeHint(ThemeHint hint) const
         return 1.0 / NSEvent.keyRepeatInterval;
     case QPlatformTheme::ShowIconsInMenus:
         return false;
+    case QPlatformTheme::MenuSelectionWraps:
+        return false;
     default:
         break;
     }

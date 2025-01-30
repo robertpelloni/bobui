@@ -99,6 +99,7 @@ public:
         UnderlineShortcut,
         ShowIconsInMenus,
         PreferFileIconFromTheme,
+        MenuSelectionWraps,
     };
     Q_ENUM(ThemeHint)
 

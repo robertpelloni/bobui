@@ -122,6 +122,11 @@ QT_BEGIN_NAMESPACE
 
     \value ContextMenuOnMouseRelease (bool) Whether the context menu should be shown on mouse release.
 
+    \value MenuSelectionWraps (bool) Determines whether menu selection wraps. That is, whether key navigation moves
+                                     the selection to the first menu item again after the last menu item has been
+                                     reached, and vice versa.
+                                     This enum value was added in Qt 6.10.
+
     \value TouchDoubleTapDistance (int) The maximum distance in logical pixels which a touchpoint can travel
                         between taps in order for the tap sequence to be handled as a double tap.
                         The default value is double the MouseDoubleClickDistance, or 10 logical pixels
@@ -684,6 +689,8 @@ QVariant QPlatformTheme::defaultThemeHint(ThemeHint hint)
         return true;
     case PreferFileIconFromTheme:
         return false;
+    case MenuSelectionWraps:
+        return true;
     }
 
     return QVariant();

@@ -477,6 +477,20 @@ void QStyleHints::setContextMenuTrigger(Qt::ContextMenuTrigger contextMenuTrigge
 }
 
 /*!
+    \property QStyleHints::menuSelectionWraps
+    \since 6.10
+    \brief menu selection wraps around.
+
+    Returns \c true if menu selection wraps. That is, whether key navigation moves
+    the selection to the first menu item again after the last menu item has been
+    reached, and vice versa.
+*/
+bool QStyleHints::menuSelectionWraps() const
+{
+    return themeableHint(QPlatformTheme::MenuSelectionWraps).toBool();
+}
+
+/*!
     \property QStyleHints::passwordMaskDelay
     \brief the time, in milliseconds, a typed letter is displayed unshrouded
     in a text input field in password mode.

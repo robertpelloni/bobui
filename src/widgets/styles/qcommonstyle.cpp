@@ -5192,9 +5192,12 @@ int QCommonStyle::styleHint(StyleHint sh, const QStyleOption *opt, const QWidget
         ret = 75;
         break;
 
-    case SH_Menu_SelectionWrap:
-        ret = true;
+    case SH_Menu_SelectionWrap: {
+        const QPlatformTheme *theme = QGuiApplicationPrivate::platformTheme();
+        ret = theme ? theme->themeHint(QPlatformTheme::MenuSelectionWraps).toInt()
+                    : QPlatformTheme::defaultThemeHint(QPlatformTheme::MenuSelectionWraps).toInt();
         break;
+    }
 
     case SH_Menu_FillScreenWithScroll:
         ret = true;
