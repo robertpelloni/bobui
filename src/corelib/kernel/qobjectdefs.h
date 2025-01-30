@@ -737,6 +737,24 @@ namespace QtPrivate {
         static int test(int (Object::*)(QMetaObject::Call, int, void **));
         enum { Value =  sizeof(test(&Object::qt_metacall)) == sizeof(int) };
     };
+
+    template <class TgtType, class SrcType>
+    inline TgtType qobject_cast_helper(SrcType *object)
+    {
+        using ObjType = std::remove_cv_t<std::remove_pointer_t<TgtType>> ;
+        static_assert(std::is_pointer_v<TgtType>,
+                "qobject_cast requires to cast towards a pointer type");
+        static_assert(HasQ_OBJECT_Macro<ObjType>::Value,
+                "qobject_cast requires the type to have a Q_OBJECT macro");
+
+        if constexpr (std::is_final_v<ObjType>) {
+            if (object && object->metaObject() == &ObjType::staticMetaObject)
+                return static_cast<TgtType>(object);
+            return nullptr;
+        } else {
+            return static_cast<TgtType>(ObjType::staticMetaObject.cast(object));
+        }
+    }
 }
 
 QT_END_NAMESPACE

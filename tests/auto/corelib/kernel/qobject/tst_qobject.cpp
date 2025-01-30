@@ -92,6 +92,7 @@ private slots:
     void dumpObjectTree();
     void connectToSender();
     void qobjectConstCast();
+    void qobjectCastFinal();
     void uniqConnection();
     void uniqConnectionPtr();
     void interfaceIid();
@@ -2429,6 +2430,13 @@ public:
     int rtti() const override { return 43; }
 };
 
+class FinalObject final: public FooObject
+{
+    Q_OBJECT
+public:
+    int rtti() const override { return 44; }
+};
+
 void tst_QObject::declareInterface()
 {
     FooObject obj;
@@ -3691,7 +3699,27 @@ void tst_QObject::qobjectConstCast()
     const QObject *cptr = &obj;
 
     QVERIFY(qobject_cast<FooObject *>(ptr));
+    QVERIFY(qobject_cast<const FooObject *>(ptr));
     QVERIFY(qobject_cast<const FooObject *>(cptr));
+}
+
+void tst_QObject::qobjectCastFinal()
+{
+    FooObject foo;
+    QObject *ptr = &foo;
+    const QObject *cptr = &foo;
+
+    QCOMPARE(qobject_cast<FinalObject *>(ptr), nullptr);
+    QCOMPARE(qobject_cast<const FinalObject *>(ptr), nullptr);
+    QCOMPARE(qobject_cast<const FinalObject *>(cptr), nullptr);
+
+    FinalObject final;
+    ptr = &final;
+    cptr = &final;
+
+    QCOMPARE(qobject_cast<FinalObject *>(ptr), &final);
+    QCOMPARE(qobject_cast<const FinalObject *>(ptr), &final);
+    QCOMPARE(qobject_cast<const FinalObject *>(cptr), &final);
 }
 
 void tst_QObject::uniqConnection()
