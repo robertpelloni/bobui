@@ -4526,7 +4526,7 @@ void tst_QRect::debug()
 
     str.clear();
     debug << QRect(QPoint(INT_MIN, INT_MIN), QPoint(INT_MAX, INT_MAX));
-    QCOMPARE(str, "QRect(-2147483648,-2147483648 4294967296x4294967296)");
+    QCOMPARE(str, "QRect(-2147483648,-2147483648 4294967296x4294967296 (oversized))");
 }
 
 QTEST_MAIN(tst_QRect)
