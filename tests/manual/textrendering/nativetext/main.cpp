@@ -253,6 +253,10 @@ public:
         mainLayout->setSizeConstraint(QLayout::SetFixedSize);
         setLayout(mainLayout);
 
+        // Enable emoji insertion shortcut on macOS
+        auto *menuBar = new QMenuBar(this);
+        menuBar->addMenu("Edit");
+
         setMode(TextRenderer::QtRendering);
         setFocusPolicy(Qt::StrongFocus);
         setFocus();
