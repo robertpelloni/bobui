@@ -265,7 +265,8 @@ public:
     void setMode(TextRenderer::RenderingMode mode)
     {
         s_mode = mode;
-        setWindowTitle(s_mode == TextRenderer::QtRendering ? "Qt" : "Native");
+        setWindowTitle((s_mode == TextRenderer::QtRendering ? "Qt" : "Native")
+            + QLatin1String(" (") + m_previews->font().family() + QLatin1String(")"));
 
         for (TextRenderer *renderer : m_previews->findChildren<TextRenderer *>())
             renderer->update();
