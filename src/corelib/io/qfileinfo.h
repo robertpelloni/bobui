@@ -125,6 +125,7 @@ public:
     bool isDir() const;
     bool isSymLink() const;
     bool isSymbolicLink() const;
+    bool isOther() const;
     bool isShortcut() const;
     bool isAlias() const;
     bool isJunction() const;
