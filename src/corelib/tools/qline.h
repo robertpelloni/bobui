@@ -114,12 +114,12 @@ constexpr inline QPoint QLine::p2() const
 
 constexpr inline int QLine::dx() const
 {
-    return pt2.x() - pt1.x();
+    return (pt2 - pt1).x();
 }
 
 constexpr inline int QLine::dy() const
 {
-    return pt2.y() - pt1.y();
+    return (pt2 - pt1).y();
 }
 
 constexpr inline void QLine::translate(const QPoint &point)

@@ -552,5 +552,11 @@ void tst_QPointF::structuredBinding()
     }
 }
 
+namespace ConstexprTests {
+constexpr QPointF p = (QPointF(1.0, 2.0) + QPointF(3.0, 4.0)) * 2.5;
+static_assert(p.x() == 10.0);
+static_assert(p.y() == 15.0);
+} // namespace ConstexprTests
+
 QTEST_MAIN(tst_QPointF)
 #include "tst_qpointf.moc"
