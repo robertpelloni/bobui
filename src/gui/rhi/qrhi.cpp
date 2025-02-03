@@ -8977,7 +8977,7 @@ bool QRhi::probe(QRhi::Implementation impl, QRhiInitParams *params)
     to the QVulkanInstance (\c VkInstance).
 
     The caller is expected to destroy the QRhiAdapter objects in the list. Apart
-    from querying \l{QRhiAdapter::}info(), the only purpose of these objects is
+    from querying \l{QRhiAdapter::}{info()}, the only purpose of these objects is
     to be passed on to create(), or the corresponding functions in higher layers
     such as Qt Quick.
 
@@ -9260,14 +9260,14 @@ QRhiDriverInfo QRhi::driverInfo() const
 
     Some QRhi backends target graphics APIs that expose the concept of \c
     adapters or \c{physical devices}. Call the static \l
-    {QRhi::}enumerateAdapters() function to retrieve a list of the adapters
+    {QRhi::}{enumerateAdapters()} function to retrieve a list of the adapters
     present in the system. Pass one of the returned QRhiAdapter objects to \l
-    {QRhi::}create() in order to request using the adapter or physical device
+    {QRhi::}{create()} in order to request using the adapter or physical device
     the QRhiAdapter corresponds to. Other than exposing the QRhiDriverInfo,
     QRhiAdapter is to be treated as an opaque handle.
 
     \note With Vulkan, the QRhiAdapter is valid only as long as the
-    QVulkanInstance that was used for \l{QRhi::}enumerateAdapters() is valid.
+    QVulkanInstance that was used for \l{QRhi::}{enumerateAdapters()} is valid.
     This also means that a QRhiAdapter is tied to the Vulkan instance
     (QVulkanInstance, \c VkInstance) and cannot be used in the context of
     another Vulkan instance.
