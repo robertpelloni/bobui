@@ -120,6 +120,8 @@ private slots:
     void renderToTextureArrayMultiView();
     void renderToWindowSimple_data();
     void renderToWindowSimple();
+    void continuousReadbackFromWindow_data();
+    void continuousReadbackFromWindow();
     void finishWithinSwapchainFrame_data();
     void finishWithinSwapchainFrame();
     void resourceUpdateBatchBufferTextureWithSwapchainFrames_data();
@@ -4086,6 +4088,84 @@ void tst_QRhi::renderToWindowSimple()
 
     QCOMPARE(redCount + blueCount, readbackWidth);
     QVERIFY(redCount < blueCount);
+}
+
+void tst_QRhi::continuousReadbackFromWindow_data()
+{
+    rhiTestData();
+}
+
+void tst_QRhi::continuousReadbackFromWindow()
+{
+    if (QGuiApplication::platformName().startsWith(QLatin1String("offscreen"), Qt::CaseInsensitive))
+        QSKIP("Offscreen: This fails.");
+
+    QFETCH(QRhi::Implementation, impl);
+    QFETCH(QRhiInitParams *, initParams);
+
+    QScopedPointer<QRhi> rhi(QRhi::create(impl, initParams, QRhi::Flags(), nullptr));
+    if (!rhi)
+        QSKIP("QRhi could not be created, skipping testing rendering");
+
+    QScopedPointer<QWindow> window(new QWindow);
+    setWindowType(window.data(), impl);
+
+    window->setGeometry(0, 0, 640, 480);
+    window->show();
+    QVERIFY(QTest::qWaitForWindowExposed(window.data()));
+
+    QScopedPointer<QRhiSwapChain> swapChain(rhi->newSwapChain());
+    swapChain->setWindow(window.data());
+    swapChain->setFlags(QRhiSwapChain::UsedAsTransferSource);
+    QScopedPointer<QRhiRenderPassDescriptor> rpDesc(swapChain->newCompatibleRenderPassDescriptor());
+    swapChain->setRenderPassDescriptor(rpDesc.data());
+    QVERIFY(swapChain->createOrResize());
+
+    QRhiResourceUpdateBatch *updates = rhi->nextResourceUpdateBatch();
+
+    QScopedPointer<QRhiBuffer> vbuf(rhi->newBuffer(QRhiBuffer::Immutable, QRhiBuffer::VertexBuffer, sizeof(triangleVertices)));
+    QVERIFY(vbuf->create());
+    updates->uploadStaticBuffer(vbuf.data(), triangleVertices);
+
+    QScopedPointer<QRhiShaderResourceBindings> srb(rhi->newShaderResourceBindings());
+    QVERIFY(srb->create());
+
+    QScopedPointer<QRhiGraphicsPipeline> pipeline(createSimplePipeline(rhi.data(), srb.data(), rpDesc.data()));
+    QVERIFY(pipeline);
+
+    const int asyncReadbackFrames = rhi->resourceLimit(QRhi::MaxAsyncReadbackFrames);
+    const int FRAME_COUNT = asyncReadbackFrames * 10;
+    QVector<QRhiReadbackResult> readResults(FRAME_COUNT);
+    int readbackCompletedCount = 0;
+
+    for (int frameNo = 0; frameNo < FRAME_COUNT; ++frameNo) {
+        QVERIFY(rhi->beginFrame(swapChain.data()) == QRhi::FrameOpSuccess);
+        QRhiCommandBuffer *cb = swapChain->currentFrameCommandBuffer();
+        QRhiRenderTarget *rt = swapChain->currentFrameRenderTarget();
+        const QSize outputSize = swapChain->currentPixelSize();
+        QRhiViewport viewport(0, 0, float(outputSize.width()), float(outputSize.height()));
+
+        cb->beginPass(rt, Qt::blue, { 1.0f, 0 }, updates);
+        updates = nullptr;
+        cb->setGraphicsPipeline(pipeline.data());
+        cb->setViewport(viewport);
+        QRhiCommandBuffer::VertexInput vbindings(vbuf.data(), 0);
+        cb->setVertexInput(0, 1, &vbindings);
+        cb->draw(3);
+
+        readResults[frameNo].completed = [&readbackCompletedCount] {
+            readbackCompletedCount += 1;
+        };
+        QRhiResourceUpdateBatch *readbackBatch = rhi->nextResourceUpdateBatch();
+        readbackBatch->readBackTexture({}, &readResults[frameNo]); // read back the current backbuffer
+        cb->endPass(readbackBatch);
+
+        rhi->endFrame(swapChain.data());
+    }
+
+    QVERIFY(readbackCompletedCount >= FRAME_COUNT - asyncReadbackFrames);
+    rhi->finish();
+    QCOMPARE(readbackCompletedCount, FRAME_COUNT);
 }
 
 void tst_QRhi::finishWithinSwapchainFrame_data()
