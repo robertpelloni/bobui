@@ -246,8 +246,19 @@ public:
             }
         });
         controls->addWidget(subpixelAAButton);
-        controls->addStretch();
 
+        auto *trakButton = new QCheckBox("Tracking (trak)");
+        connect(trakButton, &QCheckBox::checkStateChanged, [&](auto state) {
+            for (TextRenderer *renderer : m_previews->findChildren<TextRenderer *>()) {
+                QFont font = renderer->font();
+                font.setFeature("trak", state == Qt::Checked);
+                renderer->setFont(font);
+            }
+        });
+        trakButton->checkStateChanged(trakButton->checkState());
+        controls->addWidget(trakButton);
+
+        controls->addStretch();
         mainLayout->addLayout(controls);
 
         mainLayout->setSizeConstraint(QLayout::SetFixedSize);
