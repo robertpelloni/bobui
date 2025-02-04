@@ -1332,7 +1332,7 @@ void QLocale::setNumberOptions(NumberOptions options)
 */
 QLocale::NumberOptions QLocale::numberOptions() const
 {
-    return static_cast<NumberOptions>(d->m_numberOptions);
+    return d->m_numberOptions;
 }
 
 /*!
