@@ -199,8 +199,9 @@ function(qt_internal_add_executable name)
     set(exclude_from_all FALSE)
     if(__qt_exclude_tool_directories)
         foreach(absolute_dir ${__qt_exclude_tool_directories})
-            string(FIND "${CMAKE_CURRENT_SOURCE_DIR}" "${absolute_dir}" dir_starting_pos)
-            if(dir_starting_pos EQUAL 0)
+            _qt_internal_path_is_prefix(absolute_dir "${CMAKE_CURRENT_SOURCE_DIR}"
+                in_current_source)
+            if(in_current_source)
                 set(exclude_from_all TRUE)
                 set_target_properties("${name}" PROPERTIES
                     EXCLUDE_FROM_ALL TRUE

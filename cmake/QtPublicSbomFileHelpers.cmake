@@ -771,13 +771,9 @@ function(_qt_internal_sbom_map_path_to_reproducible_relative_path out_var)
         if(IS_ABSOLUTE "${path}")
             set(path_in "${path}")
 
-            string(FIND "${path}" "${PROJECT_SOURCE_DIR}/" src_idx)
-            string(FIND "${path}" "${PROJECT_BINARY_DIR}/" dest_idx)
-
-            if(src_idx EQUAL "0")
-                set(is_in_source_dir TRUE)
-            elseif(dest_idx EQUAL "0")
-                set(is_in_build_dir TRUE)
+            _qt_internal_path_is_prefix(PROJECT_SOURCE_DIR "${path}" is_in_source_dir)
+            if(NOT is_in_source_dir)
+                _qt_internal_path_is_prefix(PROJECT_BINARY_DIR "${path}" is_in_build_dir)
             endif()
         else()
             # We consider relative paths to be relative to the current source dir.

@@ -1619,16 +1619,11 @@ function(qt_internal_collect_module_headers out_var target)
 
         get_filename_component(file_path "${file_path}" ABSOLUTE)
 
-        string(FIND "${file_path}" "${source_dir}" source_dir_pos)
-        if(source_dir_pos EQUAL 0)
-            set(is_outside_module_source_dir FALSE)
-        else()
-            set(is_outside_module_source_dir TRUE)
-        endif()
+        _qt_internal_path_is_prefix(source_dir "${file_path}" is_inside_module_source_dir)
 
         get_source_file_property(is_generated "${file_path}" GENERATED)
         # Skip all header files outside the module source directory, except the generated files.
-        if(is_outside_module_source_dir AND NOT is_generated)
+        if(NOT is_inside_module_source_dir AND NOT is_generated)
             continue()
         endif()
 
@@ -1640,10 +1635,10 @@ function(qt_internal_collect_module_headers out_var target)
                 "\nCondition:\n    ${condition_string}")
         endif()
 
-        if(is_outside_module_source_dir)
-            set(base_dir "${binary_dir}")
-        else()
+        if(is_inside_module_source_dir)
             set(base_dir "${source_dir}")
+        else()
+            set(base_dir "${binary_dir}")
         endif()
 
         file(RELATIVE_PATH file_path_rel "${base_dir}" "${file_path}")
