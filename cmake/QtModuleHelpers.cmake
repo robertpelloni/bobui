@@ -1520,8 +1520,8 @@ function(qt_internal_generate_cpp_global_exports target module_define_infix)
         SOURCES "${generated_header_path}"
         CONFIGURE_GENERATED
     )
-    # `GENERATED` property is set in order to be processed by `qt_internal_collect_module_headers`
-    set_source_files_properties("${generated_header_path}" PROPERTIES GENERATED TRUE)
+    # Make sure the file is installed when processed by `qt_internal_collect_module_headers`
+    set_source_files_properties("${generated_header_path}" PROPERTIES _qt_syncqt_force_include TRUE)
 endfunction()
 
 function(qt_internal_install_module_headers target)
@@ -1621,9 +1621,11 @@ function(qt_internal_collect_module_headers out_var target)
 
         _qt_internal_path_is_prefix(source_dir "${file_path}" is_inside_module_source_dir)
 
+        get_source_file_property(forced_include "${file_path}" _qt_syncqt_force_include)
         get_source_file_property(is_generated "${file_path}" GENERATED)
-        # Skip all header files outside the module source directory, except the generated files.
-        if(NOT is_inside_module_source_dir AND NOT is_generated)
+        # Skip all header files outside the module source directory, except the generated files,
+        # or files explicitly marked to be included for syncqt.
+        if(NOT (forced_include OR is_inside_module_source_dir OR is_generated))
             continue()
         endif()
 
