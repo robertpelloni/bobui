@@ -66,6 +66,8 @@ private:
     static void updateScreens();
     static void cleanupScreens();
 
+    static void updateHdrWindows();
+
     static QMacNotificationObserver s_screenParameterObserver;
     static CGDisplayReconfigurationCallBack s_displayReconfigurationCallBack;
 
