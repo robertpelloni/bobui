@@ -2333,10 +2333,10 @@ bool QRectF::intersects(const QRectF &r) const noexcept
 
 QRect QRectF::toAlignedRect() const noexcept
 {
-    int xmin = int(qFloor(xp));
-    int xmax = int(qCeil(xp + w));
-    int ymin = int(qFloor(yp));
-    int ymax = int(qCeil(yp + h));
+    int xmin = qFloor(xp);
+    int xmax = qCeil(xp + w);
+    int ymin = qFloor(yp);
+    int ymax = qCeil(yp + h);
     return QRect(xmin, ymin, xmax - xmin, ymax - ymin);
 }
 
