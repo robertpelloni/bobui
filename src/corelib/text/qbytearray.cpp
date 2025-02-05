@@ -2012,7 +2012,7 @@ void QByteArray::expand(qsizetype i)
 }
 
 /*!
-    \fn QByteArray &QByteArray::nullTerminate() const
+    \fn QByteArray &QByteArray::nullTerminate()
     \since 6.9
 
     If this byte array's data isn't null-terminated, this method will make
@@ -2027,7 +2027,7 @@ void QByteArray::expand(qsizetype i)
 */
 
 /*!
-    \fn QByteArray QByteArray::nullTerminated() const
+    \fn QByteArray QByteArray::nullTerminated() const &
     \since 6.9
 
     Returns a copy of this byte array that is always null-terminated.
@@ -4459,7 +4459,7 @@ QByteArray QByteArray::number(double n, char format, int precision)
     This function can be used instead of fromRawData() to re-use
     existing QByteArray objects to save memory re-allocations.
 
-    \sa fromRawData(), data(), constData(), nullTermiante(), nullTerminated()
+    \sa fromRawData(), data(), constData(), nullTerminate(), nullTerminated()
 */
 QByteArray &QByteArray::setRawData(const char *data, qsizetype size)
 {
