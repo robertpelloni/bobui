@@ -29,7 +29,6 @@ Q_LOGGING_CATEGORY(lcQpaApplication, "qt.qpa.application");
 Q_LOGGING_CATEGORY(lcQpaClipboard, "qt.qpa.clipboard")
 Q_LOGGING_CATEGORY(lcQpaDialogs, "qt.qpa.dialogs")
 Q_LOGGING_CATEGORY(lcQpaMenus, "qt.qpa.menus")
-Q_LOGGING_CATEGORY(lcQpaServices, "qt.qpa.services")
 
 //
 // Conversion Functions
