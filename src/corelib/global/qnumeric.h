@@ -488,6 +488,28 @@ constexpr inline auto qUnsignedAbs(T t)
     return (t >= 0) ? U(t) : U(~U(t) + U(1));
 }
 
+template <typename Result,
+          typename FP,
+          typename std::enable_if_t<std::is_integral_v<Result>, bool> = true,
+          typename std::enable_if_t<std::is_floating_point_v<FP>, bool> = true>
+constexpr inline Result qCheckedFPConversionToInteger(FP value)
+{
+    // GCC always has constexpr cmath
+#if !defined(__cpp_lib_constexpr_cmath) && !defined(Q_CC_GNU_ONLY)
+# ifdef QT_SUPPORTS_IS_CONSTANT_EVALUATED
+    if (!q20::is_constant_evaluated())
+# else
+    if (false)
+# endif
+#endif
+    {
+        const FP truncatedValue = std::trunc(value);
+        Q_ASSERT(truncatedValue >= FP((std::numeric_limits<Result>::min)()));
+        Q_ASSERT(truncatedValue <= FP((std::numeric_limits<Result>::max)()));
+    }
+    return Result(value);
+}
+
 namespace QRoundImpl {
 // gcc < 10 doesn't have __has_builtin
 #if defined(Q_PROCESSOR_ARM_64) && (__has_builtin(__builtin_round) || defined(Q_CC_GNU)) && !defined(Q_CC_CLANG)
@@ -530,22 +552,22 @@ constexpr inline int qSaturateRound(FP value)
 
 constexpr inline int qRound(double d)
 {
-    return int(QtPrivate::QRoundImpl::qRound(d));
+    return QtPrivate::qCheckedFPConversionToInteger<int>(QtPrivate::QRoundImpl::qRound(d));
 }
 
 constexpr inline int qRound(float f)
 {
-    return int(QtPrivate::QRoundImpl::qRound(f));
+    return QtPrivate::qCheckedFPConversionToInteger<int>(QtPrivate::QRoundImpl::qRound(f));
 }
 
 constexpr inline qint64 qRound64(double d)
 {
-    return qint64(QtPrivate::QRoundImpl::qRound(d));
+    return QtPrivate::qCheckedFPConversionToInteger<qint64>(QtPrivate::QRoundImpl::qRound(d));
 }
 
 constexpr inline qint64 qRound64(float f)
 {
-    return qint64(QtPrivate::QRoundImpl::qRound(f));
+    return QtPrivate::qCheckedFPConversionToInteger<qint64>(QtPrivate::QRoundImpl::qRound(f));
 }
 
 namespace QtPrivate {

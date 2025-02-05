@@ -27,13 +27,13 @@ extern Q_CORE_EXPORT const qreal qt_sine_table[QT_SINE_TABLE_SIZE];
 template <typename T> int qCeil(T v)
 {
     using std::ceil;
-    return int(ceil(v));
+    return QtPrivate::qCheckedFPConversionToInteger<int>(ceil(v));
 }
 
 template <typename T> int qFloor(T v)
 {
     using std::floor;
-    return int(floor(v));
+    return QtPrivate::qCheckedFPConversionToInteger<int>(floor(v));
 }
 
 template <typename T> auto qFabs(T v)
