@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 add_subdirectory(qstringlistmodel)
+add_subdirectory(qgenericitemmodel)
 if(TARGET Qt::Gui)
     add_subdirectory(qabstractitemmodel)
     if(QT_FEATURE_proxymodel)

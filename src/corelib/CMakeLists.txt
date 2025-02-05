@@ -1156,6 +1156,7 @@ qt_internal_extend_target(Core CONDITION QT_FEATURE_itemmodel
     SOURCES
         itemmodels/qabstractitemmodel.cpp itemmodels/qabstractitemmodel.h itemmodels/qabstractitemmodel_p.h
         itemmodels/qitemselectionmodel.cpp itemmodels/qitemselectionmodel.h itemmodels/qitemselectionmodel_p.h
+        itemmodels/qgenericitemmodel.h itemmodels/qgenericitemmodel_impl.h itemmodels/qgenericitemmodel.cpp
 )
 
 qt_internal_extend_target(Core CONDITION QT_FEATURE_proxymodel
@@ -1620,3 +1621,7 @@ function(qt_internal_library_deprecation_level)
     set_source_files_properties("${output_header}" PROPERTIES GENERATED TRUE)
 endfunction()
 qt_internal_library_deprecation_level()
+
+if(QT_FEATURE_doc_snippets)
+    add_subdirectory(doc/snippets)
+endif()

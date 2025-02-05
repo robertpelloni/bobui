@@ -1,0 +1,387 @@
+// Copyright (C) 2025 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+
+#include "qgenericitemmodel.h"
+
+QT_BEGIN_NAMESPACE
+
+/*!
+    \class QGenericItemModel
+    \inmodule QtCore
+    \since 6.10
+    \ingroup model-view
+    \brief QGenericItemModel implements QAbstractItemModel for any C++ range.
+    \reentrant
+
+    QGenericItemModel can make the data in any sequentially iterable C++ type
+    available to the \l{Model/View Programming}{model/view framework} of Qt.
+    This makes it easy to display existing data structures in the Qt Widgets
+    and Qt Quick item views, and to allow the user of the application to
+    manipulate the data using a graphical user interface.
+
+    To use QGenericItemModel, instantiate it with a C++ range and set it as
+    the model of one or more views:
+
+    \snippet qgenericitemmodel/main.cpp array
+
+    The range can be any C++ type for which the standard methods
+    \c{std::cbegin} and \c{std::cend} are implemented, and for which the
+    returned iterator type satisfies \c{std::forward_iterator}. Certain model
+    operations will perform better if \c{std::size} is available, and if the
+    iterator satisfies \c{std::random_access_iterator}.
+
+    The range can be provided by pointer or by value, and has to be provided
+    when constructing the model. If the range is provided by pointer, then
+    QAbstractItemModel APIs that modify the model, such as setData() or
+    insertRows(), modify the range. The caller must make sure that the
+    range's lifetime exceeds the lifetime of the model. Methods that modify
+    the structure of the range, such as insertRows() or removeColumns(), use
+    standard C++ container APIs \c{resize()}, \c{insert()}, \c{erase()}, in
+    addition to dereferencing a mutating iterator to set or clear the data.
+
+    There is no API to retrieve the range again, so constructing the model
+    from a range by value is mostly only useful for displaying data.
+    Changes to the data can be monitored using the signals emitted by the
+    model, such as \l{QAbstractItemModel}{dataChanged()}.
+
+    \section2 Read-only or mutable
+
+    For ranges that are const objects, for which access always yields
+    constant values, or where the required container APIs are not available,
+    QGenericItemModel implements write-access APIs to do nothing and return
+    \c{false}. In the example above, the model cannot add or remove rows, as
+    the number of entries in a C++ array is fixed. But the values can be
+    changed using setData(), and the user can trigger editing of the values in
+    the list view. By making the array const, the values also become read-only.
+
+    \snippet qgenericitemmodel/main.cpp const_array
+
+    The values are also read-only if the element type is const, like in
+
+    \snippet qgenericitemmodel/main.cpp const_values
+
+    \note If the values in the range are const, then it's also not possible
+    to remove or insert columns and rows through the QAbstractItemModel API.
+    For more granular control, implement \l{the C++ tuple protocol}.
+
+    \section1 List or Table
+
+    The elements in the range are interpreted as rows of the model. Depending
+    on the type of these rows, QGenericItemModel exposes the range as a list or
+    a table.
+
+    If the row type is not an iterable range, and does not implement the
+    C++ tuple protocol, then the range gets represented as a list.
+
+    \snippet qgenericitemmodel/main.cpp list_of_int
+
+    If the row type is an iterable range, then the range gets represented as a
+    table.
+
+    \snippet qgenericitemmodel/main.cpp grid_of_numbers
+
+    With such a row type, the number of columns can be changed via
+    insertColumns() and removeColumns(). However, all rows are expected to have
+    the same number of columns.
+
+    \section2 Fixed-size rows
+
+    If the row type implements \l{the C++ tuple protocol}, then the range gets
+    represented as a table with a fixed number of columns.
+
+    \snippet qgenericitemmodel/main.cpp pair_int_QString
+
+    \section2 Item Types
+
+    The type of the items that the implementations of data(), setData(), and
+    clearItemData() operate on can be the same across the entire model - like
+    in the gridOfNumbers example above. But the range can also have different
+    item types for different columns, like in the \c{numberNames} case.
+
+    By default, the value gets used for the Qt::DisplayRole and Qt::EditRole
+    roles. Most views expect the value to be \l{QVariant::canConvert}{convertible
+    to and from a QString} (but a custom delegate might provide more flexibility).
+
+    \section2 The C++ tuple protocol
+
+    As seen in the \c{numberNames} example above, the row type can be a tuple,
+    and in fact any type that implements the tuple protocol. This protocol is
+    implemented by specializing \c{std::tuple_size} and \c{std::tuple_element},
+    and overloading the unqualified \c{get} function. Do so for your custom row
+    type to make existing structured data available to the model/view framework
+    in Qt.
+
+    \snippet qgenericitemmodel/main.cpp tuple_protocol
+
+    In the above implementation, the \c{title} and \c{author} values of the
+    \c{Book} type are returned as \c{const}, so the model flags items in those
+    two columns as read-only. The user won't be able to trigger editing, and
+    setData() does nothing and returns false. For \c{summary} and \c{rating}
+    the implementation returns the same value category as the book, so when
+    \c{get} is called with a mutable reference to a \c{Book}, then it will
+    return a mutable reference of the respective variable. The model makes
+    those columns editable, both for the user and for programmatic access.
+
+    \note The implementation of \c{get} above requires C++23. A C++17 compliant
+    implementation can be found in the unit test code for QGenericItemModel.
+
+    \sa {Model/View Programming}
+*/
+
+/*!
+    \fn template <typename Range, QGenericItemModelDetails::if_is_range<Range>> QGenericItemModel::QGenericItemModel(Range &&range, QObject *parent)
+
+    Constructs a generic item model instance that operates on the data in
+    \a range. The \a range has to be a sequential range for which
+    \c{std::cbegin} and \c{std::cend} are available. The model instance becomes
+    a child of \a parent.
+
+    The \a range can be a pointer, in which case mutating model APIs will
+    modify the data in that range instance. If \a range is a value (or moved
+    into the model), then use the signals emitted by the model to respond to
+    changes to the data.
+
+    \note While the model does not take ownership of the range object, you
+    must not modify the \a range directly once the model has been
+    constructed. Such modifications will not emit signals necessary to keep
+    model users (other models or views) synchronized with the model, resulting
+    in inconsistent results, undefined behavior, and crashes.
+*/
+
+/*!
+    Destroys the generic item model.
+
+    The range that the model was constructed from is not destroyed.
+*/
+QGenericItemModel::~QGenericItemModel() = default;
+
+/*!
+    \reimp
+
+    Returns the index of the model item at \a row and \a column in \a parent.
+
+    Passing a valid parent produces an invalid index for models that operate on
+    list and table ranges.
+
+    \sa parent()
+*/
+QModelIndex QGenericItemModel::index(int row, int column, const QModelIndex &parent) const
+{
+    return impl->callConst<QModelIndex>(QGenericItemModelImplBase::Index, row, column, parent);
+}
+
+/*!
+    \reimp
+
+    Returns the parent of the item at the \a child index.
+
+    This function always produces an invalid index for models that operate on
+    list and table ranges.
+
+    \sa index(), hasChildren()
+*/
+QModelIndex QGenericItemModel::parent(const QModelIndex &child) const
+{
+    return impl->callConst<QModelIndex>(QGenericItemModelImplBase::Parent, child);
+}
+
+/*!
+    \reimp
+
+    Returns the number of rows under the given \a parent. This is the number of
+    items in the root range for an invalid \a parent index.
+
+    If the \a parent index is valid, then this function always returns 0 for
+    models that operate on list and table ranges.
+
+    \sa columnCount(), insertRows(), hasChildren()
+*/
+int QGenericItemModel::rowCount(const QModelIndex &parent) const
+{
+    return impl->callConst<int>(QGenericItemModelImplBase::RowCount, parent);
+}
+
+/*!
+    \reimp
+
+    Returns the number of columns of the model. This function returns the same
+    value for all \a parent indexes.
+
+    For models operating on a statically sized row type, this returned value is
+    always the same throughout the lifetime of the model. For models operating
+    on dynamically sized row type, the model returns the number of items in the
+    first row, or 0 if the model has no rows.
+
+    \sa rowCount, insertColumns()
+*/
+int QGenericItemModel::columnCount(const QModelIndex &parent) const
+{
+    return impl->callConst<int>(QGenericItemModelImplBase::ColumnCount, parent);
+}
+
+/*!
+    \reimp
+
+    Returns the item flags for the given \a index.
+
+    The implementation returns a combination of flags that enables the item
+    (\c ItemIsEnabled) and allows it to be selected (\c ItemIsSelectable). For
+    models operating on a range with mutable data, it also sets the flag
+    that allows the item to be editable (\c ItemIsEditable).
+
+    \sa Qt::ItemFlags
+*/
+Qt::ItemFlags QGenericItemModel::flags(const QModelIndex &index) const
+{
+    return impl->callConst<Qt::ItemFlags>(QGenericItemModelImplBase::Flags, index);
+}
+
+/*!
+    \reimp
+
+    Returns the data for the given \a role and \a section in the header with
+    the specified \a orientation.
+
+    For horizontal headers, the section number corresponds to the column
+    number. Similarly, for vertical headers, the section number corresponds to
+    the row number.
+
+    \sa Qt::ItemDataRole, setHeaderData(), QHeaderView
+*/
+QVariant QGenericItemModel::headerData(int section, Qt::Orientation orientation, int role) const
+{
+    return impl->callConst<QVariant>(QGenericItemModelImplBase::HeaderData,
+                                     section, orientation, role);
+}
+
+/*!
+    \reimp
+
+    Returns the data stored under the given \a role for the value in the
+    range referred to by the \a index.
+
+    The implementation returns a QVariant constructed from the item at the
+    \a index via \c{QVariant::fromValue()} for \c{Qt::DisplayRole} or
+    \c{Qt::EditRole}. For other roles, the implementation returns an \b invalid
+    (default-constructed) QVariant.
+
+    \sa Qt::ItemDataRole, setData(), headerData()
+*/
+QVariant QGenericItemModel::data(const QModelIndex &index, int role) const
+{
+    return impl->callConst<QVariant>(QGenericItemModelImplBase::Data, index, role);
+}
+
+/*!
+    \reimp
+
+    Sets the \a role data for the item at \a index to \a data. This
+    implementation assigns the value in \a data to the item at the \a index
+    in the range for \c{Qt::DisplayRole} and \c{Qt::EditRole}, and returns
+    \c{true}. For other roles, the implementation returns \c{false}.
+
+//! [read-only-setData]
+    For models operating on a read-only range, or on a read-only column in
+    a row type that implements \l{the C++ tuple protocol}, this implementation
+    returns \c{false} immediately.
+//! [read-only-setData]
+*/
+bool QGenericItemModel::setData(const QModelIndex &index, const QVariant &data, int role)
+{
+    return impl->call<bool>(QGenericItemModelImplBase::SetData, index, data, role);
+}
+
+/*!
+    \reimp
+
+    Replaces the value stored in the range at \a index with a default-
+    constructed value.
+
+    \include qgenericitemmodel.cpp read-only-setData
+*/
+bool QGenericItemModel::clearItemData(const QModelIndex &index)
+{
+    return impl->call<bool>(QGenericItemModelImplBase::ClearItemData, index);
+}
+
+/*
+//! [column-change-requirement]
+    \note A dynamically sized row type needs to provide a \c{\1} member function.
+
+    For models operating on a read-only range, or on a range with a
+    statically sized row type (such as a tuple, array, or struct), this
+    implementation does nothing and returns \c{false} immediately.
+//! [column-change-requirement]
+*/
+
+/*!
+    \reimp
+
+    Inserts \a count empty columns before the item at \a column in all rows
+    of the range at \a parent. Returns \c{true} if successful; otherwise
+    returns \c{false}.
+
+    \include qgenericitemmodel.cpp {column-change-requirement} {insert(const_iterator, size_t, value_type)}
+*/
+bool QGenericItemModel::insertColumns(int column, int count, const QModelIndex &parent)
+{
+    return impl->call<bool>(QGenericItemModelImplBase::InsertColumns, column, count, parent);
+}
+
+/*!
+    \reimp
+
+    Removes \a count columns from the item at \a column on in all rows of the
+    range at \a parent. Returns \c{true} if successful, otherwise returns
+    \c{false}.
+
+    \include qgenericitemmodel.cpp {column-change-requirement} {erase(const_iterator, size_t)}
+*/
+bool QGenericItemModel::removeColumns(int column, int count, const QModelIndex &parent)
+{
+    return impl->call<bool>(QGenericItemModelImplBase::RemoveColumns, column, count, parent);
+}
+
+/*
+//! [row-change-requirement]
+    \note The range needs to be dynamically sized and provide a \c{\1}
+    member function.
+
+    For models operating on a read-only or statically-sized range (such as
+    an array), this implementation does nothing and returns \c{false}
+    immediately.
+//! [row-change-requirement]
+*/
+
+/*!
+    \reimp
+
+    Inserts \a count empty rows before the given \a row into the range at
+    \a parent. Returns \c{true} if successful; otherwise returns \c{false}.
+
+    \include qgenericitemmodel.cpp {row-change-requirement} {insert(const_iterator, size_t, value_type)}
+
+    \note For ranges with a dynamically sized column type, the column needs
+    to provide a \c{resize(size_t)} member function.
+*/
+bool QGenericItemModel::insertRows(int row, int count, const QModelIndex &parent)
+{
+    return impl->call<bool>(QGenericItemModelImplBase::InsertRows, row, count, parent);
+}
+
+/*!
+    \reimp
+
+    Removes \a count rows from the range at \a parent, starting with the
+    given \a row. Returns \c{true} if successful, otherwise returns \c{false}.
+
+    \include qgenericitemmodel.cpp {row-change-requirement} {erase(const_iterator, size_t)}
+*/
+bool QGenericItemModel::removeRows(int row, int count, const QModelIndex &parent)
+{
+    return impl->call<bool>(QGenericItemModelImplBase::RemoveRows, row, count, parent);
+}
+
+QT_END_NAMESPACE
+
+#include "moc_qgenericitemmodel.cpp"
