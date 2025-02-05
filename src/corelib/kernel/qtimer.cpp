@@ -246,9 +246,14 @@ void QTimer::start(int msec)
 static std::chrono::milliseconds
 checkInterval(const char *caller, std::chrono::milliseconds interval)
 {
+    constexpr auto maxInterval = INT_MAX * 1ms;
     if (interval < 0ms) {
         qWarning("%s: negative intervals aren't allowed; the interval will be set to 1ms.", caller);
         interval = 1ms;
+    } else if (interval > maxInterval) {
+        qWarning("%s: interval exceeds maximum allowed interval, it will be clamped to "
+                 "INT_MAX ms (about 24 days).", caller);
+        interval = maxInterval;
     }
     return interval;
 }
@@ -276,9 +281,6 @@ void QTimer::start(std::chrono::milliseconds interval)
     Q_D(QTimer);
 
     interval = checkInterval("QTimer::start", interval);
-
-    // This could be narrowing as the interval is stored in an `int` QProperty,
-    // and the type can't be changed in Qt6.
     const int msec = interval.count();
     const bool intervalChanged = msec != d->inter;
     d->inter.setValue(msec);
@@ -645,9 +647,6 @@ void QTimer::setInterval(std::chrono::milliseconds interval)
     Q_D(QTimer);
 
     interval = checkInterval("QTimer::setInterval", interval);
-
-    // This could be narrowing as the interval is stored in an `int` QProperty,
-    // and the type can't be changed in Qt6.
     const int msec = interval.count();
     d->inter.removeBindingUnlessInWrapper();
     const bool intervalChanged = msec != d->inter.valueBypassingBindings();

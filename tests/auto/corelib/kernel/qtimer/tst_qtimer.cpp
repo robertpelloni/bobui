@@ -99,6 +99,8 @@ private slots:
 
     void negativeInterval();
     void testTimerId();
+
+    void intervalOverflow();
 };
 
 void tst_QTimer::zeroTimer()
@@ -1432,6 +1434,46 @@ void tst_QTimer::negativeInterval()
     timer.start(-100ms);
     QVERIFY(timer.isActive());
     QCOMPARE(timer.intervalAsDuration(), 1ms);
+}
+
+void tst_QTimer::intervalOverflow()
+{
+    QTimer timer;
+    constexpr auto maxInterval = INT_MAX * 1ms;
+    constexpr auto tooBig = maxInterval + 1ms;
+    auto ignoreStartWarningMsg = [] {
+        QTest::ignoreMessage(QtWarningMsg,
+                             "QTimer::start: interval exceeds maximum allowed interval, it will "
+                             "be clamped to INT_MAX ms (about 24 days).");
+    };
+    auto ignoreSetIntervalWarningMsg = [] {
+        QTest::ignoreMessage(QtWarningMsg,
+                             "QTimer::setInterval: interval exceeds maximum allowed interval, "
+                             "it will be clamped to INT_MAX ms (about 24 days).");
+    };
+
+    ignoreStartWarningMsg();
+    timer.start(tooBig);
+    QVERIFY(timer.isActive());
+    // Interval clamped to INT_MAX * 1ms
+    QCOMPARE(timer.intervalAsDuration(), maxInterval);
+
+    timer.stop();
+    ignoreSetIntervalWarningMsg();
+    timer.setInterval(tooBig); // The same but with setInterval()
+    QCOMPARE(timer.intervalAsDuration(), maxInterval);
+    timer.start();
+    QVERIFY(timer.isActive());
+
+    timer.stop();
+    ignoreStartWarningMsg();
+    timer.start(tooBig + 10min);
+    QVERIFY(timer.isActive());
+    QCOMPARE(timer.intervalAsDuration(), maxInterval);
+    ignoreSetIntervalWarningMsg();
+    timer.setInterval(tooBig + 1h); // With an already running timer
+    QVERIFY(timer.isActive());
+    QCOMPARE(timer.intervalAsDuration(), maxInterval);
 }
 
 class OrderHelper : public QObject
