@@ -487,41 +487,66 @@ constexpr inline auto qUnsignedAbs(T t)
     using U = std::make_unsigned_t<T>;
     return (t >= 0) ? U(t) : U(~U(t) + U(1));
 }
-} // namespace QtPrivate
 
+namespace QRoundImpl {
 // gcc < 10 doesn't have __has_builtin
 #if defined(Q_PROCESSOR_ARM_64) && (__has_builtin(__builtin_round) || defined(Q_CC_GNU)) && !defined(Q_CC_CLANG)
 // ARM64 has a single instruction that can do C++ rounding with conversion to integer.
 // Note current clang versions have non-constexpr __builtin_round, ### allow clang this path when they fix it.
-constexpr inline int qRound(double d)
-{ return int(__builtin_round(d)); }
-constexpr inline int qRound(float f)
-{ return int(__builtin_roundf(f)); }
-constexpr inline qint64 qRound64(double d)
-{ return qint64(__builtin_round(d)); }
-constexpr inline qint64 qRound64(float f)
-{ return qint64(__builtin_roundf(f)); }
+constexpr inline double qRound(double d)
+{ return __builtin_round(d); }
+constexpr inline float qRound(float f)
+{ return __builtin_roundf(f); }
 #elif defined(__SSE2__) && (__has_builtin(__builtin_copysign) || defined(Q_CC_GNU))
 // SSE has binary operations directly on floating point making copysign fast
-constexpr inline int qRound(double d)
-{ return int(d + __builtin_copysign(0.5, d)); }
-constexpr inline int qRound(float f)
-{ return int(f + __builtin_copysignf(0.5f, f)); }
-constexpr inline qint64 qRound64(double d)
-{ return qint64(d + __builtin_copysign(0.5, d)); }
-constexpr inline qint64 qRound64(float f)
-{ return qint64(f + __builtin_copysignf(0.5f, f)); }
+constexpr inline double qRound(double d)
+{ return d + __builtin_copysign(0.5, d); }
+constexpr inline float qRound(float f)
+{ return f + __builtin_copysignf(0.5f, f); }
 #else
+constexpr inline double qRound(double d)
+{ return d >= 0.0 ? d + 0.5 : d - 0.5; }
+constexpr inline float qRound(float d)
+{ return d >= 0.0f ? d + 0.5f : d - 0.5f; }
+#endif
+} // namespace QRoundImpl
+
+// Like qRound, but have well-defined saturating behavior.
+// NaN is not handled.
+template <typename FP,
+          typename std::enable_if_t<std::is_floating_point_v<FP>, bool> = true>
+constexpr inline int qSaturateRound(FP value)
+{
+#ifdef QT_SUPPORTS_IS_CONSTANT_EVALUATED
+    if (!q20::is_constant_evaluated())
+        Q_ASSERT(!qIsNaN(value));
+#endif
+    constexpr FP MinBound = FP((std::numeric_limits<int>::min)());
+    constexpr FP MaxBound = FP((std::numeric_limits<int>::max)());
+    const FP beforeTruncation = QRoundImpl::qRound(value);
+    return int(qBound(MinBound, beforeTruncation, MaxBound));
+}
+} // namespace QtPrivate
+
 constexpr inline int qRound(double d)
-{ return d >= 0.0 ? int(d + 0.5) : int(d - 0.5); }
-constexpr inline int qRound(float d)
-{ return d >= 0.0f ? int(d + 0.5f) : int(d - 0.5f); }
+{
+    return int(QtPrivate::QRoundImpl::qRound(d));
+}
+
+constexpr inline int qRound(float f)
+{
+    return int(QtPrivate::QRoundImpl::qRound(f));
+}
 
 constexpr inline qint64 qRound64(double d)
-{ return d >= 0.0 ? qint64(d + 0.5) : qint64(d - 0.5); }
-constexpr inline qint64 qRound64(float d)
-{ return d >= 0.0f ? qint64(d + 0.5f) : qint64(d - 0.5f); }
-#endif
+{
+    return qint64(QtPrivate::QRoundImpl::qRound(d));
+}
+
+constexpr inline qint64 qRound64(float f)
+{
+    return qint64(QtPrivate::QRoundImpl::qRound(f));
+}
 
 namespace QtPrivate {
 template <typename T>

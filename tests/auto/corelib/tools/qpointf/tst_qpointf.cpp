@@ -29,6 +29,9 @@ CHECK(const &&);
 
 #include <qpoint.h>
 
+#include <cmath>
+#include <cfloat>
+
 class tst_QPointF : public QObject
 {
     Q_OBJECT
@@ -414,6 +417,8 @@ void tst_QPointF::toPoint_data()
     QTest::newRow("(0.0, 0.0) ==> (0, 0)") << QPointF(0, 0) << QPoint(0, 0);
     QTest::newRow("(0.5, 0.5) ==> (1, 1)") << QPointF(0.5, 0.5) << QPoint(1, 1);
     QTest::newRow("(-0.5, -0.5) ==> (-1, -1)") << QPointF(-0.5, -0.5) << QPoint(-1, -1);
+    QTest::newRow("(DBL_MAX, -DBL_MAX) ==> (INT_MAX, INT_MIN)") << QPointF(DBL_MAX, -DBL_MAX) << QPoint(INT_MAX, INT_MIN);
+    QTest::newRow("(HUGE_VAL, 0) ==> (INT_MAX, 0)") << QPointF(HUGE_VAL, 0) << QPoint(INT_MAX, 0);
 }
 
 void tst_QPointF::toPoint()

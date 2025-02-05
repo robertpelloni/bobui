@@ -198,14 +198,18 @@ constexpr inline QMargins operator*(int factor, const QMargins &margins) noexcep
 constexpr inline QMargins operator*(const QMargins &margins, qreal factor) noexcept
 {
     // Deliberately using left(), top() etc. (checked ints don't have FP arithmetic)
-    return QMargins(qRound(margins.left() * factor), qRound(margins.top() * factor),
-                    qRound(margins.right() * factor), qRound(margins.bottom() * factor));
+    return QMargins(QtPrivate::qSaturateRound(margins.left() * factor),
+                    QtPrivate::qSaturateRound(margins.top() * factor),
+                    QtPrivate::qSaturateRound(margins.right() * factor),
+                    QtPrivate::qSaturateRound(margins.bottom() * factor));
 }
 
 constexpr inline QMargins operator*(qreal factor, const QMargins &margins) noexcept
 {
-    return QMargins(qRound(margins.left() * factor), qRound(margins.top() * factor),
-                    qRound(margins.right() * factor), qRound(margins.bottom() * factor));
+    return QMargins(QtPrivate::qSaturateRound(margins.left() * factor),
+                    QtPrivate::qSaturateRound(margins.top() * factor),
+                    QtPrivate::qSaturateRound(margins.right() * factor),
+                    QtPrivate::qSaturateRound(margins.bottom() * factor));
 }
 
 constexpr inline QMargins operator/(const QMargins &margins, int divisor)
@@ -217,8 +221,10 @@ constexpr inline QMargins operator/(const QMargins &margins, int divisor)
 constexpr inline QMargins operator/(const QMargins &margins, qreal divisor)
 {
     Q_ASSERT(!qFuzzyIsNull(divisor));
-    return QMargins(qRound(margins.left() / divisor), qRound(margins.top() / divisor),
-                    qRound(margins.right() / divisor), qRound(margins.bottom() / divisor));
+    return QMargins(QtPrivate::qSaturateRound(margins.left() / divisor),
+                    QtPrivate::qSaturateRound(margins.top() / divisor),
+                    QtPrivate::qSaturateRound(margins.right() / divisor),
+                    QtPrivate::qSaturateRound(margins.bottom() / divisor));
 }
 
 constexpr inline QMargins operator|(const QMargins &m1, const QMargins &m2) noexcept
@@ -533,7 +539,10 @@ constexpr QMarginsF QMargins::toMarginsF() const noexcept { return *this; }
 
 constexpr inline QMargins QMarginsF::toMargins() const noexcept
 {
-    return QMargins(qRound(m_left), qRound(m_top), qRound(m_right), qRound(m_bottom));
+    return QMargins(QtPrivate::qSaturateRound(m_left),
+                    QtPrivate::qSaturateRound(m_top),
+                    QtPrivate::qSaturateRound(m_right),
+                    QtPrivate::qSaturateRound(m_bottom));
 }
 
 #ifndef QT_NO_DEBUG_STREAM

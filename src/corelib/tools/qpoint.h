@@ -65,15 +65,15 @@ private:
     friend constexpr inline QPoint operator-(const QPoint &p1, const QPoint &p2) noexcept
     { return QPoint(p1.xp - p2.xp, p1.yp - p2.yp); }
     friend constexpr inline QPoint operator*(const QPoint &p, float factor)
-    { return QPoint(qRound(p.x() * factor), qRound(p.y() * factor)); }
+    { return QPoint(QtPrivate::qSaturateRound(p.x() * factor), QtPrivate::qSaturateRound(p.y() * factor)); }
     friend constexpr inline QPoint operator*(const QPoint &p, double factor)
-    { return QPoint(qRound(p.x() * factor), qRound(p.y() * factor)); }
+    { return QPoint(QtPrivate::qSaturateRound(p.x() * factor), QtPrivate::qSaturateRound(p.y() * factor)); }
     friend constexpr inline QPoint operator*(const QPoint &p, int factor) noexcept
     { return QPoint(p.xp * factor, p.yp * factor); }
     friend constexpr inline QPoint operator*(float factor, const QPoint &p)
-    { return QPoint(qRound(p.x() * factor), qRound(p.y() * factor)); }
+    { return QPoint(QtPrivate::qSaturateRound(p.x() * factor), QtPrivate::qSaturateRound(p.y() * factor)); }
     friend constexpr inline QPoint operator*(double factor, const QPoint &p)
-    { return QPoint(qRound(p.x() * factor), qRound(p.y() * factor)); }
+    { return QPoint(QtPrivate::qSaturateRound(p.x() * factor), QtPrivate::qSaturateRound(p.y() * factor)); }
     friend constexpr inline QPoint operator*(int factor, const QPoint &p) noexcept
     { return QPoint(p.xp * factor, p.yp * factor); }
     friend constexpr inline QPoint operator+(const QPoint &p) noexcept
@@ -83,7 +83,7 @@ private:
     friend constexpr inline QPoint operator/(const QPoint &p, qreal c)
     {
         Q_ASSERT(!qFuzzyIsNull(c));
-        return QPoint(qRound(p.x() / c), qRound(p.y() / c));
+        return QPoint(QtPrivate::qSaturateRound(p.x() / c), QtPrivate::qSaturateRound(p.y() / c));
     }
 
 public:
@@ -189,15 +189,15 @@ constexpr inline QPoint &QPoint::operator-=(const QPoint &p)
 
 constexpr inline QPoint &QPoint::operator*=(float factor)
 {
-    xp.setValue(qRound(x() * factor));
-    yp.setValue(qRound(y() * factor));
+    xp.setValue(QtPrivate::qSaturateRound(x() * factor));
+    yp.setValue(QtPrivate::qSaturateRound(y() * factor));
     return *this;
 }
 
 constexpr inline QPoint &QPoint::operator*=(double factor)
 {
-    xp.setValue(qRound(x() * factor));
-    yp.setValue(qRound(y() * factor));
+    xp.setValue(QtPrivate::qSaturateRound(x() * factor));
+    yp.setValue(QtPrivate::qSaturateRound(y() * factor));
     return *this;
 }
 
@@ -415,7 +415,7 @@ constexpr QPointF QPoint::toPointF() const noexcept { return *this; }
 
 constexpr inline QPoint QPointF::toPoint() const
 {
-    return QPoint(qRound(xp), qRound(yp));
+    return QPoint(QtPrivate::qSaturateRound(xp), QtPrivate::qSaturateRound(yp));
 }
 
 #ifndef QT_NO_DEBUG_STREAM
