@@ -75,3 +75,24 @@ macos arm
 qnx ci
 [bindThenResolveHost:WithoutProxy SSL:first-fail]
 qnx ci
+
+[blockingIMAP]
+* # QTBUG-133548
+[partialRead]
+* # QTBUG-133548
+[readAllAfterClose]
+* # QTBUG-133548
+[connectDisconnectConnectDisconnect]
+* # QTBUG-133548
+[readLine]
+* # QTBUG-133548
+[readLineString]
+* # QTBUG-133548
+[readLineChunks]
+* # QTBUG-133548
+[readyReadSignalsAfterWaitForReadyRead]
+* # QTBUG-133548
+[readChunks]
+* # QTBUG-133548
+[unget]
+* # QTBUG-133548

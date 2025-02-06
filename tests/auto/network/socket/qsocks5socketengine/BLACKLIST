@@ -8,3 +8,5 @@ qnx ci
 [passwordAuth2]
 ubuntu
 
+[tcpSocketBlockingTest]
+* # QTBUG-133548

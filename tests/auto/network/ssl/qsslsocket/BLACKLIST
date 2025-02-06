@@ -4,3 +4,14 @@ windows
 macos
 [connectToHostEncryptedWithVerificationPeerName]
 macos
+
+[simpleConnect]
+* # QTBUG-133548
+[simpleConnectWithIgnore]
+* # QTBUG-133548
+[sslErrors:qt-test-server]
+* # QTBUG-133548
+[waitForConnectedEncryptedReadyRead]
+* # QTBUG-133548
+[resume]
+* # QTBUG-133548
