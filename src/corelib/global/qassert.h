@@ -38,10 +38,11 @@ Q_NORETURN
 Q_DECL_COLD_FUNCTION
 Q_CORE_EXPORT
 void qt_assert_x(const char *where, const char *what, const char *file, int line) noexcept;
+inline bool qt_no_assert_x(bool, const char *, const char *) noexcept { return false; }
 
 #if !defined(Q_ASSERT_X)
 #  if defined(QT_NO_DEBUG) && !defined(QT_FORCE_ASSERTS)
-#    define Q_ASSERT_X(cond, where, what) static_cast<void>(false && (cond) && (where) && (what))
+#    define Q_ASSERT_X(cond, where, what) static_cast<void>(false && qt_no_assert_x(bool(cond), where, what))
 #  else
 #    define Q_ASSERT_X(cond, where, what) ((cond) ? static_cast<void>(0) : qt_assert_x(where, what, __FILE__, __LINE__))
 #  endif
