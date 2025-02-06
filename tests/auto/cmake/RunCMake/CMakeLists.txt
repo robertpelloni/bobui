@@ -2,6 +2,8 @@
 
 add_RunCMake_test(QtFlagHandlingHelpers "-DQt6_DIR=${Qt6_DIR}")
 
+add_RunCMake_test(find_package "-DQt6_DIR=${Qt6_DIR}")
+
 set(extra_run_cmake_args "-DQt6_DIR=${Qt6_DIR}")
 if(TARGET Qt::Gui)
     list(APPEND extra_run_cmake_args "-DHAS_GUI=TRUE")
