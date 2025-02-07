@@ -91,16 +91,30 @@ QT_BEGIN_NAMESPACE
 
     \snippet qgenericitemmodel/main.cpp pair_int_QString
 
-    \section2 Item Types
+    \section2 Multi-role items
 
-    The type of the items that the implementations of data(), setData(), and
-    clearItemData() operate on can be the same across the entire model - like
-    in the gridOfNumbers example above. But the range can also have different
-    item types for different columns, like in the \c{numberNames} case.
+    The type of the items that the implementations of data(), setData(),
+    clearItemData() etc. operate on can be the same across the entire model -
+    like in the \c{gridOfNumbers} example above. But the range can also have
+    different item types for different columns, like in the \c{numberNames}
+    case.
 
     By default, the value gets used for the Qt::DisplayRole and Qt::EditRole
-    roles. Most views expect the value to be \l{QVariant::canConvert}{convertible
-    to and from a QString} (but a custom delegate might provide more flexibility).
+    roles. Most views expect the value to be
+    \l{QVariant::canConvert}{convertible to and from a QString} (but a custom
+    delegate might provide more flexibility).
+
+    If the item is an associative container that uses \c{int},
+    \l{Qt::ItemDataRole}, or QString as the key type, and QVariant as the
+    mapped type, then QGenericItemModel interprets that container as the storage
+    of the data for multiple roles. The data() and setData() functions return
+    and modify the mapped value in the container, and clearItemData() clears
+    the entire container.
+
+    \snippet qgenericitemmodel/main.cpp color_map
+
+    The most efficient data type to use as the key is Qt::ItemDataRole or
+    \c{int}.
 
     \section2 The C++ tuple protocol
 
@@ -260,9 +274,13 @@ QVariant QGenericItemModel::headerData(int section, Qt::Orientation orientation,
     Returns the data stored under the given \a role for the value in the
     range referred to by the \a index.
 
-    The implementation returns a QVariant constructed from the item at the
-    \a index via \c{QVariant::fromValue()} for \c{Qt::DisplayRole} or
-    \c{Qt::EditRole}. For other roles, the implementation returns an \b invalid
+    If the item type for that index is an associative container that maps from
+    either \c{int}, Qt::ItemDataRole, or QString to a QVariant, then the role
+    data is looked up in that container and returned.
+
+    Otherwise, the implementation returns a QVariant constructed from the item
+    via \c{QVariant::fromValue()} for \c{Qt::DisplayRole} or \c{Qt::EditRole}.
+    For other roles, the implementation returns an \b invalid
     (default-constructed) QVariant.
 
     \sa Qt::ItemDataRole, setData(), headerData()
@@ -275,10 +293,16 @@ QVariant QGenericItemModel::data(const QModelIndex &index, int role) const
 /*!
     \reimp
 
-    Sets the \a role data for the item at \a index to \a data. This
-    implementation assigns the value in \a data to the item at the \a index
-    in the range for \c{Qt::DisplayRole} and \c{Qt::EditRole}, and returns
-    \c{true}. For other roles, the implementation returns \c{false}.
+    Sets the \a role data for the item at \a index to \a data.
+
+    If the item type for that \a index is an associative container that maps
+    from either \c{int}, Qt::ItemDataRole, or QString to a QVariant, then
+    \a data is stored in that container for the key specified by \a role.
+
+    Otherwise, this implementation assigns the value in \a data to the item at
+    the \a index in the range for \c{Qt::DisplayRole} and \c{Qt::EditRole},
+    and returns \c{true}. For other roles, the implementation returns
+    \c{false}.
 
 //! [read-only-setData]
     For models operating on a read-only range, or on a read-only column in

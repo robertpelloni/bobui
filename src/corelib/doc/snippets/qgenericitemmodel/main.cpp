@@ -106,3 +106,23 @@ namespace std {
 }
 //! [tuple_protocol]
 #endif // __cpp_concepts && forward_like
+
+void color_map()
+{
+//! [color_map]
+using ColorEntry = QMap<Qt::ItemDataRole, QVariant>;
+
+const QStringList colorNames = QColor::colorNames();
+QList<ColorEntry> colors;
+colors.reserve(colorNames.size());
+for (const QString &name : colorNames) {
+    const QColor color = QColor::fromString(name);
+    colors << ColorEntry{{Qt::DisplayRole, name},
+                         {Qt::DecorationRole, color},
+                         {Qt::ToolTipRole, color.name()}};
+}
+QGenericItemModel colorModel(colors);
+QListView list;
+list.setModel(&colorModel);
+//! [color_map]
+}

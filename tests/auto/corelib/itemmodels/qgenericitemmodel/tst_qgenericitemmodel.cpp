@@ -169,6 +169,20 @@ private:
             {16.0, 17.0, 18.0, 19.0, 20.0},
             {21.0, 22.0, 23.0, 24.0, 25.0},
         };
+
+        // values are associative containers
+        std::vector<QVariantMap> listOfNamedRoles = {
+            {{"display", "DISPLAY0"}, {"decoration", "DECORATION0"}},
+            {{"display", "DISPLAY1"}, {"decoration", "DECORATION1"}},
+            {{"display", "DISPLAY2"}, {"decoration", "DECORATION2"}},
+            {{"display", "DISPLAY3"}, {"decoration", "DECORATION3"}},
+        };
+        std::vector<std::vector<std::map<Qt::ItemDataRole, QVariant>>> tableOfEnumRoles = {
+            {{{Qt::DisplayRole, "DISPLAY0"}, {Qt::DecorationRole, "DECORATION0"}}},
+            {{{Qt::DisplayRole, "DISPLAY1"}, {Qt::DecorationRole, "DECORATION1"}}},
+            {{{Qt::DisplayRole, "DISPLAY2"}, {Qt::DecorationRole, "DECORATION2"}}},
+            {{{Qt::DisplayRole, "DISPLAY3"}, {Qt::DecorationRole, "DECORATION3"}}},
+        };
     };
 
     std::unique_ptr<Data> m_data;
@@ -272,6 +286,15 @@ void tst_QGenericItemModel::createTestData()
         << 5 << ChangeActions(ChangeAction::ReadOnly);
     ADD_POINTER(constTableOfNumbers)
         << 5 << ChangeActions(ChangeAction::ReadOnly);
+
+    ADD_COPY(listOfNamedRoles)
+        << 1 << (ChangeAction::ChangeRows | ChangeAction::SetData);
+    ADD_POINTER(listOfNamedRoles)
+        << 1 << (ChangeAction::ChangeRows | ChangeAction::SetData);
+    ADD_COPY(tableOfEnumRoles)
+        << 1 << ChangeActions(ChangeAction::All);
+    ADD_POINTER(tableOfEnumRoles)
+        << 1 << ChangeActions(ChangeAction::All);
 
 #undef ADD_COPY
 #undef ADD_POINTER
@@ -467,6 +490,12 @@ void tst_QGenericItemModel::insertRows()
     QCOMPARE(model->rowCount() == expectedRowCount + 1,
              changeActions.testFlag(ChangeAction::InsertRows));
 
+    auto ignoreFailureFromAssociativeContainers = []{
+        QEXPECT_FAIL("listOfNamedRolesPointer", "QVariantMap is empty by design", Continue);
+        QEXPECT_FAIL("listOfNamedRolesCopy", "QVariantMap is empty by design", Continue);
+        QEXPECT_FAIL("tableOfEnumRolesPointer", "QVariantMap is empty by design", Continue);
+        QEXPECT_FAIL("tableOfEnumRolesCopy", "QVariantMap is empty by design", Continue);
+    };
     // get and put data into the new row
     const QModelIndex firstItem = model->index(0, 0);
     const QModelIndex lastItem = model->index(0, expectedColumnCount - 1);
@@ -477,8 +506,13 @@ void tst_QGenericItemModel::insertRows()
     QEXPECT_FAIL("tableOfPointersPointer", "No item created", Continue);
     QEXPECT_FAIL("tableOfRowPointersPointer", "No row created", Continue);
 
+    // associative containers are default constructed with no valid data
+    ignoreFailureFromAssociativeContainers();
+
     QVERIFY(firstValue.isValid() && lastValue.isValid());
+    ignoreFailureFromAssociativeContainers();
     QCOMPARE(model->setData(firstItem, lastValue), canSetData && lastValue.isValid());
+    ignoreFailureFromAssociativeContainers();
     QCOMPARE(model->setData(lastItem, firstValue), canSetData && firstValue.isValid());
 
     // append more rows

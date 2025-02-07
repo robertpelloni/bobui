@@ -68,6 +68,28 @@ namespace QGenericItemModelDetails
         : std::true_type
     {};
 
+    // Test if a type is an associative container that we can use for multi-role
+    // data, i.e. has a key_type and a mapped_type typedef, and maps from int,
+    // Qt::ItemDataRole, or QString to QVariant. This excludes std::set (and
+    // unordered_set), which are not useful for us anyway even though they are
+    // considered associative containers.
+    template <typename C, typename = void> struct is_multi_role : std::false_type
+    {
+        static constexpr bool int_key = false;
+    };
+    template <typename C> // Qt::ItemDataRole -> QVariant, or QString -> QVariant, int -> QVariant
+    struct is_multi_role<C, std::void_t<typename C::key_type, typename C::mapped_type>>
+        : std::conjunction<std::disjunction<std::is_same<typename C::key_type, int>,
+                                            std::is_same<typename C::key_type, Qt::ItemDataRole>,
+                                            std::is_same<typename C::key_type, QString>>,
+                           std::is_same<typename C::mapped_type, QVariant>>
+    {
+        static constexpr bool int_key = !std::is_same_v<typename C::key_type, QString>;
+    };
+    template <typename C>
+    [[maybe_unused]]
+    static constexpr bool is_multi_role_v = is_multi_role<C>::value;
+
     template <typename C, typename = void>
     struct test_size : std::false_type {};
     template <typename C>
@@ -82,7 +104,8 @@ namespace QGenericItemModelDetails
     };
     template <typename C>
     struct range_traits<C, std::void_t<decltype(std::cbegin(std::declval<C&>())),
-                                       decltype(std::cend(std::declval<C&>()))
+                                       decltype(std::cend(std::declval<C&>())),
+                                       std::enable_if_t<!is_multi_role_v<C>>
                                       >> : std::true_type
     {
         using value_type = std::remove_reference_t<decltype(*std::begin(std::declval<C&>()))>;
@@ -182,7 +205,7 @@ namespace QGenericItemModelDetails
 
         ModelStorage m_model;
     };
-} // QGenericItemModelDetails
+}
 
 class QGenericItemModel;
 

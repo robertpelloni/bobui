@@ -251,9 +251,24 @@ public:
     QVariant data(const QModelIndex &index, int role) const
     {
         QVariant result;
-        const auto readData = [&result, role](const auto &value) {
-            if (role == Qt::DisplayRole || role == Qt::EditRole)
+        const auto readData = [this, &result, role](const auto &value) {
+            Q_UNUSED(this);
+            using value_type = q20::remove_cvref_t<decltype(value)>;
+            using multi_role = QGenericItemModelDetails::is_multi_role<value_type>;
+            if constexpr (multi_role::value) {
+                const auto it = [this, &value, role]{
+                    Q_UNUSED(this);
+                    if constexpr (multi_role::int_key)
+                        return std::as_const(value).find(Qt::ItemDataRole(role));
+                    else
+                        return std::as_const(value).find(roleNames().value(role));
+                }();
+                if (it != value.cend()) {
+                    result = QGenericItemModelDetails::value(it);
+                }
+            } else if (role == Qt::DisplayRole || role == Qt::EditRole) {
                 result = read(value);
+            }
         };
 
         if (index.isValid()) {
@@ -282,9 +297,29 @@ public:
                 }
             });
 
-            const auto writeData = [&data, role](auto &&target) -> bool {
-                if (role == Qt::DisplayRole || role == Qt::EditRole)
+            const auto writeData = [this, &data, role](auto &&target) -> bool {
+                using value_type = q20::remove_cvref_t<decltype(target)>;
+                using multi_role = QGenericItemModelDetails::is_multi_role<value_type>;
+                if constexpr (multi_role::value) {
+                    Qt::ItemDataRole roleToSet = Qt::ItemDataRole(role);
+                    // If there is an entry for EditRole, overwrite that; otherwise,
+                    // set the entry for DisplayRole.
+                    if (role == Qt::EditRole) {
+                        if constexpr (multi_role::int_key) {
+                            if (target.find(roleToSet) == target.end())
+                                roleToSet = Qt::DisplayRole;
+                        } else {
+                            if (target.find(roleNames().value(roleToSet)) == target.end())
+                                roleToSet = Qt::DisplayRole;
+                        }
+                    }
+                    if constexpr (multi_role::int_key)
+                        return write(target[roleToSet], data);
+                    else
+                        return write(target[roleNames().value(roleToSet)], data);
+                } else if (role == Qt::DisplayRole || role == Qt::EditRole) {
                     return write(target, data);
+                }
                 return false;
             };
 
