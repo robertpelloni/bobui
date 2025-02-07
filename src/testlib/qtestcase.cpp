@@ -3101,28 +3101,33 @@ static void massageExponent(char *text)
 // Be consistent about display of infinities and NaNs (snprintf()'s varies,
 // notably on MinGW, despite POSIX documenting "[-]inf" or "[-]infinity" for %f,
 // %e and %g, uppercasing for their capital versions; similar for "nan"):
-#define TO_STRING_FLOAT(TYPE, FORMAT) \
-template <> Q_TESTLIB_EXPORT char *QTest::toString<TYPE>(const TYPE &t) \
-{ \
-    char *msg = new char[128]; \
-    switch (qFpClassify(t)) { \
-    case FP_INFINITE: \
-        qstrncpy(msg, (t < 0 ? "-inf" : "inf"), 128); \
-        break; \
-    case FP_NAN: \
-        qstrncpy(msg, "nan", 128); \
-        break; \
-    default: \
-        std::snprintf(msg, 128, #FORMAT, double(t));    \
-        massageExponent(msg); \
-        break; \
-    } \
-    return msg; \
+static char *toStringFp(double t, int digits10)
+{
+    char *msg = new char[128];
+    switch (qFpClassify(t)) {
+    case FP_INFINITE:
+        qstrncpy(msg, (t < 0 ? "-inf" : "inf"), 128);
+        break;
+    case FP_NAN:
+        qstrncpy(msg, "nan", 128);
+        break;
+    default:
+        std::snprintf(msg, 128, "%.*g", digits10, t);
+        massageExponent(msg);
+        std::snprintf(msg + strlen(msg), 128 - strlen(msg), " (%a)", t);
+        break;
+    }
+    return msg;
 }
 
-TO_STRING_FLOAT(qfloat16, %.3g)
-TO_STRING_FLOAT(float, %g)
-TO_STRING_FLOAT(double, %.12g)
+#define TO_STRING_FLOAT(TYPE) \
+template <> Q_TESTLIB_EXPORT char *QTest::toString<TYPE>(const TYPE &t) \
+{ \
+    return toStringFp(t, std::numeric_limits<TYPE>::digits10 + 1); \
+}
+TO_STRING_FLOAT(qfloat16)
+TO_STRING_FLOAT(float)
+TO_STRING_FLOAT(double)
 
 template <> Q_TESTLIB_EXPORT char *QTest::toString<char>(const char &t)
 {

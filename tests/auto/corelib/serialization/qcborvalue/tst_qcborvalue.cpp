@@ -3325,6 +3325,9 @@ void tst_QCborValue::debugOutput()
 
 void tst_QCborValue::testlibFormatting_data()
 {
+    auto formattedDouble = [](double d) {
+        return QString::fromLatin1(std::unique_ptr<char[]>(QTest::toString(d)).get());
+    };
     QTest::addColumn<QCborValue>("v");
     QTest::addColumn<QString>("expected");
 
@@ -3337,7 +3340,8 @@ void tst_QCborValue::testlibFormatting_data()
     QTest::newRow("simpletype")
             << QCborValue(QCborSimpleType(0)) << "QCborValue(QCborSimpleType(0))";
     QTest::newRow("Integer:0") << QCborValue(0) << "QCborValue(Integer, 0)";
-    QTest::newRow("Double:0") << QCborValue(0.) << "QCborValue(Double, 0)"; // must be integer!
+    QTest::newRow("Double:0")
+            << QCborValue(0.) << "QCborValue(Double, " + formattedDouble(0) + ')'; // must be integer!
     QTest::newRow("ByteArray")
             << QCborValue(raw("Hello\0World")) << "QCborValue(ByteArray, \"Hello\\x00World\")";
     QTest::newRow("String")
@@ -3360,11 +3364,11 @@ void tst_QCborValue::testlibFormatting_data()
     QTest::newRow("Map:Empty") << QCborValue(QCborMap()) << "QCborValue(Map, {})";
     QTest::newRow("Array")
             << QCborValue(QCborArray{1, 2., nullptr})
-            << "QCborValue(Array, [QCborValue(Integer, 1), QCborValue(Double, 2), QCborValue(nullptr)])";
+            << "QCborValue(Array, [QCborValue(Integer, 1), QCborValue(Double, " + formattedDouble(2)  + "), QCborValue(nullptr)])";
     QTest::newRow("Map")
             << QCborValue(QCborMap{{1, 2.}, {nullptr, "Hello"}, {"World", QCborArray()}})
             << "QCborValue(Map, {"
-               "QCborValue(Integer, 1): QCborValue(Double, 2), "
+               "QCborValue(Integer, 1): QCborValue(Double, " + formattedDouble(2) + "), "
                "QCborValue(nullptr): QCborValue(String, \"Hello\"), "
                "QCborValue(String, \"World\"): QCborValue(Array, [])"
                "})";
