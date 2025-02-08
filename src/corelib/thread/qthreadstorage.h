@@ -14,6 +14,18 @@ QT_BEGIN_NAMESPACE
 
 #if QT_CONFIG(thread)
 
+template <bool ShouldWarn> struct QThreadStorageTraits
+{
+    static constexpr void warnAboutTrivial() {}
+};
+template <> struct QThreadStorageTraits<true>
+{
+#ifndef Q_NO_THREAD_STORAGE_TRIVIAL_WARNING
+    Q_DECL_DEPRECATED_X("QThreadStorage used with a trivial non-pointer type; consider using thread_local")
+#endif
+    static constexpr void warnAboutTrivial() noexcept {}
+};
+
 class Q_CORE_EXPORT QThreadStorageData
 {
 public:
@@ -87,6 +99,7 @@ template <class T>
 class QThreadStorage
 {
 private:
+    using Trait = QThreadStorageTraits<std::is_trivial_v<T> && !std::is_pointer_v<T>>;
     QThreadStorageData d;
 
     Q_DISABLE_COPY(QThreadStorage)
@@ -95,7 +108,7 @@ private:
     { qThreadStorage_deleteData(x, reinterpret_cast<T*>(0)); }
 
 public:
-    inline QThreadStorage() : d(deleteData) { }
+    inline QThreadStorage() : d(deleteData) { Trait::warnAboutTrivial(); }
     inline ~QThreadStorage() { }
 
     inline bool hasLocalData() const
