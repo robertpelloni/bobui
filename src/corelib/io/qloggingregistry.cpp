@@ -27,6 +27,7 @@ QT_BEGIN_NAMESPACE
 using namespace Qt::StringLiterals;
 
 Q_GLOBAL_STATIC(QLoggingRegistry, qtLoggingRegistry)
+alignas(QLoggingCategory) static unsigned char defaultLoggingCategory[sizeof(QLoggingCategory)];
 
 /*!
     \internal
@@ -227,6 +228,14 @@ void QLoggingSettingsParser::parseNextLine(QStringView line)
 QLoggingRegistry::QLoggingRegistry()
     : categoryFilter(defaultCategoryFilter)
 {
+    using U = QLoggingCategory::UnregisteredInitialization;
+    Q_ASSERT_X(!self, "QLoggingRegistry", "Singleton recreated");
+    self = this;
+
+    // can't use std::construct_at here - private constructor
+    auto cat = new (defaultLoggingCategory) QLoggingCategory(U{}, defaultCategoryName);
+    categories.emplace(cat, QtDebugMsg);
+
 #if defined(Q_OS_ANDROID)
     // Unless QCoreApplication has been constructed we can't be sure that
     // we are on Qt's main thread. If we did allow logging here, we would
@@ -424,6 +433,18 @@ QLoggingRegistry *QLoggingRegistry::instance()
     return qtLoggingRegistry();
 }
 
+QLoggingCategory *QLoggingRegistry::defaultCategory()
+{
+    // Initialize the defaultLoggingCategory global static, if necessary. Note
+    // how it remains initialized forever, even if the QLoggingRegistry
+    // instance() is destroyed.
+    instance();
+
+    // std::launder() to be on the safe side, but it's unnecessary because the
+    // object is never recreated.
+    return std::launder(reinterpret_cast<QLoggingCategory *>(defaultLoggingCategory));
+}
+
 /*!
     \internal
     Updates category settings according to rules.
@@ -432,7 +453,7 @@ QLoggingRegistry *QLoggingRegistry::instance()
 */
 void QLoggingRegistry::defaultCategoryFilter(QLoggingCategory *cat)
 {
-    const QLoggingRegistry *reg = QLoggingRegistry::instance();
+    const QLoggingRegistry *reg = self;
     Q_ASSERT(reg->categories.contains(cat));
     QtMsgType enableForLevel = reg->categories.value(cat);
 

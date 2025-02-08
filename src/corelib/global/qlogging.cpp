@@ -953,7 +953,7 @@ QDebug QMessageLogger::fatal(QMessageLogger::CategoryFunction catFunc) const
 
 static bool isDefaultCategory(const char *category)
 {
-    return !category || strcmp(category, "default") == 0;
+    return !category || strcmp(category, QLoggingRegistry::defaultCategoryName) == 0;
 }
 
 /*!

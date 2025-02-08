@@ -15,8 +15,7 @@
 // We mean it.
 //
 
-#include <QtCore/private/qglobal_p.h>
-#include <QtCore/qloggingcategory.h>
+#include <QtCore/private/qloggingcategory_p.h>
 #include <QtCore/qlist.h>
 #include <QtCore/qhash.h>
 #include <QtCore/qmutex.h>
@@ -116,8 +115,12 @@ public:
 
     Q_CORE_EXPORT static QLoggingRegistry *instance();
 
+    static constexpr const char defaultCategoryName[] = "default";
+    static QLoggingCategory *defaultCategory();
+
 private:
     Q_AUTOTEST_EXPORT void updateRules();
+    static inline QLoggingRegistry *self = nullptr;
 
     static void defaultCategoryFilter(QLoggingCategory *category);
 

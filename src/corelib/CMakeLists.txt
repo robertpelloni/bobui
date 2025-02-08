@@ -135,7 +135,7 @@ qt_internal_add_module(Core
         io/qiodevicebase.h
         io/qipaddress.cpp io/qipaddress_p.h
         io/qlockfile.cpp io/qlockfile.h io/qlockfile_p.h
-        io/qloggingcategory.cpp io/qloggingcategory.h
+        io/qloggingcategory.cpp io/qloggingcategory.h io/qloggingcategory_p.h
         io/qloggingregistry.cpp io/qloggingregistry_p.h
         io/qnoncontiguousbytedevice.cpp io/qnoncontiguousbytedevice_p.h
         io/qresource.cpp io/qresource.h io/qresource_p.h
