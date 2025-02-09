@@ -18,6 +18,7 @@
 #include <qdir.h>
 #include <qfile.h>
 #include <qfileinfo.h>
+#include <private/qfilesystementry_p.h>
 #include <qmutex.h>
 #include <private/qloggingregistry_p.h>
 #include <qscopeguard.h>
@@ -2382,7 +2383,8 @@ QString QCoreApplication::applicationDirPath()
         return QString();
     }
 
-    return QFileInfo(applicationFilePath()).path();
+    QFileSystemEntry appFilePath(applicationFilePath(), QFileSystemEntry::FromInternalPath{});
+    return appFilePath.isEmpty() ? QString() : appFilePath.path();
 }
 
 #if !defined(Q_OS_WIN) && !defined(Q_OS_DARWIN)
