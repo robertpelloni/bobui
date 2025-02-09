@@ -2449,6 +2449,11 @@ QString QCoreApplication::applicationFilePath()
         return d->cachedApplicationFilePath;
 
     QString absPath = qAppFileName();
+    if (Q_LIKELY(!absPath.isEmpty())) {   // Darwin, FreeBSD, Linux, Windows
+        // the OS has canonicalized for us
+        return d->cachedApplicationFilePath = std::move(absPath);
+    }
+
     if (absPath.isEmpty() && !arguments().isEmpty()) {
         QString argv0 = QFile::decodeName(arguments().at(0).toLocal8Bit());
 

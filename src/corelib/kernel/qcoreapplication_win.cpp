@@ -5,6 +5,7 @@
 #include "qcoreapplication.h"
 #include "qcoreapplication_p.h"
 #include "qstringlist.h"
+#include "qdir.h"
 #include "qfileinfo.h"
 #ifndef QT_NO_QOBJECT
 #include "qmutex.h"
@@ -52,7 +53,10 @@ QString qAppFileName()                // get application file name
         v = GetModuleFileName(hInstance, space.data(), DWORD(space.size()));
     } while (Q_UNLIKELY(v >= size));
 
-    return QString::fromWCharArray(space.data(), v);
+    // QCoreApplication::applicationFilePath() expects a canonical path with
+    // Qt-style separators
+    QStringView nativePath(space.data(), v);
+    return QDir::fromNativeSeparators(nativePath.toString());
 }
 
 QString QCoreApplicationPrivate::appName() const
