@@ -2454,8 +2454,8 @@ QString QCoreApplication::applicationFilePath()
         return d->cachedApplicationFilePath = std::move(absPath);
     }
 
-    if (absPath.isEmpty() && !arguments().isEmpty()) {
-        QString argv0 = QFile::decodeName(arguments().at(0).toLocal8Bit());
+    if (const QStringList args = arguments(); !args.isEmpty()) {
+        const QString &argv0 = args[0];
 
         if (!argv0.isEmpty() && argv0.at(0) == u'/') {
             /*
@@ -2480,7 +2480,7 @@ QString QCoreApplication::applicationFilePath()
 
     absPath = QFileInfo(absPath).canonicalFilePath();
     if (!absPath.isEmpty()) {
-        return d->cachedApplicationFilePath = absPath;
+        return d->cachedApplicationFilePath = std::move(absPath);
     }
     return QString();
 }
