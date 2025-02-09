@@ -23,12 +23,12 @@ Q_STATIC_LOGGING_CATEGORY(lcSqlDb, "qt.sql.qsqldatabase")
 using namespace Qt::StringLiterals;
 
 #define CHECK_QCOREAPPLICATION \
-    if (Q_UNLIKELY(!QCoreApplication::instance())) { \
+    if (Q_UNLIKELY(!QCoreApplication::instanceExists())) { \
         qCWarning(lcSqlDb, "QSqlDatabase requires a QCoreApplication"); \
         return; \
     }
 #define CHECK_QCOREAPPLICATION_RETVAL \
-    if (Q_UNLIKELY(!QCoreApplication::instance())) { \
+    if (Q_UNLIKELY(!QCoreApplication::instanceExists())) { \
         qCWarning(lcSqlDb, "QSqlDatabase requires a QCoreApplication"); \
         return {}; \
     }
@@ -661,7 +661,7 @@ void QSqlDatabasePrivate::init(const QString &type)
         qCWarning(lcSqlDb, "QSqlDatabase: %ls driver not loaded", qUtf16Printable(type));
         qCWarning(lcSqlDb, "QSqlDatabase: available drivers: %ls",
                   qUtf16Printable(QSqlDatabase::drivers().join(u' ')));
-        if (QCoreApplication::instance() == nullptr)
+        if (!QCoreApplication::instanceExists())
             qCWarning(lcSqlDb, "QSqlDatabase: an instance of QCoreApplication is required for loading driver plugins");
         driver = shared_null()->driver;
     }

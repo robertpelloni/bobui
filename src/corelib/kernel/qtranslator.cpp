@@ -397,7 +397,7 @@ QTranslator::QTranslator(QObject * parent)
 
 QTranslator::~QTranslator()
 {
-    if (QCoreApplication::instance())
+    if (QCoreApplication::instanceExists())
         QCoreApplication::removeTranslator(this);
     Q_D(QTranslator);
     d->clear();

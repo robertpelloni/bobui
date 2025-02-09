@@ -62,14 +62,14 @@ QLibrarySettings::QLibrarySettings() : paths(false), reloadOnQAppAvailable(false
 
 QSettings *QLibrarySettings::configuration()
 {
-    if (reloadOnQAppAvailable && QCoreApplication::instance() != nullptr)
+    if (reloadOnQAppAvailable && QCoreApplication::instanceExists())
         load();
     return settings.get();
 }
 
 bool QLibrarySettings::havePaths()
 {
-    if (reloadOnQAppAvailable && QCoreApplication::instance() != nullptr)
+    if (reloadOnQAppAvailable && QCoreApplication::instanceExists())
         load();
     return paths;
 }
@@ -78,7 +78,7 @@ void QLibrarySettings::load()
 {
     // If we get any settings here, those won't change when the application shows up.
     settings = findConfiguration();
-    reloadOnQAppAvailable = !settings && !QCoreApplication::instance();
+    reloadOnQAppAvailable = !settings && !QCoreApplication::instanceExists();
 
     if (settings) {
         // This code needs to be in the regular library, as otherwise a qt.conf that
@@ -121,7 +121,7 @@ static std::unique_ptr<QSettings> findConfiguration()
         }
     }
 #endif
-    if (QCoreApplication::instance()) {
+    if (QCoreApplication::instanceExists()) {
         QString pwd = QCoreApplication::applicationDirPath();
         qtconfig = pwd + u"/qt" QT_STRINGIFY(QT_VERSION_MAJOR) ".conf"_s;
         if (QFile::exists(qtconfig))
@@ -270,7 +270,7 @@ QVersionNumber QLibraryInfo::version() noexcept
 
 static QString prefixFromAppDirHelper()
 {
-    if (QCoreApplication::instance()) {
+    if (QCoreApplication::instanceExists()) {
 #ifdef Q_OS_DARWIN
         CFBundleRef bundleRef = CFBundleGetMainBundle();
         if (bundleRef) {

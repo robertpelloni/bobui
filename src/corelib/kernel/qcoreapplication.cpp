@@ -144,6 +144,21 @@ Q_CONSTINIT QCoreApplication *QCoreApplication::self = nullptr;
 Q_CONSTINIT static QBasicAtomicPointer<QCoreApplication> g_self = nullptr;
 #  undef qApp
 #  define qApp g_self.loadRelaxed()
+
+/*!
+    \internal
+
+    This function is a Qt 6 thread-safe (no data races) version of:
+    \code
+        QCoreApplication::instance() != nullptr
+    \endcode
+
+    We may remove it in Qt 7.0 because the above will be thread-safe.
+*/
+bool QCoreApplication::instanceExists() noexcept
+{
+    return qApp != nullptr;
+}
 #endif
 
 #if !defined(Q_OS_WIN) || defined(QT_BOOTSTRAPPED)
@@ -276,7 +291,7 @@ void qAddPreRoutine(QtStartUpFunction p)
         return;
 
     if (preRoutinesCalled) {
-        Q_ASSERT(QCoreApplication::instance());
+        Q_ASSERT(qApp);
         p();
     }
 
@@ -465,11 +480,6 @@ QCoreApplicationPrivate::~QCoreApplicationPrivate()
 #if defined(Q_OS_WIN) && !defined(QT_BOOTSTRAPPED)
     cleanupDebuggingConsole();
 #endif
-}
-
-bool QCoreApplicationPrivate::isAlive() noexcept
-{
-    return qApp != nullptr;
 }
 
 #ifndef QT_NO_QOBJECT

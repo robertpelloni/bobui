@@ -157,7 +157,7 @@ void QThreadStorageData::finish(void **p)
         locker.unlock();
 
         if (!destructor) {
-            if (QCoreApplicationPrivate::isAlive())
+            if (QCoreApplication::instanceExists())
                 qWarning("QThreadStorage: entry %d destroyed before end of thread %p",
                          i, QThread::currentThread());
             continue;

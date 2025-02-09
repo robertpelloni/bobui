@@ -96,8 +96,10 @@ public:
 
 #if QT_VERSION >= QT_VERSION_CHECK(7, 0, 0)
     static QCoreApplication *instance() noexcept { return self.loadRelaxed(); }
+    static bool instanceExists() noexcept { return instance() != nullptr; }
 #else
     static QCoreApplication *instance() noexcept { return self; }
+    static bool instanceExists() noexcept;
 #endif
 
 #ifndef QT_NO_QOBJECT

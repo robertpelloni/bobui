@@ -61,7 +61,6 @@ public:
 #endif
     ~QCoreApplicationPrivate();
 
-    static bool isAlive() noexcept;
     void init();
 
     QString appName() const;
