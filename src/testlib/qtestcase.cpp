@@ -3072,32 +3072,6 @@ TO_STRING_IMPL(bool, %d)
 TO_STRING_IMPL(signed char, %hhd)
 TO_STRING_IMPL(unsigned char, %hhu)
 
-/*!
-  \internal
-
-  Be consistent about leading 0 in exponent.
-
-  POSIX specifies that %e (hence %g when using it) uses at least two digits in
-  the exponent, requiring a leading 0 on single-digit exponents; (at least)
-  MinGW includes a leading zero also on an already-two-digit exponent,
-  e.g. 9e-040, which differs from more usual platforms.  So massage that away.
-*/
-static void massageExponent(char *text)
-{
-    char *p = strchr(text, 'e');
-    if (!p)
-        return;
-    const char *const end = p + strlen(p); // *end is '\0'
-    p += (p[1] == '-' || p[1] == '+') ? 2 : 1;
-    if (p[0] != '0' || end - 2 <= p)
-        return;
-    // We have a leading 0 on an exponent of at least two more digits
-    const char *n = p + 1;
-    while (end - 2 > n && n[0] == '0')
-        ++n;
-    memmove(p, n, end + 1 - n);
-}
-
 // Be consistent about display of infinities and NaNs (snprintf()'s varies,
 // notably on MinGW, despite POSIX documenting "[-]inf" or "[-]infinity" for %f,
 // %e and %g, uppercasing for their capital versions; similar for "nan"):
@@ -3112,9 +3086,7 @@ static char *toStringFp(double t, int digits10)
         qstrncpy(msg, "nan", 128);
         break;
     default:
-        std::snprintf(msg, 128, "%.*g", digits10, t);
-        massageExponent(msg);
-        std::snprintf(msg + strlen(msg), 128 - strlen(msg), " (%a)", t);
+        std::snprintf(msg, 128, "%.*g (%a)", digits10, t, t);
         break;
     }
     return msg;
