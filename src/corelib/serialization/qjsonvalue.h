@@ -201,6 +201,9 @@ protected:
     Q_CORE_EXPORT static QString objectKey(QJsonValueConstRef self);
     QString objectKey() const { return objectKey(*this); }
 
+    Q_CORE_EXPORT static QAnyStringView objectKeyView(QJsonValueConstRef self);
+    QAnyStringView objectKeyView() const { return objectKeyView(*this); }
+
 #if QT_VERSION < QT_VERSION_CHECK(7, 0, 0) && !defined(QT_BOOTSTRAPPED)
     QJsonValueConstRef(QJsonArray *array, qsizetype idx)
         : a(array), is_object(false), index(static_cast<quint64>(idx)) {}

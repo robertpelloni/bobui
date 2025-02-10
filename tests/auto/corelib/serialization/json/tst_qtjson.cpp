@@ -1135,6 +1135,7 @@ void tst_QtJson::testObjectIteration()
 
     for (QJsonObject::iterator it = object.begin(); it != object.end(); ++it) {
         QJsonValue value = it.value();
+        QCOMPARE(it.keyView(), QString::number(it.value().toInteger()));
         QCOMPARE((double)it.key().toInt(), value.toDouble());
         QT_TEST_EQUALITY_OPS(it, QJsonObject::iterator(), false);
     }
@@ -1600,8 +1601,10 @@ void tst_QtJson::keySorting()
     QCOMPARE(o.keys(), sortedKeys);
     QJsonObject::const_iterator it = o.constBegin();
     QStringList::const_iterator it2 = sortedKeys.constBegin();
-    for ( ; it != o.constEnd(); ++it, ++it2)
+    for ( ; it != o.constEnd(); ++it, ++it2) {
         QCOMPARE(it.key(), *it2);
+        QCOMPARE(it.keyView(), *it2);
+    }
 }
 
 void tst_QtJson::undefinedValues()

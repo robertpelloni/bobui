@@ -1073,6 +1073,17 @@ QJsonValue QJsonValueConstRef::concrete(QJsonValueConstRef self) noexcept
     return QJsonPrivate::Value::fromTrustedCbor(d->valueAt(index));
 }
 
+QAnyStringView QJsonValueConstRef::objectKeyView(QJsonValueConstRef self)
+{
+    Q_ASSERT(self.is_object);
+    const QCborContainerPrivate *d = QJsonPrivate::Value::container(self);
+    const qsizetype index = QJsonPrivate::Value::indexHelper(self);
+
+    Q_ASSERT(d);
+    Q_ASSERT(index < d->elements.size());
+    return d->anyStringViewAt(index - 1);
+}
+
 QString QJsonValueConstRef::objectKey(QJsonValueConstRef self)
 {
     Q_ASSERT(self.is_object);

@@ -102,6 +102,7 @@ public:
         }
 
         inline QString key() const { return item.objectKey(); }
+        QAnyStringView keyView() const { return item.objectKeyView(); }
         inline QJsonValueRef value() const { return item; }
         inline QJsonValueRef operator*() const { return item; }
         inline const QJsonValueConstRef *operator->() const { return &item; }
@@ -215,6 +216,7 @@ public:
         }
 
         inline QString key() const { return item.objectKey(); }
+        QAnyStringView keyView() const { return item.objectKeyView(); }
         inline QJsonValueConstRef value() const { return item; }
         inline const QJsonValueConstRef operator*() const { return item; }
         inline const QJsonValueConstRef *operator->() const { return &item; }

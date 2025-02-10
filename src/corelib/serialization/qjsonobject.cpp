@@ -914,7 +914,24 @@ QJsonObject::const_iterator QJsonObject::constFindImpl(T key) const
     iterator, although it can be done by calling QJsonObject::erase()
     followed by QJsonObject::insert().
 
-    \sa value()
+    \sa value(), keyView()
+*/
+
+/*!
+    \fn QAnyStringView QJsonObject::iterator::keyView() const
+    \since 6.10
+
+    Returns the current item's key as a QAnyStringView. This function does not
+    allocate memory.
+
+    Since QJsonObject stores keys in US-ASCII, UTF-8 or UTF-16, the returned
+    QAnyStringView may be in any of these encodings.
+
+    There is no direct way of changing an item's key through an
+    iterator, although it can be done by calling QJsonObject::erase()
+    followed by QJsonObject::insert().
+
+    \sa key(), value()
 */
 
 /*! \fn QJsonValueRef QJsonObject::iterator::value() const
@@ -930,7 +947,7 @@ QJsonObject::const_iterator QJsonObject::constFindImpl(T key) const
     the assignment will apply to the element in the QJsonArray or QJsonObject
     from which you got the reference.
 
-    \sa key(), operator*()
+    \sa key(), keyView(), operator*()
 */
 
 /*! \fn QJsonValueRef QJsonObject::iterator::operator*() const
@@ -945,7 +962,7 @@ QJsonObject::const_iterator QJsonObject::constFindImpl(T key) const
     the assignment will apply to the element in the QJsonArray or QJsonObject
     from which you got the reference.
 
-    \sa key()
+    \sa key(), keyView()
 */
 
 /*! \fn QJsonValueRef *QJsonObject::iterator::operator->()
@@ -1189,14 +1206,27 @@ QJsonObject::const_iterator QJsonObject::constFindImpl(T key) const
 
     Returns the current item's key.
 
-    \sa value()
+    \sa value(), keyView()
+*/
+
+/*!
+    \fn QAnyStringView QJsonObject::const_iterator::keyView() const
+    \since 6.10
+
+    Returns the current item's key as a QAnyStringView. This function does not
+    allocate.
+
+    Since QJsonObject stores keys in US-ASCII, UTF-8 or UTF-16, the returned
+    QAnyStringView may be in any of these encodings.
+
+    \sa value(), key()
 */
 
 /*! \fn QJsonValueConstRef QJsonObject::const_iterator::value() const
 
     Returns the current item's value.
 
-    \sa key(), operator*()
+    \sa key(), keyView(), operator*()
 */
 
 /*! \fn const QJsonValueConstRef QJsonObject::const_iterator::operator*() const
@@ -1205,7 +1235,7 @@ QJsonObject::const_iterator QJsonObject::constFindImpl(T key) const
 
     Same as value().
 
-    \sa key()
+    \sa key(), keyView()
 */
 
 /*! \fn const QJsonValueConstRef *QJsonObject::const_iterator::operator->() const
