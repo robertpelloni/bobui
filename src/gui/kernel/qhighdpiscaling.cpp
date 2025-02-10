@@ -28,6 +28,7 @@ static const char scaleFactorRoundingPolicyEnvVar[] = "QT_SCALE_FACTOR_ROUNDING_
 static const char dpiAdjustmentPolicyEnvVar[] = "QT_DPI_ADJUSTMENT_POLICY";
 static const char usePhysicalDpiEnvVar[] = "QT_USE_PHYSICAL_DPI";
 
+[[maybe_unused]]
 static std::optional<QString> qEnvironmentVariableOptionalString(const char *name)
 {
     QString value = qEnvironmentVariable(name);
@@ -402,9 +403,9 @@ void QHighDpiScaling::initHighDpiScaling()
     if (envScaleFactor.has_value())
         qCDebug(lcHighDpi) << envDebugStr <<  scaleFactorEnvVar << envScaleFactor.value();
 
-    std::optional<QString> envScreenFactors = qEnvironmentVariableOptionalString(screenFactorsEnvVar);
-    if (envScreenFactors.has_value())
-        qCDebug(lcHighDpi) << envDebugStr << screenFactorsEnvVar << envScreenFactors.value();
+    const QString envScreenFactors = qEnvironmentVariable(screenFactorsEnvVar);
+    if (envScreenFactors.isNull())
+        qCDebug(lcHighDpi) << envDebugStr << screenFactorsEnvVar << envScreenFactors;
 
     std::optional envUsePhysicalDpi = qEnvironmentVariableIntegerValue(usePhysicalDpiEnvVar);
     if (envUsePhysicalDpi.has_value())
@@ -429,8 +430,7 @@ void QHighDpiScaling::initHighDpiScaling()
     // Store the envScreenFactors string for later use. The string format
     // supports using screen names, which means that screen DPI cannot
     // be resolved at this point.
-    QString screenFactorsSpec = envScreenFactors.value_or(QString());
-    m_screenFactors = parseScreenScaleFactorsSpec(QStringView{screenFactorsSpec});
+    m_screenFactors = parseScreenScaleFactorsSpec(envScreenFactors);
     m_namedScreenScaleFactors.clear();
 
     m_usePhysicalDpi = envUsePhysicalDpi.value_or(0) > 0;
