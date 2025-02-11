@@ -100,6 +100,7 @@ public:
     double toDouble(double defaultValue = 0) const;
     QString toString() const;
     QString toString(const QString &defaultValue) const;
+    QAnyStringView toStringView(QAnyStringView defaultValue = {}) const;
     QJsonArray toArray() const;
     QJsonArray toArray(const QJsonArray &defaultValue) const;
     QJsonObject toObject() const;
@@ -165,6 +166,8 @@ public:
     { return concreteDouble(*this, defaultValue); }
     QString toString(const QString &defaultValue = {}) const
     { return concreteString(*this, defaultValue); }
+    QAnyStringView toStringView(QAnyStringView defaultValue = {}) const
+    { return concreteStringView(*this, defaultValue); }
     Q_CORE_EXPORT QJsonArray toArray() const;
     Q_CORE_EXPORT QJsonObject toObject() const;
 
@@ -195,6 +198,7 @@ protected:
     Q_CORE_EXPORT static double
     concreteDouble(QJsonValueConstRef self, double defaultValue) noexcept Q_DECL_PURE_FUNCTION;
     Q_CORE_EXPORT static QString concreteString(QJsonValueConstRef self, const QString &defaultValue);
+    Q_CORE_EXPORT static QAnyStringView concreteStringView(QJsonValueConstRef self, QAnyStringView defaultValue);
     Q_CORE_EXPORT static QJsonValue concrete(QJsonValueConstRef self) noexcept;
 
     // for iterators
@@ -287,6 +291,8 @@ public:
     inline qint64 toInteger(qint64 defaultValue = 0) const { return QJsonValueConstRef::toInteger(defaultValue); }
     inline double toDouble(double defaultValue = 0) const { return QJsonValueConstRef::toDouble(defaultValue); }
     inline QString toString(const QString &defaultValue = {}) const { return QJsonValueConstRef::toString(defaultValue); }
+    QAnyStringView toStringView(QAnyStringView defaultValue = {}) const
+    { return QJsonValueConstRef::toStringView(defaultValue); }
     QJsonArray toArray() const;
     QJsonObject toObject() const;
 

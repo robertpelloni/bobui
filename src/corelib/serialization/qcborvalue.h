@@ -198,6 +198,7 @@ public:
 
     QByteArray toByteArray(const QByteArray &defaultValue = {}) const;
     QString toString(const QString &defaultValue = {}) const;
+    QAnyStringView toStringView(QAnyStringView defaultValue = {}) const;
 #if QT_CONFIG(datestring)
     QDateTime toDateTime(const QDateTime &defaultValue = {}) const;
 #endif
@@ -350,6 +351,8 @@ public:
     { return concrete().toByteArray(defaultValue); }
     QString toString(const QString &defaultValue = {}) const
     { return concrete().toString(defaultValue); }
+    QAnyStringView toStringView(QAnyStringView defaultValue = {}) const
+    { return concreteStringView(*this, defaultValue); }
 #if QT_CONFIG(datestring)
     QDateTime toDateTime(const QDateTime &defaultValue = {}) const
     { return concrete().toDateTime(defaultValue); }
@@ -442,6 +445,8 @@ protected:
     concreteByteArray(QCborValueConstRef that, const QByteArray &defaultValue);
     static Q_CORE_EXPORT QString
     concreteString(QCborValueConstRef that, const QString &defaultValue);
+    static Q_CORE_EXPORT QAnyStringView
+    concreteStringView(QCborValueConstRef that, QAnyStringView defaultValue);
 
     constexpr QCborValueConstRef() : d(nullptr), i(0) {} // this will actually be invalid
     constexpr QCborValueConstRef(QCborContainerPrivate *dd, qsizetype ii)

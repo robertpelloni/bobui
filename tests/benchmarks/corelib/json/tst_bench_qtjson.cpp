@@ -38,6 +38,17 @@ private Q_SLOTS:
                         [](auto it) { return it->toString(); });
     }
 
+    void iteratorKeyValueView()
+    {
+        iteratorKeyImpl([](auto it) { return it.key(); },
+                        [](auto it) { return it->toStringView(); });
+    }
+    void iteratorKeyViewValueView()
+    {
+        iteratorKeyImpl([](auto it) { return it.keyView(); },
+                        [](auto it) { return it->toStringView(); });
+    }
+
 private:
     template <typename KeyFunc, typename ValueFunc>
     void iteratorKeyImpl(KeyFunc key, ValueFunc val);

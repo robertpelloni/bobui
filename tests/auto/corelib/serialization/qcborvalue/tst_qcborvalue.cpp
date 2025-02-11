@@ -342,6 +342,7 @@ static void basicTypeCheck(QCborValue::Type type, const QCborValue &v, const QVa
         QVERIFY(validexpr)
     CMP(v.toByteArray(), QByteArray, v.toByteArray().isNull());
     CMP(v.toString(), QString, v.toString().isNull());
+    CMP(v.toStringView(), QString, v.toStringView().isNull());
     CMP(v.toDateTime(), QDateTime, !v.toDateTime().isValid());
     CMP(v.toUrl(), QUrl, !v.toUrl().isValid());
     CMP(v.toRegularExpression(), QRegularExpression, v.toRegularExpression().pattern().isNull());
@@ -886,6 +887,7 @@ void tst_QCborValue::mapSimpleInitializerList()
         QCborValue v = m.value(2);
         QVERIFY(v.isString());
         QCOMPARE(v.toString(), "Hello");
+        QCOMPARE(v.toStringView(), u8"Hello");
         QCOMPARE(vmap[2], v);
     }
     {
@@ -893,6 +895,7 @@ void tst_QCborValue::mapSimpleInitializerList()
         QCborValue v = m.value(3);
         QVERIFY(v.isString());
         QCOMPARE(v.toString(), "World");
+        QCOMPARE(v.toStringView(), "World"_L1);
         QCOMPARE(vmap[3], v);
     }
     {
@@ -934,6 +937,7 @@ void tst_QCborValue::mapSimpleInitializerList()
     QCOMPARE((it + 1).key(), QCborValue(2));
     QVERIFY((it + 1)->isString());
     QCOMPARE((it + 1)->toString(), "Hello");
+    QCOMPARE((it + 1)->toStringView(), u8"Hello");
     it += 2;
     QCOMPARE(it.key(), QCborValue("Hello"));
     QVERIFY(it->isInteger());
@@ -941,6 +945,7 @@ void tst_QCborValue::mapSimpleInitializerList()
     QCOMPARE(it.key(), QCborValue(3));
     QVERIFY(it->isString());
     QCOMPARE(it.value().toString(), "World");
+    QCOMPARE(it.value().toStringView(), "World"_L1);
     --end;
     QCOMPARE(end.key(), QCborValue("World"));
     QCOMPARE(end.value(), QCborValue(3));
@@ -1462,6 +1467,7 @@ void tst_QCborValue::arrayStringElements()
 
     QCborValueRef r1 = a[0];
     QCOMPARE(r1.toString(), "Hello");
+    QCOMPARE(r1.toStringView(), u8"Hello");
     QCOMPARE(r1.operator QCborValue(), QCborValue("Hello"));
     QT_TEST_EQUALITY_OPS(r1, QCborValue("Hello"), true);
 
@@ -1476,10 +1482,11 @@ void tst_QCborValue::arrayStringElements()
 
     v2 = a.at(1);
     QCOMPARE(v2.toString(), "World");
+    QCOMPARE(v2.toStringView(), u8"World");
     QT_TEST_EQUALITY_OPS(v2, QCborValue("World"), true);
 
     QCOMPARE(a.takeAt(1).toString(), "World");
-    QCOMPARE(a.takeAt(0).toString(), "Hello");
+    QCOMPARE(a.takeAt(0).toStringView(), "Hello"_L1);
     QVERIFY(a.isEmpty());
 }
 
@@ -1492,6 +1499,7 @@ void tst_QCborValue::mapStringValues()
 
     QCborValueRef r1 = m[0];
     QCOMPARE(r1.toString(), "Hello");
+    QCOMPARE(r1.toStringView(), "Hello"_L1);
     QCOMPARE(r1.operator QCborValue(), QCborValue("Hello"));
     QT_TEST_EQUALITY_OPS(r1, QCborValue("Hello"), true);
 
@@ -1506,10 +1514,11 @@ void tst_QCborValue::mapStringValues()
 
     v2 = (m.begin() + 1).value();
     QCOMPARE(v2.toString(), "World");
+    QCOMPARE(v2.toStringView(), "World"_L1);
     QCOMPARE(v2, QCborValue("World"));
 
     QCOMPARE(m.extract(m.begin() + 1).toString(), "World");
-    QCOMPARE(m.take(0).toString(), "Hello");
+    QCOMPARE(m.take(0).toStringView(), u8"Hello");
     QVERIFY(m.isEmpty());
 }
 
@@ -1530,6 +1539,7 @@ void tst_QCborValue::mapStringKeys()
     QVERIFY(m2.value(QCborValue(QByteArray("foo"))).isUndefined());
     QVERIFY(m.value(QCborValue(QLatin1String("foo"))).isUndefined());
     QCOMPARE(m.value(QCborValue(QByteArray("foo"))).toString(), "bar");
+    QCOMPARE(m.value(QCborValue(QByteArray("foo"))).toStringView(), "bar");
 
     m.insert(u"World"_s, QCborValue(3));    // replaces
     QCOMPARE(m.size(), 3);
@@ -1796,7 +1806,7 @@ void tst_QCborValue::mapComplexKeys()
 
         // basics_data() strings are Latin1
         QByteArray latin1 = v.toString().toLatin1();
-        Q_ASSERT(v.toString() == QString::fromLatin1(latin1));
+        Q_ASSERT(v.toStringView() == QString::fromLatin1(latin1));
         QCOMPARE(m[QLatin1String(latin1)].toInteger(), 42);
     }
 
@@ -3007,6 +3017,7 @@ template <typename ValueRef> static void cborValueRef_template()
     QCOMPARE(ref.toDouble(47), v.toDouble(47));
     QCOMPARE(ref.toByteArray("other"), v.toByteArray("other"));
     QCOMPARE(ref.toString("other"), v.toString("other"));
+    QCOMPARE(ref.toStringView("other"_L1), v.toStringView("other"));
     QCOMPARE(ref.toArray(otherArray), v.toArray(otherArray));
     QCOMPARE(ref.toMap(otherMap), v.toMap(otherMap));
     QCOMPARE(ref.toDateTime(otherDateTime), v.toDateTime(otherDateTime));

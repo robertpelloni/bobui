@@ -2195,7 +2195,7 @@ QByteArray QCborValue::toByteArray(const QByteArray &defaultValue) const
     Note that this function performs no conversion from other types to
     QString.
 
-    \sa isString(), isByteArray(), toByteArray()
+    \sa toStringView(), isString(), isByteArray(), toByteArray()
  */
 QString QCborValue::toString(const QString &defaultValue) const
 {
@@ -2204,6 +2204,33 @@ QString QCborValue::toString(const QString &defaultValue) const
 
     Q_ASSERT(n >= 0);
     return container->stringAt(n);
+}
+
+/*!
+    \since 6.10
+
+    Returns the string value stored in this QCborValue, if it is of the string
+    type. Otherwise, it returns \a defaultValue. Since QCborValue stores
+    strings in either US-ASCII, UTF-8 or UTF-16, the returned QAnyStringView
+    may be in any of these encodings.
+
+    This function does not allocate memory. The return value is valid until the
+    next call to a non-const member function on this object. If this object goes
+    out of scope, the return value is valid until the next call to a non-const
+    member function on the parent CBOR object (map or array).
+
+    Note that this function performs no conversion from other types to
+    QString.
+
+    \sa toString(), isString(), isByteArray(), toByteArray()
+*/
+QAnyStringView QCborValue::toStringView(QAnyStringView defaultValue) const
+{
+    if (!container || !isString())
+        return defaultValue;
+
+    Q_ASSERT(n >= 0);
+    return container->anyStringViewAt(n);
 }
 
 #if QT_CONFIG(datestring)
@@ -2899,6 +2926,14 @@ QString QCborValueConstRef::concreteString(QCborValueConstRef self, const QStrin
     if (e.type != QCborValue::String)
         return defaultValue;
     return self.d->stringAt(self.i);
+}
+
+QAnyStringView QCborValueConstRef::concreteStringView(QCborValueConstRef self, QAnyStringView defaultValue)
+{
+    QtCbor::Element e = self.d->elements.at(self.i);
+    if (e.type != QCborValue::String)
+        return defaultValue;
+    return self.d->anyStringViewAt(self.i);
 }
 
 bool
