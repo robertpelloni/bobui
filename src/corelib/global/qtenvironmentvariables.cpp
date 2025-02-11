@@ -10,6 +10,7 @@
 #include <QtCore/qstring.h>
 #include <QtCore/qvarlengtharray.h>
 
+#include <QtCore/private/qlocale_p.h>
 #include <QtCore/private/qlocking_p.h>
 
 QT_BEGIN_NAMESPACE
@@ -253,11 +254,10 @@ std::optional<int> qEnvironmentVariableIntegerValue(const char *varName) noexcep
     if (!buffer || (size = strlen(buffer)) > MaxDigitsForOctalInt)
         return std::nullopt;
 #endif
-    bool ok;
-    int value = QByteArrayView(buffer, size).toInt(&ok, 0);
-    if (!ok)
+    auto r = QLocaleData::bytearrayToLongLong(QByteArrayView(buffer, size), 0);
+    if (!r.ok() || int(r.result) != r.result)
         return std::nullopt;
-    return value;
+    return r.result;
 }
 
 /*!
