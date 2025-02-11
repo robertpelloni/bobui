@@ -28,6 +28,7 @@ void tst_QGetPutEnv::getSetCheck()
 
     QVERIFY(!qEnvironmentVariableIsSet(varName));
     QVERIFY(qEnvironmentVariableIsEmpty(varName));
+    QCOMPARE(qEnvironmentVariableIntegerValue(varName), std::nullopt);
     ok = true;
     QCOMPARE(qEnvironmentVariableIntValue(varName), 0);
     QCOMPARE(qEnvironmentVariableIntValue(varName, &ok), 0);
@@ -44,6 +45,7 @@ void tst_QGetPutEnv::getSetCheck()
 
     QVERIFY(qEnvironmentVariableIsSet(varName));
     QVERIFY(qEnvironmentVariableIsEmpty(varName));
+    QCOMPARE(qEnvironmentVariableIntegerValue(varName), std::nullopt);
     ok = true;
     QCOMPARE(qEnvironmentVariableIntValue(varName), 0);
     QCOMPARE(qEnvironmentVariableIntValue(varName, &ok), 0);
@@ -68,6 +70,7 @@ void tst_QGetPutEnv::getSetCheck()
 
     QVERIFY(qEnvironmentVariableIsSet(varName));
     QVERIFY(!qEnvironmentVariableIsEmpty(varName));
+    QCOMPARE(qEnvironmentVariableIntegerValue(varName), std::nullopt);
     ok = true;
     QCOMPARE(qEnvironmentVariableIntValue(varName), 0);
     QCOMPARE(qEnvironmentVariableIntValue(varName, &ok), 0);
@@ -85,6 +88,7 @@ void tst_QGetPutEnv::getSetCheck()
     QVERIFY(qunsetenv(varName));
     QVERIFY(!qEnvironmentVariableIsSet(varName)); // note: might fail on some systems!
     QVERIFY(qEnvironmentVariableIsEmpty(varName));
+    QCOMPARE(qEnvironmentVariableIntegerValue(varName), std::nullopt);
     ok = true;
     QCOMPARE(qEnvironmentVariableIntValue(varName), 0);
     QCOMPARE(qEnvironmentVariableIntValue(varName, &ok), 0);
@@ -210,6 +214,10 @@ void tst_QGetPutEnv::intValue()
     QCOMPARE(qEnvironmentVariableIntValue(varName), expected);
     QCOMPARE(qEnvironmentVariableIntValue(varName, &actualOk), expected);
     QCOMPARE(actualOk, ok);
+    if (actualOk)
+        QCOMPARE(qEnvironmentVariableIntegerValue(varName), expected);
+    else
+        QCOMPARE(qEnvironmentVariableIntegerValue(varName), std::nullopt);
 }
 
 QTEST_MAIN(tst_QGetPutEnv)

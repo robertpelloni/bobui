@@ -40,14 +40,6 @@ static std::optional<QByteArray> qEnvironmentVariableOptionalByteArray(const cha
     return value.isNull() ? std::nullopt : std::optional(std::move(value));
 }
 
-static std::optional<int> qEnvironmentVariableOptionalInt(const char *name)
-{
-    bool ok = false;
-    const int value = qEnvironmentVariableIntValue(name, &ok);
-    auto opt = ok ? std::optional(value) : std::nullopt;
-    return opt;
-}
-
 static std::optional<qreal> qEnvironmentVariableOptionalReal(const char *name)
 {
     const QByteArray val = qgetenv(name);
@@ -402,7 +394,7 @@ void QHighDpiScaling::initHighDpiScaling()
 
     // Read environment variables
     static const char* envDebugStr = "environment variable set:";
-    std::optional<int> envEnableHighDpiScaling = qEnvironmentVariableOptionalInt(enableHighDpiScalingEnvVar);
+    std::optional<int> envEnableHighDpiScaling = qEnvironmentVariableIntegerValue(enableHighDpiScalingEnvVar);
     if (envEnableHighDpiScaling.has_value())
         qCDebug(lcHighDpi) << envDebugStr << enableHighDpiScalingEnvVar << envEnableHighDpiScaling.value();
 
@@ -414,7 +406,7 @@ void QHighDpiScaling::initHighDpiScaling()
     if (envScreenFactors.has_value())
         qCDebug(lcHighDpi) << envDebugStr << screenFactorsEnvVar << envScreenFactors.value();
 
-    std::optional<int> envUsePhysicalDpi = qEnvironmentVariableOptionalInt(usePhysicalDpiEnvVar);
+    std::optional<int> envUsePhysicalDpi = qEnvironmentVariableIntegerValue(usePhysicalDpiEnvVar);
     if (envUsePhysicalDpi.has_value())
         qCDebug(lcHighDpi) << envDebugStr << usePhysicalDpiEnvVar << envUsePhysicalDpi.value();
 

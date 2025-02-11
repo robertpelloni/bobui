@@ -38,7 +38,7 @@ Q_CONSTINIT static QBasicMutex environmentMutex;
     On Unix systems, this function is lossless.
 
     \sa qputenv(), qEnvironmentVariable(), qEnvironmentVariableIsSet(),
-    qEnvironmentVariableIsEmpty()
+    qEnvironmentVariableIsEmpty(), qEnvironmentVariableIntegerValue()
 */
 QByteArray qgetenv(const char *varName)
 {
@@ -104,7 +104,8 @@ QByteArray qgetenv(const char *varName)
 
     \note the variable name \a varName must contain only US-ASCII characters.
 
-    \sa qputenv(), qgetenv(), qEnvironmentVariableIsSet(), qEnvironmentVariableIsEmpty()
+    \sa qputenv(), qgetenv(), qEnvironmentVariableIsSet(), qEnvironmentVariableIsEmpty(),
+        qEnvironmentVariableIntegerValue()
 */
 QString qEnvironmentVariable(const char *varName, const QString &defaultValue)
 {
@@ -193,6 +194,45 @@ bool qEnvironmentVariableIsEmpty(const char *varName) noexcept
 */
 int qEnvironmentVariableIntValue(const char *varName, bool *ok) noexcept
 {
+    std::optional<int> value = qEnvironmentVariableIntegerValue(varName);
+    if (ok)
+        *ok = bool(value);
+    return value.value_or(0);
+}
+
+/*!
+    \relates <QtEnvironmentVariables>
+    \since 6.10
+
+    Returns the numerical value of the environment variable \a varName. If the
+    variable is not set or could not be parsed as an integer, it returns
+    \c{std::nullopt}.
+
+    Similar to
+    \snippet code/src_corelib_global_qglobal.cpp to-int
+    except that it's much faster, and can't throw exceptions.
+
+    If a value of zero is semantically the same as an empty or unset variable,
+    applications can use
+    \snippet code/src_corelib_global_qglobal.cpp int-value_or
+    Do note in this case that failures to parse a value will also produce a
+    zero.
+
+    But if a value of zero can be used to disable some functionality,
+    applications can compare the returned \c{std::optional} to zero, which will
+    only be true if the variable was set and contained a number that parsed as
+    zero, as in:
+    \snippet code/src_corelib_global_qglobal.cpp int-eq0
+
+    \note there's a limit on the length of the value, which is sufficient for
+    all valid values of int, not counting leading zeroes or spaces. Values that
+    are too long will either be truncated or this function will return
+    \c{std::nullopt}.
+
+    \sa qgetenv(), qEnvironmentVariable(), qEnvironmentVariableIsSet()
+*/
+std::optional<int> qEnvironmentVariableIntegerValue(const char *varName) noexcept
+{
     static const int NumBinaryDigitsPerOctalDigit = 3;
     static const int MaxDigitsForOctalInt =
         (std::numeric_limits<uint>::digits + NumBinaryDigitsPerOctalDigit - 1) / NumBinaryDigitsPerOctalDigit
@@ -205,21 +245,19 @@ int qEnvironmentVariableIntValue(const char *varName, bool *ok) noexcept
     // we provide a buffer that can hold any int value:
     char buffer[MaxDigitsForOctalInt + 1]; // +1 for the terminating null
     size_t dummy;
-    if (getenv_s(&dummy, buffer, sizeof buffer, varName) != 0) {
-        if (ok)
-            *ok = false;
-        return 0;
-    }
+    if (getenv_s(&dummy, buffer, sizeof buffer, varName) != 0)
+        return std::nullopt;
     size = strlen(buffer);
 #else
     const char * const buffer = ::getenv(varName);
-    if (!buffer || (size = strlen(buffer)) > MaxDigitsForOctalInt) {
-        if (ok)
-            *ok = false;
-        return 0;
-    }
+    if (!buffer || (size = strlen(buffer)) > MaxDigitsForOctalInt)
+        return std::nullopt;
 #endif
-    return QByteArrayView(buffer, size).toInt(ok, 0);
+    bool ok;
+    int value = QByteArrayView(buffer, size).toInt(&ok, 0);
+    if (!ok)
+        return std::nullopt;
+    return value;
 }
 
 /*!
@@ -232,7 +270,8 @@ int qEnvironmentVariableIntValue(const char *varName, bool *ok) noexcept
     \snippet code/src_corelib_global_qglobal.cpp is-null
     except that it's potentially much faster, and can't throw exceptions.
 
-    \sa qgetenv(), qEnvironmentVariable(), qEnvironmentVariableIsEmpty()
+    \sa qgetenv(), qEnvironmentVariable(), qEnvironmentVariableIsEmpty(),
+        qEnvironmentVariableIntegerValue()
 */
 bool qEnvironmentVariableIsSet(const char *varName) noexcept
 {

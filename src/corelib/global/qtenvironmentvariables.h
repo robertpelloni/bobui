@@ -8,6 +8,8 @@
 #include <QtCore/qtcoreexports.h>
 #include <QtCore/qtdeprecationmarkers.h>
 
+#include <optional>
+
 #if 0
 #pragma qt_class(QtEnvironmentVariables)
 #pragma qt_sync_stop_processing
@@ -32,6 +34,7 @@ Q_CORE_EXPORT bool qunsetenv(const char *varName);
 Q_CORE_EXPORT bool qEnvironmentVariableIsEmpty(const char *varName) noexcept;
 Q_CORE_EXPORT bool qEnvironmentVariableIsSet(const char *varName) noexcept;
 Q_CORE_EXPORT int  qEnvironmentVariableIntValue(const char *varName, bool *ok=nullptr) noexcept;
+Q_CORE_EXPORT std::optional<int> qEnvironmentVariableIntegerValue(const char *varName) noexcept;
 
 QT_END_NAMESPACE
 
