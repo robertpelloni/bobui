@@ -7068,7 +7068,7 @@ const ushort *QString::utf16() const
     \since 6.10
 
     If this string data isn't null-terminated, this method will make a deep
-    copy of the data and make it null-terminated().
+    copy of the data and make it null-terminated.
 
     A QString is null-terminated by default, however in some cases (e.g.
     when using fromRawData()), the string data doesn't necessarily end
