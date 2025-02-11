@@ -17,6 +17,8 @@
 #include <QtCore/QList>
 #include <QtCore/QOperatingSystemVersion>
 #include <QtCore/QSharedPointer>
+#include <QtCore/QXmlStreamWriter>
+#include <QtNetwork/QSslCertificate>
 
 #ifdef Q_OS_WIN
 #include <QtCore/qt_windows.h>
@@ -212,6 +214,8 @@ struct Options {
     bool ignoreLibraryErrors = false;
     bool deployInsightTrackerPlugin = false;
     bool forceOpenSslPlugin = false;
+    bool createAppx = false;
+    QString appxCertificatePath;
 };
 
 // Return binary to be deployed from folder, ignore pre-existing web engine process.
@@ -506,6 +510,15 @@ static inline int parseArguments(const QStringList &arguments, QCommandLineParse
                                   QStringLiteral("option"));
     parser->addOption(listOption);
 
+    QCommandLineOption appxOption(QStringLiteral("appx"),
+                                  QStringLiteral("Create an appx package for the Windows Store"));
+    parser->addOption(appxOption);
+
+    QCommandLineOption appxCertificatePath(QStringLiteral("appx-certificate"),
+                                          QStringLiteral("Path to appx certificate to sign appx package"),
+                                          QStringLiteral(".cer file"));
+    parser->addOption(appxCertificatePath);
+
     // Add early option to have it available in the help text.
     parser->addOption(createVerboseOption());
 
@@ -562,6 +575,14 @@ static inline int parseArguments(const QStringList &arguments, QCommandLineParse
     options->systemD3dCompiler = !parser->isSet(noSystemD3DCompilerOption);
     options->systemDxc = !parser->isSet(noSystemDxcOption);
     options->quickImports = !parser->isSet(noQuickImportOption);
+    options->createAppx = parser->isSet(appxOption);
+    if (options->createAppx) {
+        if (!parser->isSet(appxCertificatePath)) {
+            *errorMessage = QStringLiteral("--appx requires --appx-certificate with a valid certificate");
+            return CommandLineParseError;
+        }
+        options->appxCertificatePath = parser->value(appxCertificatePath);
+    }
 
     // default to deployment of compiler runtime for windows desktop configurations
     if (options->platform == WindowsDesktopMinGW || options->platform.testFlags(WindowsDesktopMsvc)
@@ -2040,6 +2061,116 @@ int main(int argc, char **argv)
             std::wcerr << errorMessage << '\n';
             return 1;
         }
+    }
+
+    if (options.createAppx && !options.appxCertificatePath.isEmpty()) {
+        const QFileInfo storeLogo(options.directory + QStringLiteral("/Assets/StoreLogo.png"));
+        if (!storeLogo.exists()) {
+            std::wcerr << "Error: Could not open application logo file " << storeLogo.absoluteFilePath() << '\n';
+            return 1;
+        }
+
+        QFile certFile(options.appxCertificatePath);
+        if (!certFile.open(QIODevice::ReadOnly)) {
+            std::wcerr << "Could not open certificate file" << '\n';
+            return 1;
+        }
+
+        QSslCertificate cert(&certFile, QSsl::Der);
+        QString publisher = cert.subjectDisplayName();
+
+        const QString applicationName = QFileInfo(options.binaries.first()).baseName();
+        const QString platform = options.platform.testFlag(PlatformFlag::IntelBased) ? QStringLiteral("x64") : QStringLiteral("arm64");
+        const QString appxFilePath(options.directory + QStringLiteral("/") + QStringLiteral("AppxManifest.xml"));
+        QFile f(appxFilePath);
+        if (!f.open(QIODevice::Truncate | QIODevice::WriteOnly | QIODevice::Text)) {
+            std::wcerr << "Could not create AppxManifest.xml" << '\n';
+            return 1;
+        }
+
+        QXmlStreamWriter manifestWriter(&f);
+        manifestWriter.setAutoFormatting(true);
+        manifestWriter.writeStartDocument();
+        manifestWriter.writeStartElement(QStringLiteral("Package"));
+        manifestWriter.writeAttribute(QStringLiteral("xmlns"), QStringLiteral("http://schemas.microsoft.com/appx/manifest/foundation/windows10"));
+        manifestWriter.writeAttribute(QStringLiteral("xmlns:uap"), QStringLiteral("http://schemas.microsoft.com/appx/manifest/uap/windows10"));
+        manifestWriter.writeAttribute(QStringLiteral("xmlns:rescap"), QStringLiteral("http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"));
+
+            manifestWriter.writeStartElement(QStringLiteral("Identity"));
+            manifestWriter.writeAttribute("Name", QUuid::createUuid().toString(QUuid::WithoutBraces));
+            manifestWriter.writeAttribute("Publisher", QStringLiteral("CN=") + publisher);
+            manifestWriter.writeAttribute("Version", "1.0.0.0");
+            manifestWriter.writeAttribute("ProcessorArchitecture", platform);
+            manifestWriter.writeEndElement();
+
+            manifestWriter.writeStartElement("Properties");
+                manifestWriter.writeStartElement("DisplayName");
+                    manifestWriter.writeCharacters(applicationName);
+                manifestWriter.writeEndElement();
+                manifestWriter.writeStartElement("PublisherDisplayName");
+                    manifestWriter.writeCharacters(publisher);
+                manifestWriter.writeEndElement();
+                manifestWriter.writeStartElement("Logo");
+                    manifestWriter.writeCharacters("Assets/StoreLogo.png");
+                manifestWriter.writeEndElement();
+            manifestWriter.writeEndElement();
+
+            manifestWriter.writeStartElement("Dependencies");
+                manifestWriter.writeStartElement("TargetDeviceFamily");
+                    manifestWriter.writeAttribute("Name", "Windows.Desktop");
+                    manifestWriter.writeAttribute("MinVersion", "10.0.14316.0");
+                    manifestWriter.writeAttribute("MaxVersionTested", "10.0.14316.0");
+                manifestWriter.writeEndElement();
+            manifestWriter.writeEndElement();
+
+            manifestWriter.writeStartElement("Capabilities");
+                manifestWriter.writeStartElement("rescap:Capability");
+                    manifestWriter.writeAttribute("Name", "runFullTrust");
+                manifestWriter.writeEndElement();
+            manifestWriter.writeEndElement();
+
+            manifestWriter.writeStartElement("Resources");
+                manifestWriter.writeStartElement("Resource");
+                    if (options.languages.isEmpty()) {
+                        QLocale locale = QLocale::system();
+                        manifestWriter.writeAttribute("Language", locale.bcp47Name());
+                    } else {
+                        for (const auto& language : options.languages) {
+                            manifestWriter.writeAttribute("Language", language);
+                        }
+                    }
+                manifestWriter.writeEndElement();
+            manifestWriter.writeEndElement();
+
+            manifestWriter.writeStartElement("Applications");
+                for (const auto& binary : options.binaries) {
+                        const QString binaryRelative = binary.split(QStringLiteral("/")).last();
+                        const QString displayName = binaryRelative.split(QStringLiteral(".")).first();
+                        QFile descriptionFile(options.directory + QStringLiteral("/") + QStringLiteral("Assets/Description_") + displayName + QStringLiteral(".txt"));
+                        QString description;
+                        if (!descriptionFile.exists())
+                            std::wcerr << "Warning: No package description was provided " << descriptionFile.fileName() << '\n';
+                        if (descriptionFile.open(QIODevice::ReadOnly | QIODevice::Text))
+                            description = QString::fromUtf8(descriptionFile.readAll());
+
+                        manifestWriter.writeStartElement("Application");
+                            manifestWriter.writeAttribute("Id", displayName);
+                            manifestWriter.writeAttribute("Executable", binaryRelative);
+                            manifestWriter.writeAttribute("EntryPoint", "Windows.FullTrustApplication");
+                            manifestWriter.writeStartElement("uap:VisualElements");
+                                manifestWriter.writeAttribute("DisplayName", displayName);
+                                manifestWriter.writeAttribute("Description", description);
+                                manifestWriter.writeAttribute("BackgroundColor", "transparent");
+                                manifestWriter.writeAttribute("Square150x150Logo", "Assets/Logo.png");
+                                manifestWriter.writeAttribute("Square44x44Logo", "Assets/SmallLogo.png");
+                                manifestWriter.writeStartElement("uap:DefaultTile");
+                                manifestWriter.writeEndElement();
+                            manifestWriter.writeEndElement();
+                        manifestWriter.writeEndElement();
+                }
+            manifestWriter.writeEndElement();
+        manifestWriter.writeEndElement();
+        manifestWriter.writeEndDocument();
     }
 
     if (options.json) {

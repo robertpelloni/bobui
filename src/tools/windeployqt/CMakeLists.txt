@@ -25,6 +25,7 @@ qt_internal_add_tool(${target_name}
         QT_NO_QPAIR
     LIBRARIES
         Qt::CorePrivate
+        Qt::Network
 )
 
 qt_internal_return_unless_building_tools()
