@@ -174,6 +174,8 @@ bool qEnvironmentVariableIsEmpty(const char *varName) noexcept
 #endif
 }
 
+QT_WARNING_PUSH
+QT_WARNING_DISABLE_GCC("-Wmaybe-uninitialized") // older GCC don't like libstdc++'s std::optional
 /*!
     \relates <QtEnvironmentVariables>
     \since 5.5
@@ -195,11 +197,14 @@ bool qEnvironmentVariableIsEmpty(const char *varName) noexcept
 */
 int qEnvironmentVariableIntValue(const char *varName, bool *ok) noexcept
 {
-    std::optional<int> value = qEnvironmentVariableIntegerValue(varName);
+    std::optional<qint64> value = qEnvironmentVariableIntegerValue(varName);
+    if (value && *value != int(*value))
+        value = std::nullopt;
     if (ok)
         *ok = bool(value);
     return value.value_or(0);
 }
+QT_WARNING_POP
 
 /*!
     \relates <QtEnvironmentVariables>
@@ -232,11 +237,11 @@ int qEnvironmentVariableIntValue(const char *varName, bool *ok) noexcept
 
     \sa qgetenv(), qEnvironmentVariable(), qEnvironmentVariableIsSet()
 */
-std::optional<int> qEnvironmentVariableIntegerValue(const char *varName) noexcept
+std::optional<qint64> qEnvironmentVariableIntegerValue(const char *varName) noexcept
 {
     static const int NumBinaryDigitsPerOctalDigit = 3;
     static const int MaxDigitsForOctalInt =
-        (std::numeric_limits<uint>::digits + NumBinaryDigitsPerOctalDigit - 1) / NumBinaryDigitsPerOctalDigit
+        (std::numeric_limits<quint64>::digits + NumBinaryDigitsPerOctalDigit - 1) / NumBinaryDigitsPerOctalDigit
             + 1     // sign
             + 1;    // "0" base prefix
 
@@ -255,7 +260,7 @@ std::optional<int> qEnvironmentVariableIntegerValue(const char *varName) noexcep
         return std::nullopt;
 #endif
     auto r = QLocaleData::bytearrayToLongLong(QByteArrayView(buffer, size), 0);
-    if (!r.ok() || int(r.result) != r.result)
+    if (!r.ok())
         return std::nullopt;
     return r.result;
 }

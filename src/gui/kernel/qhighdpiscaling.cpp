@@ -394,7 +394,7 @@ void QHighDpiScaling::initHighDpiScaling()
 
     // Read environment variables
     static const char* envDebugStr = "environment variable set:";
-    std::optional<int> envEnableHighDpiScaling = qEnvironmentVariableIntegerValue(enableHighDpiScalingEnvVar);
+    std::optional envEnableHighDpiScaling = qEnvironmentVariableIntegerValue(enableHighDpiScalingEnvVar);
     if (envEnableHighDpiScaling.has_value())
         qCDebug(lcHighDpi) << envDebugStr << enableHighDpiScalingEnvVar << envEnableHighDpiScaling.value();
 
@@ -406,7 +406,7 @@ void QHighDpiScaling::initHighDpiScaling()
     if (envScreenFactors.has_value())
         qCDebug(lcHighDpi) << envDebugStr << screenFactorsEnvVar << envScreenFactors.value();
 
-    std::optional<int> envUsePhysicalDpi = qEnvironmentVariableIntegerValue(usePhysicalDpiEnvVar);
+    std::optional envUsePhysicalDpi = qEnvironmentVariableIntegerValue(usePhysicalDpiEnvVar);
     if (envUsePhysicalDpi.has_value())
         qCDebug(lcHighDpi) << envDebugStr << usePhysicalDpiEnvVar << envUsePhysicalDpi.value();
 

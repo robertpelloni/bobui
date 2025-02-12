@@ -7,6 +7,7 @@
 #include <QtCore/qtconfigmacros.h>
 #include <QtCore/qtcoreexports.h>
 #include <QtCore/qtdeprecationmarkers.h>
+#include <QtCore/qtypes.h>
 
 #include <optional>
 
@@ -34,7 +35,7 @@ Q_CORE_EXPORT bool qunsetenv(const char *varName);
 Q_CORE_EXPORT bool qEnvironmentVariableIsEmpty(const char *varName) noexcept;
 Q_CORE_EXPORT bool qEnvironmentVariableIsSet(const char *varName) noexcept;
 Q_CORE_EXPORT int  qEnvironmentVariableIntValue(const char *varName, bool *ok=nullptr) noexcept;
-Q_CORE_EXPORT std::optional<int> qEnvironmentVariableIntegerValue(const char *varName) noexcept;
+Q_CORE_EXPORT std::optional<qint64> qEnvironmentVariableIntegerValue(const char *varName) noexcept;
 
 QT_END_NAMESPACE
 
