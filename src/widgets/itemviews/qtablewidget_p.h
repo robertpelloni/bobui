@@ -136,6 +136,7 @@ public:
     bool dropMimeData(const QMimeData *data, Qt::DropAction action,
             int row, int column, const QModelIndex &parent) override;
     Qt::DropActions supportedDropActions() const override;
+    Qt::DropActions supportedDragActions() const override;
 
     QMimeData *internalMimeData()  const;
 
@@ -173,6 +174,7 @@ public:
     void dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight);
 
     std::array<QMetaObject::Connection, 10> connections;
+    std::optional<Qt::DropActions> supportedDragActions;
 };
 
 class QTableWidgetItemPrivate

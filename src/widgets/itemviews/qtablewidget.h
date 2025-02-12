@@ -265,6 +265,9 @@ public:
     const QTableWidgetItem *itemPrototype() const;
     void setItemPrototype(const QTableWidgetItem *item);
 
+    Qt::DropActions supportedDragActions() const;
+    void setSupportedDragActions(Qt::DropActions actions);
+
 public Q_SLOTS:
     void scrollToItem(const QTableWidgetItem *item, QAbstractItemView::ScrollHint hint = EnsureVisible);
     void insertRow(int row);

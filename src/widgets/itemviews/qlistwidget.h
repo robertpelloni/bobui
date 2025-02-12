@@ -221,6 +221,9 @@ public:
     QModelIndex indexFromItem(const QListWidgetItem *item) const;
     QListWidgetItem *itemFromIndex(const QModelIndex &index) const;
 
+    void setSupportedDragActions(Qt::DropActions actions);
+    Qt::DropActions supportedDragActions() const;
+
 protected:
 #if QT_CONFIG(draganddrop)
     void dropEvent(QDropEvent *event) override;

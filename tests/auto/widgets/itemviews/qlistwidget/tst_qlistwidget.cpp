@@ -100,15 +100,14 @@ private slots:
     void QTBUG50891_ensureSelectionModelSignalConnectionsAreSet();
     void createPersistentOnLayoutAboutToBeChanged();
     void createPersistentOnLayoutAboutToBeChangedAutoSort();
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     void clearItemData();
-#endif
 
     void moveRows_data();
     void moveRows();
     void moveRowsInvalid_data();
     void moveRowsInvalid();
     void noopDragDrop();
+    void supportedDragActions();
 
 protected slots:
     void rowsAboutToBeInserted(const QModelIndex &parent, int first, int last)
@@ -2002,7 +2001,6 @@ void tst_QListWidget::noopDragDrop() // QTBUG-100128
     CHECK_ITEM;
 }
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 void tst_QListWidget::clearItemData()
 {
     QListWidget list;
@@ -2022,7 +2020,25 @@ void tst_QListWidget::clearItemData()
     QVERIFY(list.model()->clearItemData(list.model()->index(0, 0)));
     QCOMPARE(dataChangeSpy.size(), 0);
 }
-#endif
+
+class MoveOnlyListWidget : public QListWidget
+{
+    Q_OBJECT
+public:
+    using QListWidget::QListWidget;
+    Qt::DropActions supportedDropActions() const override { return Qt::MoveAction; }
+};
+
+void tst_QListWidget::supportedDragActions()
+{
+    MoveOnlyListWidget listWidget;
+    QCOMPARE(listWidget.model()->supportedDropActions(), Qt::MoveAction);
+    // For Qt < 6.8 compatibility reasons, supportedDragActions defaults to supportedDropActions
+    QCOMPARE(listWidget.model()->supportedDragActions(), Qt::MoveAction);
+
+    listWidget.setSupportedDragActions(Qt::CopyAction);
+    QCOMPARE(listWidget.model()->supportedDragActions(), Qt::CopyAction);
+}
 
 QTEST_MAIN(tst_QListWidget)
 #include "tst_qlistwidget.moc"

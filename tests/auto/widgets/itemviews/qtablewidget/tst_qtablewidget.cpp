@@ -87,6 +87,7 @@ private slots:
     void moveRows();
     void moveRowsInvalid_data();
     void moveRowsInvalid();
+    void supportedDragActions();
 
 private:
     std::unique_ptr<QTableWidget> testWidget;
@@ -2045,6 +2046,25 @@ void tst_QTableWidget::moveRowsInvalid()
     QCOMPARE(rowMovedSpy.size(), 0);
     QCOMPARE(rowAboutMovedSpy.size(), 0);
     delete baseWidget;
+}
+
+class MoveOnlyTableWidget : public QTableWidget
+{
+    Q_OBJECT
+public:
+    using QTableWidget::QTableWidget;
+    Qt::DropActions supportedDropActions() const override { return Qt::MoveAction; }
+};
+
+void tst_QTableWidget::supportedDragActions()
+{
+    MoveOnlyTableWidget tableWidget;
+    QCOMPARE(tableWidget.model()->supportedDropActions(), Qt::MoveAction);
+    // For Qt < 6.8 compatibility reasons, supportedDragActions defaults to supportedDropActions
+    QCOMPARE(tableWidget.model()->supportedDragActions(), Qt::MoveAction);
+
+    tableWidget.setSupportedDragActions(Qt::CopyAction);
+    QCOMPARE(tableWidget.model()->supportedDragActions(), Qt::CopyAction);
 }
 
 QTEST_MAIN(tst_QTableWidget)

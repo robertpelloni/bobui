@@ -98,6 +98,7 @@ public:
                       int row, int column, const QModelIndex &parent) override;
     Qt::DropActions supportedDropActions() const override;
 #endif
+    Qt::DropActions supportedDragActions() const override;
 
     QMimeData *internalMimeData()  const;
 private:
@@ -126,9 +127,10 @@ public:
     void emitCurrentItemChanged(const QModelIndex &current, const QModelIndex &previous);
     void sort();
     void dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight);
+
     Qt::SortOrder sortOrder;
     bool sortingEnabled;
-
+    std::optional<Qt::DropActions> supportedDragActions;
     std::array<QMetaObject::Connection, 8> connections;
     std::array<QMetaObject::Connection, 2> selectionModelConnections;
 };

@@ -869,6 +869,12 @@ Qt::DropActions QTableModel::supportedDropActions() const
     return (view ? view->supportedDropActions() : Qt::DropActions(Qt::IgnoreAction));
 }
 
+Qt::DropActions QTableModel::supportedDragActions() const
+{
+    const QTableWidget *view = this->view();
+    return (view ? view->supportedDragActions() : Qt::DropActions(Qt::IgnoreAction));
+}
+
 /*!
     \class QTableWidgetSelectionRange
 
@@ -2605,7 +2611,7 @@ QMimeData *QTableWidget::mimeData(const QList<QTableWidgetItem *> &items) const
     Returns \c true if the data and action can be handled by the model;
     otherwise returns \c false.
 
-    \sa supportedDropActions()
+    \sa supportedDropActions(), supportedDragActions()
 */
 bool QTableWidget::dropMimeData(int row, int column, const QMimeData *data, Qt::DropAction action)
 {
@@ -2624,11 +2630,36 @@ bool QTableWidget::dropMimeData(int row, int column, const QMimeData *data, Qt::
 /*!
   Returns the drop actions supported by this view.
 
-  \sa Qt::DropActions
+  \sa Qt::DropActions, supportedDragActions(), dropMimeData()
 */
 Qt::DropActions QTableWidget::supportedDropActions() const
 {
     return d_func()->tableModel()->QAbstractTableModel::supportedDropActions() | Qt::MoveAction;
+}
+
+/*!
+  Returns the drag actions supported by this view.
+
+  \since 6.10
+  \sa Qt::DropActions, setSupportedDragActions(), supportedDropActions()
+*/
+Qt::DropActions QTableWidget::supportedDragActions() const
+{
+    Q_D(const QTableWidget);
+    return d->supportedDragActions.value_or(supportedDropActions());
+}
+
+/*!
+  Sets the drag \a actions supported by this view.
+
+  \since 6.10
+  \sa Qt::DropActions, supportedDragActions()
+*/
+
+void QTableWidget::setSupportedDragActions(Qt::DropActions actions)
+{
+    Q_D(QTableWidget);
+    d->supportedDragActions = actions;
 }
 
 /*!
