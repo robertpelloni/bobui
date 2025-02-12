@@ -1076,6 +1076,18 @@ void Moc::parse()
     }
 }
 
+QByteArrayView Moc::strippedFileName() const
+{
+    QByteArrayView fn = QByteArrayView(filename);
+
+    auto isSlash = [](char ch) { return ch == '/' || ch == '\\'; };
+    auto rit = std::find_if(fn.crbegin(), fn.crend(), isSlash);
+    if (rit != fn.crend())
+        fn = fn.last(rit - fn.crbegin());
+
+    return fn;
+}
+
 static bool any_type_contains(const QList<PropertyDef> &properties, const QByteArray &pattern)
 {
     for (const auto &p : properties) {
@@ -1143,12 +1155,7 @@ static QByteArrayList requiredQtContainers(const QList<ClassDef> &classes)
 
 void Moc::generate(FILE *out, FILE *jsonOutput)
 {
-    QByteArrayView fn = QByteArrayView(filename);
-
-    auto isSlash = [](char ch) { return ch == '/' || ch == '\\'; };
-    auto rit = std::find_if(fn.crbegin(), fn.crend(), isSlash);
-    if (rit != fn.crend())
-        fn = fn.last(rit - fn.crbegin());
+    QByteArrayView fn = strippedFileName();
 
     fprintf(out, "/****************************************************************************\n"
             "** Meta object code from reading C++ file '%s'\n**\n" , fn.constData());

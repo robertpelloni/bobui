@@ -12,8 +12,10 @@
 static bool readFromFile(QFile *device, QJsonArray *allMetaObjects)
 {
     const QByteArray contents = device->readAll();
-    if (contents.isEmpty())
-        return true;
+    if (contents.isEmpty()) {
+        fprintf(stderr, "%s:0: metatypes input file is empty\n", qPrintable(device->fileName()));
+        return false;
+    }
 
     QJsonParseError error {};
     QJsonDocument metaObjects = QJsonDocument::fromJson(contents, &error);

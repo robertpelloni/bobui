@@ -242,6 +242,7 @@ public:
     QList<QString> parsedPluginMetadataFiles;
 
     void parse();
+    QByteArrayView strippedFileName() const;
     void generate(FILE *out, FILE *jsonOutput);
 
     bool parseClassHead(ClassDef *def);
