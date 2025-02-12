@@ -86,6 +86,8 @@ extern char *__progname;
 
 #ifdef Q_OS_WIN
 #include <qt_windows.h>
+#include <processthreadsapi.h>
+#include "qfunctionpointer.h"
 #endif
 
 QT_BEGIN_NAMESPACE
@@ -175,6 +177,54 @@ static bool isFatal(QtMsgType msgType)
 
     return false;
 }
+
+#if defined(Q_OS_LINUX) || defined(Q_OS_DARWIN) || defined(Q_OS_FREEBSD) || defined(Q_OS_NETBSD)
+static bool qt_append_thread_name_to(QString &message)
+{
+    std::array<char, 16> name{};
+    if (pthread_getname_np(pthread_self(), name.data(), name.size()) == 0) {
+        QUtf8StringView threadName(name.data());
+        if (!threadName.isEmpty()) {
+            message.append(threadName);
+            return true;
+        }
+    }
+    return false;
+}
+#elif defined(Q_OS_WIN)
+typedef HRESULT (WINAPI *GetThreadDescriptionFunc)(HANDLE, PWSTR *);
+static bool qt_append_thread_name_to(QString &message)
+{
+    // Once MinGW 12.0 is required for Qt, we can call GetThreadDescription directly
+    // instead of this runtime resolve:
+    static GetThreadDescriptionFunc pGetThreadDescription = []() -> GetThreadDescriptionFunc {
+        HMODULE hKernel = GetModuleHandleW(L"kernel32.dll");
+        if (!hKernel)
+            return nullptr;
+        auto funcPtr = reinterpret_cast<QFunctionPointer>(GetProcAddress(hKernel, "GetThreadDescription"));
+        return reinterpret_cast<GetThreadDescriptionFunc>(funcPtr);
+    } ();
+    if (!pGetThreadDescription)
+        return false; // Not available on this system
+    PWSTR description = nullptr;
+    HRESULT hr = pGetThreadDescription(GetCurrentThread(), &description);
+    std::unique_ptr<WCHAR, decltype(&LocalFree)> descriptionOwner(description, &LocalFree);
+    if (SUCCEEDED(hr)) {
+        QStringView threadName(description);
+        if (!threadName.isEmpty()) {
+            message.append(threadName);
+            return true;
+        }
+    }
+    return false;
+}
+#else
+static bool qt_append_thread_name_to(QString &message)
+{
+    Q_UNUSED(message)
+    return false;
+}
+#endif
 
 #ifndef Q_OS_WASM
 
@@ -1059,6 +1109,7 @@ static const char functionTokenC[] = "%{function}";
 static const char pidTokenC[] = "%{pid}";
 static const char appnameTokenC[] = "%{appname}";
 static const char threadidTokenC[] = "%{threadid}";
+static const char threadnameTokenC[] = "%{threadname}";
 static const char qthreadptrTokenC[] = "%{qthreadptr}";
 static const char timeTokenC[] = "%{time"; //not a typo: this command has arguments
 static const char backtraceTokenC[] = "%{backtrace"; //ditto
@@ -1218,6 +1269,8 @@ void QMessagePattern::setPattern(const QString &pattern)
                 tokens[i] = appnameTokenC;
             else if (lexeme == QLatin1StringView(threadidTokenC))
                 tokens[i] = threadidTokenC;
+            else if (lexeme == QLatin1StringView(threadnameTokenC))
+                tokens[i] = threadnameTokenC;
             else if (lexeme == QLatin1StringView(qthreadptrTokenC))
                 tokens[i] = qthreadptrTokenC;
             else if (lexeme.startsWith(QLatin1StringView(timeTokenC))) {
@@ -1620,6 +1673,9 @@ static QString formatLogMessage(QtMsgType type, const QMessageLogContext &contex
         } else if (token == threadidTokenC) {
             // print the TID as decimal
             message.append(QString::number(qt_gettid()));
+        } else if (token == threadnameTokenC) {
+            if (!qt_append_thread_name_to(message))
+                message.append(QString::number(qt_gettid())); // fallback to the TID
         } else if (token == qthreadptrTokenC) {
             message.append("0x"_L1);
             message.append(QString::number(qlonglong(QThread::currentThread()->currentThread()), 16));
@@ -2197,6 +2253,7 @@ void qErrnoWarning(int code, const char *msg, ...)
     \row \li \c %{message} \li The actual message
     \row \li \c %{pid} \li QCoreApplication::applicationPid()
     \row \li \c %{threadid} \li The system-wide ID of current thread (if it can be obtained)
+    \row \li \c %{threadname} \li The current thread name (if it can be obtained, or the thread ID, since Qt 6.10)
     \row \li \c %{qthreadptr} \li A pointer to the current QThread (result of QThread::currentThread())
     \row \li \c %{type} \li "debug", "warning", "critical" or "fatal"
     \row \li \c %{time process} \li time of the message, in seconds since the process started (the token "process" is literal)
