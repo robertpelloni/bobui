@@ -15,6 +15,9 @@ add_subdirectory(qchar)
 add_subdirectory(qcollator)
 add_subdirectory(qlatin1stringmatcher)
 add_subdirectory(qlatin1stringview)
+if (NOT WASM) # QTBUG-133219
+add_subdirectory(qlocale)
+endif()
 if (NOT WASM) # QTBUG-121822
 add_subdirectory(qregularexpression)
 endif()
@@ -30,6 +33,3 @@ add_subdirectory(qstringtokenizer)
 add_subdirectory(qstringview)
 add_subdirectory(qtextboundaryfinder)
 add_subdirectory(qunicodetools)
-if (NOT WASM) # QTBUG-133219
-add_subdirectory(qlocale)
-endif()
