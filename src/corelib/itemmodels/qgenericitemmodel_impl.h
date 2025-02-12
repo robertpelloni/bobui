@@ -495,6 +495,7 @@ public:
         RemoveColumns,
         InsertRows,
         RemoveRows,
+        MoveRows,
     };
 
     void destroy()
@@ -535,6 +536,9 @@ protected:
     inline void endInsertRows();
     inline void beginRemoveRows(const QModelIndex &parent, int start, int count);
     inline void endRemoveRows();
+    inline bool beginMoveRows(const QModelIndex &sourceParent, int sourceFirst, int sourceLast,
+                              const QModelIndex &destParent, int destRow);
+    inline void endMoveRows();
 
 public:
     template <typename Ret, typename ...Args>

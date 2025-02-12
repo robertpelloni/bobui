@@ -728,6 +728,23 @@ bool QGenericItemModel::removeRows(int row, int count, const QModelIndex &parent
     return impl->call<bool>(QGenericItemModelImplBase::RemoveRows, row, count, parent);
 }
 
+/*!
+    \reimp
+
+    Moves \a count rows starting with the given \a sourceRow under parent
+    \a sourceParent to row \a destinationRow under parent \a destinationParent.
+
+    Returns \c{true} if the rows were successfully moved; otherwise returns
+    \c{false}.
+*/
+bool QGenericItemModel::moveRows(const QModelIndex &sourceParent, int sourceRow, int count,
+                                 const QModelIndex &destinationParent, int destinationRow)
+{
+    return impl->call<bool>(QGenericItemModelImplBase::MoveRows,
+                            sourceParent, sourceRow, count,
+                            destinationParent, destinationRow);
+}
+
 QT_END_NAMESPACE
 
 #include "moc_qgenericitemmodel.cpp"

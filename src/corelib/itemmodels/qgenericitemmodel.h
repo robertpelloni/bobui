@@ -7,6 +7,8 @@
 #include <QtCore/qgenericitemmodel_impl.h>
 #include <QtCore/qmap.h>
 
+#include <algorithm>
+
 QT_BEGIN_NAMESPACE
 
 class Q_CORE_EXPORT QGenericItemModel : public QAbstractItemModel
@@ -72,6 +74,8 @@ public:
     bool removeColumns(int column, int count, const QModelIndex &parent = {}) override;
     bool insertRows(int row, int count, const QModelIndex &parent = {}) override;
     bool removeRows(int row, int count, const QModelIndex &parent = {}) override;
+    bool moveRows(const QModelIndex &sourceParent, int sourceRow, int count,
+                  const QModelIndex &destParent, int destRow) override;
 
 private:
     Q_DISABLE_COPY_MOVE(QGenericItemModel)
@@ -131,6 +135,16 @@ void QGenericItemModelImplBase::beginRemoveRows(const QModelIndex &parent, int s
 void QGenericItemModelImplBase::endRemoveRows()
 {
     m_itemModel->endRemoveRows();
+}
+bool QGenericItemModelImplBase::beginMoveRows(const QModelIndex &sourceParent, int sourceFirst,
+                                              int sourceLast,
+                                              const QModelIndex &destParent, int destRow)
+{
+    return m_itemModel->beginMoveRows(sourceParent, sourceFirst, sourceLast, destParent, destRow);
+}
+void QGenericItemModelImplBase::endMoveRows()
+{
+    m_itemModel->endMoveRows();
 }
 
 template <typename Structure, typename Range>
@@ -279,6 +293,8 @@ public:
         case InsertRows: makeCall(that, &Self::insertRows, r, args);
             break;
         case RemoveRows: makeCall(that, &Self::removeRows, r, args);
+            break;
+        case MoveRows: makeCall(that, &Self::moveRows, r, args);
             break;
         }
     }
@@ -849,6 +865,48 @@ public:
         }
     }
 
+    bool moveRows(const QModelIndex &sourceParent, int sourceRow, int count,
+                  const QModelIndex &destParent, int destRow)
+    {
+        if constexpr (isMutable()) {
+            if (!Structure::canMoveRows(sourceParent, destParent))
+                return false;
+
+            if (sourceParent != destParent) {
+                return that().moveRowsAcross(sourceParent, sourceRow, count,
+                                             destParent, destRow);
+            }
+
+            if (sourceRow == destRow || sourceRow == destRow - 1 || count <= 0
+             || sourceRow < 0 || sourceRow + count - 1 >= m_itemModel->rowCount(sourceParent)
+             || destRow < 0 || destRow > m_itemModel->rowCount(destParent)) {
+                return false;
+            }
+
+            range_type *source = childRange(sourceParent);
+            // moving within the same range
+            if (!beginMoveRows(sourceParent, sourceRow, sourceRow + count - 1, destParent, destRow))
+                return false;
+
+            const auto first = std::next(std::begin(*source), sourceRow);
+            const auto middle = std::next(first, count);
+            const auto last = std::next(std::begin(*source), destRow);
+
+            if (sourceRow < destRow) // moving down
+                std::rotate(first, middle, last);
+            else // moving up
+                std::rotate(last, first, middle);
+
+            if constexpr (!rows_are_pointers)
+                that().resetParentInChildren(source);
+
+            endMoveRows();
+            return true;
+        } else {
+            return false;
+        }
+    }
+
 protected:
     ~QGenericItemModelImpl()
     {
@@ -1164,6 +1222,90 @@ protected:
              && Base::dynamicRows() && range_features::has_erase;
     }
 
+    static constexpr bool canMoveRows(const QModelIndex &, const QModelIndex &)
+    {
+        return true;
+    }
+
+    bool moveRowsAcross(const QModelIndex &sourceParent, int sourceRow, int count,
+                        const QModelIndex &destParent, int destRow)
+    {
+        // If rows are pointers, then reference to the parent row don't
+        // change, so we can move them around freely. Otherwise we need to
+        // be able to explicitly update the parent pointer.
+        if constexpr (!Base::rows_are_pointers && !tree_traits::has_setParentRow) {
+            return false;
+        } else if constexpr (!(range_features::has_insert && range_features::has_erase)) {
+            return false;
+        } else if (!this->beginMoveRows(sourceParent, sourceRow, sourceRow + count - 1,
+                                        destParent, destRow)) {
+            return false;
+        }
+
+        range_type *source = this->childRange(sourceParent);
+        range_type *destination = this->childRange(destParent);
+
+        // If we can insert data from another range into, then
+        // use that to move the old data over.
+        const auto destStart = std::next(std::begin(*destination), destRow);
+        if constexpr (range_features::has_insert_range) {
+            const auto sourceStart = std::next(std::begin(*source), sourceRow);
+            const auto sourceEnd = std::next(sourceStart, count);
+
+            destination->insert(destStart, std::move_iterator(sourceStart),
+                                           std::move_iterator(sourceEnd));
+        } else if constexpr (std::is_copy_constructible_v<row_type>) {
+            // otherwise we have to make space first, and copy later.
+            destination->insert(destStart, count, row_type{});
+        }
+
+        row_ptr parentRow = destParent.isValid()
+                          ? QGenericItemModelDetails::pointerTo(this->rowData(destParent))
+                          : nullptr;
+
+        // if the source's parent was already inside the new parent row,
+        // then the source row might have become invalid, so reset it.
+        if (parentRow == static_cast<row_ptr>(sourceParent.internalPointer())) {
+            if (sourceParent.row() < destRow) {
+                source = this->childRange(sourceParent);
+            } else {
+                // the source parent moved down within destination
+                source = this->childRange(this->createIndex(sourceParent.row() + count, 0,
+                                                            sourceParent.internalPointer()));
+            }
+        }
+
+        // move the data over and update the parent pointer
+        {
+            const auto writeStart = std::next(std::begin(*destination), destRow);
+            const auto writeEnd = std::next(writeStart, count);
+            const auto sourceStart = std::next(std::begin(*source), sourceRow);
+            const auto sourceEnd = std::next(sourceStart, count);
+
+            for (auto write = writeStart, read = sourceStart; write != writeEnd; ++write, ++read) {
+                // move data over if not already done, otherwise
+                // only fix the parent pointer
+                if constexpr (!range_features::has_insert_range)
+                    *write = std::move(*read);
+                m_protocol.setParentRow(*write, parentRow);
+            }
+            // remove the old rows from the source parent
+            source->erase(sourceStart, sourceEnd);
+        }
+
+        // Fix the parent pointers in children of both source and destination
+        // ranges, as the references to the entries might have become invalid.
+        // We don't have to do that if the rows are pointers, as in that case
+        // the references to the entries are stable.
+        if constexpr (!Base::rows_are_pointers) {
+            resetParentInChildren(destination);
+            resetParentInChildren(source);
+        }
+
+        this->endMoveRows();
+        return true;
+    }
+
     auto makeEmptyRow(const QModelIndex &parent)
     {
         // tree traversal protocol: if we are here, then it must be possible
@@ -1363,6 +1505,18 @@ protected:
     static constexpr bool canRemoveRows()
     {
         return Base::dynamicRows() && range_features::has_erase;
+    }
+
+    static constexpr bool canMoveRows(const QModelIndex &source, const QModelIndex &destination)
+    {
+        return !source.isValid() && !destination.isValid();
+    }
+
+    constexpr bool moveRowsAcross(const QModelIndex &, int , int,
+                                  const QModelIndex &, int) noexcept
+    {
+        // table/flat model: can't move rows between different parents
+        return false;
     }
 
     auto makeEmptyRow(const QModelIndex &)

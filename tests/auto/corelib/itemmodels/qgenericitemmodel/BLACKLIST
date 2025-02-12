@@ -1,4 +1,4 @@
-# QTBUG-135419
+# QTBUG-135419 - all tests of tree modifications fail on vxworks
 [setData:value tree]
 vxworks
 [setData:pointer tree]
@@ -15,9 +15,15 @@ vxworks
 vxworks
 [removeRows:pointer tree]
 vxworks
+[moveRows:value tree]
+vxworks
+[moveRows:pointer tree]
+vxworks
 [treeModifyBranch]
 vxworks
 [treeCreateBranch]
 vxworks
 [treeRemoveBranch]
+vxworks
+[treeMoveRowBranches]
 vxworks

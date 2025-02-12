@@ -294,6 +294,8 @@ private slots:
     void insertRows();
     void removeRows_data() { createTestData(); }
     void removeRows();
+    void moveRows_data() { createTestData(); }
+    void moveRows();
     void insertColumns_data() { createTestData(); }
     void insertColumns();
     void removeColumns_data() { createTestData(); }
@@ -309,15 +311,13 @@ private slots:
     void treeCreateBranch();
     void treeRemoveBranch_data() { tree_data(); }
     void treeRemoveBranch();
+    void treeMoveRows_data() { tree_data(); }
+    void treeMoveRows();
+    void treeMoveRowBranches_data() { tree_data(); }
+    void treeMoveRowBranches();
 
 private:
-    enum TestedModels {
-        Lists   = 0x01,
-        Tables  = 0x02,
-        Trees   = 0x04,
-        All     = Lists|Tables|Trees,
-    };
-    void createTestData(TestedModels tested = All);
+    void createTestData();
     void createTree();
 
     QList<QPersistentModelIndex> allIndexes(QAbstractItemModel *model, const QModelIndex &parent = {})
@@ -598,7 +598,7 @@ void createBackup(QObject* object, T& model) {
 template <typename T, std::enable_if_t<!std::is_copy_assignable_v<T>, bool> = true>
 void createBackup(QObject* , T& ) {}
 
-void tst_QGenericItemModel::createTestData(TestedModels tested)
+void tst_QGenericItemModel::createTestData()
 {
     m_data.reset(new Data);
 
@@ -705,19 +705,17 @@ void tst_QGenericItemModel::createTestData(TestedModels tested)
     }) << 6 << 2 << (ChangeAction::ChangeRows | ChangeAction::SetData);
 
     // special case: tree
-    if (tested & Trees) {
-        QTest::addRow("value tree") << Factory([this]{
-            return std::unique_ptr<QAbstractItemModel>(new QGenericItemModel(m_data->m_tree.get()));
-        }) << int(std::size(*m_data->m_tree.get())) << int(std::tuple_size_v<tree_row>)
-           << (ChangeAction::ChangeRows | ChangeAction::SetData);
+    QTest::addRow("value tree") << Factory([this]{
+        return std::unique_ptr<QAbstractItemModel>(new QGenericItemModel(m_data->m_tree.get()));
+    }) << int(std::size(*m_data->m_tree.get())) << int(std::tuple_size_v<tree_row>)
+       << (ChangeAction::ChangeRows | ChangeAction::SetData);
 
-        QTest::addRow("pointer tree") << Factory([this]{
-            return std::unique_ptr<QAbstractItemModel>(
-                new QGenericItemModel(m_data->m_pointer_tree.get(), tree_row::ProtocolPointerImpl{})
-            );
-        }) << int(std::size(*m_data->m_pointer_tree.get())) << int(std::tuple_size_v<tree_row>)
-           << (ChangeAction::ChangeRows | ChangeAction::SetData);
-    }
+    QTest::addRow("pointer tree") << Factory([this]{
+        return std::unique_ptr<QAbstractItemModel>(
+            new QGenericItemModel(m_data->m_pointer_tree.get(), tree_row::ProtocolPointerImpl{})
+        );
+    }) << int(std::size(*m_data->m_pointer_tree.get())) << int(std::tuple_size_v<tree_row>)
+       << (ChangeAction::ChangeRows | ChangeAction::SetData);
 }
 
 void tst_QGenericItemModel::basics()
@@ -1135,6 +1133,49 @@ void tst_QGenericItemModel::removeRows()
     QCOMPARE(couldRemove, model->rowCount() != newRowCount);
 }
 
+void tst_QGenericItemModel::moveRows()
+{
+    QFETCH(Factory, factory);
+    auto model = factory();
+    QFETCH(const int, expectedRowCount);
+    QFETCH(const ChangeActions, changeActions);
+
+    QCOMPARE(model->rowCount(), expectedRowCount);
+    if (expectedRowCount < 3)
+        QSKIP("Model is to small for testing moveRows");
+
+    const QVariant first = model->index(0, 0).data();
+    const QVariant second = model->index(1, 0).data();
+    const QVariant last = model->index(expectedRowCount - 1, 0).data();
+
+    // try to move first to last
+    QCOMPARE(model->moveRows({}, 0, 1, {}, expectedRowCount),
+             changeActions != ChangeAction::ReadOnly);
+    if (changeActions == ChangeAction::ReadOnly)
+        return;
+
+    QCOMPARE(model->index(0, 0).data(), second); // second is now on first
+    QCOMPARE(model->index(expectedRowCount - 2, 0).data(), last); // last is now second last
+    QCOMPARE(model->index(expectedRowCount - 1, 0).data(), first);
+
+    // move all but one row to the end - this restores the order
+    QVERIFY(model->moveRows({}, 0, expectedRowCount - 1,
+                            {}, expectedRowCount));
+    QCOMPARE(model->index(0, 0).data(), first);
+    QCOMPARE(model->index(1, 0).data(), second);
+    QCOMPARE(model->index(expectedRowCount - 1, 0).data(), last);
+
+    // move the last row step by step up to the top
+    for (int row = model->rowCount() - 1; row > 0; --row)
+        QVERIFY(model->moveRow({}, row, {}, row - 1));
+    QCOMPARE(model->index(0, 0).data(), last);
+    // move all except the first row up - this restores the order again
+    QVERIFY(model->moveRows({}, 1, expectedRowCount - 1, {}, 0));
+    QCOMPARE(model->index(0, 0).data(), first);
+    QCOMPARE(model->index(1, 0).data(), second);
+    QCOMPARE(model->index(expectedRowCount - 1, 0).data(), last);
+}
+
 void tst_QGenericItemModel::insertColumns()
 {
     QFETCH(Factory, factory);
@@ -1464,6 +1505,102 @@ void tst_QGenericItemModel::treeRemoveBranch()
         return; // nothing else to test with a read-only model
     QVERIFY(!model->hasChildren(parent));
     QCOMPARE(model->rowCount(parent), 0);
+}
+
+void tst_QGenericItemModel::treeMoveRows()
+{
+    auto model = makeTreeModel();
+    QFETCH(const QList<int>, rowsWithChildren);
+    QFETCH(const ChangeActions, changeActions);
+    if (!changeActions.testFlag(ChangeAction::ChangeRows))
+        return;
+
+    const QList<QPersistentModelIndex> pmiList = allIndexes(model.get());
+
+    // move the first row down
+    for (int currentRow = 0; currentRow < model->rowCount(); ++currentRow) {
+        model->moveRow({}, currentRow, {}, currentRow + 2);
+        QVERIFY(treeIntegrityCheck());
+    }
+
+    // move the last row back up
+    for (int currentRow = model->rowCount() - 1; currentRow > 0; --currentRow) {
+        model->moveRow({}, currentRow, {}, currentRow - 1);
+        QVERIFY(treeIntegrityCheck());
+    }
+
+    verifyPmiList(pmiList);
+}
+
+void tst_QGenericItemModel::treeMoveRowBranches()
+{
+    auto model = makeTreeModel();
+    QFETCH(const QList<int>, rowsWithChildren);
+    QFETCH(const ChangeActions, changeActions);
+
+#if QT_CONFIG(itemmodeltester)
+    QAbstractItemModelTester modelTest(model.get());
+#endif
+
+    const QList<QPersistentModelIndex> pmiList = allIndexes(model.get());
+
+    auto rowData = [model = model.get()](int row, const QModelIndex &parent = {}) -> QVariantList
+    {
+        QVariantList data;
+        for (int i = 0; i < model->columnCount(parent); ++i)
+            data << model->data(model->index(row, i, parent));
+        return data;
+    };
+
+    int branchRow = rowsWithChildren.first();
+    // those operations invalidate the model index, so get a fresh one every time
+    auto branchParent = [&model, &branchRow] { return model->index(branchRow, 0); };
+
+    int oldRootCount = model->rowCount();
+    int oldBranchCount = model->rowCount(branchParent());
+
+    QPersistentModelIndex pmi = model->index(0, 0);
+    QVariantList oldData = rowData(0);
+
+    QVERIFY(treeIntegrityCheck());
+
+    // move the first toplevel child to the end of the branch
+    QCOMPARE(model->moveRow({}, 0, branchParent(), oldBranchCount),
+             changeActions.testFlag(ChangeAction::ChangeRows));
+    if (!changeActions.testFlag(ChangeAction::ChangeRows))
+        return; // nothing else to test with a read-only model
+
+    QVERIFY(treeIntegrityCheck());
+    QCOMPARE(model->rowCount(), --oldRootCount);
+    // this moves the branch up
+    --branchRow;
+    QCOMPARE(model->rowCount(branchParent()), ++oldBranchCount);
+    // verify that the data has been copied
+    QCOMPARE(rowData(oldBranchCount - 1, branchParent()), oldData);
+    // make sure that the moved row has the right parent
+    QVERIFY(pmi.isValid());
+    QCOMPARE(pmi.parent(), branchParent());
+
+    pmi = model->index(0, 0, branchParent());
+    oldData = rowData(0, branchParent());
+
+    // move first child from the branch to the end of the toplevel list
+    model->moveRow(branchParent(), 0, {}, model->rowCount());
+    QCOMPARE(model->rowCount(branchParent()), --oldBranchCount);
+    QCOMPARE(model->rowCount(), ++oldRootCount);
+    QCOMPARE(rowData(oldRootCount - 1), oldData);
+    QVERIFY(pmi.isValid());
+    QVERIFY(!pmi.parent().isValid());
+
+    // move the last child one level up, right before it's own parent
+    {
+        const QModelIndex parent = branchParent();
+        const QModelIndex lastChild = model->index(model->rowCount(parent) - 1, 0, parent);
+        const auto grandParent = parent.parent();
+        QVERIFY(model->moveRow(parent, lastChild.row(), grandParent, parent.row()));
+    }
+
+    verifyPmiList(pmiList);
 }
 
 QTEST_MAIN(tst_QGenericItemModel)
