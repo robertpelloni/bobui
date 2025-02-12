@@ -458,6 +458,7 @@ public:
     enum ConstOp {
         Index,
         Parent,
+        Sibling,
         RowCount,
         ColumnCount,
         Flags,

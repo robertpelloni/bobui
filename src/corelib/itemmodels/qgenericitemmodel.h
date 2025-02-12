@@ -58,6 +58,7 @@ public:
 
     QModelIndex index(int row, int column, const QModelIndex &parent = {}) const override;
     QModelIndex parent(const QModelIndex &child) const override;
+    QModelIndex sibling(int row, int column, const QModelIndex &index) const override;
     int rowCount(const QModelIndex &parent = {}) const override;
     int columnCount(const QModelIndex &parent = {}) const override;
     Qt::ItemFlags flags(const QModelIndex &index) const override;
@@ -210,6 +211,8 @@ public:
             break;
         case Parent: makeCall(that, &Structure::parent, r, args);
             break;
+        case Sibling: makeCall(that, &Self::sibling, r, args);
+            break;
         case RowCount: makeCall(that, &Structure::rowCount, r, args);
             break;
         case ColumnCount: makeCall(that, &Structure::columnCount, r, args);
@@ -256,6 +259,24 @@ public:
         }
 
         return that().indexImpl(row, column, parent);
+    }
+
+    QModelIndex sibling(int row, int column, const QModelIndex &index) const
+    {
+        if (row == index.row() && column == index.column())
+            return index;
+
+        if (column < 0 || column >= m_itemModel->columnCount())
+            return {};
+
+        if (row == index.row())
+            return createIndex(row, column, index.constInternalPointer());
+
+        const_row_ptr parentRow = static_cast<const_row_ptr>(index.constInternalPointer());
+        const auto siblingCount = size(that().childrenOf(parentRow));
+        if (row < 0 || row >= int(siblingCount))
+            return {};
+        return createIndex(row, column, parentRow);
     }
 
     Qt::ItemFlags flags(const QModelIndex &index) const
@@ -1199,7 +1220,6 @@ protected:
         return std::addressof(*children);
     }
 
-private:
     const range_type &childrenOf(const_row_ptr row) const
     {
         if (!row)
@@ -1210,6 +1230,7 @@ private:
             return *m_protocol.childRows(*row);
     }
 
+private:
     range_type &childrenOf(row_ptr row)
     {
         if (!row)
@@ -1232,6 +1253,7 @@ class QGenericTableItemModelImpl
     using range_type = typename Base::range_type;
     using range_features = typename Base::range_features;
     using row_type = typename Base::row_type;
+    using const_row_ptr = typename Base::const_row_ptr;
     using row_traits = typename Base::row_traits;
     using row_features = typename Base::row_features;
 
@@ -1348,6 +1370,12 @@ protected:
     auto childRangeImpl(const QModelIndex &)
     {
         return nullptr;
+    }
+
+    const range_type &childrenOf(const_row_ptr row) const
+    {
+        Q_ASSERT(!row);
+        return *this->m_data.model();
     }
 
     void resetParentInChildren(range_type *)

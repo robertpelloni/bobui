@@ -451,6 +451,22 @@ QModelIndex QGenericItemModel::parent(const QModelIndex &child) const
 /*!
     \reimp
 
+    Returns the sibling at \a row and \a column for the item at \a index, or an
+    invalid QModelIndex if there is no sibling at that location.
+
+    This implementation is significantly faster than going through the parent()
+    of the \a index.
+
+    \sa index(), QModelIndex::row(), QModelIndex::column()
+*/
+QModelIndex QGenericItemModel::sibling(int row, int column, const QModelIndex &index) const
+{
+    return impl->callConst<QModelIndex>(QGenericItemModelImplBase::Sibling, row, column, index);
+}
+
+/*!
+    \reimp
+
     Returns the number of rows under the given \a parent. This is the number of
     items in the root range for an invalid \a parent index.
 

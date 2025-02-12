@@ -292,6 +292,8 @@ private slots:
 
     void dimensions_data() { createTestData(); }
     void dimensions();
+    void sibling_data() { createTestData(); }
+    void sibling();
     void flags_data() { createTestData(); }
     void flags();
     void data_data() { createTestData(); }
@@ -890,6 +892,31 @@ void tst_QGenericItemModel::dimensions()
 
     QCOMPARE(model->rowCount(), expectedRowCount);
     QCOMPARE(model->columnCount(), expectedColumnCount);
+}
+
+void tst_QGenericItemModel::sibling()
+{
+    QFETCH(Factory, factory);
+    auto model = factory();
+
+    QModelIndex withChildren;
+    const auto test = [model = model.get(), &withChildren](const QModelIndex &parent){
+        const QModelIndex first = model->index(0, 0, parent);
+        // deliberately requesting siblings outside of the range
+        for (int r = 0; r < model->rowCount() + 1; ++r) {
+            for (int c = 0; c < model->columnCount() + 1; ++c) {
+                const QModelIndex next = model->sibling(r, c, first);
+                const QModelIndex qaimNext = model->QAbstractItemModel::sibling(r, c, first);
+                if (!withChildren.isValid() && model->hasChildren(next))
+                    withChildren = next;
+                QCOMPARE(next, qaimNext);
+            }
+        }
+    };
+
+    test({});
+    if (withChildren.isValid())
+        test(withChildren);
 }
 
 void tst_QGenericItemModel::flags()
