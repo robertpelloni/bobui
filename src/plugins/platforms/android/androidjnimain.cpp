@@ -556,12 +556,6 @@ static void terminateQt(JNIEnv *env, jclass /*clazz*/)
 static void handleLayoutSizeChanged(JNIEnv * /*env*/, jclass /*clazz*/,
                                     jint availableWidth, jint availableHeight)
 {
-    if (m_androidPlatformIntegration) {
-        QSize currentSize = m_androidPlatformIntegration->screen()->availableGeometry().size();
-        if (currentSize.width() == availableWidth && currentSize.height() == availableHeight)
-            return;
-    }
-
     QMutexLocker lock(&m_platformMutex);
     // available geometry always starts from top left
     const QRect availableGeometry(0, 0, availableWidth, availableHeight);
