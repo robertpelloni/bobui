@@ -3235,7 +3235,7 @@ void QRhiVulkan::beginPass(QRhiCommandBuffer *cb,
     rpBeginInfo.renderArea.extent.width = uint32_t(rtD->pixelSize.width());
     rpBeginInfo.renderArea.extent.height = uint32_t(rtD->pixelSize.height());
 
-    QVarLengthArray<VkClearValue, 4> cvs;
+    QVarLengthArray<VkClearValue, (QVkRenderTargetData::MAX_COLOR_ATTACHMENTS + 1) * 2 + 1> cvs;
     for (int i = 0; i < rtD->colorAttCount; ++i) {
         VkClearValue cv;
         cv.color = { { float(colorClearValue.redF()), float(colorClearValue.greenF()), float(colorClearValue.blueF()),
