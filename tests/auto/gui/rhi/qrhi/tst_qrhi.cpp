@@ -6,6 +6,7 @@
 #include <QFile>
 #include <QOffscreenSurface>
 #include <QPainter>
+#include <QSpan>
 #include <qrgbafloat.h>
 #include <qrgba64.h>
 
@@ -40,6 +41,10 @@ Q_DECLARE_METATYPE(QRhiInitParams *)
 class tst_QRhi : public QObject
 {
     Q_OBJECT
+
+private:
+    template<typename T, std::size_t E, typename ParamStringifier>
+    void rhiTestDataWithParam(const char *paramName, QSpan<T, E> paramValues, ParamStringifier &&paramStringifier);
 
 private slots:
     void initTestCase();
@@ -87,6 +92,8 @@ private slots:
     void renderPassDescriptorClone();
     void textureWithSampleCount_data();
     void textureWithSampleCount();
+    void textureFormats_data();
+    void textureFormats();
 
     void renderToTextureSimple_data();
     void renderToTextureSimple();
@@ -259,6 +266,55 @@ void tst_QRhi::rhiTestData()
 #endif
 #ifdef TST_MTL
     QTest::newRow("Metal") << QRhi::Metal << static_cast<QRhiInitParams *>(&initParams.mtl);
+#endif
+}
+
+template<typename T, std::size_t E, typename ParamStringifier>
+void tst_QRhi::rhiTestDataWithParam(const char *paramName, QSpan<T, E> paramValues, ParamStringifier &&paramStringifier)
+{
+    QTest::addColumn<QRhi::Implementation>("impl");
+    QTest::addColumn<QRhiInitParams *>("initParams");
+    QTest::addColumn<T>(paramName);
+
+#ifndef Q_OS_WEBOS
+    for (auto &paramValue : paramValues) {
+        QTest::newRow(qPrintable(QStringLiteral("Null-") + paramStringifier(paramValue)))
+            << QRhi::Null << static_cast<QRhiInitParams *>(&initParams.null) << paramValue;
+    }
+#endif
+#ifdef TST_GL
+    if (QGuiApplicationPrivate::platformIntegration()->hasCapability(QPlatformIntegration::OpenGL)) {
+        for (auto &paramValue : paramValues) {
+            QTest::newRow(qPrintable(QStringLiteral("OpenGL-") + paramStringifier(paramValue)))
+                << QRhi::OpenGLES2 << static_cast<QRhiInitParams *>(&initParams.gl) << paramValue;
+        }
+    }
+#endif
+#ifdef TST_VK
+    if (vulkanInstance.isValid()) {
+        for (auto &paramValue : paramValues) {
+            QTest::newRow(qPrintable(QStringLiteral("Vulkan-") + paramStringifier(paramValue)))
+                << QRhi::Vulkan << static_cast<QRhiInitParams *>(&initParams.vk) << paramValue;
+        }
+    }
+#endif
+#ifdef TST_D3D11
+    for (auto &paramValue : paramValues) {
+        QTest::newRow(qPrintable(QStringLiteral("Direct3D11-") + paramStringifier(paramValue)))
+            << QRhi::D3D11 << static_cast<QRhiInitParams *>(&initParams.d3d11) << paramValue;
+    }
+#endif
+#ifdef TST_D3D12
+    for (auto &paramValue : paramValues) {
+        QTest::newRow(qPrintable(QStringLiteral("Direct3D12-") + paramStringifier(paramValue)))
+            << QRhi::D3D12 << static_cast<QRhiInitParams *>(&initParams.d3d12) << paramValue;
+    }
+#endif
+#ifdef TST_MTL
+    for (auto &paramValue : paramValues) {
+        QTest::newRow(qPrintable(QStringLiteral("Metal-") + paramStringifier(paramValue)))
+            << QRhi::Metal << static_cast<QRhiInitParams *>(&initParams.mtl) << paramValue;
+    }
 #endif
 }
 
@@ -5318,6 +5374,77 @@ void tst_QRhi::textureWithSampleCount()
     }
 }
 
+void tst_QRhi::textureFormats_data()
+{
+    static constexpr QRhiTexture::Format textureFormats[] = {
+        QRhiTexture::RGBA8,
+        QRhiTexture::BGRA8,
+        QRhiTexture::R8,
+        QRhiTexture::RG8,
+        QRhiTexture::R16,
+        QRhiTexture::RG16,
+        QRhiTexture::RED_OR_ALPHA8,
+        QRhiTexture::RGBA16F,
+        QRhiTexture::RGBA32F,
+        QRhiTexture::R16F,
+        QRhiTexture::R32F,
+        QRhiTexture::RGB10A2,
+        QRhiTexture::R8UI,
+        QRhiTexture::R32UI,
+        QRhiTexture::RG32UI,
+        QRhiTexture::RGBA32UI,
+        QRhiTexture::D16,
+        QRhiTexture::D24,
+        QRhiTexture::D24S8,
+        QRhiTexture::D32F,
+        QRhiTexture::D32FS8,
+        QRhiTexture::BC1,
+        QRhiTexture::BC2,
+        QRhiTexture::BC3,
+        QRhiTexture::BC4,
+        QRhiTexture::BC5,
+        QRhiTexture::BC6H,
+        QRhiTexture::BC7,
+        QRhiTexture::ETC2_RGB8,
+        QRhiTexture::ETC2_RGB8A1,
+        QRhiTexture::ETC2_RGBA8,
+        QRhiTexture::ASTC_4x4,
+        QRhiTexture::ASTC_5x4,
+        QRhiTexture::ASTC_5x5,
+        QRhiTexture::ASTC_6x5,
+        QRhiTexture::ASTC_6x6,
+        QRhiTexture::ASTC_8x5,
+        QRhiTexture::ASTC_8x6,
+        QRhiTexture::ASTC_8x8,
+        QRhiTexture::ASTC_10x5,
+        QRhiTexture::ASTC_10x6,
+        QRhiTexture::ASTC_10x8,
+        QRhiTexture::ASTC_10x10,
+        QRhiTexture::ASTC_12x10,
+        QRhiTexture::ASTC_12x12,
+    };
+
+    rhiTestDataWithParam("textureFormat", QSpan(textureFormats), [](const QRhiTexture::Format format) {
+        return QString::number(format);
+    });
+}
+
+void tst_QRhi::textureFormats()
+{
+    QFETCH(QRhi::Implementation, impl);
+    QFETCH(QRhiInitParams *, initParams);
+    QFETCH(QRhiTexture::Format, textureFormat);
+
+    std::unique_ptr<QRhi> rhi(QRhi::create(impl, initParams, QRhi::Flags(), nullptr));
+    if (!rhi)
+        QSKIP("QRhi could not be created, skipping testing texture formats");
+
+    if (!rhi->isTextureFormatSupported(textureFormat))
+        QSKIP("Texture format not supported on this backend");
+
+    std::unique_ptr<QRhiTexture> tex(rhi->newTexture(textureFormat, QSize(512, 512), 1));
+    QVERIFY(tex->create());
+}
 
 void tst_QRhi::textureImportOpenGL()
 {

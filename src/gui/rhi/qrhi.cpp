@@ -4506,6 +4506,8 @@ bool QRhiRenderBuffer::createFrom(NativeRenderBuffer src)
     \value [since 6.9] RGBA32UI Four components, unsigned 32-bit. (128 bits total)
  */
 
+// When adding new texture formats, update void tst_QRhi::textureFormats_data().
+
 /*!
     \struct QRhiTexture::NativeTexture
     \inmodule QtGuiPrivate
