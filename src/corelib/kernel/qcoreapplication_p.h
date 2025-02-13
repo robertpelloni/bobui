@@ -157,7 +157,6 @@ public:
     static inline bool testAttribute(uint flag) { return attribs & (1 << flag); }
 
     void processCommandLineArguments();
-    QString cachedApplicationDirPath;
     QString cachedApplicationFilePath;
     QString qmljs_debug_arguments; // a string containing arguments for js/qml debugging.
     inline QString qmljsDebugArgumentsString() const { return qmljs_debug_arguments; }

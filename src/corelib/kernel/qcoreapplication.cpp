@@ -2382,10 +2382,7 @@ QString QCoreApplication::applicationDirPath()
         return QString();
     }
 
-    QCoreApplicationPrivate *d = self->d_func();
-    if (d->cachedApplicationDirPath.isNull())
-        d->cachedApplicationDirPath = QFileInfo(applicationFilePath()).path();
-    return d->cachedApplicationDirPath;
+    return QFileInfo(applicationFilePath()).path();
 }
 
 #if !defined(Q_OS_WIN) && !defined(Q_OS_DARWIN)
