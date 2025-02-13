@@ -397,6 +397,7 @@ void QCborStreamWriter::append(QCborNegativeInteger n)
 
 /*!
    \fn void QCborStreamWriter::append(const QByteArray &ba)
+   \fn void QCborStreamWriter::append(QByteArrayView ba)
    \overload
 
    Appends the byte array \a ba to the stream, creating a CBOR Byte String
@@ -410,6 +411,9 @@ void QCborStreamWriter::append(QCborNegativeInteger n)
 
    As the example shows, unlike JSON, CBOR requires no escaping for binary
    content.
+
+   \note The overload taking a \l QByteArrayView has been present since Qt
+   6.10.
 
    \sa appendByteString(), QCborStreamReader::isByteArray(),
        QCborStreamReader::readByteArray()

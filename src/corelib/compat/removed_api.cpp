@@ -1380,6 +1380,8 @@ QUuid::Version QUuid::version() const noexcept
 
 #if QT_CORE_REMOVED_SINCE(6, 10)
 
+#include "qcborstreamwriter.h"      // Q_WEAK_OVERLOAD added
+
 #include "qcoreapplication.h"
 
 #if QT_CONFIG(permissions)
