@@ -39,7 +39,6 @@ manifestmeta.android.names          =   "Qt3D/Qt 3D: Basic Shapes C++ Example" \
                                         "QtBluetooth/Bluetooth Low Energy Scanner Example" \
                                         "QtBluetooth/Bluetooth Scanner Example" \
                                         "QtBluetooth/QML Bluetooth Scanner Example" \
-                                        "QtCharts/*" \
                                         "QtGui/OpenGL Window Example" \
                                         "QtGui/Raster Window Example" \
                                         "QtLinguist/Arrow Pad Example" \
