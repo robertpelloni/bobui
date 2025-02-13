@@ -2013,7 +2013,7 @@ void QByteArray::expand(qsizetype i)
 
 /*!
     \fn QByteArray &QByteArray::nullTerminate()
-    \since 6.9
+    \since 6.10
 
     If this byte array's data isn't null-terminated, this method will make
     a deep-copy of the data and make it null-terminated.
@@ -2028,7 +2028,7 @@ void QByteArray::expand(qsizetype i)
 
 /*!
     \fn QByteArray QByteArray::nullTerminated() const &
-    \since 6.9
+    \since 6.10
 
     Returns a copy of this byte array that is always null-terminated.
     See nullTerminate().

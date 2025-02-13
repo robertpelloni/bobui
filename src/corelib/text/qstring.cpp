@@ -7065,7 +7065,7 @@ const ushort *QString::utf16() const
 
 /*!
     \fn QString &QString::nullTerminate()
-    \since 6.9
+    \since 6.10
 
     If this string data isn't null-terminated, this method will make a deep
     copy of the data and make it null-terminated().
@@ -7080,7 +7080,7 @@ const ushort *QString::utf16() const
 
 /*!
     \fn QString QString::nullTerminated() const &
-    \since 6.9
+    \since 6.10
 
     Returns a copy of this string that is always null-terminated.
     See nullTerminate().
