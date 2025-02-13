@@ -968,7 +968,8 @@ void QFutureInterfaceBase::setContinuation(const QObject *context, std::function
 
     // Capture continuationFuture so that it lives as long as the continuation,
     // and the continuation data remains valid.
-    setContinuation([watcherMutex, watcher = QPointer(watcher), continuationFuture]
+    setContinuation([watcherMutex = std::move(watcherMutex),
+                     watcher = QPointer(watcher), continuationFuture]
                     (const QFutureInterfaceBase &parentData)
     {
         Q_UNUSED(parentData);
