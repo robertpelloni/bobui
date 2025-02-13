@@ -420,6 +420,18 @@ void QCborStreamWriter::append(QCborNegativeInteger n)
  */
 
 /*!
+   \fn void QCborStreamWriter::append(QUtf8StringView str)
+   \since 6.10
+   \overload
+
+   Appends the UTF-8 string viewed by \a str to the stream, creating a CBOR
+   Text String value. QCborStreamWriter will attempt to write the entire string
+   in one chunk.
+
+   \sa appendTextString(), QCborStreamReader::isString(), QCborStreamReader::readString()
+*/
+
+/*!
    \overload
 
    Appends the Latin-1 string viewed by \a str to the stream, creating a CBOR
@@ -435,7 +447,7 @@ void QCborStreamWriter::append(QCborNegativeInteger n)
    determine whether the contents are US-ASCII or not. If the string is found
    to contain characters outside of US-ASCII, it will allocate memory and
    convert to UTF-8. If this check is unnecessary, use appendTextString()
-   instead.
+   instead or the overload taking a \l QUtf8StringView.
 
    \sa QCborStreamReader::isString(), QCborStreamReader::readString()
  */
