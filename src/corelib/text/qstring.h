@@ -782,6 +782,10 @@ public:
     }
     static QString fromUtf16(const char16_t *, qsizetype size = -1);
     static QString fromUcs4(const char32_t *, qsizetype size = -1);
+    static QString fromRawData(const char16_t *unicode, qsizetype size)
+    {
+        return QString(DataPointer(nullptr, const_cast<char16_t *>(unicode), size));
+    }
     static QString fromRawData(const QChar *, qsizetype size);
 
 #if QT_DEPRECATED_SINCE(6, 0)

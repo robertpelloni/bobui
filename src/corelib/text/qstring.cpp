@@ -9378,6 +9378,9 @@ QString::iterator QString::erase(QString::const_iterator first, QString::const_i
 */
 
 /*!
+    \fn QString QString::fromRawData(const char16_t *unicode, qsizetype size)
+    \since 6.10
+
     Constructs a QString that uses the first \a size Unicode characters
     in the array \a unicode. The data in \a unicode is \e not
     copied. The caller must be able to guarantee that \a unicode will
@@ -9402,6 +9405,11 @@ QString::iterator QString::erase(QString::const_iterator first, QString::const_i
 
     \sa fromUtf16(), setRawData(), data(), constData(),
     nullTerminate(), nullTerminated()
+*/
+
+/*!
+    \fn QString QString::fromRawData(const QChar *unicode, qsizetype size)
+    \overload
 */
 QString QString::fromRawData(const QChar *unicode, qsizetype size)
 {
