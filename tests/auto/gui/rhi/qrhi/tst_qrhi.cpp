@@ -323,6 +323,9 @@ bool tst_QRhi::isAndroidOpenGLSwiftShader(QRhi::Implementation impl, const QRhi 
 #ifdef Q_OS_ANDROID
     if (impl == QRhi::OpenGLES2 && rhi->driverInfo().deviceName.contains("SwiftShader"))
         return true;
+#else
+    Q_UNUSED(impl);
+    Q_UNUSED(rhi);
 #endif
     return false;
 }
