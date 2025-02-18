@@ -1,6 +1,3 @@
-# QTBUG-92211
-[renderPassDescriptorCompatibility]
-android
 # Skip 3D textures on Android emulator: Software GL implementation doesn't work and GLES 3.0
 # won't be available.
 [tessellation vulkan]
