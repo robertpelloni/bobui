@@ -1027,10 +1027,6 @@ function(qt_internal_write_basic_module_package target target_private)
         endif()
     endif()
 
-    ### Temporary measure to fix QtQml user projects. Remove, once
-    ### https://codereview.qt-project.org/c/qt/qtdeclarative/+/620337 is merged.
-    set(always_load_private_module ON)
-
     if(arg_IS_STATIC_LIB AND NOT arg_PRIVATE AND CMAKE_VERSION VERSION_LESS "3.26")
         # We auto-load the private module package from the public module package if we have a static
         # Qt module and CMake's version is < 3.26. This is needed for the case "Qt6Foo links against
