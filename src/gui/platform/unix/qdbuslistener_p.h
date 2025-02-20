@@ -38,6 +38,7 @@ public:
         Theme,
         ApplicationStyle,
         ColorScheme,
+        Contrast,
     };
     Q_ENUM(Setting)
 
@@ -51,7 +52,7 @@ private Q_SLOTS:
 Q_SIGNALS:
     void settingChanged(QDBusListener::Provider provider,
                         QDBusListener::Setting setting,
-                        const QString &value);
+                        const QVariant &value);
 
 private:
     struct DBusKey

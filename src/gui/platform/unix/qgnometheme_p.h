@@ -41,6 +41,7 @@ public:
 #ifndef QT_NO_DBUS
     QPlatformMenuBar *createPlatformMenuBar() const override;
     Qt::ColorScheme colorScheme() const override;
+    Qt::ContrastPreference contrastPreference() const override;
 #endif
 #if !defined(QT_NO_DBUS) && !defined(QT_NO_SYSTEMTRAYICON)
     QPlatformSystemTrayIcon *createPlatformSystemTrayIcon() const override;
@@ -62,10 +63,12 @@ public:
 
 #ifndef QT_NO_DBUS
     Qt::ColorScheme m_colorScheme = Qt::ColorScheme::Unknown;
+    Qt::ContrastPreference m_contrast = Qt::ContrastPreference::NoPreference;
 private:
     std::unique_ptr<QDBusListener> dbus;
     bool initDbus();
     void updateColorScheme(const QString &themeName);
+    void updateHighContrast(Qt::ContrastPreference contrast);
 #endif // QT_NO_DBUS
 };
 

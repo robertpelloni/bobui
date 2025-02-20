@@ -15,6 +15,10 @@
 
 QT_BEGIN_NAMESPACE
 
+#ifndef QT_NO_DBUS
+Q_STATIC_LOGGING_CATEGORY(lcQpaThemeGnome, "qt.qpa.theme.gnome")
+#endif // QT_NO_DBUS
+
 /*!
     \class QGnomeTheme
     \brief QGnomeTheme is a theme implementation for the Gnome desktop.
@@ -27,7 +31,30 @@ const char *QGnomeTheme::name = "gnome";
 QGnomeThemePrivate::QGnomeThemePrivate()
 {
 #ifndef QT_NO_DBUS
-    initDbus();
+    QDBusMessage message = QDBusMessage::createMethodCall(QLatin1String("org.freedesktop.portal.Desktop"),
+                                             QLatin1String("/org/freedesktop/portal/desktop"),
+                                             QLatin1String("org.freedesktop.portal.Settings"),
+                                             QLatin1String("ReadOne"));
+    static constexpr QLatin1String appearanceNamespace("org.freedesktop.appearance");
+    static constexpr QLatin1String contrastKey("contrast");
+
+    message << appearanceNamespace << contrastKey;
+
+    QDBusConnection dbus = QDBusConnection::sessionBus();
+    if (!dbus.isConnected())
+        qCWarning(lcQpaThemeGnome) << "dbus connection failed. Last error: " << dbus.lastError();
+
+    QDBusPendingCall pendingCall = dbus.asyncCall(message);
+    QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(pendingCall);
+    QObject::connect(watcher, &QDBusPendingCallWatcher::finished, watcher, [this](QDBusPendingCallWatcher *watcher) {
+        if (!watcher->isError()) {
+            QDBusPendingReply<QVariant> reply = *watcher;
+            if (Q_LIKELY(reply.isValid()))
+                m_contrast = static_cast<Qt::ContrastPreference>(reply.value().toUInt());
+        }
+        watcher->deleteLater();
+        initDbus();
+    });
 #endif // QT_NO_DBUS
 }
 QGnomeThemePrivate::~QGnomeThemePrivate()
@@ -60,14 +87,22 @@ bool QGnomeThemePrivate::initDbus()
     // Wrap slot in a lambda to avoid inheriting QGnomeThemePrivate from QObject
     auto wrapper = [this](QDBusListener::Provider provider,
                           QDBusListener::Setting setting,
-                          const QString &value) {
+                          const QVariant &value) {
         if (provider != QDBusListener::Provider::Gnome
             && provider != QDBusListener::Provider::Gtk) {
             return;
         }
 
-        if (setting == QDBusListener::Setting::Theme)
-            updateColorScheme(value);
+        switch (setting) {
+        case QDBusListener::Setting::Theme:
+            updateColorScheme(value.toString());
+            break;
+        case QDBusListener::Setting::Contrast:
+            updateHighContrast(static_cast<Qt::ContrastPreference>(value.toUInt()));
+            break;
+        default:
+            break;
+        }
     };
 
     return QObject::connect(dbus.get(), &QDBusListener::settingChanged, dbus.get(), wrapper);
@@ -87,6 +122,15 @@ void QGnomeThemePrivate::updateColorScheme(const QString &themeName)
     if (oldColorScheme != m_colorScheme)
         QWindowSystemInterface::handleThemeChange();
 }
+
+void QGnomeThemePrivate::updateHighContrast(Qt::ContrastPreference contrast)
+{
+    if (m_contrast == contrast)
+        return;
+    m_contrast = contrast;
+    QWindowSystemInterface::handleThemeChange();
+}
+
 #endif // QT_NO_DBUS
 
 QGnomeTheme::QGnomeTheme()
@@ -179,6 +223,11 @@ QPlatformMenuBar *QGnomeTheme::createPlatformMenuBar() const
 Qt::ColorScheme QGnomeTheme::colorScheme() const
 {
     return d_func()->m_colorScheme;
+}
+
+Qt::ContrastPreference QGnomeTheme::contrastPreference() const
+{
+    return d_func()->m_contrast;
 }
 
 #endif

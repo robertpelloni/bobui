@@ -597,6 +597,12 @@ void QWindowsTheme::requestColorScheme(Qt::ColorScheme scheme)
     handleSettingsChanged();
 }
 
+Qt::ContrastPreference QWindowsTheme::contrastPreference() const
+{
+    return queryHighContrast() ? Qt::ContrastPreference::HighContrast
+                               : Qt::ContrastPreference::NoPreference;
+}
+
 void QWindowsTheme::handleSettingsChanged()
 {
     const auto oldColorScheme = s_colorScheme;

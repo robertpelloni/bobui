@@ -319,6 +319,7 @@ public:
     virtual QKeySequence standardButtonShortcut(int button) const;
 #endif
     virtual void requestColorScheme(Qt::ColorScheme scheme);
+    virtual Qt::ContrastPreference contrastPreference() const;
 
     static QVariant defaultThemeHint(ThemeHint hint);
     static QString defaultStandardButtonText(int button);

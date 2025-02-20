@@ -114,7 +114,7 @@ private:
     bool initDbus();
     void settingChangedHandler(QDBusListener::Provider provider,
                                QDBusListener::Setting setting,
-                               const QString &value);
+                               const QVariant &value);
     Qt::ColorScheme colorSchemeFromPalette() const;
 #endif // QT_NO_DBUS
     void clearResources();
@@ -123,21 +123,23 @@ private:
 #ifndef QT_NO_DBUS
 void QKdeThemePrivate::settingChangedHandler(QDBusListener::Provider provider,
                                              QDBusListener::Setting setting,
-                                             const QString &value)
+                                             const QVariant &value)
 {
     if (provider != QDBusListener::Provider::Kde)
         return;
 
     switch (setting) {
     case QDBusListener::Setting::ColorScheme:
-        qCDebug(lcQpaThemeKde) << "KDE color theme changed to:" << value;
+        qCDebug(lcQpaThemeKde) << "KDE color theme changed to:" << value.toUInt();
         break;
     case QDBusListener::Setting::Theme:
-        qCDebug(lcQpaThemeKde) << "KDE global theme changed to:" << value;
+        qCDebug(lcQpaThemeKde) << "KDE global theme changed to:" << value.toString();
         break;
     case QDBusListener::Setting::ApplicationStyle:
-        qCDebug(lcQpaThemeKde) << "KDE application style changed to:" << value;
+        qCDebug(lcQpaThemeKde) << "KDE application style changed to:" << value.toString();
         break;
+    case QDBusListener::Setting::Contrast:
+        qCDebug(lcQpaThemeKde) << "KDE contrast setting changed to: " << static_cast<Qt::ContrastPreference>(value.toUInt());
     }
 
     refresh();
@@ -158,7 +160,7 @@ bool QKdeThemePrivate::initDbus()
     // Wrap slot in a lambda to avoid inheriting QKdeThemePrivate from QObject
     auto wrapper = [this](QDBusListener::Provider provider,
                           QDBusListener::Setting setting,
-                          const QString &value) {
+                          const QVariant &value) {
         settingChangedHandler(provider, setting, value);
     };
 

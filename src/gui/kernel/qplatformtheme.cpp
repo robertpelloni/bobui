@@ -484,6 +484,11 @@ void QPlatformTheme::requestColorScheme(Qt::ColorScheme scheme)
     }
 }
 
+Qt::ContrastPreference QPlatformTheme::contrastPreference() const
+{
+    return Qt::ContrastPreference::NoPreference;
+}
+
 /*!
     \internal
     \brief Return a color palette for type \a type.

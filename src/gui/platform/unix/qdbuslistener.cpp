@@ -209,6 +209,9 @@ void QDBusListener::populateSignalMap()
     m_signalMap.insert(DBusKey("org.freedesktop.appearance"_L1, "color-scheme"_L1),
                        ChangeSignal(Provider::Gnome, Setting::ColorScheme));
 
+    m_signalMap.insert(DBusKey("org.freedesktop.appearance"_L1, "contrast"_L1),
+                       ChangeSignal(Provider::Gnome, Setting::Contrast));
+
     const QString &saveJsonFile = qEnvironmentVariable("QT_QPA_DBUS_SIGNALS_SAVE");
     if (!saveJsonFile.isEmpty())
         saveJson(saveJsonFile);
@@ -232,6 +235,6 @@ void QDBusListener::onSettingChanged(const QString &location, const QString &key
     if (!sig.has_value())
         return;
 
-    emit settingChanged(sig.value().provider, sig.value().setting, value.variant().toString());
+    emit settingChanged(sig.value().provider, sig.value().setting, value.variant());
 }
 QT_END_NAMESPACE

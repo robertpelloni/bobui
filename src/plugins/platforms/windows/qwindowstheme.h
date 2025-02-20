@@ -33,6 +33,7 @@ public:
 
     Qt::ColorScheme colorScheme() const override;
     void requestColorScheme(Qt::ColorScheme scheme) override;
+    Qt::ContrastPreference contrastPreference() const override;
 
     static void handleSettingsChanged();
 

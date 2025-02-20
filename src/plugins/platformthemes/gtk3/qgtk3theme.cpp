@@ -233,7 +233,7 @@ const QPalette *QGtk3Theme::palette(Palette type) const
 #ifdef QT_DEBUG
     if (m_requestedColorScheme != Qt::ColorScheme::Unknown
         && m_requestedColorScheme != m_storage->colorScheme()) {
-        qCDebug(lcQGtk3Interface) << "Current KDE theme doesn't support reuqested color scheme"
+        qCDebug(lcQGtk3Interface) << "Current KDE theme doesn't support requested color scheme"
                                   << m_requestedColorScheme << "Falling back to fusion palette.";
         return QPlatformTheme::palette(type);
     }

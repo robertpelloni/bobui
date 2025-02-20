@@ -508,6 +508,12 @@ void QCocoaTheme::updateColorScheme()
     m_colorScheme = qt_mac_applicationIsInDarkMode() ? Qt::ColorScheme::Dark : Qt::ColorScheme::Light;
 }
 
+Qt::ContrastPreference QCocoaTheme::contrastPreference() const
+{
+    return NSWorkspace.sharedWorkspace.accessibilityDisplayShouldIncreaseContrast ? Qt::ContrastPreference::HighContrast
+                                                                                  : Qt::ContrastPreference::NoPreference;
+}
+
 QString QCocoaTheme::standardButtonText(int button) const
 {
     return button == QPlatformDialogHelper::Discard ?
