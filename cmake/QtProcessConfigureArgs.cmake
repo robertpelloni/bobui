@@ -516,6 +516,12 @@ function(qt_commandline_path arg val nextok)
     qt_commandline_string("${arg}" "${val}" "${nextok}")
 endfunction()
 
+# Handle command line arguments of type "stringList" exactly like strings.
+# They are treated differently by translate_input, however.
+function(qt_commandline_stringList arg val nextok)
+    qt_commandline_string("${arg}" "${val}" "${nextok}")
+endfunction()
+
 function(qt_commandline_optionalString arg val nextok)
     if("${val}" STREQUAL "")
         if(nextok)
@@ -861,6 +867,9 @@ macro(translate_input name cmake_var)
         translate_path_input(${name} ${cmake_var})
     elseif("${commandline_input_${name}_type}" STREQUAL "string")
         translate_string_input(${name} ${cmake_var})
+    elseif("${commandline_input_${name}_type}" STREQUAL "addString"
+            OR "${commandline_input_${name}_type}" STREQUAL "stringList")
+        translate_list_input(${name} ${cmake_var})
     else()
         message(FATAL_ERROR
             "translate_input cannot handle input '${name}' "
@@ -966,7 +975,6 @@ if(NOT "${INPUT_device}" STREQUAL "")
     drop_input(device)
 endif()
 guess_compiler_from_mkspec()
-translate_list_input(qpa_platforms QT_QPA_PLATFORMS)
 
 if(DEFINED INPUT_android-ndk-platform)
     drop_input(android-ndk-platform)
@@ -1046,7 +1054,7 @@ if("${INPUT_ltcg}" STREQUAL "yes")
     endforeach()
 endif()
 
-translate_list_input(device-option QT_QMAKE_DEVICE_OPTIONS)
+# Handle -D, -I and friends.
 translate_list_input(defines QT_EXTRA_DEFINES)
 translate_list_input(fpaths QT_EXTRA_FRAMEWORKPATHS)
 translate_list_input(includes QT_EXTRA_INCLUDEPATHS)
