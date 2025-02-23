@@ -4092,13 +4092,7 @@ int main(int argc, char *argv[])
     if (!createRcc(options))
         return CannotCreateRcc;
 
-    if (options.auxMode) {
-        if (!updateAndroidFiles(options))
-            return CannotUpdateAndroidFiles;
-        return 0;
-    }
-
-    if (options.build) {
+    if (options.auxMode || options.build) {
         if (!copyAndroidSources(options))
             return CannotCopyAndroidSources;
 
@@ -4110,7 +4104,12 @@ int main(int argc, char *argv[])
 
         if (Q_UNLIKELY(options.timing))
             fprintf(stdout, "[TIMING] %lld ns: Updated files\n", options.timer.nsecsElapsed());
+    }
 
+    if (options.auxMode)
+        return 0;
+
+    if (options.build) {
         if (Q_UNLIKELY(options.timing))
             fprintf(stdout, "[TIMING] %lld ns: Created project\n", options.timer.nsecsElapsed());
 
