@@ -1496,4 +1496,44 @@ or the character \a ch
     Returns maxSize().
 */
 
+/*!
+    \fn Qt::Literals::StringLiterals::operator""_sv(const char16_t *str, size_t size)
+
+    \relates QStringView
+    \since 6.10
+
+    Literal operator that creates a QStringView out of the first
+    \a size characters in the char16_t string literal \a str.
+
+    There is rarely need to explicitly construct a QStringView from a
+    char16_t string literal, as QStringView is implicitly constructible
+    from one:
+
+    \code
+    QStringView greeting = u"hello"; // OK even without _sv
+
+    void print(QStringView s);
+    print(u"world"); // OK even without _sv
+    \endcode
+
+    To use this operator, you need to be using the corresponding
+    namespace(s):
+
+    \code
+    using namespace Qt::Literals::StringLiterals;
+    auto sv = u"peace"_sv;
+    \endcode
+
+    Note that the returned QStringView will span over any NUL embedded
+    in the string literal. This is different from passing the string
+    literal to QStringView's constructor (explicitly or implicitly):
+
+    \code
+    QStringView sv1 = u"abc\0def";    // sv1 == "abc"
+    QStringView sv2 = u"abc\0def"_sv; // sv2 == "abc\0def"
+    \endcode
+
+    \sa Qt::Literals::StringLiterals
+*/
+
 QT_END_NAMESPACE

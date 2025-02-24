@@ -512,6 +512,17 @@ qsizetype QtPrivate::findString(QStringView str, qsizetype from, QChar ch, Qt::C
     return -1;
 }
 
+namespace Qt {
+inline namespace Literals {
+inline namespace StringLiterals {
+constexpr QStringView operator""_sv(const char16_t *str, size_t size) noexcept
+{
+    return QStringView(str, qsizetype(size));
+}
+} // StringLiterals
+} // Literals
+} // Qt
+
 QT_END_NAMESPACE
 
 #endif /* QSTRINGVIEW_H */

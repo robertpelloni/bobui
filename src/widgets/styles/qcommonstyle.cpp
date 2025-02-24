@@ -6071,7 +6071,7 @@ QIcon QCommonStylePrivate::iconFromResourceTheme(QCommonStyle::StandardPixmap st
         addIconFiles(u"normalizedockup-", dockTitleIconSizes, icon);
         break;
     case QStyle::SP_ToolBarHorizontalExtensionButton:
-        addIconFiles(rtl(option) ? u"toolbar-ext-h-rtl-" : u"toolbar-ext-h-", toolBarExtHSizes, icon);
+        addIconFiles(rtl(option) ? u"toolbar-ext-h-rtl-"_sv : u"toolbar-ext-h-"_sv, toolBarExtHSizes, icon);
         break;
     case QStyle::SP_ToolBarVerticalExtensionButton:
         addIconFiles(u"toolbar-ext-v-", toolBarExtVSizes, icon);
