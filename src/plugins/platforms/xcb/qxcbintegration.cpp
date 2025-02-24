@@ -43,7 +43,8 @@
 #endif
 
 #include <qpa/qplatforminputcontextfactory_p.h>
-#include <private/qgenericunixthemes_p.h>
+#include <private/qgenericunixtheme_p.h>
+#include <private/qkdetheme_p.h>
 #include <qpa/qplatforminputcontext.h>
 
 #include <QtGui/QOpenGLContext>

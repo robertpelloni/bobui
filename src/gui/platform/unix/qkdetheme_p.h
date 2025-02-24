@@ -1,0 +1,68 @@
+// Copyright (C) 2025 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+
+#ifndef QKDETHEME_P_H
+#define QKDETHEME_P_H
+
+//
+//  W A R N I N G
+//  -------------
+//
+// This file is not part of the Qt API. It exists purely as an
+// implementation detail. This header file may change from version to
+// version without notice, or even be removed.
+//
+// We mean it.
+//
+
+#include "qgenericunixtheme_p.h"
+#include <qpa/qplatformtheme.h>
+#include <QtCore/QString>
+#include <QtCore/QStringList>
+#include <QtGui/QFont>
+#include <QtCore/private/qglobal_p.h>
+
+QT_BEGIN_NAMESPACE
+
+class ResourceHelper
+{
+public:
+    ResourceHelper();
+    ~ResourceHelper() { clear(); }
+
+    void clear();
+
+    QPalette *palettes[QPlatformTheme::NPalettes];
+    QFont *fonts[QPlatformTheme::NFonts];
+};
+
+class QKdeThemePrivate;
+class Q_GUI_EXPORT QKdeTheme : public QGenericUnixTheme
+{
+    Q_DECLARE_PRIVATE(QKdeTheme)
+public:
+    QKdeTheme(const QStringList& kdeDirs, int kdeVersion);
+
+    static QPlatformTheme *createKdeTheme();
+    QVariant themeHint(ThemeHint hint) const override;
+
+    QIcon fileIcon(const QFileInfo &fileInfo,
+                   QPlatformTheme::IconOptions iconOptions = { }) const override;
+
+    const QPalette *palette(Palette type = SystemPalette) const override;
+    Qt::ColorScheme colorScheme() const override;
+    //void requestColorScheme(Qt::ColorScheme scheme) override;
+
+    const QFont *font(Font type) const override;
+#ifndef QT_NO_DBUS
+    QPlatformMenuBar *createPlatformMenuBar() const override;
+#endif
+#if !defined(QT_NO_DBUS) && !defined(QT_NO_SYSTEMTRAYICON)
+    QPlatformSystemTrayIcon *createPlatformSystemTrayIcon() const override;
+#endif
+
+    static const char *name;
+};
+
+QT_END_NAMESPACE
+#endif // QKDETHEME_P_H

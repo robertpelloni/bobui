@@ -1,59 +1,22 @@
-// Copyright (C) 2022 The Qt Company Ltd.
+// Copyright (C) 2025 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
-#include "qgenericunixthemes_p.h"
-
-#include <QPalette>
-#include <QFont>
-#include <QGuiApplication>
-#include <QDir>
-#include <QFileInfo>
-#include <QFile>
-#include <QDebug>
-#include <QHash>
-#include <QLoggingCategory>
-#include <QVariant>
-#include <QStandardPaths>
-#include <QStringList>
-#if QT_CONFIG(mimetype)
-#include <QMimeDatabase>
-#endif
-#if QT_CONFIG(settings)
-#include <QSettings>
-#endif
-
-#include <qpa/qplatformfontdatabase.h> // lcQpaFonts
-#include <qpa/qplatformintegration.h>
-#include <qpa/qplatformservices.h>
-#include <qpa/qplatformdialoghelper.h>
+#include "qkdetheme_p.h"
 #include <qpa/qplatformtheme_p.h>
-
-#include <private/qguiapplication_p.h>
-#ifndef QT_NO_DBUS
-#include <QDBusConnectionInterface>
+#include <qpa/qplatformfontdatabase.h>
+#include <qpa/qplatformdialoghelper.h>
+#include <QPalette>
+#include <qpa/qwindowsysteminterface.h>
+#include "qdbuslistener_p.h"
+#include <private/qdbustrayicon_p.h>
 #include <private/qdbusplatformmenu_p.h>
 #include <private/qdbusmenubar_p.h>
-#include <private/qflatmap_p.h>
-#include <QJsonDocument>
-#include <QJsonArray>
-#include <QJsonObject>
-#include <QJsonValue>
-#include <QJsonParseError>
-#endif
-#if !defined(QT_NO_DBUS) && !defined(QT_NO_SYSTEMTRAYICON)
-#include <private/qdbustrayicon_p.h>
-#endif
-
-#include <algorithm>
 
 QT_BEGIN_NAMESPACE
-#ifndef QT_NO_DBUS
-Q_STATIC_LOGGING_CATEGORY(lcQpaThemeDBus, "qt.qpa.theme.dbus")
-#endif
 
 using namespace Qt::StringLiterals;
 
-Q_DECLARE_LOGGING_CATEGORY(qLcTray)
+Q_STATIC_LOGGING_CATEGORY(lcQpaThemeKde, "qt.qpa.theme.kde")
 
 ResourceHelper::ResourceHelper()
 {
@@ -69,477 +32,7 @@ void ResourceHelper::clear()
     std::fill(fonts, fonts + QPlatformTheme::NFonts, static_cast<QFont *>(nullptr));
 }
 
-const char *QGenericUnixTheme::name = "generic";
-
-// Default system font, corresponding to the value returned by 4.8 for
-// XRender/FontConfig which we can now assume as default.
-static const char defaultSystemFontNameC[] = "Sans Serif";
-static const char defaultFixedFontNameC[] = "monospace";
-enum { defaultSystemFontSize = 9 };
-
-#if !defined(QT_NO_DBUS) && !defined(QT_NO_SYSTEMTRAYICON)
-static bool shouldUseDBusTray() {
-    // There's no other tray implementation to fallback to on non-X11
-    // and QDBusTrayIcon can register the icon on the fly after creation
-    if (QGuiApplication::platformName() != "xcb"_L1)
-        return true;
-    const bool result = QDBusMenuConnection().isWatcherRegistered();
-    qCDebug(qLcTray) << "D-Bus tray available:" << result;
-    return result;
-}
-#endif
-
-static QString mouseCursorTheme()
-{
-    static QString themeName = qEnvironmentVariable("XCURSOR_THEME");
-    return themeName;
-}
-
-static QSize mouseCursorSize()
-{
-    constexpr int defaultCursorSize = 24;
-    static const int xCursorSize = qEnvironmentVariableIntValue("XCURSOR_SIZE");
-    static const int s = xCursorSize > 0 ? xCursorSize : defaultCursorSize;
-    return QSize(s, s);
-}
-
-#ifndef QT_NO_DBUS
-static bool checkDBusGlobalMenuAvailable()
-{
-    const QDBusConnection connection = QDBusConnection::sessionBus();
-    static const QString registrarService = QStringLiteral("com.canonical.AppMenu.Registrar");
-    if (const auto iface = connection.interface())
-        return iface->isServiceRegistered(registrarService);
-    return false;
-}
-
-static bool isDBusGlobalMenuAvailable()
-{
-    static bool dbusGlobalMenuAvailable = checkDBusGlobalMenuAvailable();
-    return dbusGlobalMenuAvailable;
-}
-
-/*!
- * \internal
- * The QGenericUnixThemeDBusListener class listens to the SettingChanged DBus signal
- * and translates it into combinations of the enums \c Provider and \c Setting.
- * Upon construction, it logs success/failure of the DBus connection.
- *
- * The signal settingChanged delivers the normalized setting type and the new value as a string.
- * It is emitted on known setting types only.
- */
-
-class QGenericUnixThemeDBusListener : public QObject
-{
-    Q_OBJECT
-
-public:
-
-    enum class Provider {
-        Kde,
-        Gtk,
-        Gnome,
-    };
-    Q_ENUM(Provider)
-
-    enum class Setting {
-        Theme,
-        ApplicationStyle,
-        ColorScheme,
-    };
-    Q_ENUM(Setting)
-
-    QGenericUnixThemeDBusListener();
-    QGenericUnixThemeDBusListener(const QString &service, const QString &path,
-                                  const QString &interface, const QString &signal);
-
-private Q_SLOTS:
-    void onSettingChanged(const QString &location, const QString &key, const QDBusVariant &value);
-
-Q_SIGNALS:
-    void settingChanged(QGenericUnixThemeDBusListener::Provider provider,
-                        QGenericUnixThemeDBusListener::Setting setting,
-                        const QString &value);
-
-private:
-    struct DBusKey
-    {
-        QString location;
-        QString key;
-        DBusKey(const QString &loc, const QString &k) : location(loc), key(k) {};
-        bool operator<(const DBusKey &other) const
-        {
-            return location + key < other.location + other.key;
-        }
-    };
-
-    struct ChangeSignal
-    {
-        Provider provider;
-        Setting setting;
-        ChangeSignal(Provider p, Setting s) : provider(p), setting(s) {}
-        ChangeSignal() {}
-    };
-
-    QFlatMap <DBusKey, ChangeSignal> m_signalMap;
-
-    void init(const QString &service, const QString &path,
-              const QString &interface, const QString &signal);
-
-    std::optional<ChangeSignal> findSignal(const QString &location, const QString &key) const;
-    void populateSignalMap();
-    void loadJson(const QString &fileName);
-    void saveJson(const QString &fileName) const;
-};
-
-namespace {
-namespace JsonKeys {
-constexpr auto dbusLocation() { return "DBusLocation"_L1; }
-constexpr auto dbusKey() { return "DBusKey"_L1; }
-constexpr auto provider() { return "Provider"_L1; }
-constexpr auto setting() { return "Setting"_L1; }
-constexpr auto dbusSignals() { return "DbusSignals"_L1; }
-constexpr auto root() { return "Qt.qpa.DBusSignals"_L1; }
-} // namespace JsonKeys
-}
-
-QGenericUnixThemeDBusListener::QGenericUnixThemeDBusListener(const QString &service,
-                               const QString &path, const QString &interface, const QString &signal)
-{
-    init (service, path, interface, signal);
-}
-
-QGenericUnixThemeDBusListener::QGenericUnixThemeDBusListener()
-{
-    const auto service = u""_s;
-    const auto path = u"/org/freedesktop/portal/desktop"_s;
-    const auto interface = u"org.freedesktop.portal.Settings"_s;
-    const auto signal = u"SettingChanged"_s;
-
-    init (service, path, interface, signal);
-}
-
-void QGenericUnixThemeDBusListener::init(const QString &service, const QString &path,
-          const QString &interface, const QString &signal)
-{
-    QDBusConnection dbus = QDBusConnection::sessionBus();
-    const bool dBusRunning = dbus.isConnected();
-    bool dBusSignalConnected = false;
-#define LOG service << path << interface << signal;
-
-    if (dBusRunning) {
-        populateSignalMap();
-        qRegisterMetaType<QDBusVariant>();
-        dBusSignalConnected = dbus.connect(service, path, interface, signal, this,
-                              SLOT(onSettingChanged(QString,QString,QDBusVariant)));
-    }
-
-    if (dBusSignalConnected) {
-        // Connection successful
-        qCDebug(lcQpaThemeDBus) << LOG;
-    } else {
-        if (dBusRunning) {
-            // DBus running, but connection failed
-            qCWarning(lcQpaThemeDBus) << "DBus connection failed:" << LOG;
-        } else {
-            // DBus not running
-            qCWarning(lcQpaThemeDBus) << "Session DBus not running.";
-        }
-        qCWarning(lcQpaThemeDBus) << "Application will not react to setting changes.\n"
-                                  << "Check your DBus installation.";
-    }
-#undef LOG
-}
-
-void QGenericUnixThemeDBusListener::loadJson(const QString &fileName)
-{
-    Q_ASSERT(!fileName.isEmpty());
-#define CHECK(cond, warning)\
-    if (!cond) {\
-        qCWarning(lcQpaThemeDBus) << fileName << warning << "Falling back to default.";\
-        return;\
-    }
-
-#define PARSE(var, enumeration, string)\
-    enumeration var;\
-    {\
-        bool success;\
-        const int val = QMetaEnum::fromType<enumeration>().keyToValue(string.toLatin1(), &success);\
-        CHECK(success, "Parse Error: Invalid value" << string << "for" << #var);\
-        var = static_cast<enumeration>(val);\
-    }
-
-    QFile file(fileName);
-    CHECK(file.exists(), fileName << "doesn't exist.");
-    CHECK(file.open(QIODevice::ReadOnly), "could not be opened for reading.");
-
-    QJsonParseError error;
-    QJsonDocument doc = QJsonDocument::fromJson(file.readAll(), &error);
-    CHECK((error.error == QJsonParseError::NoError), error.errorString());
-    CHECK(doc.isObject(), "Parse Error: Expected root object" << JsonKeys::root());
-
-    const QJsonObject &root = doc.object();
-    CHECK(root.contains(JsonKeys::root()), "Parse Error: Expected root object" << JsonKeys::root());
-    CHECK(root[JsonKeys::root()][JsonKeys::dbusSignals()].isArray(), "Parse Error: Expected array" << JsonKeys::dbusSignals());
-
-    const QJsonArray &sigs = root[JsonKeys::root()][JsonKeys::dbusSignals()].toArray();
-    CHECK((sigs.count() > 0), "Parse Error: Found empty array" << JsonKeys::dbusSignals());
-
-    for (auto sig = sigs.constBegin(); sig != sigs.constEnd(); ++sig) {
-        CHECK(sig->isObject(), "Parse Error: Expected object array" << JsonKeys::dbusSignals());
-        const QJsonObject &obj = sig->toObject();
-        CHECK(obj.contains(JsonKeys::dbusLocation()), "Parse Error: Expected key" << JsonKeys::dbusLocation());
-        CHECK(obj.contains(JsonKeys::dbusKey()), "Parse Error: Expected key" << JsonKeys::dbusKey());
-        CHECK(obj.contains(JsonKeys::provider()), "Parse Error: Expected key" << JsonKeys::provider());
-        CHECK(obj.contains(JsonKeys::setting()), "Parse Error: Expected key" << JsonKeys::setting());
-        const QString &location = obj[JsonKeys::dbusLocation()].toString();
-        const QString &key = obj[JsonKeys::dbusKey()].toString();
-        const QString &providerString = obj[JsonKeys::provider()].toString();
-        const QString &settingString = obj[JsonKeys::setting()].toString();
-        PARSE(provider, Provider, providerString);
-        PARSE(setting, Setting, settingString);
-        const DBusKey dkey(location, key);
-        CHECK (!m_signalMap.contains(dkey), "Duplicate key" << location << key);
-        m_signalMap.insert(dkey, ChangeSignal(provider, setting));
-    }
-#undef PARSE
-#undef CHECK
-
-    if (m_signalMap.count() > 0)
-        qCInfo(lcQpaThemeDBus) << "Successfully imported" << fileName;
-    else
-        qCWarning(lcQpaThemeDBus) << "No data imported from" << fileName << "falling back to default.";
-
-#ifdef QT_DEBUG
-    const int count = m_signalMap.count();
-    if (count == 0)
-        return;
-
-    qCDebug(lcQpaThemeDBus) << "Listening to" << count << "signals:";
-    for (auto it = m_signalMap.constBegin(); it != m_signalMap.constEnd(); ++it) {
-        qDebug() << it.key().key << it.key().location << "mapped to"
-                 << it.value().provider << it.value().setting;
-    }
-
-#endif
-}
-
-void QGenericUnixThemeDBusListener::saveJson(const QString &fileName) const
-{
-    Q_ASSERT(!m_signalMap.isEmpty());
-    Q_ASSERT(!fileName.isEmpty());
-    QFile file(fileName);
-    if (!file.open(QIODevice::WriteOnly)) {
-        qCWarning(lcQpaThemeDBus) << fileName << "could not be opened for writing.";
-        return;
-    }
-
-    QJsonArray sigs;
-    for (auto sig = m_signalMap.constBegin(); sig != m_signalMap.constEnd(); ++sig) {
-        const DBusKey &dkey = sig.key();
-        const ChangeSignal &csig = sig.value();
-        QJsonObject obj;
-        obj[JsonKeys::dbusLocation()] = dkey.location;
-        obj[JsonKeys::dbusKey()] = dkey.key;
-        obj[JsonKeys::provider()] = QLatin1StringView(QMetaEnum::fromType<Provider>()
-                                            .valueToKey(static_cast<int>(csig.provider)));
-        obj[JsonKeys::setting()] = QLatin1StringView(QMetaEnum::fromType<Setting>()
-                                           .valueToKey(static_cast<int>(csig.setting)));
-        sigs.append(obj);
-    }
-    QJsonObject obj;
-    obj[JsonKeys::dbusSignals()] = sigs;
-    QJsonObject root;
-    root[JsonKeys::root()] = obj;
-    QJsonDocument doc(root);
-    file.write(doc.toJson());
-    file.close();
-}
-
-void QGenericUnixThemeDBusListener::populateSignalMap()
-{
-    m_signalMap.clear();
-    const QString &loadJsonFile = qEnvironmentVariable("QT_QPA_DBUS_SIGNALS");
-    if (!loadJsonFile.isEmpty())
-        loadJson(loadJsonFile);
-    if (!m_signalMap.isEmpty())
-        return;
-
-    m_signalMap.insert(DBusKey("org.kde.kdeglobals.KDE"_L1, "widgetStyle"_L1),
-                       ChangeSignal(Provider::Kde, Setting::ApplicationStyle));
-
-    m_signalMap.insert(DBusKey("org.kde.kdeglobals.General"_L1, "ColorScheme"_L1),
-                       ChangeSignal(Provider::Kde, Setting::Theme));
-
-    m_signalMap.insert(DBusKey("org.gnome.desktop.interface"_L1, "gtk-theme"_L1),
-                       ChangeSignal(Provider::Gtk, Setting::Theme));
-
-    m_signalMap.insert(DBusKey("org.freedesktop.appearance"_L1, "color-scheme"_L1),
-                       ChangeSignal(Provider::Gnome, Setting::ColorScheme));
-
-    const QString &saveJsonFile = qEnvironmentVariable("QT_QPA_DBUS_SIGNALS_SAVE");
-    if (!saveJsonFile.isEmpty())
-        saveJson(saveJsonFile);
-}
-
-std::optional<QGenericUnixThemeDBusListener::ChangeSignal>
-    QGenericUnixThemeDBusListener::findSignal(const QString &location, const QString &key) const
-{
-    const DBusKey dkey(location, key);
-    std::optional<QGenericUnixThemeDBusListener::ChangeSignal> ret;
-    if (m_signalMap.contains(dkey))
-        ret.emplace(m_signalMap.value(dkey));
-
-    return ret;
-}
-
-void QGenericUnixThemeDBusListener::onSettingChanged(const QString &location, const QString &key, const QDBusVariant &value)
-{
-    auto sig = findSignal(location, key);
-    if (!sig.has_value())
-        return;
-
-    emit settingChanged(sig.value().provider, sig.value().setting, value.variant().toString());
-}
-
-#endif //QT_NO_DBUS
-
-class QGenericUnixThemePrivate : public QPlatformThemePrivate
-{
-public:
-    QGenericUnixThemePrivate()
-        : QPlatformThemePrivate()
-        , systemFont(QLatin1StringView(defaultSystemFontNameC), defaultSystemFontSize)
-        , fixedFont(QLatin1StringView(defaultFixedFontNameC), systemFont.pointSize())
-    {
-        fixedFont.setStyleHint(QFont::TypeWriter);
-        qCDebug(lcQpaFonts) << "default fonts: system" << systemFont << "fixed" << fixedFont;
-    }
-
-    const QFont systemFont;
-    QFont fixedFont;
-};
-
-QGenericUnixTheme::QGenericUnixTheme()
-    : QPlatformTheme(new QGenericUnixThemePrivate())
-{
-}
-
-const QFont *QGenericUnixTheme::font(Font type) const
-{
-    Q_D(const QGenericUnixTheme);
-    switch (type) {
-    case QPlatformTheme::SystemFont:
-        return &d->systemFont;
-    case QPlatformTheme::FixedFont:
-        return &d->fixedFont;
-    default:
-        return nullptr;
-    }
-}
-
-// Helper to return the icon theme paths from XDG.
-QStringList QGenericUnixTheme::xdgIconThemePaths()
-{
-    QStringList paths;
-    // Add home directory first in search path
-    const QFileInfo homeIconDir(QDir::homePath() + "/.icons"_L1);
-    if (homeIconDir.isDir())
-        paths.prepend(homeIconDir.absoluteFilePath());
-
-    paths.append(QStandardPaths::locateAll(QStandardPaths::GenericDataLocation,
-                                           QStringLiteral("icons"),
-                                           QStandardPaths::LocateDirectory));
-
-    return paths;
-}
-
-QStringList QGenericUnixTheme::iconFallbackPaths()
-{
-    QStringList paths;
-    const QFileInfo pixmapsIconsDir(QStringLiteral("/usr/share/pixmaps"));
-    if (pixmapsIconsDir.isDir())
-        paths.append(pixmapsIconsDir.absoluteFilePath());
-
-    return paths;
-}
-
-#ifndef QT_NO_DBUS
-QPlatformMenuBar *QGenericUnixTheme::createPlatformMenuBar() const
-{
-    if (isDBusGlobalMenuAvailable())
-        return new QDBusMenuBar();
-    return nullptr;
-}
-#endif
-
-#if !defined(QT_NO_DBUS) && !defined(QT_NO_SYSTEMTRAYICON)
-QPlatformSystemTrayIcon *QGenericUnixTheme::createPlatformSystemTrayIcon() const
-{
-    if (shouldUseDBusTray())
-        return new QDBusTrayIcon();
-    return nullptr;
-}
-#endif
-
-QVariant QGenericUnixTheme::themeHint(ThemeHint hint) const
-{
-    switch (hint) {
-    case QPlatformTheme::SystemIconFallbackThemeName:
-        return QVariant(QString(QStringLiteral("hicolor")));
-    case QPlatformTheme::IconThemeSearchPaths:
-        return xdgIconThemePaths();
-    case QPlatformTheme::IconFallbackSearchPaths:
-        return iconFallbackPaths();
-    case QPlatformTheme::DialogButtonBoxButtonsHaveIcons:
-        return QVariant(true);
-    case QPlatformTheme::StyleNames: {
-        QStringList styleNames;
-        styleNames << QStringLiteral("Fusion") << QStringLiteral("Windows");
-        return QVariant(styleNames);
-    }
-    case QPlatformTheme::KeyboardScheme:
-        return QVariant(int(X11KeyboardScheme));
-    case QPlatformTheme::UiEffects:
-        return QVariant(int(HoverEffect));
-    case QPlatformTheme::MouseCursorTheme:
-        return QVariant(mouseCursorTheme());
-    case QPlatformTheme::MouseCursorSize:
-        return QVariant(mouseCursorSize());
-    case QPlatformTheme::PreferFileIconFromTheme:
-        return true;
-    default:
-        break;
-    }
-    return QPlatformTheme::themeHint(hint);
-}
-
-// Helper functions for implementing QPlatformTheme::fileIcon() for XDG icon themes.
-static QList<QSize> availableXdgFileIconSizes()
-{
-    return QIcon::fromTheme(QStringLiteral("inode-directory")).availableSizes();
-}
-
-#if QT_CONFIG(mimetype)
-static QIcon xdgFileIcon(const QFileInfo &fileInfo)
-{
-    QMimeDatabase mimeDatabase;
-    QMimeType mimeType = mimeDatabase.mimeTypeForFile(fileInfo);
-    if (!mimeType.isValid())
-        return QIcon();
-    const QString &iconName = mimeType.iconName();
-    if (!iconName.isEmpty()) {
-        const QIcon icon = QIcon::fromTheme(iconName);
-        if (!icon.isNull())
-            return icon;
-    }
-    const QString &genericIconName = mimeType.genericIconName();
-    return genericIconName.isEmpty() ? QIcon() : QIcon::fromTheme(genericIconName);
-}
-#endif
-
-#if QT_CONFIG(settings)
-class QKdeThemePrivate : public QPlatformThemePrivate
+class QKdeThemePrivate : public QGenericUnixThemePrivate
 {
 
 public:
@@ -624,31 +117,31 @@ public:
 private:
     mutable QHash<QString, QSettings *> kdeSettings;
 #ifndef QT_NO_DBUS
-    std::unique_ptr<QGenericUnixThemeDBusListener> dbus;
+    std::unique_ptr<QDBusListener> dbus;
     bool initDbus();
-    void settingChangedHandler(QGenericUnixThemeDBusListener::Provider provider,
-                               QGenericUnixThemeDBusListener::Setting setting,
+    void settingChangedHandler(QDBusListener::Provider provider,
+                               QDBusListener::Setting setting,
                                const QString &value);
 #endif // QT_NO_DBUS
 };
 
 #ifndef QT_NO_DBUS
-void QKdeThemePrivate::settingChangedHandler(QGenericUnixThemeDBusListener::Provider provider,
-                                             QGenericUnixThemeDBusListener::Setting setting,
+void QKdeThemePrivate::settingChangedHandler(QDBusListener::Provider provider,
+                                             QDBusListener::Setting setting,
                                              const QString &value)
 {
-    if (provider != QGenericUnixThemeDBusListener::Provider::Kde)
+    if (provider != QDBusListener::Provider::Kde)
         return;
 
     switch (setting) {
-    case QGenericUnixThemeDBusListener::Setting::ColorScheme:
-        qCDebug(lcQpaThemeDBus) << "KDE color theme changed to:" << value;
+    case QDBusListener::Setting::ColorScheme:
+        qCDebug(lcQpaThemeKde) << "KDE color theme changed to:" << value;
         break;
-    case QGenericUnixThemeDBusListener::Setting::Theme:
-        qCDebug(lcQpaThemeDBus) << "KDE global theme changed to:" << value;
+    case QDBusListener::Setting::Theme:
+        qCDebug(lcQpaThemeKde) << "KDE global theme changed to:" << value;
         break;
-    case QGenericUnixThemeDBusListener::Setting::ApplicationStyle:
-        qCDebug(lcQpaThemeDBus) << "KDE application style changed to:" << value;
+    case QDBusListener::Setting::ApplicationStyle:
+        qCDebug(lcQpaThemeKde) << "KDE application style changed to:" << value;
         break;
     }
 
@@ -657,17 +150,17 @@ void QKdeThemePrivate::settingChangedHandler(QGenericUnixThemeDBusListener::Prov
 
 bool QKdeThemePrivate::initDbus()
 {
-    dbus.reset(new QGenericUnixThemeDBusListener());
+    dbus.reset(new QDBusListener());
     Q_ASSERT(dbus);
 
     // Wrap slot in a lambda to avoid inheriting QKdeThemePrivate from QObject
-    auto wrapper = [this](QGenericUnixThemeDBusListener::Provider provider,
-                          QGenericUnixThemeDBusListener::Setting setting,
+    auto wrapper = [this](QDBusListener::Provider provider,
+                          QDBusListener::Setting setting,
                           const QString &value) {
         settingChangedHandler(provider, setting, value);
     };
 
-    return QObject::connect(dbus.get(), &QGenericUnixThemeDBusListener::settingChanged, dbus.get(), wrapper);
+    return QObject::connect(dbus.get(), &QDBusListener::settingChanged, dbus.get(), wrapper);
 }
 #endif // QT_NO_DBUS
 
@@ -909,12 +402,14 @@ void QKdeThemePrivate::refresh()
     if (QFont *systemFont = kdeFont(readKdeSetting(KdeSetting::Font)))
         resources.fonts[QPlatformTheme::SystemFont] = systemFont;
     else
-        resources.fonts[QPlatformTheme::SystemFont] = new QFont(QLatin1StringView(defaultSystemFontNameC), defaultSystemFontSize);
+        resources.fonts[QPlatformTheme::SystemFont] = new QFont(QLatin1StringView(QGenericUnixTheme::defaultSystemFontNameC),
+                                                                QGenericUnixTheme::defaultSystemFontSize);
 
     if (QFont *fixedFont = kdeFont(readKdeSetting(KdeSetting::Fixed))) {
         resources.fonts[QPlatformTheme::FixedFont] = fixedFont;
     } else {
-        fixedFont = new QFont(QLatin1StringView(defaultFixedFontNameC), defaultSystemFontSize);
+        fixedFont = new QFont(QLatin1StringView(QGenericUnixTheme::defaultFixedFontNameC),
+                              QGenericUnixTheme::defaultSystemFontSize);
         fixedFont->setStyleHint(QFont::TypeWriter);
         resources.fonts[QPlatformTheme::FixedFont] = fixedFont;
     }
@@ -1043,7 +538,7 @@ void QKdeThemePrivate::readKdeSystemPalette(const QStringList &kdeDirs, int kdeV
 const char *QKdeTheme::name = "kde";
 
 QKdeTheme::QKdeTheme(const QStringList& kdeDirs, int kdeVersion)
-    : QPlatformTheme(new QKdeThemePrivate(kdeDirs,kdeVersion))
+    : QGenericUnixTheme(new QKdeThemePrivate(kdeDirs, kdeVersion))
 {
     d_func()->refresh();
 }
@@ -1276,278 +771,4 @@ QPlatformSystemTrayIcon *QKdeTheme::createPlatformSystemTrayIcon() const
 }
 #endif
 
-#endif // settings
-
-/*!
-    \class QGnomeTheme
-    \brief QGnomeTheme is a theme implementation for the Gnome desktop.
-    \since 5.0
-    \internal
-    \ingroup qpa
-*/
-
-const char *QGnomeTheme::name = "gnome";
-
-class QGnomeThemePrivate : public QPlatformThemePrivate
-{
-public:
-    QGnomeThemePrivate();
-    ~QGnomeThemePrivate();
-
-    void configureFonts(const QString &gtkFontName) const
-    {
-        Q_ASSERT(!systemFont);
-        const int split = gtkFontName.lastIndexOf(QChar::Space);
-        float size = QStringView{gtkFontName}.mid(split + 1).toFloat();
-        QString fontName = gtkFontName.left(split);
-
-        systemFont = new QFont(fontName, size);
-        fixedFont = new QFont(QLatin1StringView(defaultFixedFontNameC), systemFont->pointSize());
-        fixedFont->setStyleHint(QFont::TypeWriter);
-        qCDebug(lcQpaFonts) << "default fonts: system" << systemFont << "fixed" << fixedFont;
-    }
-
-    mutable QFont *systemFont = nullptr;
-    mutable QFont *fixedFont = nullptr;
-
-#ifndef QT_NO_DBUS
-    Qt::ColorScheme m_colorScheme = Qt::ColorScheme::Unknown;
-private:
-    std::unique_ptr<QGenericUnixThemeDBusListener> dbus;
-    bool initDbus();
-    void updateColorScheme(const QString &themeName);
-#endif // QT_NO_DBUS
-};
-
-QGnomeThemePrivate::QGnomeThemePrivate()
-{
-#ifndef QT_NO_DBUS
-    initDbus();
-#endif // QT_NO_DBUS
-}
-QGnomeThemePrivate::~QGnomeThemePrivate()
-{
-    if (systemFont)
-        delete systemFont;
-    if (fixedFont)
-        delete fixedFont;
-}
-
-#ifndef QT_NO_DBUS
-bool QGnomeThemePrivate::initDbus()
-{
-    dbus.reset(new QGenericUnixThemeDBusListener());
-    Q_ASSERT(dbus);
-
-    // Wrap slot in a lambda to avoid inheriting QGnomeThemePrivate from QObject
-    auto wrapper = [this](QGenericUnixThemeDBusListener::Provider provider,
-                          QGenericUnixThemeDBusListener::Setting setting,
-                          const QString &value) {
-        if (provider != QGenericUnixThemeDBusListener::Provider::Gnome
-            && provider != QGenericUnixThemeDBusListener::Provider::Gtk) {
-            return;
-        }
-
-        if (setting == QGenericUnixThemeDBusListener::Setting::Theme)
-            updateColorScheme(value);
-    };
-
-    return QObject::connect(dbus.get(), &QGenericUnixThemeDBusListener::settingChanged, dbus.get(), wrapper);
-}
-
-void QGnomeThemePrivate::updateColorScheme(const QString &themeName)
-{
-    const auto oldColorScheme = m_colorScheme;
-    if (themeName.contains(QLatin1StringView("light"), Qt::CaseInsensitive)) {
-        m_colorScheme = Qt::ColorScheme::Light;
-    } else if (themeName.contains(QLatin1StringView("dark"), Qt::CaseInsensitive)) {
-        m_colorScheme = Qt::ColorScheme::Dark;
-    } else {
-        m_colorScheme = Qt::ColorScheme::Unknown;
-    }
-
-    if (oldColorScheme != m_colorScheme)
-        QWindowSystemInterface::handleThemeChange();
-}
-#endif // QT_NO_DBUS
-
-QGnomeTheme::QGnomeTheme()
-    : QPlatformTheme(new QGnomeThemePrivate())
-{
-}
-
-QVariant QGnomeTheme::themeHint(QPlatformTheme::ThemeHint hint) const
-{
-    switch (hint) {
-    case QPlatformTheme::DialogButtonBoxButtonsHaveIcons:
-        return QVariant(true);
-    case QPlatformTheme::DialogButtonBoxLayout:
-        return QVariant(QPlatformDialogHelper::GnomeLayout);
-    case QPlatformTheme::SystemIconThemeName:
-        return QVariant(QStringLiteral("Adwaita"));
-    case QPlatformTheme::SystemIconFallbackThemeName:
-        return QVariant(QStringLiteral("gnome"));
-    case QPlatformTheme::IconThemeSearchPaths:
-        return QVariant(QGenericUnixTheme::xdgIconThemePaths());
-    case QPlatformTheme::IconPixmapSizes:
-        return QVariant::fromValue(availableXdgFileIconSizes());
-    case QPlatformTheme::StyleNames: {
-        QStringList styleNames;
-        styleNames << QStringLiteral("Fusion") << QStringLiteral("windows");
-        return QVariant(styleNames);
-    }
-    case QPlatformTheme::KeyboardScheme:
-        return QVariant(int(GnomeKeyboardScheme));
-    case QPlatformTheme::PasswordMaskCharacter:
-        return QVariant(QChar(0x2022));
-    case QPlatformTheme::UiEffects:
-        return QVariant(int(HoverEffect));
-    case QPlatformTheme::ButtonPressKeys:
-        return QVariant::fromValue(
-                QList<Qt::Key>({ Qt::Key_Space, Qt::Key_Return, Qt::Key_Enter, Qt::Key_Select }));
-    case QPlatformTheme::PreselectFirstFileInDirectory:
-        return true;
-    case QPlatformTheme::MouseCursorTheme:
-        return QVariant(mouseCursorTheme());
-    case QPlatformTheme::MouseCursorSize:
-        return QVariant(mouseCursorSize());
-    case QPlatformTheme::PreferFileIconFromTheme:
-        return true;
-    default:
-        break;
-    }
-    return QPlatformTheme::themeHint(hint);
-}
-
-QIcon QGnomeTheme::fileIcon(const QFileInfo &fileInfo, QPlatformTheme::IconOptions) const
-{
-#if QT_CONFIG(mimetype)
-    return xdgFileIcon(fileInfo);
-#else
-    Q_UNUSED(fileInfo);
-    return QIcon();
-#endif
-}
-
-const QFont *QGnomeTheme::font(Font type) const
-{
-    Q_D(const QGnomeTheme);
-    if (!d->systemFont)
-        d->configureFonts(gtkFontName());
-    switch (type) {
-    case QPlatformTheme::SystemFont:
-        return d->systemFont;
-    case QPlatformTheme::FixedFont:
-        return d->fixedFont;
-    default:
-        return nullptr;
-    }
-}
-
-QString QGnomeTheme::gtkFontName() const
-{
-    return QStringLiteral("%1 %2").arg(QLatin1StringView(defaultSystemFontNameC)).arg(defaultSystemFontSize);
-}
-
-#ifndef QT_NO_DBUS
-QPlatformMenuBar *QGnomeTheme::createPlatformMenuBar() const
-{
-    if (isDBusGlobalMenuAvailable())
-        return new QDBusMenuBar();
-    return nullptr;
-}
-
-Qt::ColorScheme QGnomeTheme::colorScheme() const
-{
-    return d_func()->m_colorScheme;
-}
-
-#endif
-
-#if !defined(QT_NO_DBUS) && !defined(QT_NO_SYSTEMTRAYICON)
-QPlatformSystemTrayIcon *QGnomeTheme::createPlatformSystemTrayIcon() const
-{
-    if (shouldUseDBusTray())
-        return new QDBusTrayIcon();
-    return nullptr;
-}
-#endif
-
-QString QGnomeTheme::standardButtonText(int button) const
-{
-    switch (button) {
-    case QPlatformDialogHelper::Ok:
-        return QCoreApplication::translate("QGnomeTheme", "&OK");
-    case QPlatformDialogHelper::Save:
-        return QCoreApplication::translate("QGnomeTheme", "&Save");
-    case QPlatformDialogHelper::Cancel:
-        return QCoreApplication::translate("QGnomeTheme", "&Cancel");
-    case QPlatformDialogHelper::Close:
-        return QCoreApplication::translate("QGnomeTheme", "&Close");
-    case QPlatformDialogHelper::Discard:
-        return QCoreApplication::translate("QGnomeTheme", "Close without Saving");
-    default:
-        break;
-    }
-    return QPlatformTheme::standardButtonText(button);
-}
-
-/*!
-    \brief Creates a UNIX theme according to the detected desktop environment.
-*/
-
-QPlatformTheme *QGenericUnixTheme::createUnixTheme(const QString &name)
-{
-    if (name == QLatin1StringView(QGenericUnixTheme::name))
-        return new QGenericUnixTheme;
-#if QT_CONFIG(settings)
-    if (name == QLatin1StringView(QKdeTheme::name))
-        if (QPlatformTheme *kdeTheme = QKdeTheme::createKdeTheme())
-            return kdeTheme;
-#endif
-    if (name == QLatin1StringView(QGnomeTheme::name))
-        return new QGnomeTheme;
-    return nullptr;
-}
-
-QStringList QGenericUnixTheme::themeNames()
-{
-    QStringList result;
-    if (QGuiApplication::desktopSettingsAware()) {
-        const QByteArray desktopEnvironment = QGuiApplicationPrivate::platformIntegration()->services()->desktopEnvironment();
-        QList<QByteArray> gtkBasedEnvironments;
-        gtkBasedEnvironments << "GNOME"
-                             << "X-CINNAMON"
-                             << "PANTHEON"
-                             << "UNITY"
-                             << "MATE"
-                             << "XFCE"
-                             << "LXDE";
-        const QList<QByteArray> desktopNames = desktopEnvironment.split(':');
-        for (const QByteArray &desktopName : desktopNames) {
-            if (desktopEnvironment == "KDE") {
-#if QT_CONFIG(settings)
-                result.push_back(QLatin1StringView(QKdeTheme::name));
-#endif
-            } else if (gtkBasedEnvironments.contains(desktopName)) {
-                // prefer the GTK3 theme implementation with native dialogs etc.
-                result.push_back(QStringLiteral("gtk3"));
-                // fallback to the generic Gnome theme if loading the GTK3 theme fails
-                result.push_back(QLatin1StringView(QGnomeTheme::name));
-            } else {
-                // unknown, but lowercase the name (our standard practice) and
-                // remove any "x-" prefix
-                QString s = QString::fromLatin1(desktopName.toLower());
-                result.push_back(s.startsWith("x-"_L1) ? s.mid(2) : s);
-            }
-        }
-    } // desktopSettingsAware
-    result.append(QLatin1StringView(QGenericUnixTheme::name));
-    return result;
-}
-
 QT_END_NAMESPACE
-
-#ifndef QT_NO_DBUS
-#include "qgenericunixthemes.moc"
-#endif // QT_NO_DBUS

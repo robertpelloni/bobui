@@ -5,7 +5,7 @@
 #define QGTK3THEME_H
 
 #include <private/qtguiglobal_p.h>
-#include <private/qgenericunixthemes_p.h>
+#include <private/qgnometheme_p.h>
 #include "qgtk3storage_p.h"
 
 QT_BEGIN_NAMESPACE
