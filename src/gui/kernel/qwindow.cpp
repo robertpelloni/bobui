@@ -1842,6 +1842,13 @@ void QWindow::setGeometry(const QRect &rect)
 
     d->positionPolicy = QWindowPrivate::WindowFrameExclusive;
     if (d->platformWindow) {
+        // Setting a new geometry may move the window to a new screen.
+        // The QHighDpi layer needs to know the new screen to be able
+        // to resolve the resulting geometry based on the screen's DPR,
+        // so we update the screen before passing the geometry on to
+        // the platform layer. FIXME: Find a way to tell QHighDpi about
+        // the new screen without actually changing the screen, so that
+        // the geometry change is the trigger for the screen change.
         QScreen *newScreen = d->screenForGeometry(rect);
         if (newScreen && isTopLevel())
             d->setTopLevelScreen(newScreen, true);
