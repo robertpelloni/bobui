@@ -45,7 +45,7 @@ public:
                 QWasmBackingStore *backingStore, WId nativeHandle);
     ~QWasmWindow() final;
 
-    static QWasmWindow *fromWindow(QWindow *window);
+    static QWasmWindow *fromWindow(const QWindow *window);
     QSurfaceFormat format() const override;
 
     void registerEventHandlers();

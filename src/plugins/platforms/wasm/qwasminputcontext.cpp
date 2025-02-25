@@ -327,8 +327,8 @@ void QWasmInputContext::updateInputElement()
         m_inputElement.set("value", "");
 
         m_inputElement.call<void>("blur");
-        if (focusWindow && focusWindow->handle())
-            ((QWasmWindow *)(focusWindow->handle()))->focus();
+        if (QWasmWindow *wasmwindow = QWasmWindow::fromWindow(focusWindow))
+            wasmwindow->focus();
 
         return;
     }

@@ -211,8 +211,10 @@ QSurfaceFormat QWasmWindow::format() const
     return window()->requestedFormat();
 }
 
-QWasmWindow *QWasmWindow::fromWindow(QWindow *window)
+QWasmWindow *QWasmWindow::fromWindow(const QWindow *window)
 {
+    if (!window ||!window->handle())
+        return nullptr;
     return static_cast<QWasmWindow *>(window->handle());
 }
 
