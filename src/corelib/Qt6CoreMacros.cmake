@@ -2260,8 +2260,11 @@ endfunction()
 # targets pass a value to the OUTPUT_TARGETS parameter.
 #
 function(_qt_internal_process_resource target resourceName)
-    cmake_parse_arguments(rcc "BIG_RESOURCES"
-        "PREFIX;LANG;BASE;OUTPUT_TARGETS;DESTINATION" "FILES;OPTIONS" ${ARGN})
+    set(options BIG_RESOURCES DISCARD_FILE_CONTENTS)
+    set(oneValueArgs PREFIX LANG BASE OUTPUT_TARGETS DESTINATION)
+    set(multiValueArgs FILES OPTIONS)
+
+    cmake_parse_arguments(rcc "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
     if("${rcc_OPTIONS}" MATCHES "-binary")
         set(isBinary TRUE)
@@ -2377,7 +2380,7 @@ function(_qt_internal_process_resource target resourceName)
         )
 
         string(APPEND qrcContents "    <file alias=\"${escaped_file_resource_path}\"")
-        if(is_empty)
+        if(is_empty OR rcc_DISCARD_FILE_CONTENTS)
             string(APPEND qrcContents " empty=\"true\"")
         endif()
         string(APPEND qrcContents ">${escaped_file}</file>\n")

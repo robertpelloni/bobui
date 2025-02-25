@@ -29,6 +29,7 @@ qt_add_resources(<TARGET> <RESOURCE_NAME>
                   [LANG <LANGUAGE>]
                   [BASE <PATH>]
                   [BIG_RESOURCES]
+                  [DISCARD_FILE_CONTENTS]
                   [OUTPUT_TARGETS <VARIABLE_NAME>]
                   [FILES ...] [OPTIONS ...])
 \endcode
@@ -84,6 +85,10 @@ When using this command with static libraries, one or more special targets will
 be generated. Should you wish to perform additional processing on these targets,
 pass a variable name to the \c OUTPUT_TARGETS parameter. The \c qt_add_resources
 function stores the names of the special targets in the specified variable.
+
+If \c DISCARD_FILE_CONTENTS is specified, the resource files will be added to
+the resource system without embedding their actual contents. Instead, these
+files will be stored as empty placeholders within the generated resource.
 
 \section1 Arguments of both variants
 
