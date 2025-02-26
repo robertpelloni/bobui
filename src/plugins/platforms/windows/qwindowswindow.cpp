@@ -654,13 +654,18 @@ static inline void fixTopLevelWindowFlags(Qt::WindowFlags &flags)
 {
     // Not supported on Windows, also do correction when it is set.
     flags &= ~Qt::WindowFullscreenButtonHint;
-    if (flags.testFlags((Qt::Dialog | Qt::Tool) & ~Qt::Window)) {
-        flags |= Qt::WindowTitleHint | Qt::WindowSystemMenuHint | Qt::WindowCloseButtonHint;
-    } else if (flags.testFlag(Qt::Window)) {
+    switch (flags) {
+    case Qt::Window:
         flags |= Qt::WindowTitleHint | Qt::WindowSystemMenuHint | Qt::WindowMinimizeButtonHint
               |Qt::WindowMaximizeButtonHint|Qt::WindowCloseButtonHint;
+        break;
+    case Qt::Dialog:
+    case Qt::Tool:
+        flags |= Qt::WindowTitleHint | Qt::WindowSystemMenuHint | Qt::WindowCloseButtonHint;
+        break;
+    default:
+        break;
     }
-
     if ((flags & Qt::WindowType_Mask) == Qt::SplashScreen)
         flags |= Qt::FramelessWindowHint;
 }
