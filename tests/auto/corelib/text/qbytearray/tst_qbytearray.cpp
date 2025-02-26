@@ -1590,15 +1590,7 @@ void tst_QByteArray::replaceWithEmptyNeedleInsertsBeforeEachChar()
             // shared
             auto copy = haystack;
             copy.replace(needle, replacement);
-            if (isByteArray) {
-                QEXPECT_FAIL("/<null>/<null>/a/", "QTBUG-134079", Continue);
-                QEXPECT_FAIL("/<null>//a/",       "QTBUG-134079", Continue);
-            }
             QCOMPARE(copy.isNull(), result.isNull());
-            if (isByteArray) {
-                QEXPECT_FAIL("/<null>/<null>/a/", "QTBUG-134079", Continue);
-                QEXPECT_FAIL("/<null>//a/",       "QTBUG-134079", Continue);
-            }
             QCOMPARE(copy, result);
         }
         {

@@ -2543,19 +2543,11 @@ void tst_QStringApiSymmetry::replace_split_impl() const
     {
         auto copy = haystack;
         copy.replace(needle, replacement);
-        if constexpr (std::is_same_v<Haystack, QByteArray>) {
-            QEXPECT_FAIL("null ~= null$",  "QTBUG-134079", Continue);
-            QEXPECT_FAIL("null ~= empty$", "QTBUG-134079", Continue);
-        }
         QCOMPARE(copy, result);
     }
     {
         auto copy = detached(haystack);
         copy.replace(needle, replacement);
-        if constexpr (std::is_same_v<Haystack, QByteArray>) {
-            QEXPECT_FAIL("null ~= null$",  "QTBUG-134079", Continue);
-            QEXPECT_FAIL("null ~= empty$", "QTBUG-134079", Continue);
-        }
         QCOMPARE(copy, result);
     }
 }

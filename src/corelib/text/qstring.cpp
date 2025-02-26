@@ -3864,7 +3864,7 @@ QString &QString::replace(const QChar *before, qsizetype blen,
                           const QChar *after, qsizetype alen,
                           Qt::CaseSensitivity cs)
 {
-    if (d.size == 0) {
+    if (isEmpty()) {
         if (blen)
             return *this;
     } else {

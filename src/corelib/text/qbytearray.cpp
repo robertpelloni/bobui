@@ -2532,11 +2532,18 @@ QByteArray &QByteArray::replace(QByteArrayView before, QByteArrayView after)
     const char *a = after.data();
     qsizetype asize = after.size();
 
+    if (isEmpty()) {
+        if (bsize)
+            return *this;
+    } else {
+        if (b == a && bsize == asize)
+            return *this;
+    }
+    if (asize == 0 && bsize == 0)
+        return *this;
+
     if (bsize == 1 && asize == 1)
         return replace(*b, *a); // use the fast char-char algorithm
-
-    if (isNull() || (b == a && bsize == asize))
-        return *this;
 
     // protect against before or after being part of this
     std::string pinnedNeedle, pinnedReplacement;
