@@ -107,6 +107,41 @@ namespace std {
 //! [tuple_protocol]
 #endif // __cpp_concepts && forward_like
 
+namespace gadget {
+//! [gadget]
+class Book
+{
+    Q_GADGET
+    Q_PROPERTY(QString title READ title)
+    Q_PROPERTY(QString author READ author)
+    Q_PROPERTY(QString summary MEMBER m_summary)
+    Q_PROPERTY(int rating READ rating WRITE setRating)
+public:
+    Book(const QString &title, const QString &author);
+
+    // C++ rule of 0: destructor, as well as copy/move operations
+    // provided by the compiler.
+
+    // read-only properties
+    QString title() const { return m_title; }
+    QString author() const { return m_author; }
+
+    // read/writable property with input validation
+    int rating() const { return m_rating; }
+    void setRating(int rating)
+    {
+        m_rating = qBound(0, rating, 5);
+    }
+
+private:
+    QString m_title;
+    QString m_author;
+    QString m_summary;
+    int m_rating = 0;
+};
+//! [gadget]
+} // namespace gadget
+
 void color_map()
 {
 //! [color_map]
@@ -126,3 +161,45 @@ QListView list;
 list.setModel(&colorModel);
 //! [color_map]
 }
+
+namespace multirole_gadget {
+//! [color_gadget_0]
+class ColorEntry
+{
+    Q_GADGET
+    Q_PROPERTY(QString display MEMBER m_colorName)
+    Q_PROPERTY(QColor decoration READ decoration)
+    Q_PROPERTY(QString toolTip READ toolTip)
+public:
+    ColorEntry(const QString &color = {})
+        : m_colorName(color)
+    {}
+
+    QColor decoration() const
+    {
+        return QColor::fromString(m_colorName);
+    }
+    QString toolTip() const
+    {
+        return QColor::fromString(m_colorName).name();
+    }
+
+private:
+    QString m_colorName;
+};
+//! [color_gadget_0]
+
+void color_list() {
+//! [color_gadget_1]
+const QStringList colorNames = QColor::colorNames();
+QList<QGenericItemModel::SingleColumn<ColorEntry>> colors;
+colors.reserve(colorNames.size());
+for (const QString &name : colorNames)
+    colors << ColorEntry{name};
+
+QGenericItemModel colorModel(colors);
+QListView list;
+list.setModel(&colorModel);
+//! [color_gadget_1]
+}
+} // namespace multirole_gadget

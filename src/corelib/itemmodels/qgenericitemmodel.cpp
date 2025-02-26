@@ -91,6 +91,24 @@ QT_BEGIN_NAMESPACE
 
     \snippet qgenericitemmodel/main.cpp pair_int_QString
 
+    An easier and more flexible alternative to implementing the tuple protocol
+    for a C++ type is to use Qt's \l{Meta-Object System}{meta-object system} to
+    declare a type with \l{Qt's Property System}{properties}. This can be a
+    value type that is declared as a \l{Q_GADGET}{gadget}, or a QObject subclass.
+
+    \snippet qgenericitemmodel/main.cpp gadget
+
+    Using QObject subclasses allows properties to be \l{Qt Bindable Properties}
+    {bindable}, or to have change notification signals. However, using QObject
+    instances for items has significant memory overhead.
+
+    Using Qt gadgets or objects is more convenient and can be more flexible
+    than implementing the tuple protocol. Those types are also directly
+    accessible from within QML. However, the access through the property system
+    comes with some runtime overhead. For performance critical models, consider
+    implementing the tuple protocol for compile-time generation of the access
+    code.
+
     \section2 Multi-role items
 
     The type of the items that the implementations of data(), setData(),
@@ -117,6 +135,19 @@ QT_BEGIN_NAMESPACE
     The most efficient data type to use as the key is Qt::ItemDataRole or
     \c{int}. When using \c{int}, itemData() returns the container as is, and
     doesn't have to create a copy of the data.
+
+    Gadgets and QObject types are also represented at multi-role items if they
+    are the item type in a table. The names of the properties have to match the
+    names of the roles.
+
+    \snippet qgenericitemmodel/main.cpp color_gadget_0
+
+    When used in a list, these types are ambiguous: they can be represented as
+    multi-column rows, with each property represented as a separate column. Or
+    they can be single items with each property being a role. To disambiguate,
+    use the QGenericItemModel::SingleColumn wrapper.
+
+    \snippet qgenericitemmodel/main.cpp color_gadget_1
 
     \section2 The C++ tuple protocol
 

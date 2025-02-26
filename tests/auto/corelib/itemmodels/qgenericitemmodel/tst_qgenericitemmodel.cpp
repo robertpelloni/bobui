@@ -12,15 +12,62 @@
 #include <QtTest/qabstractitemmodeltester.h>
 #endif
 
+#include <list>
 #include <vector>
 
 #if defined(__cpp_lib_ranges)
 #include <ranges>
 #endif
 
+class Item
+{
+    Q_GADGET
+    Q_PROPERTY(QString display READ display WRITE setDisplay)
+    Q_PROPERTY(QColor decoration READ decoration WRITE setDecoration)
+    Q_PROPERTY(QString toolTip READ toolTip WRITE setToolTip)
+public:
+    Item() = default;
+
+    Item(const QString &display, QColor decoration, const QString &toolTip)
+        : m_display(display), m_decoration(decoration), m_toolTip(toolTip)
+    {
+    }
+
+    QString display() const { return m_display; }
+    void setDisplay(const QString &display) { m_display = display; }
+    QColor decoration() const { return m_decoration; }
+    void setDecoration(QColor decoration) { m_decoration = decoration; }
+    QString toolTip() const { return m_toolTip.isEmpty() ? display() : m_toolTip; }
+    void setToolTip(const QString &toolTip) { m_toolTip = toolTip; }
+
+private:
+    QString m_display;
+    QColor m_decoration;
+    QString m_toolTip;
+};
+
+class Object : public QObject
+{
+    Q_OBJECT
+    Q_PROPERTY(QString string READ string WRITE setString)
+    Q_PROPERTY(int number READ number WRITE setNumber)
+public:
+    using QObject::QObject;
+
+    QString string() const { return m_string; }
+    void setString(const QString &string) { m_string = string; }
+    int number() const { return m_number; }
+    void setNumber(int number) { m_number = number; }
+
+private:
+    // note: default values need to be convertible to each other
+    QString m_string = "1234";
+    int m_number = 42;
+};
+
 struct Row
 {
-    QString m_item;
+    Item m_item;
     int m_number;
     QString m_description;
 
@@ -41,7 +88,7 @@ struct Row
 
 namespace std {
     template <> struct tuple_size<Row> : std::integral_constant<size_t, 3> {};
-    template <> struct tuple_element<0, Row> { using type = QString; };
+    template <> struct tuple_element<0, Row> { using type = Item; };
     template <> struct tuple_element<1, Row> { using type = int; };
     template <> struct tuple_element<2, Row> { using type = QString; };
 }
@@ -110,9 +157,9 @@ private:
         std::array<int, 5> fixedArrayOfNumbers = {1, 2, 3, 4, 5};
         int cArrayOfNumbers[5] = {1, 2, 3, 4, 5};
         Row cArrayFixedColumns[3] = {
-            {"red", 0xff0000, "The color red"},
-            {"green", 0x00ff00, "The color green"},
-            {"blue", 0x0000ff, "The color blue"}
+            {{"red", Qt::red, "0xff0000"}, 0xff0000, "The color red"},
+            {{"green", Qt::green, "0x00ff00"}, 0x00ff00, "The color green"},
+            {{"blue", Qt::blue, "0x0000ff"}, 0x0000ff, "The color blue"}
         };
 
         // dynamic number of rows, fixed number of columns
@@ -130,10 +177,27 @@ private:
             {31, 32, 33, 34, 35, 36, 37, 38, 39, 40},
             {41, 42, 43, 44, 45, 46, 47, 48, 49, 50},
         };
+        std::vector<Item> vectorOfGadgets = {
+            {"red", Qt::red, "0xff0000"},
+            {"green", Qt::green, "0x00ff00"},
+            {"blue", Qt::blue, "0x0000ff"},
+        };
+        std::vector<QGenericItemModel::SingleColumn<Item>> listOfGadgets = {
+            {{"red", Qt::red, "0xff0000"}},
+            {{"green", Qt::green, "0x00ff00"}},
+            {{"blue", Qt::blue, "0x0000ff"}},
+        };
         std::vector<Row> vectorOfStructs = {
-            {"red", 1, "one"},
-            {"green", 2, "two"},
-            {"blue", 3, "three"},
+            {{"red", Qt::red, "0xff0000"}, 1, "one"},
+            {{"green", Qt::green, "0x00ff00"}, 2, "two"},
+            {{"blue", Qt::blue, "0x0000ff"}, 3, "three"},
+        };
+
+        Object row1;
+        Object row2;
+        Object row3;
+        std::list<Object *> listOfObjects = {
+            &row1, &row2, &row3
         };
 
         // bad (but legal) get() overload that never returns a mutable reference
@@ -152,8 +216,16 @@ private:
             {21.0, 22.0, 23.0, 24.0, 25.0},
         };
 
+        // item is pointer
+        Item itemAsPointer = {"red", Qt::red, "0xff0000"};
+        std::vector<std::vector<Item *>> tableOfPointers = {
+            {&itemAsPointer, &itemAsPointer},
+            {&itemAsPointer, &itemAsPointer},
+            {&itemAsPointer, &itemAsPointer},
+        };
+
         // rows are pointers
-        Row rowAsPointer = {"blue", 0x0000ff, "Blau"};
+        Row rowAsPointer = {{"blue", Qt::blue, "0x0000ff"}, 0x0000ff, "Blau"};
         std::vector<Row *> tableOfRowPointers = {
             &rowAsPointer,
             &rowAsPointer,
@@ -275,17 +347,29 @@ void tst_QGenericItemModel::createTestData()
         << int(std::tuple_size_v<Row>) << (ChangeAction::ChangeRows | ChangeAction::SetData);
     ADD_POINTER(vectorOfStructs)
         << int(std::tuple_size_v<Row>) << (ChangeAction::ChangeRows | ChangeAction::SetData);
-
     ADD_COPY(vectorOfConstStructs)
         << int(std::tuple_size_v<ConstRow>) << ChangeActions(ChangeAction::ChangeRows);
     ADD_POINTER(vectorOfConstStructs)
         << int(std::tuple_size_v<ConstRow>) << ChangeActions(ChangeAction::ChangeRows);
+
+    ADD_COPY(vectorOfGadgets)
+        << 3 << (ChangeAction::ChangeRows | ChangeAction::SetData);
+    ADD_POINTER(vectorOfGadgets)
+        << 3 << (ChangeAction::ChangeRows | ChangeAction::SetData);
+    ADD_COPY(listOfGadgets)
+        << 1 << (ChangeAction::ChangeRows | ChangeAction::SetData);
+    ADD_POINTER(listOfGadgets)
+        << 1 << (ChangeAction::ChangeRows | ChangeAction::SetData);
+    ADD_COPY(listOfObjects)
+        << 2 << (ChangeAction::ChangeRows | ChangeAction::SetData);
 
     ADD_COPY(tableOfNumbers)
         << 5 << ChangeActions(ChangeAction::All);
     ADD_POINTER(tableOfNumbers)
         << 5 << ChangeActions(ChangeAction::All);
     // only adding as pointer, copy would operate on the same data
+    ADD_POINTER(tableOfPointers)
+        << 2 << ChangeActions(ChangeAction::All);
     ADD_POINTER(tableOfRowPointers)
         << int(std::tuple_size_v<Row>) << (ChangeAction::ChangeRows | ChangeAction::SetData);
 
@@ -598,6 +682,7 @@ void tst_QGenericItemModel::insertRows()
     const QVariant lastValue = lastItem.data();
     QEXPECT_FAIL("tableOfPointersPointer", "No item created", Continue);
     QEXPECT_FAIL("tableOfRowPointersPointer", "No row created", Continue);
+    QEXPECT_FAIL("listOfObjectsCopy", "No object created", Continue);
 
     // associative containers are default constructed with no valid data
     ignoreFailureFromAssociativeContainers();

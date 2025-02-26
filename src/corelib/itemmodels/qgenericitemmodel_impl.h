@@ -170,6 +170,25 @@ namespace QGenericItemModelDetails
         static constexpr int fixed_size() { return 0; }
     };
 
+    // Specialization for gadgets
+    // clang doesn't accept multiple specializations using std::void_t directly
+    template <class... Ts> struct make_void { using type = void; };
+
+    template <typename T>
+    struct row_traits<T, typename make_void<decltype(T::staticMetaObject)>::type>
+    {
+        static constexpr int static_size = 0;
+        static int fixed_size(){
+            // Interpret a gadget in a list as a multi-column row item. To
+            // disambiguate, stick it into a SingleColumn wrapper.
+            static const int columnCount = []{
+                const QMetaObject &mo = T::staticMetaObject;
+                return mo.propertyCount() - mo.propertyOffset();
+            }();
+            return columnCount;
+        }
+    };
+
     template <typename T>
     [[maybe_unused]] static constexpr int static_size_v =
                             row_traits<q20::remove_cvref_t<std::remove_pointer_t<T>>>::static_size;

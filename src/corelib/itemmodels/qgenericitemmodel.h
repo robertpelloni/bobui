@@ -13,6 +13,9 @@ class Q_CORE_EXPORT QGenericItemModel : public QAbstractItemModel
 {
     Q_OBJECT
 public:
+    template <typename T>
+    using SingleColumn = std::tuple<T>;
+
     template <typename Range,
               QGenericItemModelDetails::if_is_range<Range> = true>
     explicit QGenericItemModel(Range &&range, QObject *parent = nullptr);
@@ -143,6 +146,11 @@ protected:
     using row_ptr = std::conditional_t<rows_are_pointers, row_type, row_type *>;
     using const_row_ptr = const std::remove_pointer_t<row_type> *;
 
+    template <typename T>
+    static constexpr bool has_metaobject =
+        (QtPrivate::QMetaTypeForType<std::remove_pointer_t<T>>::flags() & QMetaType::IsGadget)
+     || (QtPrivate::QMetaTypeForType<T>::flags() & QMetaType::PointerToQObject);
+
     using ModelData = QGenericItemModelDetails::ModelData<std::conditional_t<
                                                     std::is_pointer_v<Range>,
                                                     Range, std::remove_reference_t<Range>>
@@ -217,7 +225,14 @@ public:
 
         Qt::ItemFlags f = Structure::defaultFlags();
 
-        if constexpr (static_column_count <= 0) {
+        if constexpr (has_metaobject<row_type>) {
+            if (index.column() < row_traits::fixed_size()) {
+                const QMetaObject mo = std::remove_pointer_t<row_type>::staticMetaObject;
+                const QMetaProperty prop = mo.property(index.column() + mo.propertyOffset());
+                if (prop.isWritable())
+                    f |= Qt::ItemIsEditable;
+            }
+        } else if constexpr (static_column_count <= 0) {
             if constexpr (isMutable())
                 f |= Qt::ItemIsEditable;
         } else if constexpr (std::is_reference_v<row_reference> && !std::is_const_v<row_reference>) {
@@ -244,7 +259,17 @@ public:
             return m_itemModel->QAbstractItemModel::headerData(section, orientation, role);
         }
 
-        if constexpr (static_column_count >= 1) {
+        if constexpr (has_metaobject<row_type>) {
+            using meta_type = std::remove_pointer_t<row_type>;
+            if (row_traits::fixed_size() == 1) {
+                const QMetaType metaType = QMetaType::fromType<meta_type>();
+                result = QString::fromUtf8(metaType.name());
+            } else if (section <= row_traits::fixed_size()) {
+                const QMetaProperty prop = meta_type::staticMetaObject.property(
+                                        section + meta_type::staticMetaObject.propertyOffset());
+                result = QString::fromUtf8(prop.name());
+            }
+        } else if constexpr (static_column_count >= 1) {
             const QMetaType metaType = meta_type_at<row_type>(section);
             if (metaType.isValid())
                 result = QString::fromUtf8(metaType.name());
@@ -257,11 +282,18 @@ public:
     QVariant data(const QModelIndex &index, int role) const
     {
         QVariant result;
-        const auto readData = [this, &result, role](const auto &value) {
+        const auto readData = [this, column = index.column(), &result, role](const auto &value) {
             Q_UNUSED(this);
             using value_type = q20::remove_cvref_t<decltype(value)>;
             using multi_role = QGenericItemModelDetails::is_multi_role<value_type>;
-            if constexpr (multi_role::value) {
+            if constexpr (has_metaobject<value_type>) {
+                if (row_traits::fixed_size() <= 1) {
+                    result = readRole(role, value);
+                } else if (column <= row_traits::fixed_size()
+                        && (role == Qt::DisplayRole || role == Qt::EditRole)) {
+                    result = readProperty(column, value);
+                }
+            } else if constexpr (multi_role::value) {
                 const auto it = [this, &value, role]{
                     Q_UNUSED(this);
                     if constexpr (multi_role::int_key)
@@ -347,10 +379,20 @@ public:
                 }
             });
 
-            const auto writeData = [this, &data, role](auto &&target) -> bool {
+            const auto writeData = [this, column = index.column(), &data, role](auto &&target) -> bool {
                 using value_type = q20::remove_cvref_t<decltype(target)>;
                 using multi_role = QGenericItemModelDetails::is_multi_role<value_type>;
-                if constexpr (multi_role::value) {
+                if constexpr (has_metaobject<value_type>) {
+                    if (QMetaType::fromType<value_type>() == data.metaType()) {
+                        target = data.value<value_type>();
+                        return true;
+                    } else if (row_traits::fixed_size() <= 1) {
+                        return writeRole(role, target, data);
+                    } else if (column <= row_traits::fixed_size()
+                            && (role == Qt::DisplayRole || role == Qt::EditRole)) {
+                        return writeProperty(column, target, data);
+                    }
+                } else if constexpr (multi_role::value) {
                     Qt::ItemDataRole roleToSet = Qt::ItemDataRole(role);
                     // If there is an entry for EditRole, overwrite that; otherwise,
                     // set the entry for DisplayRole.
@@ -476,20 +518,32 @@ public:
                     Q_EMIT dataChanged(index, index, {});
             });
 
+            auto clearData = [column = index.column()](auto &&target) {
+                if constexpr (has_metaobject<row_type>) {
+                    if (row_traits::fixed_size() <= 1) {
+                        // multi-role object/gadget: reset all properties
+                        return resetProperty(-1, target);
+                    } else if (column <= row_traits::fixed_size()) {
+                        return resetProperty(column, target);
+                    }
+                } else { // normal structs, values, associative containers
+                    target = {};
+                    return true;
+                }
+                return false;
+            };
+
             row_reference row = rowData(index);
             if constexpr (dynamicColumns()) {
-                *std::next(std::begin(row), index.column()) = {};
-                success = true;
+                success = clearData(*std::next(std::begin(row), index.column()));
             } else if constexpr (static_column_count == 0) {
-                row = row_type{};
-                success = true;
+                success = clearData(row);
             } else if (QGenericItemModelDetails::isValid(row)) {
-                for_element_at(row, index.column(), [&success](auto &&target){
+                for_element_at(row, index.column(), [&clearData, &success](auto &&target){
                     using target_type = decltype(target);
                     if constexpr (std::is_lvalue_reference_v<target_type>
                                && !std::is_const_v<std::remove_reference_t<target_type>>) {
-                        target = {};
-                        success = true;
+                        success = clearData(target);
                     }
                 });
             }
@@ -647,6 +701,124 @@ protected:
         if (target)
             return write(*target, value);
         return false;
+    }
+
+    template <typename ItemType>
+    QMetaProperty roleProperty(int role) const
+    {
+        const QMetaObject *mo = &ItemType::staticMetaObject;
+        const QByteArray roleName = roleNames().value(role);
+        if (const int index = mo->indexOfProperty(roleName.data()); index >= 0)
+            return mo->property(index);
+        return {};
+    }
+
+    template <typename ItemType>
+    QVariant readRole(int role, ItemType *gadget) const
+    {
+        using item_type = std::remove_pointer_t<ItemType>;
+        QVariant result;
+        QMetaProperty prop = roleProperty<item_type>(role);
+        if (!prop.isValid() && role == Qt::EditRole)
+            prop = roleProperty<item_type>(Qt::DisplayRole);
+
+        if (prop.isValid())
+            result = readProperty(prop, gadget);
+        return result;
+    }
+
+    template <typename ItemType>
+    QVariant readRole(int role, const ItemType &gadget) const
+    {
+        return readRole(role, &gadget);
+    }
+
+    template <typename ItemType>
+    static QVariant readProperty(const QMetaProperty &prop, ItemType *gadget)
+    {
+        if constexpr (std::is_base_of_v<QObject, ItemType>)
+            return prop.read(gadget);
+        else
+            return prop.readOnGadget(gadget);
+    }
+    template <typename ItemType>
+    static QVariant readProperty(int property, ItemType *gadget)
+    {
+        using item_type = std::remove_pointer_t<ItemType>;
+        const QMetaObject &mo = item_type::staticMetaObject;
+        const QMetaProperty prop = mo.property(property + mo.propertyOffset());
+        return readProperty(prop, gadget);
+    }
+
+    template <typename ItemType>
+    static QVariant readProperty(int property, const ItemType &gadget)
+    {
+        return readProperty(property, &gadget);
+    }
+
+    template <typename ItemType>
+    bool writeRole(int role, ItemType *gadget, const QVariant &data)
+    {
+        using item_type = std::remove_pointer_t<ItemType>;
+        auto prop = roleProperty<item_type>(role);
+        if (!prop.isValid() && role == Qt::EditRole)
+            prop = roleProperty<item_type>(Qt::DisplayRole);
+
+        return writeProperty(prop, gadget, data);
+    }
+
+    template <typename ItemType>
+    bool writeRole(int role, ItemType &&gadget, const QVariant &data)
+    {
+        return writeRole(role, &gadget, data);
+    }
+
+    template <typename ItemType>
+    static bool writeProperty(const QMetaProperty &prop, ItemType *gadget, const QVariant &data)
+    {
+        if constexpr (std::is_base_of_v<QObject, ItemType>)
+            return prop.write(gadget, data);
+        else
+            return prop.writeOnGadget(gadget, data);
+    }
+    template <typename ItemType>
+    static bool writeProperty(int property, ItemType *gadget, const QVariant &data)
+    {
+        using item_type = std::remove_pointer_t<ItemType>;
+        const QMetaObject &mo = item_type::staticMetaObject;
+        return writeProperty(mo.property(property + mo.propertyOffset()), gadget, data);
+    }
+
+    template <typename ItemType>
+    static bool writeProperty(int property, ItemType &&gadget, const QVariant &data)
+    {
+        return writeProperty(property, &gadget, data);
+    }
+
+    template <typename ItemType>
+    static bool resetProperty(int property, ItemType *object)
+    {
+        using item_type = std::remove_pointer_t<ItemType>;
+        const QMetaObject &mo = item_type::staticMetaObject;
+        bool success = true;
+        if (property == -1) {
+            // reset all properties
+            if constexpr (std::is_base_of_v<QObject, item_type>) {
+                for (int p = mo.propertyOffset(); p < mo.propertyCount(); ++p)
+                    success = writeProperty(mo.property(p), object, {}) && success;
+            } else { // reset a gadget by assigning a default-constructed
+                *object = {};
+            }
+        } else {
+            success = writeProperty(mo.property(property + mo.propertyOffset()), object, {});
+        }
+        return success;
+    }
+
+    template <typename ItemType>
+    static bool resetProperty(int property, ItemType &&object)
+    {
+        return resetProperty(property, &object);
     }
 
     // helpers
