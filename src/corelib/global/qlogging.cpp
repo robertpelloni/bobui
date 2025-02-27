@@ -151,14 +151,15 @@ static int checked_var_value(const char *varname)
 
 static bool isFatalCountDown(const char *varname, QBasicAtomicInt &n)
 {
-    static const int Uninitialized = -1;
-    static const int NeverFatal = 0;
-    static const int ImmediatelyFatal = 1;
+    static const int Uninitialized = 0;
+    static const int NeverFatal = 1;
+    static const int ImmediatelyFatal = 2;
 
     int v = n.loadRelaxed();
     if (v == Uninitialized) {
         // first, initialize from the environment
-        const int env = checked_var_value(varname);
+        // note that the atomic stores the env.var value plus 1, so adjust
+        const int env = checked_var_value(varname) + 1;
         if (env == NeverFatal) {
             // not fatal, now or in the future, so use a fast path
             n.storeRelaxed(NeverFatal);
@@ -166,7 +167,7 @@ static bool isFatalCountDown(const char *varname, QBasicAtomicInt &n)
         } else if (env == ImmediatelyFatal) {
             return true;
         } else if (n.testAndSetRelaxed(Uninitialized, env - 1, v)) {
-            return false;       // not yet fatal
+            return false;       // not yet fatal, but decrement
         } else {
             // some other thread initialized before we did
         }
@@ -180,8 +181,8 @@ static bool isFatalCountDown(const char *varname, QBasicAtomicInt &n)
     return v == ImmediatelyFatal;
 }
 
-Q_CONSTINIT static QBasicAtomicInt fatalCriticalsCount = { -1 };
-Q_CONSTINIT static QBasicAtomicInt fatalWarningsCount = { -1 };
+Q_CONSTINIT static QBasicAtomicInt fatalCriticalsCount = {};
+Q_CONSTINIT static QBasicAtomicInt fatalWarningsCount = {};
 static bool isFatal(QtMsgType msgType)
 {
     switch (msgType){
