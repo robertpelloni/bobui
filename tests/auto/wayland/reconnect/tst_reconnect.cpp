@@ -158,6 +158,7 @@ void tst_WaylandReconnect::multipleScreens()
     window2.show();
     QCOMPOSITOR_TRY_VERIFY(m_comp->xdgToplevel(0));
     QCOMPOSITOR_TRY_VERIFY(m_comp->xdgToplevel(1));
+    QCOMPOSITOR_TRY_VERIFY(!m_comp->output(1)->resourceMap().isEmpty());
 
     // ensure they are on different outputs
     exec([this] {
