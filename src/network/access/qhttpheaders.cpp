@@ -1548,6 +1548,34 @@ std::optional<QDateTime> QHttpHeaders::dateTimeValue(WellKnownHeader name) const
 /*!
     \since 6.10
 
+    Sets the value of the header name \a name to \a dateTime,
+    following the
+    \l {https://datatracker.ietf.org/doc/html/rfc9110#name-date-time-formats}{standard HTTP IMF-fixdate format}.
+    If the header does not exist, adds a new one.
+
+    \sa dateTimeValue(QAnyStringView name), dateTimeValueAt(qsizetype i)
+ */
+void QHttpHeaders::setDateTimeValue(QAnyStringView name, const QDateTime &dateTime)
+{
+    if (!dateTime.isValid()) {
+        qWarning("QHttpHeaders::setDateTimeValue: invalid QDateTime value received");
+        return;
+    }
+    replaceOrAppend(name, QNetworkHeadersPrivate::toHttpDate(dateTime));
+}
+
+/*!
+    \since 6.10
+    \overload setDateTimeValue(QAnyStringView)
+*/
+void QHttpHeaders::setDateTimeValue(WellKnownHeader name, const QDateTime &dateTime)
+{
+    setDateTimeValue(wellKnownHeaderName(name), dateTime);
+}
+
+/*!
+    \since 6.10
+
     Returns all the header values of \a name in a list of QDateTime objects, following
     the standard HTTP date formats. If no valid date-time values are found, returns
     \c std::nullopt.

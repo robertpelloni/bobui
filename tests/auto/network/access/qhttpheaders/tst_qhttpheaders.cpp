@@ -623,6 +623,14 @@ void tst_QHttpHeaders::dateTimeValues()
     QCOMPARE(dateTimeValueAtIndex->date(), QDate(2025, 2, 24));
     QCOMPARE(dateTimeValueAtIndex->time(), QTime(11, 11, 11, 0));
 
+    QDateTime dateTimeValue3{QDate{2049, 4, 3}, QTime{12, 30, 00, 0}};
+    dateTimeValue3.setTimeZone(QTimeZone::UTC);
+    h1.setDateTimeValue("date", dateTimeValue3);
+    std::optional<QDateTime> setDateTimeValue = h1.dateTimeValue("date");
+    QVERIFY(setDateTimeValue);
+    QCOMPARE(setDateTimeValue->date(), QDate(2049, 4, 3));
+    QCOMPARE(setDateTimeValue->time(), QTime(12, 30, 00, 0));
+
     h1.clear();
     h1.append("Date", "InvalidDateFormat");
     h1.append("Date", "");

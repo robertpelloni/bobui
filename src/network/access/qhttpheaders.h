@@ -262,6 +262,9 @@ public:
 
     Q_NETWORK_EXPORT std::optional<QDateTime> dateTimeValueAt(qsizetype i) const;
 
+    Q_NETWORK_EXPORT void setDateTimeValue(QAnyStringView name, const QDateTime &dateTime);
+    Q_NETWORK_EXPORT void setDateTimeValue(WellKnownHeader name, const QDateTime &dateTime);
+
     Q_NETWORK_EXPORT qsizetype size() const noexcept;
     Q_NETWORK_EXPORT void reserve(qsizetype size);
     bool isEmpty() const noexcept { return size() == 0; }
