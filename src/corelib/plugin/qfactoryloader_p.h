@@ -62,6 +62,9 @@ public:
     MetaDataList metaData() const;
     QList<QCborArray> metaDataKeys() const;
     QObject *instance(int index) const;
+
+private:
+    inline QObject *instanceHelper_locked(int index) const;
 };
 
 template <class PluginInterface, class FactoryInterface, typename ...Args>

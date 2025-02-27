@@ -256,9 +256,9 @@ class QFactoryLoaderPrivate : public QObjectPrivate
 public:
     QFactoryLoaderPrivate() { }
     QByteArray iid;
+    mutable QMutex mutex;
 #if QT_CONFIG(library)
     ~QFactoryLoaderPrivate();
-    mutable QMutex mutex;
     QDuplicateTracker<QString> loadedPaths;
     std::vector<QLibraryPrivate::UniquePtr> libraries;
     std::map<QString, QLibraryPrivate*> keyMap;
@@ -558,20 +558,25 @@ QObject *QFactoryLoader::instance(int index) const
     if (index < 0)
         return nullptr;
 
-#if QT_CONFIG(library)
     QMutexLocker lock(&d->mutex);
+    QObject *obj = instanceHelper_locked(index);
+
+    if (obj && !obj->parent())
+        obj->moveToThread(QCoreApplicationPrivate::mainThread());
+    return obj;
+}
+
+inline QObject *QFactoryLoader::instanceHelper_locked(int index) const
+{
+    Q_D(const QFactoryLoader);
+
+#if QT_CONFIG(library)
     if (size_t(index) < d->libraries.size()) {
         QLibraryPrivate *library = d->libraries[index].get();
-        if (QObject *obj = library->pluginInstance()) {
-            if (!obj->parent())
-                obj->moveToThread(QCoreApplicationPrivate::mainThread());
-            return obj;
-        }
-        return nullptr;
+        return library->pluginInstance();
     }
     // we know d->libraries.size() <= index <= numeric_limits<decltype(index)>::max() → no overflow
     index -= static_cast<int>(d->libraries.size());
-    lock.unlock();
 #endif
 
     QLatin1StringView iid(d->iid.constData(), d->iid.size());
