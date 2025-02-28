@@ -38,14 +38,6 @@ QPermissionPlugin *permissionPlugin(const QPermission &permission)
             auto className = metaDataList.at(i).value(QtPluginMetaDataKeys::ClassName).toString();
             qCDebug(lcPermissions) << "Found matching plugin" << qUtf8Printable(className);
             auto *plugin = static_cast<QPermissionPlugin*>(pluginLoader()->instance(i));
-            if (!plugin->parent()) {
-                // Also, as setParent will involve sending a ChildAdded event to the parent,
-                // we need to make the call on the same thread as the parent lives, as events
-                // are not allowed to be sent to an object owned by another thread.
-                QMetaObject::invokeMethod(plugin, [=] {
-                    plugin->setParent(pluginLoader);
-                });
-            }
             return plugin;
         }
     }

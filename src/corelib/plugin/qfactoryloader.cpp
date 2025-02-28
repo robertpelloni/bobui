@@ -257,6 +257,7 @@ public:
     QFactoryLoaderPrivate() { }
     QByteArray iid;
     mutable QMutex mutex;
+    mutable QList<QtPluginInstanceFunction> usedStaticInstances;
 #if QT_CONFIG(library)
     ~QFactoryLoaderPrivate();
     QDuplicateTracker<QString> loadedPaths;
@@ -438,6 +439,11 @@ QFactoryLoader::~QFactoryLoader()
         }
     }
 #endif
+
+    for (QtPluginInstanceFunction staticInstance : d->usedStaticInstances) {
+        if (staticInstance)
+            delete staticInstance();
+    }
 }
 
 #if defined(Q_OS_UNIX) && !defined (Q_OS_DARWIN)
@@ -604,14 +610,19 @@ inline QObject *QFactoryLoader::instanceHelper_locked(int index) const
 
     QLatin1StringView iid(d->iid.constData(), d->iid.size());
     const QList<QStaticPlugin> staticPlugins = QPluginLoader::staticPlugins();
+    qsizetype i = 0;
     for (QStaticPlugin plugin : staticPlugins) {
         QByteArrayView pluginData(static_cast<const char *>(plugin.rawMetaData), plugin.rawMetaDataSize);
         if (!isIidMatch(pluginData, iid))
             continue;
 
-        if (index == 0)
+        if (i == index) {
+            if (d->usedStaticInstances.size() <= i)
+                d->usedStaticInstances.resize(i + 1);
+            d->usedStaticInstances[i] = plugin.instance;
             return plugin.instance();
-        --index;
+        }
+        ++i;
     }
 
     return nullptr;
