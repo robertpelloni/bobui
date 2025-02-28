@@ -3654,9 +3654,9 @@ void QRhiGles2::executeCommandBuffer(QRhiCommandBuffer *cb)
                 // With GLES, GL_RGBA is the only mandated readback format, so stick with it.
                 // (and that's why we return false for the ReadBackAnyTextureFormat feature)
                 if (result->format == QRhiTexture::R8 || result->format == QRhiTexture::RED_OR_ALPHA8) {
-                    result->data.resize(w * h);
+                    result->data.resizeForOverwrite(w * h);
                     QByteArray tmpBuf;
-                    tmpBuf.resize(w * h * 4);
+                    tmpBuf.resizeForOverwrite(w * h * 4);
                     f->glReadPixels(x, y, w, h, GL_RGBA, GL_UNSIGNED_BYTE, tmpBuf.data());
                     const quint8 *srcBase = reinterpret_cast<const quint8 *>(tmpBuf.constData());
                     quint8 *dstBase = reinterpret_cast<quint8 *>(result->data.data());
@@ -3671,38 +3671,20 @@ void QRhiGles2::executeCommandBuffer(QRhiCommandBuffer *cb)
                         }
                     }
                 } else {
-                    switch (result->format) {
-                    // For floating point formats try it because this can be
-                    // relevant for some use cases; if it works, then fine, if
-                    // not, there's nothing we can do.
-                    case QRhiTexture::RGBA16F:
-                        result->data.resize(w * h * 8);
-                        f->glReadPixels(x, y, w, h, GL_RGBA, GL_HALF_FLOAT, result->data.data());
-                        break;
-                    case QRhiTexture::R16F:
-                        result->data.resize(w * h * 2);
-                        f->glReadPixels(x, y, w, h, GL_RED, GL_HALF_FLOAT, result->data.data());
-                        break;
-                    case QRhiTexture::R32F:
-                        result->data.resize(w * h * 4);
-                        f->glReadPixels(x, y, w, h, GL_RED, GL_FLOAT, result->data.data());
-                        break;
-                    case QRhiTexture::RGBA32F:
-                        result->data.resize(w * h * 16);
-                        f->glReadPixels(x, y, w, h, GL_RGBA, GL_FLOAT, result->data.data());
-                        break;
-                    case QRhiTexture::RGB10A2:
-                        result->data.resize(w * h * 4);
-                        f->glReadPixels(x, y, w, h, GL_RGBA, GL_UNSIGNED_INT_2_10_10_10_REV, result->data.data());
-                        break;
-                    default:
-                        result->data.resize(w * h * 4);
-                        f->glReadPixels(x, y, w, h, GL_RGBA, GL_UNSIGNED_BYTE, result->data.data());
-                        break;
-                    }
+                    // For other formats try it because this can be relevant for some use cases;
+                    // if it works, then fine, if not, there's nothing we can do.
+                    [[maybe_unused]] GLenum glintformat;
+                    [[maybe_unused]] GLenum glsizedintformat;
+                    GLenum glformat;
+                    GLenum gltype;
+                    toGlTextureFormat(result->format, caps, &glintformat, &glsizedintformat, &glformat, &gltype);
+                    quint32 byteSize;
+                    textureFormatInfo(result->format, result->pixelSize, nullptr, &byteSize, nullptr);
+                    result->data.resizeForOverwrite(byteSize);
+                    f->glReadPixels(x, y, w, h, glformat, gltype, result->data.data());
                 }
             } else {
-                result->data.resize(w * h * 4);
+                result->data.resizeForOverwrite(w * h * 4);
                 result->data.fill('\0');
             }
             if (fbo) {
