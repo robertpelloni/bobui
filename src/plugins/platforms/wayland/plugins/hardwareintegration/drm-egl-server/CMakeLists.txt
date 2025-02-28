@@ -11,10 +11,8 @@ qt_internal_add_plugin(DrmEglServerBufferPlugin
     OUTPUT_NAME drm-egl-server
     PLUGIN_TYPE wayland-graphics-integration-client
     SOURCES
-        ../../../../hardwareintegration/client/drm-egl-server/drmeglserverbufferintegration.cpp ../../../../hardwareintegration/client/drm-egl-server/drmeglserverbufferintegration.h
+        drmeglserverbufferintegration.cpp drmeglserverbufferintegration.h
         main.cpp
-    INCLUDE_DIRECTORIES
-        ../../../../hardwareintegration/client/drm-egl-server
     LIBRARIES
         EGL::EGL
         Qt::Core

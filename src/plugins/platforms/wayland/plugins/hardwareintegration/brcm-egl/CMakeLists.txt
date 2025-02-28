@@ -11,12 +11,10 @@ qt_internal_add_plugin(QWaylandBrcmEglClientBufferPlugin
     OUTPUT_NAME brcm-egl
     PLUGIN_TYPE wayland-graphics-integration-client
     SOURCES
-        ../../../../hardwareintegration/client/brcm-egl/qwaylandbrcmeglintegration.cpp ../../../../hardwareintegration/client/brcm-egl/qwaylandbrcmeglintegration.h
-        ../../../../hardwareintegration/client/brcm-egl/qwaylandbrcmeglwindow.cpp ../../../../hardwareintegration/client/brcm-egl/qwaylandbrcmeglwindow.h
-        ../../../../hardwareintegration/client/brcm-egl/qwaylandbrcmglcontext.cpp ../../../../hardwareintegration/client/brcm-egl/qwaylandbrcmglcontext.h
+        qwaylandbrcmeglintegration.cpp qwaylandbrcmeglintegration.h
+        qwaylandbrcmeglwindow.cpp qwaylandbrcmeglwindow.h
+        qwaylandbrcmglcontext.cpp qwaylandbrcmglcontext.h
         main.cpp
-    INCLUDE_DIRECTORIES
-        ../../../../hardwareintegration/client/brcm-egl
     PUBLIC_LIBRARIES
         ${CMAKE_DL_LIBS}
         EGL::EGL
@@ -30,7 +28,7 @@ qt_internal_add_plugin(QWaylandBrcmEglClientBufferPlugin
 qt6_generate_wayland_protocol_client_sources(QWaylandBrcmEglClientBufferPlugin
     PRIVATE_CODE
     FILES
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../../../hardwareintegration/client/brcm-egl/../../../extensions/brcm.xml
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../../extensions/brcm.xml
 )
 
 #### Keys ignored in scope 1:.:.:brcm-egl.pro:<TRUE>:

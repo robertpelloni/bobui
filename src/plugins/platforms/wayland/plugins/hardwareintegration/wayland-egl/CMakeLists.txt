@@ -13,11 +13,19 @@ qt_internal_add_plugin(QWaylandEglClientBufferPlugin
     PLUGIN_TYPE wayland-graphics-integration-client
     SOURCES
         main.cpp
+        qwaylandeglclientbufferintegration.cpp qwaylandeglclientbufferintegration_p.h
+        qwaylandeglinclude_p.h
+        qwaylandeglwindow.cpp qwaylandeglwindow_p.h
+        qwaylandglcontext.cpp qwaylandglcontext_p.h
     LIBRARIES
+        ${CMAKE_DL_LIBS}
+        EGL::EGL
         Qt::Core
         Qt::Gui
+        Qt::OpenGLPrivate
         Qt::WaylandClientPrivate
-        Qt::WaylandEglClientHwIntegrationPrivate
+        Wayland::Client
+        Wayland::Egl
     QT_LICENSE_ID QT_COMMERCIAL_OR_LGPL3
 )
 

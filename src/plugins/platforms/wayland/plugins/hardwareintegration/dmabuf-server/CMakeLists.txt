@@ -11,10 +11,8 @@ qt_internal_add_plugin(DmaBufServerBufferPlugin
     OUTPUT_NAME dmabuf-server
     PLUGIN_TYPE wayland-graphics-integration-client
     SOURCES
-        ../../../../hardwareintegration/client/dmabuf-server/dmabufserverbufferintegration.cpp ../../../../hardwareintegration/client/dmabuf-server/dmabufserverbufferintegration.h
+        dmabufserverbufferintegration.cpp dmabufserverbufferintegration.h
         main.cpp
-    INCLUDE_DIRECTORIES
-        ../../../../hardwareintegration/client/dmabuf-server
     LIBRARIES
         EGL::EGL
         Qt::Core

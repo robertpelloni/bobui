@@ -11,10 +11,8 @@ qt_internal_add_plugin(VulkanServerBufferPlugin
     OUTPUT_NAME vulkan-server
     PLUGIN_TYPE wayland-graphics-integration-client
     SOURCES
-        ../../../../hardwareintegration/client/vulkan-server/vulkanserverbufferintegration.cpp ../../../../hardwareintegration/client/vulkan-server/vulkanserverbufferintegration.h
+        vulkanserverbufferintegration.cpp vulkanserverbufferintegration.h
         main.cpp
-    INCLUDE_DIRECTORIES
-        ../../../../hardwareintegration/client/vulkan-server
     LIBRARIES
         Qt::Core
         Qt::Gui

@@ -11,10 +11,8 @@ qt_internal_add_plugin(ShmServerBufferPlugin
     OUTPUT_NAME shm-emulation-server
     PLUGIN_TYPE wayland-graphics-integration-client
     SOURCES
-        ../../../../hardwareintegration/client/shm-emulation-server/shmserverbufferintegration.cpp ../../../../hardwareintegration/client/shm-emulation-server/shmserverbufferintegration.h
+        shmserverbufferintegration.cpp shmserverbufferintegration.h
         main.cpp
-    INCLUDE_DIRECTORIES
-        ../../../../hardwareintegration/client/shm-emulation-server
     LIBRARIES
         Qt::Core
         Qt::Gui

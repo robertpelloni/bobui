@@ -11,10 +11,8 @@ qt_internal_add_plugin(LibHybrisEglServerBufferPlugin
     OUTPUT_NAME libhybris-egl-server
     PLUGIN_TYPE wayland-graphics-integration-client
     SOURCES
-        ../../../../hardwareintegration/client/libhybris-egl-server/libhybriseglserverbufferintegration.cpp ../../../../hardwareintegration/client/libhybris-egl-server/libhybriseglserverbufferintegration.h
+        libhybriseglserverbufferintegration.cpp libhybriseglserverbufferintegration.h
         main.cpp
-    INCLUDE_DIRECTORIES
-        ../../../../hardwareintegration/client/libhybris-egl-server
     PUBLIC_LIBRARIES
         EGL::EGL
         Qt::Core
@@ -27,7 +25,7 @@ qt_internal_add_plugin(LibHybrisEglServerBufferPlugin
 qt6_generate_wayland_protocol_client_sources(LibHybrisEglServerBufferPlugin
     PRIVATE_CODE
     FILES
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../../../hardwareintegration/client/libhybris-egl-server/../../../extensions/libhybris-egl-server-buffer.xml
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../../extensions/libhybris-egl-server-buffer.xml
 )
 
 #### Keys ignored in scope 1:.:.:libhybris-egl-server.pro:<TRUE>:
