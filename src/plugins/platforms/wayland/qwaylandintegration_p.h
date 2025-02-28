@@ -39,7 +39,7 @@ class QWaylandPlatformServices;
 class Q_WAYLANDCLIENT_EXPORT QWaylandIntegration : public QPlatformIntegration
 {
 public:
-    QWaylandIntegration();
+    QWaylandIntegration(const QString &platformName);
     ~QWaylandIntegration() override;
 
     static QWaylandIntegration *instance() { return sInstance; }
@@ -127,6 +127,7 @@ private:
     void initializeInputDeviceIntegration();
     QWaylandShellIntegration *createShellIntegration(const QString& interfaceName);
 
+    const QString mPlatformName;
     QScopedPointer<QPlatformFontDatabase> mFontDb;
 #if QT_CONFIG(clipboard)
     QScopedPointer<QPlatformClipboard> mClipboard;

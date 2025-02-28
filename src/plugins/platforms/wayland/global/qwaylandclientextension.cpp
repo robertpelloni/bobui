@@ -10,6 +10,7 @@
 QT_BEGIN_NAMESPACE
 
 using RegistryGlobal = QtWaylandClient::QWaylandDisplay::RegistryGlobal;
+using namespace Qt::StringLiterals;
 
 QWaylandClientExtensionPrivate::QWaylandClientExtensionPrivate()
 {
@@ -17,7 +18,7 @@ QWaylandClientExtensionPrivate::QWaylandClientExtensionPrivate()
     // but also add the possibility to run it as a QML component.
     waylandIntegration = QtWaylandClient::QWaylandIntegration::instance();
     if (!waylandIntegration)
-        waylandIntegration = new QtWaylandClient::QWaylandIntegration();
+        waylandIntegration = new QtWaylandClient::QWaylandIntegration("wayland"_L1);
 }
 
 void QWaylandClientExtensionPrivate::globalAdded(const RegistryGlobal &global)

@@ -74,15 +74,17 @@
 
 QT_BEGIN_NAMESPACE
 
+using namespace Qt::StringLiterals;
+
 namespace QtWaylandClient {
 
 QWaylandIntegration *QWaylandIntegration::sInstance = nullptr;
 
-QWaylandIntegration::QWaylandIntegration()
+QWaylandIntegration::QWaylandIntegration(const QString &platformName)
 #if defined(Q_OS_MACOS)
     : mFontDb(new QCoreTextFontDatabaseEngineFactory<QCoreTextFontEngine>)
 #else
-    : mFontDb(new QGenericUnixFontDatabase())
+    : mPlatformName(platformName), mFontDb(new QGenericUnixFontDatabase())
 #endif
 {
     mDisplay.reset(new QWaylandDisplay(this));
@@ -92,6 +94,8 @@ QWaylandIntegration::QWaylandIntegration()
             !qEnvironmentVariableIsSet("QT_WAYLAND_DISABLE_FIXED_POSITIONS");
 
     sInstance = this;
+    if (platformName != "wayland"_L1)
+        initializeClientBufferIntegration();
 }
 
 QWaylandIntegration::~QWaylandIntegration()
@@ -335,6 +339,10 @@ void QWaylandIntegration::initializeClientBufferIntegration()
         return;
 
     QString targetKey = QString::fromLocal8Bit(qgetenv("QT_WAYLAND_CLIENT_BUFFER_INTEGRATION"));
+    if (mPlatformName == "wayland-egl"_L1)
+        targetKey = "wayland-egl"_L1;
+    else if (mPlatformName == "wayland-brcm"_L1)
+        targetKey = "brcm"_L1;
 
     if (targetKey.isEmpty()) {
         if (mDisplay->hardwareIntegration()
