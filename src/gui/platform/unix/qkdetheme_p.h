@@ -51,7 +51,7 @@ public:
 
     const QPalette *palette(Palette type = SystemPalette) const override;
     Qt::ColorScheme colorScheme() const override;
-    //void requestColorScheme(Qt::ColorScheme scheme) override;
+    void requestColorScheme(Qt::ColorScheme scheme) override;
 
     const QFont *font(Font type) const override;
 #ifndef QT_NO_DBUS

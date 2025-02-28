@@ -114,6 +114,7 @@ public:
     int startDragTime = 500;
     int cursorBlinkRate = 1000;
     Qt::ColorScheme m_colorScheme = Qt::ColorScheme::Unknown;
+    Qt::ColorScheme m_requestedColorScheme = Qt::ColorScheme::Unknown;
     void updateColorScheme(const QString &themeName);
 
 private:
@@ -124,6 +125,7 @@ private:
     void settingChangedHandler(QDBusListener::Provider provider,
                                QDBusListener::Setting setting,
                                const QString &value);
+    Qt::ColorScheme colorSchemeFromPalette() const;
 #endif // QT_NO_DBUS
 };
 
@@ -647,9 +649,29 @@ QIcon QKdeTheme::fileIcon(const QFileInfo &fileInfo, QPlatformTheme::IconOptions
 #endif
 }
 
+void QKdeTheme::requestColorScheme(Qt::ColorScheme scheme)
+{
+    Q_D(QKdeTheme);
+    if (d->m_requestedColorScheme == scheme)
+        return;
+    qCDebug(lcQpaThemeKde) << scheme << "has been requested. Theme supports color scheme:"
+                           << d->m_colorScheme;
+    d->m_requestedColorScheme = scheme;
+    d->refresh();
+}
+
 Qt::ColorScheme QKdeTheme::colorScheme() const
 {
-    return d_func()->m_colorScheme;
+    Q_D(const QKdeTheme);
+#ifdef QT_DEBUG
+    if (d->m_requestedColorScheme != Qt::ColorScheme::Unknown
+        && d->m_requestedColorScheme != d->m_colorScheme) {
+        qCDebug(lcQpaThemeKde) << "Reuqested color scheme" << d->m_requestedColorScheme
+                               << "differs from theme color scheme" << d->m_colorScheme;
+    }
+#endif
+    return (d->m_requestedColorScheme == Qt::ColorScheme::Unknown)
+           ? d->m_colorScheme :d->m_requestedColorScheme;
 }
 
 /*!
@@ -674,23 +696,34 @@ void QKdeThemePrivate::updateColorScheme(const QString &themeName)
         return;
     }
 
-    if (systemPalette) {
-        if (systemPalette->text().color().lightness() < systemPalette->base().color().lightness()) {
-            m_colorScheme = Qt::ColorScheme::Light;
-            return;
-        }
-        if (systemPalette->text().color().lightness() > systemPalette->base().color().lightness()) {
-            m_colorScheme = Qt::ColorScheme::Dark;
-            return;
-        }
-    }
+    m_colorScheme = colorSchemeFromPalette();
+}
 
-    m_colorScheme = Qt::ColorScheme::Unknown;
+Qt::ColorScheme QKdeThemePrivate::colorSchemeFromPalette() const
+{
+    if (!systemPalette)
+        return Qt::ColorScheme::Unknown;
+    if (systemPalette->text().color().lightness() < systemPalette->base().color().lightness())
+        return Qt::ColorScheme::Light;
+    if (systemPalette->text().color().lightness() > systemPalette->base().color().lightness())
+        return Qt::ColorScheme::Dark;
+    return Qt::ColorScheme::Unknown;
 }
 
 const QPalette *QKdeTheme::palette(Palette type) const
 {
     Q_D(const QKdeTheme);
+    if (d->m_requestedColorScheme != Qt::ColorScheme::Unknown
+        && d->m_requestedColorScheme != d->m_colorScheme) {
+        qCDebug(lcQpaThemeKde) << "Current KDE theme doesn't support reuqested color scheme"
+                               << d->m_requestedColorScheme << "Falling back to fusion palette:"
+                               << type;
+        return QPlatformTheme::palette(type);
+    }
+
+    if (colorScheme() != d->m_requestedColorScheme)
+        return d->resources.palettes[Palette::SystemPalette];
+
     return d->resources.palettes[type];
 }
 
