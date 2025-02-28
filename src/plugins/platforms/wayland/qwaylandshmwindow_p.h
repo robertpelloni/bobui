@@ -29,7 +29,8 @@ public:
     ~QWaylandShmWindow() override;
 
     WindowType windowType() const override;
-    QSurfaceFormat format() const override { return QSurfaceFormat(); }
+
+    void setWindowFlags(Qt::WindowFlags flags) override;
 };
 
 }

@@ -14,6 +14,12 @@ namespace QtWaylandClient {
 QWaylandShmWindow::QWaylandShmWindow(QWindow *window, QWaylandDisplay *display)
     : QWaylandWindow(window, display)
 {
+    mSurfaceFormat.setRedBufferSize(8);
+    mSurfaceFormat.setGreenBufferSize(8);
+    mSurfaceFormat.setBlueBufferSize(8);
+
+    const QSurfaceFormat format = window->requestedFormat();
+    mSurfaceFormat.setAlphaBufferSize(format.hasAlpha() ? 8 : 0);
 }
 
 QWaylandShmWindow::~QWaylandShmWindow()
@@ -23,6 +29,15 @@ QWaylandShmWindow::~QWaylandShmWindow()
 QWaylandWindow::WindowType QWaylandShmWindow::windowType() const
 {
     return QWaylandWindow::Shm;
+}
+
+void QWaylandShmWindow::setWindowFlags(Qt::WindowFlags flags)
+{
+    QWaylandWindow::setWindowFlags(flags);
+
+    const QSurfaceFormat format = window()->requestedFormat();
+    if (!format.hasAlpha())
+        mSurfaceFormat.setAlphaBufferSize(mWindowDecorationEnabled ? 8 : 0);
 }
 
 }

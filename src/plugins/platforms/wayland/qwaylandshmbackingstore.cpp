@@ -283,7 +283,9 @@ QWaylandShmBuffer *QWaylandShmBackingStore::getBuffer(const QSize &size, bool &b
         return buffer;
 
     if (mBuffers.size() < MAX_BUFFERS) {
-        QImage::Format format = QPlatformScreen::platformScreenForWindow(window())->format();
+        QImage::Format format = QImage::Format_ARGB32_Premultiplied;
+        if (!waylandWindow()->format().hasAlpha())
+            format = QImage::Format_RGB32;
         QWaylandShmBuffer *b = new QWaylandShmBuffer(mDisplay, size, format, waylandWindow()->scale());
         bufferWasRecreated = true;
         mBuffers.push_front(b);
