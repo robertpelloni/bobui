@@ -22,6 +22,7 @@
 #include "QtCore/private/qplugin_p.h"
 #include "QtCore/qcbormap.h"
 #include "QtCore/qcborvalue.h"
+#include "QtCore/qcoreapplication.h"
 #include "QtCore/qmap.h"
 #include "QtCore/qobject.h"
 #include "QtCore/qplugin.h"
@@ -32,10 +33,9 @@ class QJsonObject;
 class QLibraryPrivate;
 
 class QFactoryLoaderPrivate;
-class Q_CORE_EXPORT QFactoryLoader : public QObject
+class Q_CORE_EXPORT QFactoryLoader
 {
-    Q_OBJECT
-    Q_DECLARE_PRIVATE(QFactoryLoader)
+    Q_DECLARE_TR_FUNCTIONS(QFactoryLoader);
 
 public:
     explicit QFactoryLoader(const char *iid,
@@ -64,6 +64,8 @@ public:
     QObject *instance(int index) const;
 
 private:
+    std::unique_ptr<QFactoryLoaderPrivate> d;
+
     inline QObject *instanceHelper_locked(int index) const;
 };
 

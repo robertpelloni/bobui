@@ -4,11 +4,9 @@
 
 #include "qfactoryloader_p.h"
 
-#ifndef QT_NO_QOBJECT
 #include "private/qcoreapplication_p.h"
 #include "private/qduplicatetracker_p.h"
 #include "private/qloggingregistry_p.h"
-#include "private/qobject_p.h"
 #include "qcborarray.h"
 #include "qcbormap.h"
 #include "qcborstreamreader.h"
@@ -249,9 +247,8 @@ QJsonObject QPluginParsedMetaData::toJson() const
     return o;
 }
 
-class QFactoryLoaderPrivate : public QObjectPrivate
+class QFactoryLoaderPrivate
 {
-    Q_DECLARE_PUBLIC(QFactoryLoader)
     Q_DISABLE_COPY_MOVE(QFactoryLoaderPrivate)
 public:
     QFactoryLoaderPrivate() { }
@@ -400,8 +397,6 @@ inline void QFactoryLoaderPrivate::updateSinglePath(const QString &path)
 void QFactoryLoader::update()
 {
 #ifdef QT_SHARED
-    Q_D(QFactoryLoader);
-
     if (!d->extraSearchPath.isEmpty())
         d->updateSinglePath(d->extraSearchPath);
 
@@ -415,7 +410,6 @@ void QFactoryLoader::update()
         d->updateSinglePath(path);
     }
 #else
-    Q_D(QFactoryLoader);
     qCDebug(lcFactoryLoader) << "ignoring" << d->iid
                              << "since plugins are disabled in static builds";
 #endif
@@ -423,8 +417,6 @@ void QFactoryLoader::update()
 
 QFactoryLoader::~QFactoryLoader()
 {
-    Q_D(QFactoryLoader);
-
     if (!qt_factoryloader_global.isDestroyed()) {
         QMutexLocker locker(&qt_factoryloader_global->mutex);
         qt_factoryloader_global->loaders.removeOne(this);
@@ -449,7 +441,6 @@ QFactoryLoader::~QFactoryLoader()
 #if defined(Q_OS_UNIX) && !defined (Q_OS_DARWIN)
 QLibraryPrivate *QFactoryLoader::library(const QString &key) const
 {
-    Q_D(const QFactoryLoader);
     const auto it = d->keyMap.find(d->cs ? key : key.toLower());
     if (it == d->keyMap.cend())
         return nullptr;
@@ -471,13 +462,11 @@ void QFactoryLoader::refreshAll()
 QFactoryLoader::QFactoryLoader(const char *iid,
                                const QString &suffix,
                                Qt::CaseSensitivity cs)
-    : QObject(*new QFactoryLoaderPrivate)
+    : d(new QFactoryLoaderPrivate)
 {
     Q_ASSERT_X(suffix.startsWith(u'/'), "QFactoryLoader",
                "For historical reasons, the suffix must start with '/' (and it can't be empty)");
 
-    moveToThread(QCoreApplicationPrivate::mainThread());
-    Q_D(QFactoryLoader);
     d->iid = iid;
 #if QT_CONFIG(library)
     d->cs = cs;
@@ -499,7 +488,6 @@ QFactoryLoader::QFactoryLoader(const char *iid,
 void QFactoryLoader::setExtraSearchPath(const QString &path)
 {
 #if QT_CONFIG(library)
-    Q_D(QFactoryLoader);
     if (d->extraSearchPath == path)
         return;             // nothing to do
 
@@ -529,7 +517,6 @@ void QFactoryLoader::setExtraSearchPath(const QString &path)
 
 QFactoryLoader::MetaDataList QFactoryLoader::metaData() const
 {
-    Q_D(const QFactoryLoader);
     QList<QPluginParsedMetaData> metaData;
 #if QT_CONFIG(library)
     QMutexLocker locker(&d->mutex);
@@ -554,7 +541,6 @@ QFactoryLoader::MetaDataList QFactoryLoader::metaData() const
 
 QList<QCborArray> QFactoryLoader::metaDataKeys() const
 {
-    Q_D(const QFactoryLoader);
     QList<QCborArray> metaData;
 #if QT_CONFIG(library)
     QMutexLocker locker(&d->mutex);
@@ -582,7 +568,6 @@ QList<QCborArray> QFactoryLoader::metaDataKeys() const
 
 QObject *QFactoryLoader::instance(int index) const
 {
-    Q_D(const QFactoryLoader);
     if (index < 0)
         return nullptr;
 
@@ -596,8 +581,6 @@ QObject *QFactoryLoader::instance(int index) const
 
 inline QObject *QFactoryLoader::instanceHelper_locked(int index) const
 {
-    Q_D(const QFactoryLoader);
-
 #if QT_CONFIG(library)
     if (size_t(index) < d->libraries.size()) {
         QLibraryPrivate *library = d->libraries[index].get();
@@ -654,7 +637,3 @@ int QFactoryLoader::indexOf(const QString &needle) const
 }
 
 QT_END_NAMESPACE
-
-#include "moc_qfactoryloader_p.cpp"
-
-#endif // QT_NO_QOBJECT
