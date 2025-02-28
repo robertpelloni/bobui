@@ -173,6 +173,10 @@ private:
 
     QMap<int, QWindowSystemInterface::TouchPoint> m_pointerIdToTouchPoints;
 
+    QWasmEventHandler m_cutCallback;
+    QWasmEventHandler m_copyCallback;
+    QWasmEventHandler m_pasteCallback;
+
     Qt::WindowStates m_state = Qt::WindowNoState;
     Qt::WindowStates m_previousWindowState = Qt::WindowNoState;
 

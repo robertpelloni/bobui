@@ -95,7 +95,11 @@ QWasmWindow::QWasmWindow(QWindow *w, QWasmDeadKeySupport *deadKeySupport,
     m_window.set("contentEditable", std::string("true"));
     m_window["style"].set("outline", std::string("none"));
 
-    QWasmClipboard::installEventHandlers(m_window);
+    if (QWasmClipboard::shouldInstallWindowEventHandlers()) {
+        m_cutCallback = QWasmEventHandler(m_window, "cut", QWasmClipboard::cut);
+        m_copyCallback = QWasmEventHandler(m_window, "copy", QWasmClipboard::copy);
+        m_pasteCallback = QWasmEventHandler(m_window, "paste", QWasmClipboard::paste);
+    }
 #endif
 
     // Set inputMode to none to stop the mobile keyboard from opening
