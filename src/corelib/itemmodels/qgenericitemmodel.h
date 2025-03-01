@@ -72,6 +72,8 @@ public:
     bool clearItemData(const QModelIndex &index) override;
     bool insertColumns(int column, int count, const QModelIndex &parent = {}) override;
     bool removeColumns(int column, int count, const QModelIndex &parent = {}) override;
+    bool moveColumns(const QModelIndex &sourceParent, int sourceColumn, int count,
+                     const QModelIndex &destParent, int destColumn) override;
     bool insertRows(int row, int count, const QModelIndex &parent = {}) override;
     bool removeRows(int row, int count, const QModelIndex &parent = {}) override;
     bool moveRows(const QModelIndex &sourceParent, int sourceRow, int count,
@@ -120,6 +122,18 @@ void QGenericItemModelImplBase::endRemoveColumns()
 {
     m_itemModel->endRemoveColumns();
 }
+bool QGenericItemModelImplBase::beginMoveColumns(const QModelIndex &sourceParent, int sourceFirst,
+                                                 int sourceLast, const QModelIndex &destParent,
+                                                 int destColumn)
+{
+    return m_itemModel->beginMoveColumns(sourceParent, sourceFirst, sourceLast,
+                                         destParent, destColumn);
+}
+void QGenericItemModelImplBase::endMoveColumns()
+{
+    m_itemModel->endMoveColumns();
+}
+
 void QGenericItemModelImplBase::beginInsertRows(const QModelIndex &parent, int start, int count)
 {
     m_itemModel->beginInsertRows(parent, start, count);
@@ -289,6 +303,8 @@ public:
         case InsertColumns: makeCall(that, &Self::insertColumns, r, args);
             break;
         case RemoveColumns: makeCall(that, &Self::removeColumns, r, args);
+            break;
+        case MoveColumns: makeCall(that, &Self::moveColumns, r, args);
             break;
         case InsertRows: makeCall(that, &Self::insertRows, r, args);
             break;
@@ -779,6 +795,47 @@ public:
         return false;
     }
 
+    bool moveColumns(const QModelIndex &sourceParent, int sourceColumn, int count,
+                     const QModelIndex &destParent, int destColumn)
+    {
+        // we only support moving columns within the same parent
+        if (sourceParent != destParent)
+            return false;
+        if constexpr (isMutable()) {
+            if (!Structure::canMoveColumns(sourceParent, destParent))
+                return false;
+
+            if constexpr (dynamicColumns()) {
+                // we only support ranges as columns, as other types might
+                // not have the same data type across all columns
+                range_type * const children = childRange(sourceParent);
+                if (!children)
+                    return false;
+
+                if (!beginMoveColumns(sourceParent, sourceColumn, sourceColumn + count - 1,
+                                      destParent, destColumn)) {
+                    return false;
+                }
+
+                for (auto &child : *children) {
+                    const auto begin = std::begin(child);
+                    const auto first = std::next(begin, sourceColumn);
+                    const auto middle = std::next(begin, sourceColumn + count);
+                    const auto last = std::next(begin, destColumn);
+
+                    if (sourceColumn < destColumn) // moving right
+                        std::rotate(first, middle, last);
+                    else // moving left
+                        std::rotate(last, first, middle);
+                }
+
+                endMoveColumns();
+                return true;
+            }
+        }
+        return false;
+    }
+
     bool insertRows(int row, int count, const QModelIndex &parent)
     {
         if constexpr (Structure::canInsertRows()) {
@@ -1222,6 +1279,11 @@ protected:
              && Base::dynamicRows() && range_features::has_erase;
     }
 
+    static constexpr bool canMoveColumns(const QModelIndex &, const QModelIndex &)
+    {
+        return true;
+    }
+
     static constexpr bool canMoveRows(const QModelIndex &, const QModelIndex &)
     {
         return true;
@@ -1505,6 +1567,11 @@ protected:
     static constexpr bool canRemoveRows()
     {
         return Base::dynamicRows() && range_features::has_erase;
+    }
+
+    static constexpr bool canMoveColumns(const QModelIndex &source, const QModelIndex &destination)
+    {
+        return !source.isValid() && !destination.isValid();
     }
 
     static constexpr bool canMoveRows(const QModelIndex &source, const QModelIndex &destination)

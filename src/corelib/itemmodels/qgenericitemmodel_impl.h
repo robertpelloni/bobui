@@ -493,6 +493,7 @@ public:
         ClearItemData,
         InsertColumns,
         RemoveColumns,
+        MoveColumns,
         InsertRows,
         RemoveRows,
         MoveRows,
@@ -532,6 +533,9 @@ protected:
     inline void endInsertColumns();
     inline void beginRemoveColumns(const QModelIndex &parent, int start, int count);
     inline void endRemoveColumns();
+    inline bool beginMoveColumns(const QModelIndex &sourceParent, int sourceFirst, int sourceLast,
+                                 const QModelIndex &destParent, int destRow);
+    inline void endMoveColumns();
     inline void beginInsertRows(const QModelIndex &parent, int start, int count);
     inline void endInsertRows();
     inline void beginRemoveRows(const QModelIndex &parent, int start, int count);

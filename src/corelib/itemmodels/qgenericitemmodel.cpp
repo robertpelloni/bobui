@@ -688,6 +688,23 @@ bool QGenericItemModel::removeColumns(int column, int count, const QModelIndex &
     return impl->call<bool>(QGenericItemModelImplBase::RemoveColumns, column, count, parent);
 }
 
+/*!
+    \reimp
+
+    Moves \a count columns starting with the given \a sourceColumn under parent
+    \a sourceParent to column \a destinationColumn under parent \a destinationParent.
+
+    Returns \c{true} if the columns were successfully moved; otherwise returns
+    \c{false}.
+*/
+bool QGenericItemModel::moveColumns(const QModelIndex &sourceParent, int sourceColumn, int count,
+                                    const QModelIndex &destinationParent, int destinationColumn)
+{
+    return impl->call<bool>(QGenericItemModelImplBase::MoveColumns,
+                            sourceParent, sourceColumn, count,
+                            destinationParent, destinationColumn);
+}
+
 /*
 //! [row-change-requirement]
     \note The range needs to be dynamically sized and provide a \c{\1}

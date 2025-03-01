@@ -300,6 +300,8 @@ private slots:
     void insertColumns();
     void removeColumns_data() { createTestData(); }
     void removeColumns();
+    void moveColumns_data() { createTestData(); }
+    void moveColumns();
 
     void inconsistentColumnCount();
 
@@ -1205,6 +1207,51 @@ void tst_QGenericItemModel::removeColumns()
     QCOMPARE(model->columnCount(), expectedColumnCount);
     QCOMPARE(model->removeColumn(0),
              changeActions.testFlag(ChangeAction::RemoveColumns));
+}
+
+void tst_QGenericItemModel::moveColumns()
+{
+    QFETCH(Factory, factory);
+    auto model = factory();
+    QFETCH(const int, expectedColumnCount);
+    QFETCH(const ChangeActions, changeActions);
+
+    QCOMPARE(model->columnCount(), expectedColumnCount);
+    if (expectedColumnCount < 2)
+        QSKIP("Cannot test moveColumns with a single-column model");
+
+    const QVariant first = model->index(0, 0).data();
+    const QVariant second = model->index(0, 1).data();
+    const QVariant last = model->index(0, expectedColumnCount - 1).data();
+
+    QCOMPARE(model->moveColumns({}, 0, 1, {}, expectedColumnCount),
+             bool(changeActions & ChangeAction::ChangeColumns));
+    if (!(changeActions & ChangeAction::ChangeColumns))
+        return;
+
+    QCOMPARE(model->index(0, 0).data(), second);
+    QCOMPARE(model->index(0, expectedColumnCount - 2).data(), last);
+    QCOMPARE(model->index(0, expectedColumnCount - 1).data(), first);
+
+    // the rest only makes sense for models with at least 3 columns
+    if (expectedColumnCount >= 3) {
+        // move all but one column to the end - this restores the order
+        QVERIFY(model->moveColumns({}, 0, expectedColumnCount - 1,
+                                {}, expectedColumnCount));
+        QCOMPARE(model->index(0, 0).data(), first);
+        QCOMPARE(model->index(0, 1).data(), second);
+        QCOMPARE(model->index(0, expectedColumnCount - 1).data(), last);
+
+        // move the last row step by step up to the top
+        for (int column = model->columnCount() - 1; column > 0; --column)
+            QVERIFY(model->moveColumn({}, column, {}, column - 1));
+        QCOMPARE(model->index(0, 0).data(), last);
+        // move all except the first row up - this restores the order again
+        QVERIFY(model->moveColumns({}, 1, expectedColumnCount - 1, {}, 0));
+        QCOMPARE(model->index(0, 0).data(), first);
+        QCOMPARE(model->index(0, 1).data(), second);
+        QCOMPARE(model->index(0, expectedColumnCount - 1).data(), last);
+    }
 }
 
 void tst_QGenericItemModel::inconsistentColumnCount()
