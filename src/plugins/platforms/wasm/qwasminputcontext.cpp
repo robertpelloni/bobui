@@ -306,9 +306,10 @@ void QWasmInputContext::updateInputElement()
         m_inputElement["style"].set("height", "1px");
         m_inputElement.set("value", "");
 
-        m_inputElement.call<void>("blur");
         if (QWasmWindow *wasmwindow = QWasmWindow::fromWindow(focusWindow))
             wasmwindow->focus();
+        else
+            m_inputElement.call<void>("blur");
 
         return;
     }
