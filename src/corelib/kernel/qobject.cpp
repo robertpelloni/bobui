@@ -3919,7 +3919,8 @@ void QMetaObject::connectSlotsByName(QObject *o)
 }
 
 /*!
-    \fn template<typename PointerToMemberFunction> QMetaObject::Connection QMetaObject::connect(const QObject *sender, const QMetaMethod &signal, const QObject *receiver, PointerToMemberFunction method, Qt::ConnectionType type)
+    \fn template<typename PointerToMemberFunction> QMetaObject::Connection QMetaObject::connect(
+        const QObject *sender, PointerToMemberFunction signal, const QObject *receiver, PointerToMemberFunction method, Qt::ConnectionType type)
 
     \threadsafe
     \overload connect()
@@ -3949,7 +3950,8 @@ void QMetaObject::connectSlotsByName(QObject *o)
  */
 
 /*!
-    \fn template<typename Functor> QMetaObject::Connection QMetaObject::connect(const QObject *sender, const QMetaMethod &signal, const QObject *context, Functor functor, Qt::ConnectionType type)
+    \fn template<typename PointerToMemberFunction, typename Functor> QMetaObject::Connection QMetaObject::connect(
+        const QObject *sender, PointerToMemberFunction signal, const QObject *context, Functor functor, Qt::ConnectionType type)
 
     \threadsafe
     \overload connect()
