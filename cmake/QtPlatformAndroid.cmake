@@ -141,7 +141,7 @@ function(qt_internal_android_test_runner_arguments target out_test_runner out_te
     set(${out_test_runner} "${host_bin_dir}/androidtestrunner" PARENT_SCOPE)
     set(deployment_tool "${host_bin_dir}/androiddeployqt")
 
-    qt_internal_android_get_target_android_build_dir(${target} android_build_dir)
+    _qt_internal_android_get_target_android_build_dir(${target} android_build_dir)
     set(${out_test_arguments}
         "--path" "${android_build_dir}"
         "--adb" "${ANDROID_SDK_ROOT}/platform-tools/adb"
