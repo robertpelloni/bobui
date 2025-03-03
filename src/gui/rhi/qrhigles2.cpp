@@ -1893,6 +1893,11 @@ void QRhiGles2::setGraphicsPipeline(QRhiCommandBuffer *cb, QRhiGraphicsPipeline 
         cbD->currentGraphicsPipeline = ps;
         cbD->currentComputePipeline = nullptr;
         cbD->currentPipelineGeneration = psD->generation;
+        if (psD->lastUsedInFrameNo != frameNo) {
+            psD->lastUsedInFrameNo = frameNo;
+            psD->currentSrb = nullptr;
+            psD->currentSrbGeneration = 0;
+        }
 
         QGles2CommandBuffer::Command &cmd(cbD->commands.get());
         cmd.cmd = QGles2CommandBuffer::Command::BindGraphicsPipeline;
@@ -2288,6 +2293,7 @@ QRhi::FrameOpResult QRhiGles2::beginFrame(QRhiSwapChain *swapChain, QRhi::BeginF
 
     executeDeferredReleases();
     swapChainD->cb.resetState();
+    frameNo += 1;
 
     if (swapChainD->timestamps.active[swapChainD->currentTimestampPairIndex]) {
         double elapsedSec = 0;
@@ -2331,7 +2337,6 @@ QRhi::FrameOpResult QRhiGles2::endFrame(QRhiSwapChain *swapChain, QRhi::EndFrame
         f->glFlush();
     }
 
-    swapChainD->frameCount += 1;
     currentSwapChain = nullptr;
 
     ctx->handle()->endFrame();
@@ -4906,6 +4911,11 @@ void QRhiGles2::setComputePipeline(QRhiCommandBuffer *cb, QRhiComputePipeline *p
         cbD->currentGraphicsPipeline = nullptr;
         cbD->currentComputePipeline = ps;
         cbD->currentPipelineGeneration = psD->generation;
+        if (psD->lastUsedInFrameNo != frameNo) {
+            psD->lastUsedInFrameNo = frameNo;
+            psD->currentSrb = nullptr;
+            psD->currentSrbGeneration = 0;
+        }
 
         QGles2CommandBuffer::Command &cmd(cbD->commands.get());
         cmd.cmd = QGles2CommandBuffer::Command::BindComputePipeline;
@@ -6861,8 +6871,6 @@ bool QGles2SwapChain::createOrResize()
         initSwapChainRenderTarget(&rtRight);
         rtRight.d.stereoTarget = QRhiSwapChain::RightBuffer;
     }
-
-    frameCount = 0;
 
     QRHI_RES_RHI(QRhiGles2);
     if (rhiD->rhiFlags.testFlag(QRhi::EnableTimestamps) && rhiD->caps.timestamps)
