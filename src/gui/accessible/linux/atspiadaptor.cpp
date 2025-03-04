@@ -45,6 +45,7 @@
 QT_BEGIN_NAMESPACE
 
 using namespace Qt::StringLiterals;
+using namespace QtGuiPrivate; // for D-Bus accessibility wrappers
 
 Q_STATIC_LOGGING_CATEGORY(lcAccessibilityAtspi, "qt.accessibility.atspi")
 Q_STATIC_LOGGING_CATEGORY(lcAccessibilityAtspiCreation, "qt.accessibility.atspi.creation")

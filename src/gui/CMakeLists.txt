@@ -573,12 +573,14 @@ qt_internal_extend_target(Gui CONDITION atspi_accessibility
         accessible/linux/dbusxml/DeviceEventController.xml
     DBUS_ADAPTOR_FLAGS
         "-i" "QtGui/private/qspi_struct_marshallers_p.h"
+        "--namespace" "QtGuiPrivate"
     DBUS_INTERFACE_SOURCES
         accessible/linux/dbusxml/Bus.xml
         accessible/linux/dbusxml/Socket.xml
         accessible/linux/dbusxml/org.freedesktop.DBus.Properties.xml
     DBUS_INTERFACE_FLAGS
         "-i" "QtGui/private/qspi_struct_marshallers_p.h"
+        "--namespace" "QtGuiPrivate"
 )
 
 if(atspi_accessibility)
