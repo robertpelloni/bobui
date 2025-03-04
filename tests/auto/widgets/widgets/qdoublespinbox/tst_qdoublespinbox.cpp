@@ -158,6 +158,8 @@ private slots:
 
     void editingFinished();
 
+    void returnPressed();
+
     void removeAll();
 
     void task199226_stateAfterEnter();
@@ -906,6 +908,15 @@ void tst_QDoubleSpinBox::editingFinished()
     testFocusWidget.hide();
     QCOMPARE(editingFinishedSpy1.size(), 4);
     QCOMPARE(editingFinishedSpy2.size(), 4);
+}
+
+void tst_QDoubleSpinBox::returnPressed()
+{
+    QDoubleSpinBox spinBox;
+    QSignalSpy spyCurrentChanged(&spinBox, &QDoubleSpinBox::returnPressed);
+    spinBox.show();
+    QTest::keyClick(&spinBox, Qt::Key_Return);
+    QCOMPARE(spyCurrentChanged.size(), 1);
 }
 
 void tst_QDoubleSpinBox::removeAll()
