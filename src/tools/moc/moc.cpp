@@ -1044,7 +1044,10 @@ void Moc::parse()
                 QByteArray msg("Potential QML registration macro was found, but no header containing it was included.\n"
                                "This might cause runtime errors in QML applications\n"
                                "Include <QtQmlIntegration/qqmlintegration.h> or <QtQml/qqmlregistration.h> to fix this.");
-                warning(qmlRegistrationMacroSymbol, msg.constData());
+                if (qmlMacroWarningIsFatal)
+                    error(qmlRegistrationMacroSymbol, msg.constData());
+                else
+                    warning(qmlRegistrationMacroSymbol, msg.constData());
             }
 
             if (!def.hasQObject && !def.hasQGadget && def.signalList.isEmpty() && def.slotList.isEmpty()

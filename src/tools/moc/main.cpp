@@ -285,6 +285,10 @@ int runMoc(int argc, char **argv)
     activeQtMode.setFlags(QCommandLineOption::HiddenFromHelp);
     parser.addOption(activeQtMode);
 
+    QCommandLineOption qmlMacroWarningIsFatal(QStringLiteral("fatal-qml-macro-warning"));
+    qmlMacroWarningIsFatal.setFlags(QCommandLineOption::HiddenFromHelp);
+    parser.addOption(qmlMacroWarningIsFatal);
+
     QCommandLineOption noNotesOption(QStringLiteral("no-notes"));
     noNotesOption.setDescription(QStringLiteral("Do not display notes."));
     parser.addOption(noNotesOption);
@@ -448,6 +452,8 @@ int runMoc(int argc, char **argv)
         moc.displayNotes = false;
     if (parser.isSet(noWarningsOption) || noNotesCompatValues.contains("w"_L1))
         moc.displayWarnings = moc.displayNotes = false;
+    if (parser.isSet(qmlMacroWarningIsFatal))
+        moc.qmlMacroWarningIsFatal = true;
 
     if (autoInclude) {
         qsizetype spos = filename.lastIndexOf(QDir::separator());

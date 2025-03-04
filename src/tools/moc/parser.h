@@ -19,6 +19,7 @@ public:
     bool displayWarnings = true;
     bool displayNotes = true;
     bool activeQtMode = false;
+    bool qmlMacroWarningIsFatal = false;
 
     struct IncludePath
     {

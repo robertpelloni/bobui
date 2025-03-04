@@ -786,6 +786,7 @@ private slots:
 
     void dontStripNamespaces();
     void oldStyleCasts();
+    void faultyQmlRegistration_data();
     void faultyQmlRegistration();
     void warnOnExtraSignalSlotQualifiaction();
     void uLongLong();
@@ -1021,16 +1022,30 @@ void tst_Moc::oldStyleCasts()
 #endif
 }
 
+void tst_Moc::faultyQmlRegistration_data()
+{
+    QTest::addColumn<bool>("qmlWarningIsFatal");
+    QTest::addColumn<int>("exitCode");
+
+    QTest::newRow("normal") << false << EXIT_SUCCESS;
+    QTest::newRow("fatalWarning") << true << EXIT_FAILURE;
+}
+
 void tst_Moc::faultyQmlRegistration()
 {
 #ifdef MOC_CROSS_COMPILED
     QSKIP("Not tested when cross-compiled");
 #endif
 #if QT_CONFIG(process)
+    QFETCH(bool, qmlWarningIsFatal);
+    QFETCH(int, exitCode);
     QProcess proc;
-    proc.start(m_moc, QStringList(m_sourceDirectory + QStringLiteral("/faulty_qml_registration/faulty_registration.h")));
+    auto cmd = QStringList(m_sourceDirectory + QStringLiteral("/faulty_qml_registration/faulty_registration.h"));
+    if (qmlWarningIsFatal)
+        cmd += QStringLiteral("--fatal-qml-macro-warning");
+    proc.start(m_moc, cmd);
     QVERIFY(proc.waitForFinished());
-    QCOMPARE(proc.exitCode(), 0);
+    QCOMPARE(proc.exitCode(), exitCode);
     QByteArray errorMsg = proc.readAllStandardError();
     QVERIFY2(errorMsg.contains("QML registration macro"), errorMsg.constData());
 #else
