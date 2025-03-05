@@ -77,6 +77,14 @@ exists($$QMAKE_QT_CONFIG) {
         EMCC_LFLAGS += $$EMCC_MODULE_FLAGS
     }
 
+    qtConfig(wasm-jspi) {
+        EMCC_LFLAGS += -sJSPI
+    }
+
+    qtConfig(wasm-exceptions) {
+        EMCC_LFLAGS += -fwasm-exceptions
+    }
+
     QMAKE_LFLAGS       += $$EMCC_LFLAGS
     QMAKE_LFLAGS_DEBUG += $$EMCC_LFLAGS
     QMAKE_CFLAGS += $$EMCC_CFLAGS
