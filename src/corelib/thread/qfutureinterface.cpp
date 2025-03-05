@@ -7,6 +7,7 @@
 
 #include <QtCore/qatomic.h>
 #include <QtCore/qcoreapplication.h>
+#include <QtCore/qloggingcategory.h>
 #include <QtCore/qthread.h>
 #include <QtCore/qvarlengtharray.h>
 #include <private/qthreadpool_p.h>
@@ -20,6 +21,8 @@
 QT_WARNING_DISABLE_GCC("-Wstringop-overflow")
 
 QT_BEGIN_NAMESPACE
+
+Q_STATIC_LOGGING_CATEGORY(lcQFutureContinuations, "qt.core.qfuture.continuations")
 
 enum {
     MaxProgressEmitsPerSecond = 25
@@ -41,6 +44,20 @@ const auto suspendingOrSuspended =
         QFutureInterfaceBase::Suspending | QFutureInterfaceBase::Suspended;
 
 } // unnamed namespace
+
+namespace QtPrivate {
+
+void qfutureWarnIfUnusedResults(qsizetype numResults)
+{
+    if (numResults > 1) {
+        qCWarning(lcQFutureContinuations,
+                  "Parent future has %" PRIdQSIZETYPE " result(s), but only the first result "
+                  "will be handled in the continuation.",
+                  numResults);
+    }
+}
+
+} // namespace QtPrivate
 
 class QObjectContinuationWrapper : public QObject
 {

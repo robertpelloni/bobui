@@ -50,6 +50,9 @@ WhenAnyResult(qsizetype, const QFuture<T> &) -> WhenAnyResult<T>;
 
 namespace QtPrivate {
 
+// implemented in qfutureinterface.cpp
+Q_CORE_EXPORT void qfutureWarnIfUnusedResults(qsizetype numResults);
+
 template<class T>
 using EnableForVoid = std::enable_if_t<std::is_same_v<T, void>>;
 
@@ -611,6 +614,7 @@ void CompactContinuation<Function, ResultType, ParentResultType>::create(F &&fun
 template<typename Function, typename ResultType, typename ParentResultType>
 void CompactContinuation<Function, ResultType, ParentResultType>::fulfillPromiseWithResult()
 {
+    qfutureWarnIfUnusedResults(parentFuture.resultCount());
     if constexpr (std::is_copy_constructible_v<ParentResultType>)
         fulfillPromise(parentFuture.result());
     else
@@ -620,6 +624,7 @@ void CompactContinuation<Function, ResultType, ParentResultType>::fulfillPromise
 template<typename Function, typename ResultType, typename ParentResultType>
 void CompactContinuation<Function, ResultType, ParentResultType>::fulfillVoidPromise()
 {
+    qfutureWarnIfUnusedResults(parentFuture.resultCount());
     if constexpr (std::is_copy_constructible_v<ParentResultType>)
         this->object()(parentFuture.result());
     else

@@ -4335,6 +4335,11 @@ QT_WARNING_POP
 void tst_QFuture::continuationsAfterReadyFutures()
 {
     // continuations without a context
+    auto suppressMultipleResultsWarning = [] {
+        QTest::ignoreMessage(QtWarningMsg,
+                             "Parent future has 3 result(s), but only the first result will be "
+                             "handled in the continuation.");
+    };
     {
         QFuture<int> f = QtFuture::makeReadyValueFuture(42)
                 .then([](int val) {
@@ -4347,6 +4352,7 @@ void tst_QFuture::continuationsAfterReadyFutures()
     }
     {
         auto rangeF = QtFuture::makeReadyRangeFuture({1, 2, 3});
+        suppressMultipleResultsWarning();
         QFuture<int> f = rangeF
                 .then([vals = rangeF.results()](auto) {
                     return vals.last();
@@ -4397,6 +4403,7 @@ void tst_QFuture::continuationsAfterReadyFutures()
     }
     {
         auto rangeF = QtFuture::makeReadyRangeFuture({1, 2, 3});
+        suppressMultipleResultsWarning();
         QFuture<int> f = rangeF
                 .then(&context, [vals = rangeF.results()](auto) {
                     return vals.last();
