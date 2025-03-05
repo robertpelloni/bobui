@@ -288,12 +288,6 @@ int main(void)
     CXX_STANDARD 23
 )
 
-# precompile_header
-qt_config_compile_test(precompile_header
-    LABEL "precompiled header support"
-    PROJECT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/config.tests/precompile_header"
-)
-
 qt_config_compiler_supports_flag_test(optimize_debug
     LABEL "-Og support"
     FLAG "-Og"
@@ -732,12 +726,6 @@ qt_feature("c++2b" PUBLIC
     CONDITION QT_FEATURE_cxx20 AND (CMAKE_VERSION VERSION_GREATER_EQUAL "3.20") AND TEST_cxx2b
 )
 qt_feature_config("c++2b" QMAKE_PUBLIC_QT_CONFIG)
-qt_feature("precompile_header"
-    LABEL "Using precompiled headers"
-    CONDITION BUILD_WITH_PCH AND TEST_precompile_header
-    AUTODETECT NOT WASM
-)
-qt_feature_config("precompile_header" QMAKE_PRIVATE_CONFIG)
 set(__qt_ltcg_detected FALSE)
 if(CMAKE_INTERPROCEDURAL_OPTIMIZATION)
     set(__qt_ltcg_detected TRUE)
@@ -1310,7 +1298,6 @@ qt_configure_add_summary_entry(
     CONDITION GCC AND NOT CLANG AND ( QT_FEATURE_debug OR QT_FEATURE_force_debug_info OR QT_FEATURE_debug_and_release )
 )
 qt_configure_add_summary_entry(ARGS "relocatable")
-qt_configure_add_summary_entry(ARGS "precompile_header")
 qt_configure_add_summary_entry(ARGS "ltcg")
 qt_configure_add_summary_entry(ARGS "intelcet")
 qt_configure_add_summary_entry(ARGS "glibc_fortify_source")
