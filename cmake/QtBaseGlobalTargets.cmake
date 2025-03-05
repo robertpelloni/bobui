@@ -217,6 +217,17 @@ configure_file(
     @ONLY
 )
 
+qt_configure_file(
+    OUTPUT "${__GlobalConfig_build_dir}/${INSTALL_CMAKE_NAMESPACE}TargetsPrecheck.cmake"
+    CONTENT
+"
+_qt_internal_should_include_targets(
+    TARGETS ${__export_targets}
+    NAMESPACE ${INSTALL_CMAKE_NAMESPACE}::
+    OUT_VAR_SHOULD_SKIP __qt_skip_include_targets_file
+)
+")
+
 write_basic_package_version_file(
     "${__GlobalConfig_build_dir}/${INSTALL_CMAKE_NAMESPACE}ConfigVersionImpl.cmake"
     VERSION ${PROJECT_VERSION}
@@ -248,6 +259,7 @@ qt_install(FILES
     "${__GlobalConfig_build_dir}/${INSTALL_CMAKE_NAMESPACE}ConfigExtras.cmake"
     "${__GlobalConfig_build_dir}/${INSTALL_CMAKE_NAMESPACE}ConfigVersion.cmake"
     "${__GlobalConfig_build_dir}/${INSTALL_CMAKE_NAMESPACE}ConfigVersionImpl.cmake"
+    "${__GlobalConfig_build_dir}/${INSTALL_CMAKE_NAMESPACE}TargetsPrecheck.cmake"
     "${__GlobalConfig_build_dir}/QtInstallPaths.cmake"
     DESTINATION "${__GlobalConfig_install_dir}"
     COMPONENT Devel

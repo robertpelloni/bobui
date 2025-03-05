@@ -401,6 +401,19 @@ endif()"
             "${config_build_dir}/${INSTALL_CMAKE_NAMESPACE}${target}Config.cmake"
             INSTALL_DESTINATION "${config_install_dir}"
         )
+
+        qt_configure_file(
+            OUTPUT "${config_build_dir}/${INSTALL_CMAKE_NAMESPACE}${target}TargetsPrecheck.cmake"
+            CONTENT
+# TODO: Remove the CHECK_QT_NO_CREATE_TARGETS once a better approach is developed
+"
+_qt_internal_should_include_targets(
+    TARGETS ${target}
+    NAMESPACE ${INSTALL_CMAKE_NAMESPACE}::
+    OUT_VAR_SHOULD_SKIP __qt_${target}_skip_include_targets_file
+    CHECK_QT_NO_CREATE_TARGETS
+)
+")
         write_basic_package_version_file(
             "${config_build_dir}/${INSTALL_CMAKE_NAMESPACE}${target}ConfigVersionImpl.cmake"
             VERSION ${PROJECT_VERSION}
@@ -415,6 +428,7 @@ endif()"
             "${config_build_dir}/${INSTALL_CMAKE_NAMESPACE}${target}Config.cmake"
             "${config_build_dir}/${INSTALL_CMAKE_NAMESPACE}${target}ConfigVersion.cmake"
             "${config_build_dir}/${INSTALL_CMAKE_NAMESPACE}${target}ConfigVersionImpl.cmake"
+            "${config_build_dir}/${INSTALL_CMAKE_NAMESPACE}${target}TargetsPrecheck.cmake"
             DESTINATION "${config_install_dir}"
             COMPONENT Devel
         )

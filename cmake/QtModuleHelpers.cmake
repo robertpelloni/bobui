@@ -1064,9 +1064,29 @@ function(qt_internal_write_basic_module_package target target_private)
     if(arg_PRIVATE)
         set(package_name "${INSTALL_CMAKE_NAMESPACE}${target_private}")
         set(module_config_input_file "QtModuleConfigPrivate.cmake.in")
+        qt_configure_file(
+            OUTPUT "${arg_CONFIG_BUILD_DIR}/${package_name}TargetsPrecheck.cmake"
+            CONTENT
+"
+_qt_internal_should_include_targets(
+    TARGETS ${target_private}
+    NAMESPACE ${INSTALL_CMAKE_NAMESPACE}::
+    OUT_VAR_SHOULD_SKIP __qt_${target_private}_skip_include_targets_file
+)
+")
     else()
         set(package_name "${INSTALL_CMAKE_NAMESPACE}${target}")
         set(module_config_input_file "QtModuleConfig.cmake.in")
+        qt_configure_file(
+            OUTPUT "${arg_CONFIG_BUILD_DIR}/${package_name}TargetsPrecheck.cmake"
+            CONTENT
+"
+_qt_internal_should_include_targets(
+    TARGETS ${target}
+    NAMESPACE ${INSTALL_CMAKE_NAMESPACE}::
+    OUT_VAR_SHOULD_SKIP __qt_${target}_skip_include_targets_file
+)
+")
         if(arg_FIND_PRIVATE_MODULE)
             set(always_load_private_module ON)
         endif()
@@ -1110,6 +1130,7 @@ set(__qt_${target}_always_load_private_module ON)
         "${arg_CONFIG_BUILD_DIR}/${package_name}Config.cmake"
         "${arg_CONFIG_BUILD_DIR}/${package_name}ConfigVersion.cmake"
         "${arg_CONFIG_BUILD_DIR}/${package_name}ConfigVersionImpl.cmake"
+        "${arg_CONFIG_BUILD_DIR}/${package_name}TargetsPrecheck.cmake"
         DESTINATION "${arg_CONFIG_INSTALL_DIR}"
         COMPONENT Devel
     )

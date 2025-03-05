@@ -395,7 +395,9 @@ function(qt_export_tools module_name)
 
     set(first_tool_package_version "")
 
-    foreach(tool_name ${QT_KNOWN_MODULE_${module_name}_TOOLS})
+    set(known_tools ${QT_KNOWN_MODULE_${module_name}_TOOLS})
+
+    foreach(tool_name IN LISTS known_tools)
         # Specific tools can have package dependencies.
         # e.g. qtwaylandscanner depends on WaylandScanner (non-qt package).
         get_target_property(extra_packages "${tool_name}" QT_EXTRA_PACKAGE_DEPENDENCIES)
@@ -427,8 +429,9 @@ function(qt_export_tools module_name)
         if (QT_WILL_RENAME_TOOL_TARGETS)
             string(REGEX REPLACE "_native$" "" tool_name ${tool_name})
         endif()
+        # `__qt_${target}_targets_file_included` is defined in the QtModuleToolsConfig.cmake.in
         set(extra_cmake_statements "${extra_cmake_statements}
-if(NOT QT_NO_CREATE_TARGETS AND ${INSTALL_CMAKE_NAMESPACE}${target}_FOUND)
+if(__qt_${target}_targets_file_included AND ${INSTALL_CMAKE_NAMESPACE}${target}_FOUND)
     __qt_internal_promote_target_to_global(${INSTALL_CMAKE_NAMESPACE}::${tool_name})
 endif()
 ")
@@ -487,6 +490,16 @@ endif()
         INSTALL_DESTINATION "${config_install_dir}"
     )
 
+    qt_configure_file(
+        OUTPUT "${config_build_dir}/${INSTALL_CMAKE_NAMESPACE}${target}TargetsPrecheck.cmake"
+        CONTENT
+"_qt_internal_should_include_targets(
+    TARGETS ${known_tools}
+    NAMESPACE ${INSTALL_CMAKE_NAMESPACE}::
+    OUT_VAR_SHOULD_SKIP __qt_${target}_skip_include_targets_file
+)
+")
+
     # There might be Tools packages which don't have a corresponding real module_name target, like
     # WaylandScannerTools.
     # In that case we'll use the package version of the first tool that belongs to that package.
@@ -522,6 +535,7 @@ endif()
         "${config_build_dir}/${INSTALL_CMAKE_NAMESPACE}${target}Config.cmake"
         "${config_build_dir}/${INSTALL_CMAKE_NAMESPACE}${target}ConfigVersion.cmake"
         "${config_build_dir}/${INSTALL_CMAKE_NAMESPACE}${target}ConfigVersionImpl.cmake"
+        "${config_build_dir}/${INSTALL_CMAKE_NAMESPACE}${target}TargetsPrecheck.cmake"
         DESTINATION "${config_install_dir}"
         COMPONENT Devel
     )
@@ -685,6 +699,7 @@ function(qt_internal_find_tool out_var target_name tools_target)
         set(tools_package_name "${INSTALL_CMAKE_NAMESPACE}${tools_target}Tools")
         message(STATUS "Searching for tool '${full_name}' in package ${tools_package_name}.")
 
+        # TODO: Remove these once developers have reconfigured their project.
         # Create the tool targets, even if QT_NO_CREATE_TARGETS is set.
         # Otherwise targets like Qt6::moc are not available in a top-level cross-build.
         set(BACKUP_QT_NO_CREATE_TARGETS ${QT_NO_CREATE_TARGETS})
@@ -750,6 +765,7 @@ function(qt_internal_find_tool out_var target_name tools_target)
         # Restore backups.
         set(CMAKE_FIND_ROOT_PATH "${${tools_package_name}_BACKUP_CMAKE_FIND_ROOT_PATH}")
         set(CMAKE_PREFIX_PATH "${${tools_package_name}_BACKUP_CMAKE_PREFIX_PATH}")
+        # TODO: Remove these once developers have reconfigured their project.
         set(QT_NO_CREATE_TARGETS ${BACKUP_QT_NO_CREATE_TARGETS})
 
         if(${${tools_package_name}_FOUND} AND TARGET ${full_name})

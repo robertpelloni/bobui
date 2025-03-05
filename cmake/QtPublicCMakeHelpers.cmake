@@ -1012,6 +1012,7 @@ endfunction()
 #       TARGETS <target1> ...
 #       NAMESPACE <str>
 #       OUT_VAR_SHOULD_SKIP <var>
+#       [CHECK_QT_NO_CREATE_TARGETS]
 #   )
 #
 # Arguments
@@ -1024,8 +1025,13 @@ endfunction()
 #
 # `OUT_VAR_SHOULD_SKIP`
 #   Output variable indicating if the `include(*Targets.cmake)` should be skipped
+#
+# `CHECK_QT_NO_CREATE_TARGETS`
+#   Whether to check `QT_NO_CREATE_TARGETS` as a compatibility step
 function(_qt_internal_should_include_targets)
-    set(option_args "")
+    set(option_args
+        CHECK_QT_NO_CREATE_TARGETS
+    )
     set(single_args
         NAMESPACE
         OUT_VAR_SHOULD_SKIP
@@ -1078,6 +1084,18 @@ function(_qt_internal_should_include_targets)
             endif()
         endif()
     endforeach()
+
+    # Compatibility using the old global `QT_NO_CREATE_TARGETS`
+    # Currently needed for top-level builds because when a module has plugins,
+    # the plugins are included from the Config.cmake, before the plugin project
+    # is processed, so the build-time targets are not used in the
+    # `_qt_internal_check_multiple_inclusion` step.
+    # TODO: Use another method to detect if we have a project that need
+    # TODO: Remove these once developers have reconfigured their project.
+    if(arg_CHECK_QT_NO_CREATE_TARGETS AND QT_NO_CREATE_TARGETS)
+        set(${arg_OUT_VAR_SHOULD_SKIP} ON PARENT_SCOPE)
+        return()
+    endif()
 
     # We might still be generating the Targets.cmake file, so we do the same
     # checks as in the Targets.cmake, but with the targets that were defined
