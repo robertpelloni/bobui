@@ -181,10 +181,6 @@ QWindowsContext::QWindowsContext() :
 #    pragma warning( disable : 4996 )
 #endif
     m_instance = this;
-    // ### FIXME: Remove this once the logging system has other options of configurations.
-    const QByteArray bv = qgetenv("QT_QPA_VERBOSE");
-    if (!bv.isEmpty())
-        QLoggingCategory::setFilterRules(QString::fromLocal8Bit(bv));
 }
 
 QWindowsContext::~QWindowsContext()

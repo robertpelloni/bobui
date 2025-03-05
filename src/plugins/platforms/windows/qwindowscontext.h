@@ -56,7 +56,7 @@ public:
         SI_SupportsTouch = 0x2
     };
 
-    // Verbose flag set by environment variable QT_QPA_VERBOSE
+    // Verbose flag set by the `verbose` platform plugin argument
     static int verbose;
 
     explicit QWindowsContext();
