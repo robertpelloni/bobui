@@ -347,6 +347,28 @@ public:
                             result.insert(role, QGenericItemModelDetails::value(it));
                     }
                 }
+            } else if constexpr (has_metaobject<value_type>) {
+                if (row_traits::fixed_size() <= 1) {
+                    tried = true;
+                    using meta_type = std::remove_pointer_t<value_type>;
+                    const QMetaObject &mo = meta_type::staticMetaObject;
+                    for (auto &&[role, roleName] : roleNames().asKeyValueRange()) {
+                        QVariant data;
+                        if constexpr (std::is_base_of_v<QObject, meta_type>) {
+                            if (value)
+                                data = value->property(roleName);
+                        } else {
+                            const int pi = mo.indexOfProperty(roleName.constData());
+                            if (pi >= 0) {
+                                const QMetaProperty prop = mo.property(pi);
+                                if (prop.isValid())
+                                    data = prop.readOnGadget(QGenericItemModelDetails::pointerTo(value));
+                            }
+                        }
+                        if (data.isValid())
+                            result[role] = data;
+                    }
+                }
             }
         };
 
@@ -477,6 +499,52 @@ public:
                             target[QString::fromUtf8(roleName(role))] = value;
                     }
                     return true;
+                } else if constexpr (has_metaobject<value_type>) {
+                    if (row_traits::fixed_size() <= 1) {
+                        tried = true;
+                        using meta_type = std::remove_pointer_t<value_type>;
+                        const QMetaObject &mo = meta_type::staticMetaObject;
+                        // transactional: if possible, modify a copy and only
+                        // update target if all values from data could be stored.
+                        auto targetCopy = [](auto &&origin) {
+                            if constexpr (std::is_base_of_v<QObject, meta_type>)
+                                return origin; // can't copy, no transaction support
+                            else if constexpr (std::is_pointer_v<decltype(target)>)
+                                return *origin;
+                            else if constexpr (std::is_copy_assignable_v<value_type>)
+                                return origin;
+                            else // can't copy - targetCopy is now a pointer
+                                return &origin;
+                        }(target);
+                        for (auto &&[role, value] : data.asKeyValueRange()) {
+                            const QByteArray roleName = roleNames().value(role);
+                            bool written = false;
+                            if constexpr (std::is_base_of_v<QObject, meta_type>) {
+                                if (targetCopy)
+                                    written = targetCopy->setProperty(roleName, value);
+                            } else {
+                                const int pi = mo.indexOfProperty(roleName.constData());
+                                if (pi >= 0) {
+                                    const QMetaProperty prop = mo.property(pi);
+                                    if (prop.isValid())
+                                        written = prop.writeOnGadget(QGenericItemModelDetails::pointerTo(targetCopy), value);
+                                }
+                            }
+                            if (!written) {
+                                qWarning("Failed to write value for %s", roleName.data());
+                                return false;
+                            }
+                        }
+                        if constexpr (std::is_base_of_v<QObject, meta_type>)
+                            target = targetCopy; // nothing actually copied
+                        else if constexpr (std::is_pointer_v<decltype(target)>)
+                            qSwap(*target, targetCopy);
+                        else if constexpr (std::is_pointer_v<decltype(targetCopy)>)
+                            ; // couldn't copy
+                        else
+                            qSwap(target, targetCopy);
+                        return true;
+                    }
                 }
                 return false;
             };

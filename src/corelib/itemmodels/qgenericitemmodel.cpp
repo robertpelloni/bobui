@@ -358,6 +358,12 @@ bool QGenericItemModel::setData(const QModelIndex &index, const QVariant &data, 
     from either \c{int}, Qt::ItemDataRole, or QString to a QVariant, then the
     data from that container is returned.
 
+    If the item type is a gadget or QObject subclass, then the values of those
+    properties that match a \l{roleNames()}{role name} are returned.
+
+    If the item is not an associative container, gadget, or QObject subclass,
+    then this calls the base class implementation.
+
     \sa setItemData(), Qt::ItemDataRole, data()
 */
 QMap<int, QVariant> QGenericItemModel::itemData(const QModelIndex &index) const
@@ -374,14 +380,20 @@ QMap<int, QVariant> QGenericItemModel::itemData(const QModelIndex &index) const
     QString to QVariant, then only those values in \a data are stored for which
     there is a mapping in the \l{roleNames()}{role names} table.
 
+    If the item type is a gadget or QObject subclass, then those properties that
+    match a \l{roleNames()}{role name} are set to the corresponding value in
+    \a data.
+
     Roles for which there is no entry in \a data are not modified.
 
-    This implementation is transactional, and returns true if all the entries
-    from \a data could be stored. If any entry could not be updated, then the
-    original container is not modified at all, and the function returns false.
+    For item types that can be copied, this implementation is transactional,
+    and returns true if all the entries from \a data could be stored. If any
+    entry could not be updated, then the original container is not modified at
+    all, and the function returns false.
 
-    If the item is not an associative container, then this calls the base class
-    implementation, which calls setData() for each entry in \a data.
+    If the item is not an associative container, gadget, or QObject subclass,
+    then this calls the base class implementation, which calls setData() for
+    each entry in \a data.
 
     \sa itemData(), setData(), Qt::ItemDataRole
 */

@@ -333,7 +333,7 @@ void tst_QGenericItemModel::createTestData()
         << 1 << ChangeActions(ChangeAction::SetData);
 
     ADD_POINTER(cArrayFixedColumns)
-        << int(std::tuple_size_v<Row>) << ChangeActions(ChangeAction::SetData);
+        << int(std::tuple_size_v<Row>) << (ChangeAction::SetData | ChangeAction::SetItemData);
 
     ADD_COPY(vectorOfFixedColumns)
         << 2 << (ChangeAction::ChangeRows | ChangeAction::SetData);
@@ -344,22 +344,24 @@ void tst_QGenericItemModel::createTestData()
     ADD_POINTER(vectorOfArrays)
         << 10 << (ChangeAction::ChangeRows | ChangeAction::SetData);
     ADD_COPY(vectorOfStructs)
-        << int(std::tuple_size_v<Row>) << (ChangeAction::ChangeRows | ChangeAction::SetData);
+        << int(std::tuple_size_v<Row>) << (ChangeAction::ChangeRows | ChangeAction::SetData
+                                                                    | ChangeAction::SetItemData);
     ADD_POINTER(vectorOfStructs)
-        << int(std::tuple_size_v<Row>) << (ChangeAction::ChangeRows | ChangeAction::SetData);
+        << int(std::tuple_size_v<Row>) << (ChangeAction::ChangeRows | ChangeAction::SetData
+                                                                    | ChangeAction::SetItemData);
     ADD_COPY(vectorOfConstStructs)
         << int(std::tuple_size_v<ConstRow>) << ChangeActions(ChangeAction::ChangeRows);
     ADD_POINTER(vectorOfConstStructs)
         << int(std::tuple_size_v<ConstRow>) << ChangeActions(ChangeAction::ChangeRows);
 
     ADD_COPY(vectorOfGadgets)
-        << 3 << (ChangeAction::ChangeRows | ChangeAction::SetData);
+        << 3 << (ChangeAction::ChangeRows | ChangeAction::SetData | ChangeAction::SetItemData);
     ADD_POINTER(vectorOfGadgets)
-        << 3 << (ChangeAction::ChangeRows | ChangeAction::SetData);
+        << 3 << (ChangeAction::ChangeRows | ChangeAction::SetData | ChangeAction::SetItemData);
     ADD_COPY(listOfGadgets)
-        << 1 << (ChangeAction::ChangeRows | ChangeAction::SetData);
+        << 1 << (ChangeAction::ChangeRows | ChangeAction::SetData | ChangeAction::SetItemData);
     ADD_POINTER(listOfGadgets)
-        << 1 << (ChangeAction::ChangeRows | ChangeAction::SetData);
+        << 1 << (ChangeAction::ChangeRows | ChangeAction::SetData | ChangeAction::SetItemData);
     ADD_COPY(listOfObjects)
         << 2 << (ChangeAction::ChangeRows | ChangeAction::SetData);
 
@@ -369,9 +371,10 @@ void tst_QGenericItemModel::createTestData()
         << 5 << ChangeActions(ChangeAction::All);
     // only adding as pointer, copy would operate on the same data
     ADD_POINTER(tableOfPointers)
-        << 2 << ChangeActions(ChangeAction::All);
+        << 2 << ChangeActions(ChangeAction::All | ChangeAction::SetItemData);
     ADD_POINTER(tableOfRowPointers)
-        << int(std::tuple_size_v<Row>) << (ChangeAction::ChangeRows | ChangeAction::SetData);
+        << int(std::tuple_size_v<Row>) << (ChangeAction::ChangeRows | ChangeAction::SetData
+                                                                    | ChangeAction::SetItemData);
 
     ADD_COPY(arrayOfConstNumbers)
         << 1 << ChangeActions(ChangeAction::ReadOnly);
@@ -577,8 +580,11 @@ void tst_QGenericItemModel::itemData()
 
     const QModelIndex index = model->index(0, 0);
     const QMap<int, QVariant> itemData = model->itemData(index);
-    for (int role = 0; role < Qt::UserRole; ++role)
+    for (int role = 0; role < Qt::UserRole; ++role) {
+        if (role == Qt::EditRole) // we fake that in data()
+            continue;
         QCOMPARE(itemData.value(role), index.data(role));
+    }
 }
 
 void tst_QGenericItemModel::setItemData()
@@ -592,14 +598,16 @@ void tst_QGenericItemModel::setItemData()
     const QModelIndex index = model->index(0, 0);
     QMap<int, QVariant> itemData = model->itemData(index);
     // we only care about multi-role models
-    if (itemData.keys() == QList<int>{Qt::DisplayRole, Qt::EditRole})
+    const auto roles = itemData.keys();
+    if (roles == QList<int>{Qt::DisplayRole, Qt::EditRole})
         QSKIP("Can't test setItemData on models with single values!");
 
     itemData = {};
-
-    const auto roles = model->roleNames().keys();
     for (int role : roles) {
-        QVariant data = QStringLiteral("Role %1").arg(role);
+        if (role == Qt::EditRole) // faked
+            continue;
+        QVariant data = role != Qt::DecorationRole ? QVariant(QStringLiteral("Role %1").arg(role))
+                                                   : QVariant(QColor(Qt::magenta));
         itemData.insert(role, data);
     }
 
@@ -621,6 +629,9 @@ void tst_QGenericItemModel::setItemData()
     }
 
     for (int role = 0; role < Qt::UserRole; ++role) {
+        if (role == Qt::EditRole) // faked role
+            continue;
+
         QVariant data = index.data(role);
         auto diagnostics = qScopeGuard([&]{
             qDebug() << "Mismatch for" << Qt::ItemDataRole(role);
