@@ -161,6 +161,8 @@ public:
         return QByteArrayLiteral("UTC");
     }
 
+    [[nodiscard]] static QTimeZone utcQTimeZone();
+
 protected:
     // Zones CLDR data says match a condition.
     // Use to filter what the backend has available.
