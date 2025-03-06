@@ -1034,12 +1034,15 @@ function(qt_internal_write_basic_module_package target target_private)
         endif()
     endif()
 
-    if(arg_IS_STATIC_LIB AND NOT arg_PRIVATE AND CMAKE_VERSION VERSION_LESS "3.26")
-        # We auto-load the private module package from the public module package if we have a static
-        # Qt module and CMake's version is < 3.26. This is needed for the case "Qt6Foo links against
-        # Qt6BarPrivate", because CMake generates a check for the target Qt6::BarPrivate in
-        # Qt6FooTargets.cmake. Once we can require CMake 3.26, we can simply link against
-        # $<BUILD_LOCAL_INTERFACE:Qt6BarPrivate> in qt_internal_extend_target.
+    if((QT_FEATURE_no_prefix OR arg_IS_STATIC_LIB)
+            AND NOT arg_PRIVATE
+            AND CMAKE_VERSION VERSION_LESS "3.26")
+        # We auto-load the private module package from the public module package if we have a
+        # statically built module or a non-prefix build and CMake's version is < 3.26. This is
+        # needed for the case "Qt6Foo links against Qt6BarPrivate", because CMake generates a check
+        # for the target Qt6::BarPrivate in Qt6FooTargets.cmake. Once we can require CMake 3.26, we
+        # can simply link against $<BUILD_LOCAL_INTERFACE:Qt6BarPrivate> in
+        # qt_internal_extend_target.
         #
         # For older CMake versions, we create an additional CMake file that's optionally included by
         # Qt6FooConfig.cmake to work around the lack of BUILD_LOCAL_INTERFACE.

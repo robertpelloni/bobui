@@ -1526,3 +1526,11 @@ qt_feature_definition("test_gui" "QT_GUI_TEST" VALUE "1")
 qt_feature("test_gui" PUBLIC
     LABEL "Build QtGuiTest namespace"
 )
+
+qt_configure_add_report_entry(
+    TYPE WARNING
+    MESSAGE "Starting with Qt 6.10, a -no-prefix or -developer-build
+Qt build might not find all necessary Qt packages when using CMake < 3.26.
+Please use a newer CMake version."
+    CONDITION QT_FEATURE_no_prefix AND CMAKE_VERSION VERSION_LESS "3.26"
+)
