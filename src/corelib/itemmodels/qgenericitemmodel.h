@@ -5,6 +5,7 @@
 #define QGENERICITEMMODEL_H
 
 #include <QtCore/qgenericitemmodel_impl.h>
+#include <QtCore/qmap.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -26,6 +27,8 @@ public:
     QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     bool setData(const QModelIndex &index, const QVariant &data, int role = Qt::EditRole) override;
+    QMap<int, QVariant> itemData(const QModelIndex &index) const override;
+    bool setItemData(const QModelIndex &index, const QMap<int, QVariant> &data) override;
     bool clearItemData(const QModelIndex &index) override;
     bool insertColumns(int column, int count, const QModelIndex &parent = {}) override;
     bool removeColumns(int column, int count, const QModelIndex &parent = {}) override;
@@ -170,6 +173,8 @@ public:
             break;
         case Data: makeCall(that, &Self::data, r, args);
             break;
+        case ItemData: makeCall(that, &Self::itemData, r, args);
+            break;
         }
     }
 
@@ -179,6 +184,8 @@ public:
         case Destroy: delete static_cast<Structure *>(that);
             break;
         case SetData: makeCall(that, &Self::setData, r, args);
+            break;
+        case SetItemData: makeCall(that, &Self::setItemData, r, args);
             break;
         case ClearItemData: makeCall(that, &Self::clearItemData, r, args);
             break;
@@ -283,6 +290,50 @@ public:
         return result;
     }
 
+    QMap<int, QVariant> itemData(const QModelIndex &index) const
+    {
+        QMap<int, QVariant> result;
+        bool tried = false;
+        const auto readItemData = [this, &result, &tried](auto &&value){
+            Q_UNUSED(this);
+            using value_type = q20::remove_cvref_t<decltype(value)>;
+            using multi_role = QGenericItemModelDetails::is_multi_role<value_type>;
+            if constexpr (multi_role()) {
+                tried = true;
+                if constexpr (std::is_convertible_v<value_type, decltype(result)>) {
+                    result = value;
+                } else {
+                    for (auto it = std::cbegin(value); it != std::cend(value); ++it) {
+                        int role = [this, key = QGenericItemModelDetails::key(it)]() {
+                            Q_UNUSED(this);
+                            if constexpr (multi_role::int_key)
+                                return int(key);
+                            else
+                                return roleNames().key(key.toUtf8(), -1);
+                        }();
+
+                        if (role != -1)
+                            result.insert(role, QGenericItemModelDetails::value(it));
+                    }
+                }
+            }
+        };
+
+        if (index.isValid()) {
+            const_row_reference row = rowData(index);
+            if constexpr (dynamicColumns())
+                readItemData(*std::next(std::cbegin(row), index.column()));
+            else if constexpr (static_column_count == 0)
+                readItemData(row);
+            else if (QGenericItemModelDetails::isValid(row))
+                for_element_at(row, index.column(), readItemData);
+
+            if (!tried) // no multi-role item found
+                return m_itemModel->QAbstractItemModel::itemData(index);
+        }
+        return result;
+    }
+
     bool setData(const QModelIndex &index, const QVariant &data, int role)
     {
         if (!index.isValid())
@@ -337,6 +388,78 @@ public:
                         success = writeData(std::forward<target_type>(target));
                     }
                 });
+            }
+        }
+        return success;
+    }
+
+    bool setItemData(const QModelIndex &index, const QMap<int, QVariant> &data)
+    {
+        if (!index.isValid() || data.isEmpty())
+            return false;
+
+        bool success = false;
+        if constexpr (isMutable()) {
+            auto emitDataChanged = qScopeGuard([&success, this, &index, &data]{
+                if (success)
+                    Q_EMIT dataChanged(index, index, data.keys());
+            });
+
+            bool tried = false;
+            auto writeItemData = [this, &tried, &data](auto &target) -> bool {
+                Q_UNUSED(this);
+                using value_type = q20::remove_cvref_t<decltype(target)>;
+                using multi_role = QGenericItemModelDetails::is_multi_role<value_type>;
+                if constexpr (multi_role()) {
+                    using key_type = typename value_type::key_type;
+                    tried = true;
+                    const auto roleName = [map = roleNames()](int role) { return map.value(role); };
+
+                    // transactional: only update target if all values from data
+                    // can be stored. Storing never fails with int-keys.
+                    if constexpr (!multi_role::int_key)
+                    {
+                        auto invalid = std::find_if(data.keyBegin(), data.keyEnd(),
+                            [&roleName](int role) { return roleName(role).isEmpty(); }
+                        );
+
+                        if (invalid != data.keyEnd()) {
+                            qWarning("No role name set for %d", *invalid);
+                            return false;
+                        }
+                    }
+
+                    for (auto &&[role, value] : data.asKeyValueRange()) {
+                        if constexpr (multi_role::int_key)
+                            target[static_cast<key_type>(role)] = value;
+                        else
+                            target[QString::fromUtf8(roleName(role))] = value;
+                    }
+                    return true;
+                }
+                return false;
+            };
+
+            row_reference row = rowData(index);
+            if constexpr (dynamicColumns()) {
+                success = writeItemData(*std::next(std::begin(row), index.column()));
+            } else if constexpr (static_column_count == 0) {
+                success = writeItemData(row);
+            } else if (QGenericItemModelDetails::isValid(row)) {
+                for_element_at(row, index.column(), [&writeItemData, &success](auto &&target){
+                    using target_type = decltype(target);
+                    // we can only assign to an lvalue reference
+                    if constexpr (std::is_lvalue_reference_v<target_type>
+                              && !std::is_const_v<std::remove_reference_t<target_type>>) {
+                        success = writeItemData(std::forward<target_type>(target));
+                    }
+                });
+            }
+
+            if (!tried) {
+                // setItemData will emit the dataChanged signal
+                emitDataChanged.dismiss();
+                success = m_itemModel->QAbstractItemModel::setItemData(index, data);
             }
         }
         return success;

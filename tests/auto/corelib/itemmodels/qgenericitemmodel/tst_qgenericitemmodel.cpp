@@ -84,6 +84,10 @@ private slots:
     void data();
     void setData_data() { createTestData(); }
     void setData();
+    void itemData_data() { createTestData(); }
+    void itemData();
+    void setItemData_data() { createTestData(); }
+    void setItemData();
     void clearItemData_data() { createTestData(); }
     void clearItemData();
     void insertRows_data() { createTestData(); }
@@ -183,6 +187,18 @@ private:
             {{{Qt::DisplayRole, "DISPLAY2"}, {Qt::DecorationRole, "DECORATION2"}}},
             {{{Qt::DisplayRole, "DISPLAY3"}, {Qt::DecorationRole, "DECORATION3"}}},
         };
+        std::vector<std::vector<QMap<int, QVariant>>> tableOfIntRoles = {
+            {{{Qt::DisplayRole, "DISPLAY0"}, {Qt::DecorationRole, "DECORATION0"}}},
+            {{{Qt::DisplayRole, "DISPLAY1"}, {Qt::DecorationRole, "DECORATION1"}}},
+            {{{Qt::DisplayRole, "DISPLAY2"}, {Qt::DecorationRole, "DECORATION2"}}},
+            {{{Qt::DisplayRole, "DISPLAY3"}, {Qt::DecorationRole, "DECORATION3"}}},
+        };
+        std::vector<std::vector<std::map<int, QVariant>>> stdTableOfIntRoles = {
+            {{{Qt::DisplayRole, "DISPLAY0"}, {Qt::DecorationRole, "DECORATION0"}}},
+            {{{Qt::DisplayRole, "DISPLAY1"}, {Qt::DecorationRole, "DECORATION1"}}},
+            {{{Qt::DisplayRole, "DISPLAY2"}, {Qt::DecorationRole, "DECORATION2"}}},
+            {{{Qt::DisplayRole, "DISPLAY3"}, {Qt::DecorationRole, "DECORATION3"}}},
+        };
     };
 
     std::unique_ptr<Data> m_data;
@@ -198,7 +214,8 @@ public:
         RemoveColumns   = 0x08,
         ChangeColumns   = InsertColumns | RemoveColumns,
         SetData         = 0x10,
-        All             = ChangeRows | ChangeColumns | SetData
+        All             = ChangeRows | ChangeColumns | SetData,
+        SetItemData     = 0x20,
     };
     Q_DECLARE_FLAGS(ChangeActions, ChangeAction);
 };
@@ -288,13 +305,21 @@ void tst_QGenericItemModel::createTestData()
         << 5 << ChangeActions(ChangeAction::ReadOnly);
 
     ADD_COPY(listOfNamedRoles)
-        << 1 << (ChangeAction::ChangeRows | ChangeAction::SetData);
+        << 1 << (ChangeAction::ChangeRows | ChangeAction::SetData | ChangeAction::SetItemData);
     ADD_POINTER(listOfNamedRoles)
-        << 1 << (ChangeAction::ChangeRows | ChangeAction::SetData);
+        << 1 << (ChangeAction::ChangeRows | ChangeAction::SetData | ChangeAction::SetItemData);
     ADD_COPY(tableOfEnumRoles)
-        << 1 << ChangeActions(ChangeAction::All);
+        << 1 << ChangeActions(ChangeAction::All | ChangeAction::SetItemData);
     ADD_POINTER(tableOfEnumRoles)
-        << 1 << ChangeActions(ChangeAction::All);
+        << 1 << ChangeActions(ChangeAction::All | ChangeAction::SetItemData);
+    ADD_COPY(tableOfIntRoles)
+        << 1 << ChangeActions(ChangeAction::All | ChangeAction::SetItemData);
+    ADD_POINTER(tableOfIntRoles)
+        << 1 << ChangeActions(ChangeAction::All | ChangeAction::SetItemData);
+    ADD_COPY(stdTableOfIntRoles)
+        << 1 << ChangeActions(ChangeAction::All | ChangeAction::SetItemData);
+    ADD_POINTER(stdTableOfIntRoles)
+        << 1 << ChangeActions(ChangeAction::All | ChangeAction::SetItemData);
 
 #undef ADD_COPY
 #undef ADD_POINTER
@@ -459,6 +484,70 @@ void tst_QGenericItemModel::setData()
     QCOMPARE(first.data() == oldValue, !changeActions.testFlag(ChangeAction::SetData));
 }
 
+void tst_QGenericItemModel::itemData()
+{
+    QFETCH(Factory, factory);
+    auto model = factory();
+
+    QVERIFY(model->itemData({}).isEmpty());
+
+    const QModelIndex index = model->index(0, 0);
+    const QMap<int, QVariant> itemData = model->itemData(index);
+    for (int role = 0; role < Qt::UserRole; ++role)
+        QCOMPARE(itemData.value(role), index.data(role));
+}
+
+void tst_QGenericItemModel::setItemData()
+{
+    QFETCH(Factory, factory);
+    auto model = factory();
+    QFETCH(const ChangeActions, changeActions);
+
+    QVERIFY(!model->setItemData({}, {}));
+
+    const QModelIndex index = model->index(0, 0);
+    QMap<int, QVariant> itemData = model->itemData(index);
+    // we only care about multi-role models
+    if (itemData.keys() == QList<int>{Qt::DisplayRole, Qt::EditRole})
+        QSKIP("Can't test setItemData on models with single values!");
+
+    itemData = {};
+
+    const auto roles = model->roleNames().keys();
+    for (int role : roles) {
+        QVariant data = QStringLiteral("Role %1").arg(role);
+        itemData.insert(role, data);
+    }
+
+    QCOMPARE_NE(model->itemData(index), itemData);
+    QCOMPARE(model->setItemData(index, itemData),
+             changeActions.testFlag(ChangeAction::SetItemData));
+    if (!changeActions.testFlag(ChangeAction::SetItemData))
+        return; // nothing more to test for those models
+
+    {
+        const auto newItemData = model->itemData(index);
+        auto diagnostics = qScopeGuard([&]{
+            qDebug() << "Mismatch";
+            qDebug() << "     Actual:" << newItemData;
+            qDebug() << "   Expected:" << itemData;
+        });
+        QCOMPARE(newItemData == itemData, changeActions.testFlag(ChangeAction::SetItemData));
+        diagnostics.dismiss();
+    }
+
+    for (int role = 0; role < Qt::UserRole; ++role) {
+        QVariant data = index.data(role);
+        auto diagnostics = qScopeGuard([&]{
+            qDebug() << "Mismatch for" << Qt::ItemDataRole(role);
+            qDebug() << "     Actual:" << data;
+            qDebug() << "   Expected:" << itemData.value(role);
+        });
+        QCOMPARE(data == itemData.value(role), changeActions.testFlag(ChangeAction::SetData));
+        diagnostics.dismiss();
+    }
+}
+
 void tst_QGenericItemModel::clearItemData()
 {
     QFETCH(Factory, factory);
@@ -495,6 +584,10 @@ void tst_QGenericItemModel::insertRows()
         QEXPECT_FAIL("listOfNamedRolesCopy", "QVariantMap is empty by design", Continue);
         QEXPECT_FAIL("tableOfEnumRolesPointer", "QVariantMap is empty by design", Continue);
         QEXPECT_FAIL("tableOfEnumRolesCopy", "QVariantMap is empty by design", Continue);
+        QEXPECT_FAIL("tableOfIntRolesPointer", "QVariantMap is empty by design", Continue);
+        QEXPECT_FAIL("tableOfIntRolesCopy", "QVariantMap is empty by design", Continue);
+        QEXPECT_FAIL("stdTableOfIntRolesPointer", "std::map is empty by design", Continue);
+        QEXPECT_FAIL("stdTableOfIntRolesCopy", "std::map is empty by design", Continue);
     };
     // get and put data into the new row
     const QModelIndex firstItem = model->index(0, 0);

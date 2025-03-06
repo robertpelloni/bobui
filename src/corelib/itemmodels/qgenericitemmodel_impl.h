@@ -295,11 +295,13 @@ public:
         Flags,
         HeaderData,
         Data,
+        ItemData,
     };
 
     enum Op {
         Destroy,
         SetData,
+        SetItemData,
         ClearItemData,
         InsertColumns,
         RemoveColumns,

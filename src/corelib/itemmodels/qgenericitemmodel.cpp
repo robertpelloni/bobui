@@ -108,13 +108,15 @@ QT_BEGIN_NAMESPACE
     \l{Qt::ItemDataRole}, or QString as the key type, and QVariant as the
     mapped type, then QGenericItemModel interprets that container as the storage
     of the data for multiple roles. The data() and setData() functions return
-    and modify the mapped value in the container, and clearItemData() clears
-    the entire container.
+    and modify the mapped value in the container, and setItemData() modifies all
+    provided values, itemData() returns all stored values, and clearItemData()
+    clears the entire container.
 
     \snippet qgenericitemmodel/main.cpp color_map
 
     The most efficient data type to use as the key is Qt::ItemDataRole or
-    \c{int}.
+    \c{int}. When using \c{int}, itemData() returns the container as is, and
+    doesn't have to create a copy of the data.
 
     \section2 The C++ tuple protocol
 
@@ -313,6 +315,48 @@ QVariant QGenericItemModel::data(const QModelIndex &index, int role) const
 bool QGenericItemModel::setData(const QModelIndex &index, const QVariant &data, int role)
 {
     return impl->call<bool>(QGenericItemModelImplBase::SetData, index, data, role);
+}
+
+/*!
+    \reimp
+
+    Returns a map with values for all predefined roles in the model for the
+    item at the given \a index.
+
+    If the item type for that \a index is an associative container that maps
+    from either \c{int}, Qt::ItemDataRole, or QString to a QVariant, then the
+    data from that container is returned.
+
+    \sa setItemData(), Qt::ItemDataRole, data()
+*/
+QMap<int, QVariant> QGenericItemModel::itemData(const QModelIndex &index) const
+{
+    return impl->callConst<QMap<int, QVariant>>(QGenericItemModelImplBase::ItemData, index);
+}
+
+/*!
+    \reimp
+
+    If the item type for that \a index is an associative container that maps
+    from either \c{int} or Qt::ItemDataRole to a QVariant, then the entries in
+    \a data are stored in that container. If the associative container maps from
+    QString to QVariant, then only those values in \a data are stored for which
+    there is a mapping in the \l{roleNames()}{role names} table.
+
+    Roles for which there is no entry in \a data are not modified.
+
+    This implementation is transactional, and returns true if all the entries
+    from \a data could be stored. If any entry could not be updated, then the
+    original container is not modified at all, and the function returns false.
+
+    If the item is not an associative container, then this calls the base class
+    implementation, which calls setData() for each entry in \a data.
+
+    \sa itemData(), setData(), Qt::ItemDataRole
+*/
+bool QGenericItemModel::setItemData(const QModelIndex &index, const QMap<int, QVariant> &data)
+{
+    return impl->call<bool>(QGenericItemModelImplBase::SetItemData, index, data);
 }
 
 /*!
