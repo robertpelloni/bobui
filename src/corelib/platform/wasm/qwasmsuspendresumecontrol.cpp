@@ -180,10 +180,35 @@ QWasmEventHandler::QWasmEventHandler(emscripten::val element, const std::string 
 
 QWasmEventHandler::~QWasmEventHandler()
 {
+    // Do nothing if this instance is default-constructed, or was moved from.
+    if (m_element.isUndefined())
+        return;
+
     QWasmSuspendResumeControl *suspendResume = QWasmSuspendResumeControl::get();
     Q_ASSERT(suspendResume);
     m_element.call<void>("removeEventListener", m_name, suspendResume->jsEventHandlerAt(m_eventHandlerIndex));
     suspendResume->removeEventHandler(m_eventHandlerIndex);
+}
+
+QWasmEventHandler::QWasmEventHandler(QWasmEventHandler&& other) noexcept
+:m_element(std::move(other.m_element))
+,m_name(std::move(other.m_name))
+,m_eventHandlerIndex(other.m_eventHandlerIndex)
+{
+    other.m_element = emscripten::val();
+    other.m_name = emscripten::val();
+    other.m_eventHandlerIndex = 0;
+}
+
+QWasmEventHandler& QWasmEventHandler::operator=(QWasmEventHandler&& other) noexcept
+{
+    m_element = std::move(other.m_element);
+    other.m_element = emscripten::val();
+    m_name = std::move(other.m_name);
+    other.m_name = emscripten::val();
+    m_eventHandlerIndex = other.m_eventHandlerIndex;
+    other.m_eventHandlerIndex = 0;
+    return *this;
 }
 
 //

@@ -51,12 +51,13 @@ class Q_CORE_EXPORT QWasmEventHandler
 {
 public:
     QWasmEventHandler() = default;
+    QWasmEventHandler(emscripten::val element, const std::string &name,
+                      std::function<void(emscripten::val)> fn);
     ~QWasmEventHandler();
     QWasmEventHandler(QWasmEventHandler const&) = delete;
     QWasmEventHandler& operator=(QWasmEventHandler const&) = delete;
-    QWasmEventHandler(emscripten::val element, const std::string &name,
-                      std::function<void(emscripten::val)> fn);
-
+    QWasmEventHandler(QWasmEventHandler&& other) noexcept;
+    QWasmEventHandler& operator=(QWasmEventHandler&& other) noexcept;
 private:
     emscripten::val m_element;
     emscripten::val m_name;
