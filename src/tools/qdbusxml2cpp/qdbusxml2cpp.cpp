@@ -610,9 +610,9 @@ void QDBusXmlToCpp::writeProxy(const QString &filename,
     }
 
     if (!customNamespace.isEmpty()) {
-        hs << "namespace " << customNamespace << " { \n"
+        hs << "namespace " << customNamespace << " {\n"
               "\n";
-        cs << "namespace " << customNamespace << " { \n"
+        cs << "namespace " << customNamespace << " {\n"
               "\n";
     }
 
@@ -956,9 +956,9 @@ void QDBusXmlToCpp::writeAdaptor(const QString &filename,
         parent = u"QObject"_s;
 
     if (!customNamespace.isEmpty()) {
-        hs << "namespace " << customNamespace << " { \n"
+        hs << "namespace " << customNamespace << " {\n"
               "\n";
-        cs << "namespace " << customNamespace << " { \n"
+        cs << "namespace " << customNamespace << " {\n"
               "\n";
     }
 
