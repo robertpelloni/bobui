@@ -330,6 +330,7 @@ void QWasmAccessibility::setHtmlElementVisibility(QAccessibleInterface *iface, b
 
     container.call<void>("appendChild", element);
 
+    visible = visible && !iface->state().invisible && !iface->state().disabled;
     element.set("ariaHidden", !visible); // ariaHidden mean completely hidden; maybe some sort of soft-hidden should be used.
 }
 
@@ -549,8 +550,7 @@ void QWasmAccessibility::populateAccessibilityTree(QAccessibleInterface *iface)
 
     // Create html element for the interface, sync up properties.
     ensureHtmlElement(iface);
-    const bool visible = !iface->state().invisible;
-    setHtmlElementVisibility(iface, visible);
+    setHtmlElementVisibility(iface, true);
     setHtmlElementGeometry(iface);
     setHtmlElementTextName(iface);
     setHtmlElementDescription(iface);
