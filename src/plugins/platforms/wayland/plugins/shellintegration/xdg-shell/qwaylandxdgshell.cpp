@@ -567,16 +567,18 @@ bool QWaylandXdgSurface::requestActivate()
             if (const auto xdgSurface = qobject_cast<QWaylandXdgSurface *>(wlWindow->shellSurface()))
                 appId = xdgSurface->m_appId;
 
-            if (const auto seat = wlWindow->display()->lastInputDevice()) {
-                const auto tokenProvider = activation->requestXdgActivationToken(
-                        wlWindow->display(), wlWindow->wlSurface(), seat->serial(), appId);
-                connect(tokenProvider, &QWaylandXdgActivationTokenV1::done, this,
-                        [this](const QString &token) {
-                            m_shell->activation()->activate(token, window()->wlSurface());
-                        });
-                connect(tokenProvider, &QWaylandXdgActivationTokenV1::done, tokenProvider, &QObject::deleteLater);
-                return true;
-            }
+            std::optional<uint32_t> serial;
+            if (const auto seat = wlWindow->display()->lastInputDevice())
+                serial = seat->serial();
+
+            const auto tokenProvider = activation->requestXdgActivationToken(
+                    wlWindow->display(), wlWindow->wlSurface(), serial, appId);
+            connect(tokenProvider, &QWaylandXdgActivationTokenV1::done, this,
+                    [this](const QString &token) {
+                        m_shell->activation()->activate(token, window()->wlSurface());
+                    });
+            connect(tokenProvider, &QWaylandXdgActivationTokenV1::done, tokenProvider, &QObject::deleteLater);
+            return true;
         }
     }
     return false;
