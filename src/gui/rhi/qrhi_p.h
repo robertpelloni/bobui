@@ -29,6 +29,7 @@ QT_BEGIN_NAMESPACE
 #define QRHI_RES_RHI(t) t *rhiD = static_cast<t *>(m_rhi)
 
 Q_DECLARE_LOGGING_CATEGORY(QRHI_LOG_INFO)
+Q_DECLARE_LOGGING_CATEGORY(QRHI_LOG_RUB)
 
 class QRhiImplementation
 {
@@ -263,7 +264,6 @@ private:
     QHash<const void *, QRhi::CleanupCallback> keyedCleanupCallbacks;
     QElapsedTimer pipelineCreationTimer;
     qint64 accumulatedPipelineCreationTime = 0;
-    static bool rubLogEnabled;
 
     friend class QRhi;
     friend class QRhiResourceUpdateBatchPrivate;
@@ -376,7 +376,7 @@ public:
         if (!d) {
             d = new QRhiBufferDataPrivate;
         } else if (d->ref != 1) {
-            if (QRhiImplementation::rubLogEnabled)
+            if (QRHI_LOG_RUB().isDebugEnabled())
                 qDebug("[rub] QRhiBufferData %p/%p new backing due to no-copy detach, ref was %d", this, d, d->ref);
             d->ref -= 1;
             d = new QRhiBufferDataPrivate;
@@ -385,7 +385,7 @@ public:
         if (size <= QRhiBufferDataPrivate::SMALL_DATA_SIZE) {
             memcpy(d->smallData, s, size);
         } else {
-            if (QRhiImplementation::rubLogEnabled && largeAlloc() < size)
+            if (QRHI_LOG_RUB().isDebugEnabled() && largeAlloc() < size)
                 qDebug("[rub] QRhiBufferData %p/%p new large data allocation %u -> %u", this, d, largeAlloc(), size);
             d->largeData.assign(QByteArrayView(s, size)); // keeps capacity
         }
@@ -395,7 +395,7 @@ public:
         if (!d) {
             d = new QRhiBufferDataPrivate;
         } else if (d->ref != 1) {
-            if (QRhiImplementation::rubLogEnabled)
+            if (QRHI_LOG_RUB().isDebugEnabled())
                 qDebug("[rub] QRhiBufferData %p/%p new backing due to no-copy detach, ref was %d", this, d, d->ref);
             d->ref -= 1;
             d = new QRhiBufferDataPrivate;
