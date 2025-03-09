@@ -106,13 +106,13 @@ public:
          * not only the one issued from event thread's waitForReading(), which means functions
          * called from dispatch_pending() can safely spin an event loop.
          */
-        if (m_quitting)
+        if (m_quitting.loadRelaxed())
             return;
 
         for (;;) {
             if (dispatchQueuePending() < 0) {
                 Q_EMIT waylandError();
-                m_quitting = true;
+                m_quitting.storeRelaxed(true);
                 return;
             }
 
@@ -139,11 +139,8 @@ public:
         if (m_pipefd[1] != -1 && write(m_pipefd[1], "\0", 1) == -1)
             qWarning("Failed to write to the pipe: %s.", strerror(errno));
 
-        {
-            QMutexLocker l(&m_mutex);
-            m_quitting = true;
-            m_cond.wakeOne();
-        }
+        m_quitting.storeRelaxed(true);
+        m_cond.wakeOne();
 
         wait();
     }
@@ -216,11 +213,11 @@ private:
             QMutexLocker lock(&m_mutex);
             // m_reading might be set from our emit or some other invocation of
             // readAndDispatchEvents().
-            while (!m_reading.loadRelaxed() && !m_quitting)
+            while (!m_reading.loadRelaxed() && !m_quitting.loadRelaxed())
                 m_cond.wait(&m_mutex);
         }
 
-        return !m_quitting;
+        return !m_quitting.loadRelaxed();
     }
 
     int dispatchQueuePending()
@@ -255,7 +252,7 @@ private:
      */
 
     QAtomicInteger<bool> m_reading;
-    bool m_quitting;
+    QAtomicInteger<bool> m_quitting;
     QMutex m_mutex;
     QWaitCondition m_cond;
 };
