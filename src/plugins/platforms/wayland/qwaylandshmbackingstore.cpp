@@ -196,7 +196,7 @@ void QWaylandShmBackingStore::beginPaint(const QRegion &region)
     // Although undocumented, QBackingStore::beginPaint expects the painted region
     // to be cleared before use if the window has a surface format with an alpha.
     // Fresh QWaylandShmBuffer are already cleared, so we don't need to clear those.
-    if (!bufferWasRecreated && mBackBuffer->image()->hasAlphaChannel()) {
+    if (!bufferWasRecreated && window()->format().hasAlpha()) {
         QPainter p(paintDevice());
         p.setCompositionMode(QPainter::CompositionMode_Source);
         const QColor blank = Qt::transparent;
