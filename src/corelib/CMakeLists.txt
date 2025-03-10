@@ -876,9 +876,10 @@ qt_internal_extend_target(Core CONDITION WIN32
         text/qlocale_win.cpp
 )
 
+# Switch this to just 'icu' once we can expect Windows 10 version 1903
 qt_internal_extend_target(Core CONDITION QT_FEATURE_winsdkicu
     LIBRARIES
-        icu
+        icuuc icuin
 )
 
 qt_internal_extend_target(Core CONDITION WASM

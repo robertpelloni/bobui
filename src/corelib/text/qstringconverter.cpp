@@ -15,14 +15,21 @@
 #include <QtCore/qbytearraylist.h>
 
 #if QT_CONFIG(icu)
+
 #include <unicode/ucnv.h>
 #include <unicode/ucnv_cb.h>
 #include <unicode/ucnv_err.h>
 #include <unicode/ustring.h>
 #define QT_USE_ICU_CODECS
+#define QT_COM_THREAD_INIT
+
 #elif QT_CONFIG(winsdkicu)
+
 #include <icu.h>
+#include <private/qfunctions_win_p.h>
 #define QT_USE_ICU_CODECS
+#define QT_COM_THREAD_INIT qt_win_ensureComInitializedOnThisThread();
+
 #endif // QT_CONFIG(icu) || QT_CONFIG(winsdkicu)
 
 #ifdef Q_OS_WIN
@@ -1841,6 +1848,7 @@ void QStringConverter::State::reset() noexcept
 {
     if (flags & Flag::UsesIcu) {
 #if defined(QT_USE_ICU_CODECS)
+        QT_COM_THREAD_INIT
         UConverter *converter = static_cast<UConverter *>(d[0]);
         if (converter)
             ucnv_reset(converter);
@@ -2162,6 +2170,7 @@ struct QStringConverterICU : QStringConverter
 {
     static void clear_function(QStringConverter::State *state) noexcept
     {
+        QT_COM_THREAD_INIT
         ucnv_close(static_cast<UConverter *>(state->d[0]));
         state->d[0] = nullptr;
     }
@@ -2176,6 +2185,7 @@ struct QStringConverterICU : QStringConverter
 
     static QChar *toUtf16(QChar *out, QByteArrayView in, QStringConverter::State *state)
     {
+        QT_COM_THREAD_INIT
         ensureConverter(state);
 
         auto icu_conv = static_cast<UConverter *>(state->d[0]);
@@ -2212,6 +2222,7 @@ struct QStringConverterICU : QStringConverter
 
     static char *fromUtf16(char *out, QStringView in, QStringConverter::State *state)
     {
+        QT_COM_THREAD_INIT
         ensureConverter(state);
         auto icu_conv = static_cast<UConverter *>(state->d[0]);
         UErrorCode err = U_ZERO_ERROR;
@@ -2277,6 +2288,7 @@ struct QStringConverterICU : QStringConverter
     {
         Q_ASSERT(name);
         Q_ASSERT(state);
+        QT_COM_THREAD_INIT
         UErrorCode status = U_ZERO_ERROR;
         UConverter *conv = ucnv_open(name, &status);
         if (status != U_ZERO_ERROR && status != U_AMBIGUOUS_ALIAS_WARNING) {
@@ -2383,6 +2395,7 @@ struct QStringConverterICU : QStringConverter
             QStringConverter::State *state,
             const char *name)
     {
+        QT_COM_THREAD_INIT
         UErrorCode status = U_ZERO_ERROR;
         UConverter *conv = createConverterForName(name, state);
         if (!conv)
@@ -2617,6 +2630,7 @@ static qsizetype availableCodecCount()
 #if !defined(QT_USE_ICU_CODECS)
     return QStringConverter::Encoding::LastEncoding;
 #else
+    QT_COM_THREAD_INIT
     /* icu contains also the names of what Qt provides
        except for the special Locale one (so add one for it)
     */
@@ -2647,6 +2661,7 @@ QStringList QStringConverter::availableCodecs()
         if (index == 0) // "Locale", not provided by icu
             return QString::fromLatin1(
                         encodingInterfaces[QStringConverter::Encoding::System].name);
+        QT_COM_THREAD_INIT
         // this mirrors the setup we do to set a converters name
         UErrorCode status = U_ZERO_ERROR;
         auto icuName = ucnv_getAvailableName(int32_t(index - 1));
