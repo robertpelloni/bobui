@@ -4369,7 +4369,7 @@ void QRhiVulkan::enqueueResourceUpdates(QVkCommandBuffer *cbD, QRhiResourceUpdat
             // Copy from the (optimal and not host visible) image into the buffer.
             VkBufferImageCopy copyDesc = {};
             copyDesc.bufferOffset = 0;
-            copyDesc.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            copyDesc.imageSubresource.aspectMask = aspectMaskForTextureFormat(readback.format);
             copyDesc.imageSubresource.mipLevel = uint32_t(u.rb.level());
             copyDesc.imageSubresource.baseArrayLayer = is3D ? 0 : uint32_t(u.rb.layer());
             copyDesc.imageSubresource.layerCount = 1;
