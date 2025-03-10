@@ -454,6 +454,24 @@ function(qt_internal_add_module target)
             set(module_header "${module_build_interface_include_dir}/${module_include_name}")
             set_property(TARGET "${target}" PROPERTY MODULE_HEADER
                     "${module_header}")
+
+            if(QT_FEATURE_no_prefix)
+                file(RELATIVE_PATH relative_include_dir
+                    "/${QT_CONFIG_INSTALL_DIR}/${module_include_name}"
+                    "/${module_build_interface_include_dir}"
+                )
+            else()
+                file(RELATIVE_PATH relative_include_dir
+                    "/${QT_CONFIG_INSTALL_DIR}/${module_include_name}"
+                    "/${module_install_interface_include_dir}"
+                )
+            endif()
+            set_property(TARGET "${target}" PROPERTY
+                _qt_module_relative_include_dir "${relative_include_dir}"
+            )
+            set_property(TARGET ${target} APPEND PROPERTY
+                EXPORT_PROPERTIES _qt_module_relative_include_dir
+            )
         endif()
 
         set(qpa_filter_regex "")
