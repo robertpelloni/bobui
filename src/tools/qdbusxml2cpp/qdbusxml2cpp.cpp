@@ -810,8 +810,7 @@ void QDBusXmlToCpp::writeProxy(const QString &filename,
     if (!customNamespace.isEmpty()) {
         hs << "} // end of namespace " << customNamespace << "\n"
            << "\n";
-        cs << "} // end of namespace " << customNamespace << "\n"
-           << "\n";
+        cs << "} // end of namespace " << customNamespace << "\n";
     }
 
     if (!skipNamespaces) {
@@ -1162,8 +1161,7 @@ void QDBusXmlToCpp::writeAdaptor(const QString &filename,
     if (!customNamespace.isEmpty()) {
         hs << "} // end of namespace " << customNamespace << "\n"
            << "\n";
-        cs << "} // end of namespace " << customNamespace << "\n"
-           << "\n";
+        cs << "} // end of namespace " << customNamespace << "\n";
     }
 
     // close the include guard
