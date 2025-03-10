@@ -99,6 +99,7 @@ private Q_SLOTS:
     void cleanupTestCase();
     void qwinregistrykey();
     void name();
+    void valueChanged();
 
 private:
     bool m_available = false;
@@ -263,6 +264,28 @@ void tst_qwinregistrykey::name()
                 RegCloseKey(baseKey);
             baseKey = childKey;
         }
+    }
+}
+
+void tst_qwinregistrykey::valueChanged()
+{
+    if (!m_available)
+        QSKIP("The test data is not ready.");
+
+    QWinRegistryKey testKey(HKEY_CURRENT_USER, TEST_KEY, KEY_READ | KEY_WRITE);
+    QVERIFY(testKey.isValid());
+
+    QVERIFY(write(testKey, u"valueThatCanChange", -1));
+
+    bool valueChanged = false;
+    QObject::connect(&testKey, &QWinRegistryKey::valueChanged, [&] {
+        valueChanged = true;
+    });
+
+    for (int i = 0; i < 10; ++i) {
+        valueChanged = false;
+        QVERIFY(write(testKey, u"valueThatCanChange", i));
+        QTRY_VERIFY(valueChanged);
     }
 }
 

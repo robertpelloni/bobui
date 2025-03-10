@@ -8,6 +8,8 @@
 #include <QtCore/qdebug.h>
 #include <QtCore/qendian.h>
 #include <QtCore/qlist.h>
+#include <QtCore/qwineventnotifier.h>
+#include <QtCore/private/qsystemerror_p.h>
 
 #include <ntstatus.h>
 
@@ -20,14 +22,17 @@ QT_BEGIN_NAMESPACE
 
 using namespace Qt::StringLiterals;
 
-QWinRegistryKey::QWinRegistryKey()
+QWinRegistryKey::QWinRegistryKey(QObject *parent)
+    : QObject(parent)
 {
 }
 
 // Open a key with the specified permissions (KEY_READ/KEY_WRITE).
 // "access" is to explicitly use the 32- or 64-bit branch.
 QWinRegistryKey::QWinRegistryKey(HKEY parentHandle, QStringView subKey,
-                                 REGSAM permissions, REGSAM access)
+                                 REGSAM permissions, REGSAM access,
+                                 QObject *parent)
+    : QObject(parent)
 {
     if (RegOpenKeyExW(parentHandle, reinterpret_cast<const wchar_t *>(subKey.utf16()),
                       0, permissions | access, &m_key) != ERROR_SUCCESS) {
@@ -172,6 +177,45 @@ QVariant QWinRegistryKey::value(QStringView subKey) const
 QString QWinRegistryKey::stringValue(QStringView subKey) const
 {
     return value<QString>(subKey).value_or(QString());
+}
+
+void QWinRegistryKey::connectNotify(const QMetaMethod &signal)
+{
+    if (signal != QMetaMethod::fromSignal(&QWinRegistryKey::valueChanged))
+        return;
+
+    if (!isValid())
+        return;
+
+    if (m_keyChangedEvent)
+        return;
+
+    m_keyChangedEvent.reset(CreateEvent(nullptr, false, false, nullptr));
+    auto *notifier = new QWinEventNotifier(m_keyChangedEvent.get(), this);
+
+    auto registerForNotification = [this] {
+        constexpr auto changeFilter =
+              REG_NOTIFY_CHANGE_NAME
+            | REG_NOTIFY_CHANGE_ATTRIBUTES
+            | REG_NOTIFY_CHANGE_LAST_SET
+            | REG_NOTIFY_CHANGE_SECURITY;
+
+        if (auto status = RegNotifyChangeKeyValue(m_key, true, changeFilter,
+            m_keyChangedEvent.get(), true); status != ERROR_SUCCESS) {
+            qWarning() << "Failed to register notification for registry key"
+                       << this << "due to" << QSystemError::windowsString(status);
+        }
+    };
+
+    QObject::connect(notifier, &QWinEventNotifier::activated, this,
+        [this, registerForNotification] {
+            emit valueChanged();
+            registerForNotification();
+        });
+
+    registerForNotification();
+
+    return QObject::connectNotify(signal);
 }
 
 #ifndef QT_NO_DEBUG_STREAM
