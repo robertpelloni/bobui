@@ -19,7 +19,7 @@ Q_LOGGING_CATEGORY(qLcQpaWasmInputContext, "qt.qpa.wasm.inputcontext")
 
 using namespace qstdweb;
 
-static void inputCallback(emscripten::val event)
+void QWasmInputContext::inputCallback(emscripten::val event)
 {
     qCDebug(qLcQpaWasmInputContext) << Q_FUNC_INFO << "isComposing : " << event["isComposing"].as<bool>();
 
@@ -103,7 +103,7 @@ static void inputCallback(emscripten::val event)
     }
 }
 
-static void compositionEndCallback(emscripten::val event)
+void QWasmInputContext::compositionEndCallback(emscripten::val event)
 {
     const auto inputStr = QString::fromStdString(event["data"].as<std::string>());
     qCDebug(qLcQpaWasmInputContext) << Q_FUNC_INFO << inputStr;
@@ -122,7 +122,7 @@ static void compositionEndCallback(emscripten::val event)
     wasmInput->commitPreeditAndClear();
 }
 
-static void compositionStartCallback(emscripten::val event)
+void QWasmInputContext::compositionStartCallback(emscripten::val event)
 {
     Q_UNUSED(event);
     qCDebug(qLcQpaWasmInputContext) << Q_FUNC_INFO;
@@ -145,7 +145,7 @@ static void beforeInputCallback(emscripten::val event)
 }
 */
 
-static void compositionUpdateCallback(emscripten::val event)
+void QWasmInputContext::compositionUpdateCallback(emscripten::val event)
 {
     const auto compositionStr = QString::fromStdString(event["data"].as<std::string>());
     qCDebug(qLcQpaWasmInputContext) << Q_FUNC_INFO << compositionStr;
@@ -232,11 +232,6 @@ static void pasteCallback(emscripten::val event)
 }
 
 EMSCRIPTEN_BINDINGS(wasminputcontext_module) {
-    function("qtCompositionEndCallback", &compositionEndCallback);
-    function("qtCompositionStartCallback", &compositionStartCallback);
-    function("qtCompositionUpdateCallback", &compositionUpdateCallback);
-    function("qtInputCallback", &inputCallback);
-    //function("qtBeforeInputCallback", &beforeInputCallback);
 
     function("qtCopyCallback", &copyCallback);
     function("qtCutCallback", &cutCallback);
@@ -265,21 +260,10 @@ QWasmInputContext::QWasmInputContext()
     emscripten::val body = document["body"];
     body.call<void>("appendChild", m_inputElement);
 
-    m_inputElement.call<void>("addEventListener", std::string("compositionstart"),
-                              emscripten::val::module_property("qtCompositionStartCallback"),
-                              emscripten::val(false));
-    m_inputElement.call<void>("addEventListener", std::string("compositionupdate"),
-                              emscripten::val::module_property("qtCompositionUpdateCallback"),
-                              emscripten::val(false));
-    m_inputElement.call<void>("addEventListener", std::string("compositionend"),
-                              emscripten::val::module_property("qtCompositionEndCallback"),
-                              emscripten::val(false));
-    m_inputElement.call<void>("addEventListener", std::string("input"),
-                              emscripten::val::module_property("qtInputCallback"),
-                              emscripten::val(false));
-    //m_inputElement.call<void>("addEventListener", std::string("beforeinput"),
-    //                          emscripten::val::module_property("qtBeforeInputCallback"),
-    //                          emscripten::val(false));
+    m_inputCallback = QWasmEventHandler(m_inputElement, "input", QWasmInputContext::inputCallback);
+    m_compositionEndCallback = QWasmEventHandler(m_inputElement, "compositionend", QWasmInputContext::compositionEndCallback);
+    m_compositionStartCallback = QWasmEventHandler(m_inputElement, "compositionstart", QWasmInputContext::compositionStartCallback);
+    m_compositionUpdateCallback = QWasmEventHandler(m_inputElement, "compositionupdate", QWasmInputContext::compositionUpdateCallback);
 
     // Clipboard for InputContext
     m_inputElement.call<void>("addEventListener", std::string("cut"),

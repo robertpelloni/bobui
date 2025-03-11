@@ -39,9 +39,18 @@ public:
 
     void insertText(QString inputStr, bool replace = false);
 
+    QWasmEventHandler m_inputCallback;
+    QWasmEventHandler m_compositionEndCallback;
+    QWasmEventHandler m_compositionStartCallback;
+    QWasmEventHandler m_compositionUpdateCallback;
+
     bool usingTextInput() const { return m_inputMethodAccepted; }
     void setFocusObject(QObject *object) override;
 
+    static void inputCallback(emscripten::val event);
+    static void compositionEndCallback(emscripten::val event);
+    static void compositionStartCallback(emscripten::val event);
+    static void compositionUpdateCallback(emscripten::val event);
 private:
     void updateInputElement();
 
