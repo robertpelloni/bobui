@@ -844,11 +844,6 @@ set(QT_ALLOW_MISSING_TOOLS_PACKAGES TRUE)")
 
     file(COPY ${extra_cmake_files} DESTINATION "${config_build_dir}")
 
-    set(targets_to_export ${target})
-    if(NOT ${arg_NO_PRIVATE_MODULE})
-        list(APPEND targets_to_export ${target_private})
-    endif()
-
     _qt_internal_forward_function_args(
         FORWARD_PREFIX arg
         FORWARD_OUT_VAR export_module_args
