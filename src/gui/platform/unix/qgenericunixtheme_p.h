@@ -1,8 +1,8 @@
 // Copyright (C) 2020 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
-#ifndef QGENERICUNIXTHEMES_H
-#define QGENERICUNIXTHEMES_H
+#ifndef QGENERICUNIXTHEME_H
+#define QGENERICUNIXTHEME_H
 
 //
 //  W A R N I N G
@@ -82,4 +82,4 @@ protected:
 
 QT_END_NAMESPACE
 
-#endif // QGENERICUNIXTHEMES_H
+#endif // QGENERICUNIXTHEME_H
