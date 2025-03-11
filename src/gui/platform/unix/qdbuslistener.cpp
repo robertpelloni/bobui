@@ -6,6 +6,9 @@
 #include <qpa/qplatformintegration.h>
 #include <qpa/qplatformservices.h>
 #include <private/qdbustrayicon_p.h>
+#include <qjsonarray.h>
+#include <qjsondocument.h>
+#include <qjsonobject.h>
 
 QT_BEGIN_NAMESPACE
 using namespace Qt::StringLiterals;

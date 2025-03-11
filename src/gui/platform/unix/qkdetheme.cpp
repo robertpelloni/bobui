@@ -11,6 +11,8 @@
 #include <private/qdbustrayicon_p.h>
 #include <private/qdbusplatformmenu_p.h>
 #include <private/qdbusmenubar_p.h>
+#include <QSettings>
+#include <QStandardPaths>
 
 QT_BEGIN_NAMESPACE
 

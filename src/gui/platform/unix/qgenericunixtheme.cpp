@@ -48,6 +48,7 @@
 #include <qpa/qplatformintegration.h>
 #include <QtCore/QStandardPaths>
 #ifndef QT_NO_DBUS
+#include <QtDBus/QDBusConnectionInterface>
 #include <private/qdbustrayicon_p.h>
 #endif
 #if QT_CONFIG(mimetype)
