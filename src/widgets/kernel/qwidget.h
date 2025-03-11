@@ -781,7 +781,7 @@ private:
     Q_PRIVATE_SLOT(d_func(), void _q_showIfNotHidden())
     Q_PRIVATE_SLOT(d_func(), QWindow *_q_closestWindowHandle())
 
-    QWidgetData *data = nullptr; // init'ed in Private::init(), but let's crash before that
+    QWidgetData *data;
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(QWidget::RenderFlags)
