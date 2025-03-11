@@ -208,6 +208,7 @@ function(qt_internal_add_docs)
         --basedir "${PROJECT_SOURCE_DIR}/.."
         --filter "QDocModule=${doc_target}"
         -o "${target_bin_dir}/codeattributions.qdoc"
+        COMMENT "Scanning attributions for ${target}..."
     )
 
     # prepare docs target
@@ -269,6 +270,7 @@ function(qt_internal_add_docs)
         COMMAND ${CMAKE_COMMAND} -E env ${qdoc_env_args}
         ${qdoc_bin}
         ${prepare_qdoc_args}
+        COMMENT "Running qdoc for ${target}..."
     )
 
     add_dependencies(prepare_docs_${target} qattributionsscanner_${target})
@@ -337,6 +339,7 @@ function(qt_internal_add_docs)
             COMMAND ${qhelpgenerator_bin}
             "${qdoc_output_dir}/${doc_target}.qhp"
             -o "${qch_file_path}"
+            COMMENT "Building QtHelp files for ${target}..."
         )
     endforeach()
     add_dependencies(qch_docs_${target} generate_docs_${target})
