@@ -24,18 +24,6 @@
 
 QT_BEGIN_NAMESPACE
 
-class ResourceHelper
-{
-public:
-    ResourceHelper();
-    ~ResourceHelper() { clear(); }
-
-    void clear();
-
-    QPalette *palettes[QPlatformTheme::NPalettes];
-    QFont *fonts[QPlatformTheme::NFonts];
-};
-
 class QKdeThemePrivate;
 class Q_GUI_EXPORT QKdeTheme : public QGenericUnixTheme
 {

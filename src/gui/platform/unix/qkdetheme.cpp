@@ -20,20 +20,6 @@ using namespace Qt::StringLiterals;
 
 Q_STATIC_LOGGING_CATEGORY(lcQpaThemeKde, "qt.qpa.theme.kde")
 
-ResourceHelper::ResourceHelper()
-{
-    std::fill(palettes, palettes + QPlatformTheme::NPalettes, static_cast<QPalette *>(nullptr));
-    std::fill(fonts, fonts + QPlatformTheme::NFonts, static_cast<QFont *>(nullptr));
-}
-
-void ResourceHelper::clear()
-{
-    qDeleteAll(palettes, palettes + QPlatformTheme::NPalettes);
-    qDeleteAll(fonts, fonts + QPlatformTheme::NFonts);
-    std::fill(palettes, palettes + QPlatformTheme::NPalettes, static_cast<QPalette *>(nullptr));
-    std::fill(fonts, fonts + QPlatformTheme::NFonts, static_cast<QFont *>(nullptr));
-}
-
 class QKdeThemePrivate : public QGenericUnixThemePrivate
 {
 
@@ -100,7 +86,6 @@ public:
     const QStringList kdeDirs;
     const int kdeVersion;
 
-    ResourceHelper resources;
     QString iconThemeName;
     QString iconFallbackThemeName;
     QStringList styleNames;
@@ -115,7 +100,11 @@ public:
     int cursorBlinkRate = 1000;
     Qt::ColorScheme m_colorScheme = Qt::ColorScheme::Unknown;
     Qt::ColorScheme m_requestedColorScheme = Qt::ColorScheme::Unknown;
+    std::unique_ptr<QPalette> systemPalette;
+    QFont *fonts[QPlatformTheme::NFonts];
     void updateColorScheme(const QString &themeName);
+    bool hasRequestedColorScheme() const { return m_requestedColorScheme != Qt::ColorScheme::Unknown
+                                           && m_requestedColorScheme != m_colorScheme; }
 
 private:
     mutable QHash<QString, QSettings *> kdeSettings;
@@ -127,6 +116,7 @@ private:
                                const QString &value);
     Qt::ColorScheme colorSchemeFromPalette() const;
 #endif // QT_NO_DBUS
+    void clearResources();
 };
 
 #ifndef QT_NO_DBUS
@@ -152,6 +142,13 @@ void QKdeThemePrivate::settingChangedHandler(QDBusListener::Provider provider,
     refresh();
 }
 
+void QKdeThemePrivate::clearResources()
+{
+    qDeleteAll(fonts, fonts + QPlatformTheme::NFonts);
+    std::fill(fonts, fonts + QPlatformTheme::NFonts, static_cast<QFont *>(nullptr));
+    systemPalette.reset();
+}
+
 bool QKdeThemePrivate::initDbus()
 {
     dbus.reset(new QDBusListener());
@@ -171,6 +168,7 @@ bool QKdeThemePrivate::initDbus()
 QKdeThemePrivate::QKdeThemePrivate(const QStringList &kdeDirs, int kdeVersion)
     : kdeDirs(kdeDirs), kdeVersion(kdeVersion)
 {
+    std::fill(fonts, fonts + QPlatformTheme::NFonts, static_cast<QFont *>(nullptr));
 #ifndef QT_NO_DBUS
     initDbus();
 #endif // QT_NO_DBUS
@@ -319,7 +317,7 @@ static constexpr QLatin1StringView settingsKey(QKdeThemePrivate::KdeSetting sett
 
 void QKdeThemePrivate::refresh()
 {
-    resources.clear();
+    clearResources();
     clearKdeSettings();
 
     toolButtonStyle = Qt::ToolButtonTextBesideIcon;
@@ -333,10 +331,8 @@ void QKdeThemePrivate::refresh()
     else
         iconFallbackThemeName = iconThemeName = QStringLiteral("oxygen");
 
-    QPalette systemPalette = QPalette();
-    readKdeSystemPalette(kdeDirs, kdeVersion, kdeSettings, &systemPalette);
-    resources.palettes[QPlatformTheme::SystemPalette] = new QPalette(systemPalette);
-    //## TODO tooltip color
+    systemPalette.reset(new QPalette(QPalette()));
+    readKdeSystemPalette(kdeDirs, kdeVersion, kdeSettings, systemPalette.get());
 
     const QVariant styleValue = readKdeSetting(KdeSetting::WidgetStyle);
     if (styleValue.isValid()) {
@@ -404,32 +400,32 @@ void QKdeThemePrivate::refresh()
 
     // Read system font, ignore 'smallestReadableFont'
     if (QFont *systemFont = kdeFont(readKdeSetting(KdeSetting::Font)))
-        resources.fonts[QPlatformTheme::SystemFont] = systemFont;
+        fonts[QPlatformTheme::SystemFont] = systemFont;
     else
-        resources.fonts[QPlatformTheme::SystemFont] = new QFont(QLatin1StringView(QGenericUnixTheme::defaultSystemFontNameC),
-                                                                QGenericUnixTheme::defaultSystemFontSize);
+        fonts[QPlatformTheme::SystemFont] = new QFont(QLatin1StringView(QGenericUnixTheme::defaultSystemFontNameC),
+                                                      QGenericUnixTheme::defaultSystemFontSize);
 
     if (QFont *fixedFont = kdeFont(readKdeSetting(KdeSetting::Fixed))) {
-        resources.fonts[QPlatformTheme::FixedFont] = fixedFont;
+        fonts[QPlatformTheme::FixedFont] = fixedFont;
     } else {
         fixedFont = new QFont(QLatin1StringView(QGenericUnixTheme::defaultFixedFontNameC),
                               QGenericUnixTheme::defaultSystemFontSize);
         fixedFont->setStyleHint(QFont::TypeWriter);
-        resources.fonts[QPlatformTheme::FixedFont] = fixedFont;
+        fonts[QPlatformTheme::FixedFont] = fixedFont;
     }
 
     if (QFont *menuFont = kdeFont(readKdeSetting(KdeSetting::MenuFont))) {
-        resources.fonts[QPlatformTheme::MenuFont] = menuFont;
-        resources.fonts[QPlatformTheme::MenuBarFont] = new QFont(*menuFont);
+        fonts[QPlatformTheme::MenuFont] = menuFont;
+        fonts[QPlatformTheme::MenuBarFont] = new QFont(*menuFont);
     }
 
     if (QFont *toolBarFont = kdeFont(readKdeSetting(KdeSetting::ToolBarFont)))
-        resources.fonts[QPlatformTheme::ToolButtonFont] = toolBarFont;
+        fonts[QPlatformTheme::ToolButtonFont] = toolBarFont;
 
     QWindowSystemInterface::handleThemeChange();
 
-    qCDebug(lcQpaFonts) << "default fonts: system" << resources.fonts[QPlatformTheme::SystemFont]
-                        << "fixed" << resources.fonts[QPlatformTheme::FixedFont];
+    qCDebug(lcQpaFonts) << "default fonts: system" << fonts[QPlatformTheme::SystemFont]
+                        << "fixed" << fonts[QPlatformTheme::FixedFont];
     qDeleteAll(kdeSettings);
 }
 
@@ -649,6 +645,33 @@ QIcon QKdeTheme::fileIcon(const QFileInfo &fileInfo, QPlatformTheme::IconOptions
 #endif
 }
 
+/*!
+    \internal
+    \reimp
+    \brief QKdeTheme::requestColorScheme Programmatically request a color scheme
+    If \a scheme is \c Dark or \c Light, \a scheme is applied to the application,
+    independently from the current KDE theme.
+    If \a scheme is \c Unknown, the current KDE theme's color scheme will be applied instead.
+    This is the default behavior.
+
+    \note
+    A KDE theme is considered either \c Dark or \c Light. When the requested color scheme
+    doesn't match the current KDE theme, a default \c Dark or \c Light fusion palette
+    is used instead.
+    \sa QKdeThemePrivate::hasRequestedColorScheme
+*/
+
+/*!
+    \internal
+    \brief QKdeThemePrivate::hasRequestedColorScheme Check if fusion palette fallback is necessary.
+    This internal helper function returns true, if
+    \list
+    \li a color scheme has been programmatically requested, and
+    \li the requested color scheme differs from the current KDE theme's color scheme.
+    \endlist
+    \sa QKdeTheme:requestColorScheme
+*/
+
 void QKdeTheme::requestColorScheme(Qt::ColorScheme scheme)
 {
     Q_D(QKdeTheme);
@@ -664,26 +687,25 @@ Qt::ColorScheme QKdeTheme::colorScheme() const
 {
     Q_D(const QKdeTheme);
 #ifdef QT_DEBUG
-    if (d->m_requestedColorScheme != Qt::ColorScheme::Unknown
-        && d->m_requestedColorScheme != d->m_colorScheme) {
+    if (d->hasRequestedColorScheme()) {
         qCDebug(lcQpaThemeKde) << "Reuqested color scheme" << d->m_requestedColorScheme
                                << "differs from theme color scheme" << d->m_colorScheme;
     }
 #endif
-    return (d->m_requestedColorScheme == Qt::ColorScheme::Unknown)
-           ? d->m_colorScheme :d->m_requestedColorScheme;
+    return d->hasRequestedColorScheme() ? d->m_requestedColorScheme
+                                        : d->m_colorScheme;
 }
 
 /*!
-   \internal
-   \brief QKdeTheme::updateColorScheme - guess and set a color scheme for unix themes.
-   KDE themes do not have a color scheme property.
-   The key words "dark" or "light" are usually part of the theme name.
-   This is, however, not a mandatory convention.
+    \internal
+    \brief QKdeTheme::updateColorScheme - guess and set a color scheme for unix themes.
+    KDE themes do not have a color scheme property.
+    The key words "dark" or "light" are usually part of the theme name.
+    This is, however, not a mandatory convention.
 
-   If \param themeName contains a valid key word, the respective color scheme is set.
-   If it doesn't, the color scheme is heuristically determined by comparing text and base color
-   of the system palette.
+    If \param themeName contains a valid key word, the respective color scheme is set.
+    If it doesn't, the color scheme is heuristically determined by comparing text and base color
+    of the system palette.
  */
 void QKdeThemePrivate::updateColorScheme(const QString &themeName)
 {
@@ -713,24 +735,20 @@ Qt::ColorScheme QKdeThemePrivate::colorSchemeFromPalette() const
 const QPalette *QKdeTheme::palette(Palette type) const
 {
     Q_D(const QKdeTheme);
-    if (d->m_requestedColorScheme != Qt::ColorScheme::Unknown
-        && d->m_requestedColorScheme != d->m_colorScheme) {
+    if (d->hasRequestedColorScheme()) {
         qCDebug(lcQpaThemeKde) << "Current KDE theme doesn't support reuqested color scheme"
                                << d->m_requestedColorScheme << "Falling back to fusion palette:"
                                << type;
         return QPlatformTheme::palette(type);
     }
 
-    if (colorScheme() != d->m_requestedColorScheme)
-        return d->resources.palettes[Palette::SystemPalette];
-
-    return d->resources.palettes[type];
+    return d->systemPalette.get();
 }
 
 const QFont *QKdeTheme::font(Font type) const
 {
     Q_D(const QKdeTheme);
-    return d->resources.fonts[type];
+    return d->fonts[type];
 }
 
 QPlatformTheme *QKdeTheme::createKdeTheme()
