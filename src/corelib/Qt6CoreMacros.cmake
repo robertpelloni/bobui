@@ -680,9 +680,11 @@ function(_qt_internal_create_executable target)
             OBJC_VISIBILITY_PRESET default
             OBJCXX_VISIBILITY_PRESET default
             _qt_android_apply_arch_suffix_called_from_qt_impl TRUE
+            _qt_android_target_type APPLICATION
         )
 
         qt6_android_apply_arch_suffix("${target}")
+        # TODO: remove after the successful submodule update round.
         set_property(TARGET "${target}" PROPERTY _qt_is_android_executable TRUE)
     else()
         cmake_policy(PUSH)
@@ -812,9 +814,9 @@ function(qt6_finalize_target target)
     _qt_internal_expose_deferred_files_to_ide(${target})
     _qt_internal_finalize_source_groups(${target})
     get_target_property(target_type ${target} TYPE)
-    get_target_property(is_android_executable "${target}" _qt_is_android_executable)
+    get_target_property(android_type "${target}" _qt_android_target_type)
 
-    if(target_type STREQUAL "EXECUTABLE" OR is_android_executable)
+    if(target_type STREQUAL "EXECUTABLE" OR android_type STREQUAL "APPLICATION")
         _qt_internal_finalize_executable(${ARGV})
     endif()
 
