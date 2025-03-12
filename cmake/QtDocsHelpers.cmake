@@ -314,7 +314,9 @@ function(qt_internal_add_docs)
         endif()
         add_custom_target(${target_prefix}_${target}
             ${depends_arg}
-            COMMAND ${CMAKE_COMMAND} -E env ${qdoc_env_args} ${qdoc_bin} ${generate_qdoc_args})
+            COMMAND ${CMAKE_COMMAND} -E env ${qdoc_env_args} ${qdoc_bin} ${generate_qdoc_args}
+            COMMENT "Generating documentation for ${target}..."
+        )
     endforeach()
 
     add_dependencies(generate_docs_${target} prepare_docs_${target})
