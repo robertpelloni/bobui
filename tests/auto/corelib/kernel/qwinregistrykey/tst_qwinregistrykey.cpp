@@ -98,6 +98,7 @@ private Q_SLOTS:
     void initTestCase();
     void cleanupTestCase();
     void qwinregistrykey();
+    void name();
 
 private:
     bool m_available = false;
@@ -136,16 +137,7 @@ void tst_qwinregistrykey::cleanupTestCase()
     const LONG ret = RegOpenKeyExW(HKEY_CURRENT_USER, TEST_KEY, 0, KEY_READ | KEY_WRITE, &key);
     if (ret != ERROR_SUCCESS)
         return;
-    #define C_STR(View) reinterpret_cast<const wchar_t *>(View.utf16())
-    RegDeleteValueW(key, C_STR(TEST_STRING.first));
-    RegDeleteValueW(key, C_STR(TEST_STRING_NULL.first));
-    RegDeleteValueW(key, C_STR(TEST_STRINGLIST.first));
-    RegDeleteValueW(key, C_STR(TEST_STRINGLIST_NULL.first));
-    RegDeleteValueW(key, C_STR(TEST_DWORD.first));
-    RegDeleteValueW(key, C_STR(TEST_QWORD.first));
-    RegDeleteValueW(key, C_STR(TEST_BINARY.first));
-    RegDeleteValueW(key, C_STR(TEST_DEFAULT.first));
-    #undef C_STR
+    RegDeleteTree(key, nullptr);
     RegDeleteKeyW(HKEY_CURRENT_USER, TEST_KEY);
     RegCloseKey(key);
 }
@@ -233,6 +225,44 @@ void tst_qwinregistrykey::qwinregistrykey()
     {
         const auto value = registry.value<DWORD>(TEST_NOT_EXIST.first);
         QVERIFY(!value);
+    }
+}
+
+void tst_qwinregistrykey::name()
+{
+    if (!m_available)
+        QSKIP("The test data is not ready.");
+
+    QWinRegistryKey testKey(HKEY_CURRENT_USER, TEST_KEY);
+    QVERIFY(testKey.isValid());
+
+    // In practice: "\\REGISTRY\\USER\\S-1-5-21-4156955479-607706614-2054699034-1000\\Software\\tst_qwinregistrykey",
+    //          or: "\\REGISTRY\\USER\\S-1-5-21-4156955479-607706614-2054699034-1000\\SOFTWARE\\tst_qwinregistrykey".
+    QVERIFY(testKey.name().toLower().endsWith("software\\tst_qwinregistrykey"));
+
+    // Check that we can report the name of a key with a deep path
+    HKEY baseKey = testKey.handle();
+    constexpr auto kKeyDepth = 500;
+    for (int i = 0; i < kKeyDepth; ++i) {
+        constexpr auto kChildKeyName = LR"(childKey)";
+
+        HKEY childKey = nullptr;
+        auto ret = RegCreateKeyEx(baseKey, kChildKeyName, 0, nullptr, 0,
+            KEY_READ | KEY_WRITE, nullptr, &childKey, nullptr);
+        QVERIFY(ret == ERROR_SUCCESS);
+
+        if (i == kKeyDepth - 1) {
+            RegCloseKey(childKey);
+            QWinRegistryKey leafKey(baseKey, kChildKeyName);
+            QVERIFY(leafKey.isValid());
+            const QString keyName = leafKey.name();
+            QVERIFY(keyName.size() > 1000);
+            QVERIFY(keyName.endsWith("childKey\\childKey\\childKey"));
+        } else {
+            if (baseKey != testKey.handle())
+                RegCloseKey(baseKey);
+            baseKey = childKey;
+        }
     }
 }
 

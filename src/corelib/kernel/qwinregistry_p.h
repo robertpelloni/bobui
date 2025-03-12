@@ -46,6 +46,8 @@ public:
 
     void close();
 
+    QString name() const;
+
     [[nodiscard]] QVariant value(QStringView subKey) const;
     template<typename T>
     [[nodiscard]] std::optional<T> value(QStringView subKey) const
@@ -57,6 +59,10 @@ public:
     }
 
     QString stringValue(QStringView subKey) const;
+
+#ifndef QT_NO_DEBUG_STREAM
+    friend Q_CORE_EXPORT QDebug operator<<(QDebug dbg, const QWinRegistryKey &);
+#endif
 
 private:
     HKEY m_key = nullptr;

@@ -620,6 +620,7 @@ qt_internal_extend_target(Core CONDITION WIN32
         text/qlatin1stringmatcher.cpp
         text/qunicodetools.cpp
         tools/qhash.cpp # Q_DECL_INIT_PRIORITY
+        kernel/qwinregistry.cpp # ntstatus.h clashes
 )
 
 qt_internal_extend_target(Core CONDITION GCC AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "13"

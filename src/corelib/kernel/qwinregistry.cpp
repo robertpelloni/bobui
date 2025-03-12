@@ -1,12 +1,24 @@
 // Copyright (C) 2019 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
+#define UMDF_USING_NTSTATUS // Avoid ntstatus redefinitions
+
 #include "qwinregistry_p.h"
 #include <QtCore/qvarlengtharray.h>
+#include <QtCore/qdebug.h>
 #include <QtCore/qendian.h>
 #include <QtCore/qlist.h>
 
+#include <ntstatus.h>
+
+// User mode version of ZwQueryKey, as per:
+// https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-zwquerykey
+extern "C" NTSTATUS NTSYSCALLAPI NtQueryKey(HANDLE KeyHandle, int KeyInformationClass,
+    PVOID KeyInformation, ULONG Length, PULONG ResultLength);
+
 QT_BEGIN_NAMESPACE
+
+using namespace Qt::StringLiterals;
 
 QWinRegistryKey::QWinRegistryKey()
 {
@@ -34,6 +46,39 @@ void QWinRegistryKey::close()
         RegCloseKey(m_key);
         m_key = nullptr;
     }
+}
+
+QString QWinRegistryKey::name() const
+{
+    if (!isValid())
+        return {};
+
+    // https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntddk/ns-ntddk-_key_name_information
+    constexpr int kKeyNameInformation = 3;
+    struct KeyNameInformation { ULONG length = 0; WCHAR name[1] = {}; };
+
+    // Resolve name of key iteratively by first computing the needed size,
+    // and then querying the name, accounting for the possibility that the
+    // name length changes behind our back a few times.
+    DWORD keyInformationSize = 0;
+    for (int i = 0; i < 5; ++i) {
+        QByteArray buffer(keyInformationSize, 0u);
+        auto *keyNameInformation = reinterpret_cast<KeyNameInformation *>(buffer.data());
+        switch (NtQueryKey(m_key, kKeyNameInformation, keyNameInformation,
+            keyInformationSize, &keyInformationSize)) {
+        case STATUS_BUFFER_TOO_SMALL:
+        case STATUS_BUFFER_OVERFLOW:
+            continue;
+        case STATUS_SUCCESS: {
+            return QString::fromWCharArray(keyNameInformation->name,
+                keyNameInformation->length / sizeof(wchar_t));
+        }
+        default:
+            return {};
+        }
+    }
+
+    return {};
 }
 
 QVariant QWinRegistryKey::value(QStringView subKey) const
@@ -128,5 +173,18 @@ QString QWinRegistryKey::stringValue(QStringView subKey) const
 {
     return value<QString>(subKey).value_or(QString());
 }
+
+#ifndef QT_NO_DEBUG_STREAM
+QDebug operator<<(QDebug debug, const QWinRegistryKey &key)
+{
+    QDebugStateSaver saver(debug);
+    debug.nospace();
+    debug << "QWinRegistryKey(";
+    if (key.isValid())
+        debug << key.name();
+    debug << ')';
+    return debug;
+}
+#endif
 
 QT_END_NAMESPACE
