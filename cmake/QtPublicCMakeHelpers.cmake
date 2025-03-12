@@ -361,21 +361,44 @@ function(_qt_internal_add_phony_target_deferred target)
     endif()
 endfunction()
 
+# Equivalent to the auto-generated `*Targets.cmake` multi-inclusion check
+#
 # The helper function that checks if module was included multiple times, and has the inconsistent
 # set of targets that belong to the module. It's expected that either all 'targets' or none of them
 # will be written to the 'targets_not_defined' variable, if the module was not or was
 # searched before accordingly.
-function(_qt_internal_check_multiple_inclusion targets_not_defined targets)
+function(_qt_internal_check_multiple_inclusion targets_not_defined)
+    # Backport for the old syntax
+    if(ARGC EQUAL 2)
+        _qt_internal_check_multiple_inclusion(${targets_not_defined}
+            TARGETS ${ARGN}
+        )
+        set(${targets_not_defined} "${${targets_not_defined}}" PARENT_SCOPE)
+        return()
+    endif()
+
+    set(option_args "")
+    set(single_args
+        NAMESPACE
+    )
+    set(multi_args
+        TARGETS
+    )
+    cmake_parse_arguments(PARSE_ARGV 1 arg "${option_args}" "${single_args}" "${multi_args}")
+
+    if(NOT arg_NAMESPACE)
+        set(arg_NAMESPACE Qt::)
+    endif()
+
     set(targets_defined "")
     set(${targets_not_defined} "")
     set(expected_targets "")
-    foreach(expected_target ${targets})
+    foreach(expected_target ${arg_TARGETS})
         list(APPEND expected_targets ${expected_target})
-        if(NOT TARGET Qt::${expected_target})
-            list(APPEND ${targets_not_defined} ${expected_target})
-        endif()
-        if(TARGET Qt::${expected_target})
+        if(TARGET "${arg_NAMESPACE}${expected_target}")
             list(APPEND targets_defined ${expected_target})
+        else()
+            list(APPEND ${targets_not_defined} ${expected_target})
         endif()
     endforeach()
     if("${targets_defined}" STREQUAL "${expected_targets}")
