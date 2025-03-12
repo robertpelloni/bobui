@@ -135,6 +135,11 @@ function(qt_internal_setup_docker_test_fixture name)
     if (NOT DEFINED QT_DOCKER_TEST_SERVER)
         execute_process(COMMAND "${QT_DOCKER}" images -aq "qt-test-server-*" OUTPUT_VARIABLE QT_DOCKER_TEST_SERVER)
         if (NOT QT_DOCKER_TEST_SERVER)
+            get_cmake_property(warning_shown QT_TEST_DOCKER_WARNING_SHOWN)
+            if(warning_shown)
+                return()
+            endif()
+            set_property(GLOBAL PROPERTY QT_TEST_DOCKER_WARNING_SHOWN ON)
             message(WARNING
                 "Docker image qt-test-server-* not found.\n"
                 "Run the provisioning script (coin/provisioning/.../testserver/docker_testserver.sh) in advance\n"
