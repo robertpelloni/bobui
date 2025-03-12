@@ -1147,7 +1147,36 @@ function(qt_internal_apply_apple_privacy_manifest target)
 endfunction()
 
 function(qt_finalize_module target)
+    set(no_value_options
+        INTERNAL_MODULE
+        NO_PRIVATE_MODULE
+    )
+    set(single_value_options "")
+    set(multi_value_options "")
+    cmake_parse_arguments(PARSE_ARGV 1 arg
+        "${no_value_options}" "${single_value_options}" "${multi_value_options}"
+    )
+    _qt_internal_validate_all_args_are_parsed(arg)
+
     qt_internal_collect_module_headers(module_headers ${target})
+
+    # Issue a warning if we
+    # - suppressed creation of the private module but have private headers
+    # - created a private module but don't have any private headers
+    if(NOT arg_INTERNAL_MODULE)
+        get_target_property(has_private_headers ${target} _qt_module_has_private_headers)
+        if(arg_NO_PRIVATE_MODULE AND has_private_headers)
+            message(AUTHOR_WARNING
+                "Module ${target} has private headers. "
+                "Please remove NO_PRIVATE_MODULE from its creation flags."
+            )
+        elseif(NOT arg_NO_PRIVATE_MODULE AND NOT has_private_headers)
+            message(AUTHOR_WARNING
+                "Module ${target} does not have private headers. "
+                "Please add NO_PRIVATE_MODULE to its creation flags."
+            )
+        endif()
+    endif()
 
     # qt_internal_install_module_headers needs to be called before
     # qt_finalize_framework_headers_copy, because the last uses the QT_COPIED_FRAMEWORK_HEADERS
