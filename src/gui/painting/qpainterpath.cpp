@@ -22,6 +22,8 @@
 #include <private/qstroker_p.h>
 #include <private/qtextengine_p.h>
 
+#include <cmath>
+
 #include <limits.h>
 
 #if 0
@@ -3228,7 +3230,7 @@ QPainterPath QPainterPath::trimmed(qreal f1, qreal f2, qreal offset) const
 
     if (offset) {
         qreal dummy;
-        offset = modf(offset, &dummy); // Use only the fractional part of offset, range <-1, 1>
+        offset = std::modf(offset, &dummy); // Use only the fractional part of offset, range <-1, 1>
 
         qreal of1 = f1 + offset;
         qreal of2 = f2 + offset;
