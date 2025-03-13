@@ -303,9 +303,10 @@ struct QHashCombine
 {
     typedef size_t result_type;
     template <typename T>
-    constexpr result_type operator()(size_t seed, const T &t) const noexcept(noexcept(qHash(t)))
+    constexpr result_type operator()(size_t seed, const T &t) const
+        noexcept(noexcept(qHash(t, seed)))
     // combiner taken from N3876 / boost::hash_combine
-    { return seed ^ (qHash(t) + 0x9e3779b9 + (seed << 6) + (seed >> 2)) ; }
+    { return seed ^ (qHash(t, size_t(0)) + 0x9e3779b9 + (seed << 6) + (seed >> 2)); }
 };
 
 struct QHashCombineCommutative
@@ -317,21 +318,22 @@ struct QHashCombineCommutative
     // QHash). Therefore, provide a commutative combiner, too.
     typedef size_t result_type;
     template <typename T>
-    constexpr result_type operator()(size_t seed, const T &t) const noexcept(noexcept(qHash(t)))
-    { return seed + qHash(t); } // don't use xor!
+    constexpr result_type operator()(size_t seed, const T &t) const
+        noexcept(noexcept(qHash(t, seed)))
+    { return seed + qHash(t, size_t(0)); } // don't use xor!
 };
 
 template <typename... T>
 using QHashMultiReturnType = decltype(
     std::declval< std::enable_if_t<(sizeof...(T) > 0)> >(),
-    (qHash(std::declval<const T &>()), ...),
+    (qHash(std::declval<const T &>(), size_t(0)), ...),
     size_t{}
 );
 
 // workaround for a MSVC ICE,
 // https://developercommunity.visualstudio.com/content/problem/996540/internal-compiler-error-on-msvc-1924-when-doing-sf.html
 template <typename T>
-inline constexpr bool QNothrowHashableHelper_v = noexcept(qHash(std::declval<const T &>()));
+inline constexpr bool QNothrowHashableHelper_v = noexcept(qHash(std::declval<const T &>(), size_t(0)));
 
 template <typename T, typename Enable = void>
 struct QNothrowHashable : std::false_type {};
