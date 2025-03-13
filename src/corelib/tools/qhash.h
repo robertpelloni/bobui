@@ -2710,9 +2710,9 @@ template <class Key, class T>
 size_t qHash(const QHash<Key, T> &key, size_t seed = 0)
     noexcept(noexcept(qHash(std::declval<Key&>())) && noexcept(qHash(std::declval<T&>())))
 {
+    const QtPrivate::QHashCombine combine(seed);
     size_t hash = 0;
     for (auto it = key.begin(), end = key.end(); it != end; ++it) {
-        QtPrivate::QHashCombine combine;
         size_t h = combine(seed, it.key());
         // use + to keep the result independent of the ordering of the keys
         hash += combine(h, it.value());
@@ -2724,9 +2724,9 @@ template <class Key, class T>
 inline size_t qHash(const QMultiHash<Key, T> &key, size_t seed = 0)
     noexcept(noexcept(qHash(std::declval<Key&>())) && noexcept(qHash(std::declval<T&>())))
 {
+    const QtPrivate::QHashCombine combine(seed);
     size_t hash = 0;
     for (auto it = key.begin(), end = key.end(); it != end; ++it) {
-        QtPrivate::QHashCombine combine;
         size_t h = combine(seed, it.key());
         // use + to keep the result independent of the ordering of the keys
         hash += combine(h, it.value());

@@ -1445,7 +1445,7 @@ void QJsonObject::removeAt(qsizetype index)
 
 size_t qHash(const QJsonObject &object, size_t seed)
 {
-    QtPrivate::QHashCombine hash;
+    QtPrivate::QHashCombine hash(seed);
     for (auto it = object.begin(), end = object.end(); it != end; ++it) {
         const QString key = it.key();
         const QJsonValue value = it.value();

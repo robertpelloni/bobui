@@ -507,7 +507,7 @@ struct Q_D3D12_SAMPLER_DESC
 
     friend size_t qHash(const Q_D3D12_SAMPLER_DESC &key, size_t seed = 0) noexcept
     {
-        QtPrivate::QHashCombine hash;
+        QtPrivate::QHashCombine hash(seed);
         seed = hash(seed, key.desc.Filter);
         seed = hash(seed, key.desc.AddressU);
         seed = hash(seed, key.desc.AddressV);

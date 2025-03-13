@@ -69,7 +69,7 @@ private:
 
     friend size_t qHash(const QRhiDepthStencilClearValue &v, size_t seed = 0) noexcept
     {
-        QtPrivate::QHashCombine hash;
+        QtPrivate::QHashCombine hash(seed);
         seed = hash(seed, v.m_d);
         seed = hash(seed, v.m_s);
         return seed;
@@ -118,7 +118,7 @@ private:
 
     friend size_t qHash(const QRhiViewport &v, size_t seed = 0) noexcept
     {
-        QtPrivate::QHashCombine hash;
+        QtPrivate::QHashCombine hash(seed);
         seed = hash(seed, v.m_rect[0]);
         seed = hash(seed, v.m_rect[1]);
         seed = hash(seed, v.m_rect[2]);
@@ -161,7 +161,7 @@ private:
 
     friend size_t qHash(const QRhiScissor &v, size_t seed = 0) noexcept
     {
-        QtPrivate::QHashCombine hash;
+        QtPrivate::QHashCombine hash(seed);
         seed = hash(seed, v.m_rect[0]);
         seed = hash(seed, v.m_rect[1]);
         seed = hash(seed, v.m_rect[2]);
@@ -215,7 +215,7 @@ private:
 
     friend size_t qHash(const QRhiVertexInputBinding &v, size_t seed = 0) noexcept
     {
-        QtPrivate::QHashCombine hash;
+        QtPrivate::QHashCombine hash(seed);
         seed = hash(seed, v.m_stride);
         seed = hash(seed, v.m_classification);
         seed = hash(seed, v.m_instanceStepRate);
@@ -303,7 +303,7 @@ private:
 
     friend size_t qHash(const QRhiVertexInputAttribute &v, size_t seed = 0) noexcept
     {
-        QtPrivate::QHashCombine hash;
+        QtPrivate::QHashCombine hash(seed);
         seed = hash(seed, v.m_binding);
         seed = hash(seed, v.m_location);
         seed = hash(seed, v.m_format);
@@ -363,7 +363,7 @@ private:
 
     friend size_t qHash(const QRhiVertexInputLayout &v, size_t seed = 0) noexcept
     {
-        QtPrivate::QHashCombine hash;
+        QtPrivate::QHashCombine hash(seed);
         seed = hash(seed, v.m_bindings);
         seed = hash(seed, v.m_attributes);
         return seed;
@@ -420,7 +420,7 @@ private:
 
     friend size_t qHash(const QRhiShaderStage &v, size_t seed = 0) noexcept
     {
-        QtPrivate::QHashCombine hash;
+        QtPrivate::QHashCombine hash(seed);
         seed = hash(seed, v.m_type);
         seed = hash(seed, v.m_shader);
         seed = hash(seed, v.m_shaderVariant);

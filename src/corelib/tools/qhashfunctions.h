@@ -298,18 +298,40 @@ bool qHashEquals(const T1 &a, const T2 &b)
 }
 
 namespace QtPrivate {
-
-struct QHashCombine
+template <typename Mixer> struct QHashCombiner : private Mixer
 {
-    typedef size_t result_type;
+    using result_type = typename Mixer::result_type ;
+
+#if QT_VERSION < QT_VERSION_CHECK(7, 0, 0) || defined(QT_BOOTSTRAPPED)
+    // Qt 6.x didn't use to pass the seed; bootstrap has no seed
+    static constexpr size_t seed = 0;
+    constexpr QHashCombiner(result_type) noexcept {}
+    Q_DECL_DEPRECATED_X("pass the seed argument") constexpr QHashCombiner() noexcept {}
+#else
+    size_t seed;
+    constexpr QHashCombiner(result_type s) : seed(s) noexcept {}
+#endif
+
     template <typename T>
-    constexpr result_type operator()(size_t seed, const T &t) const
+    constexpr result_type operator()(result_type result, const T &t) const
         noexcept(noexcept(qHash(t, seed)))
-    // combiner taken from N3876 / boost::hash_combine
-    { return seed ^ (qHash(t, size_t(0)) + 0x9e3779b9 + (seed << 6) + (seed >> 2)); }
+    {
+        return Mixer::operator()(result, qHash(t, seed));
+    }
 };
 
-struct QHashCombineCommutative
+struct QHashCombineMixer
+{
+    typedef size_t result_type;
+    constexpr result_type operator()(result_type result, result_type hash) const noexcept
+    {
+        // combiner taken from N3876 / boost::hash_combine
+        return result ^ (hash + 0x9e3779b9 + (result << 6) + (result >> 2));
+    }
+};
+using QHashCombine = QHashCombiner<QHashCombineMixer>;
+
+struct QHashCombineCommutativeMixer : std::plus<size_t>
 {
     // QHashCombine is a good hash combiner, but is not commutative,
     // ie. it depends on the order of the input elements. That is
@@ -317,11 +339,8 @@ struct QHashCombineCommutative
     // {1,3,0}. Except when it isn't (e.g. for QSet and
     // QHash). Therefore, provide a commutative combiner, too.
     typedef size_t result_type;
-    template <typename T>
-    constexpr result_type operator()(size_t seed, const T &t) const
-        noexcept(noexcept(qHash(t, seed)))
-    { return seed + qHash(t, size_t(0)); } // don't use xor!
 };
+using QHashCombineCommutative = QHashCombiner<QHashCombineCommutativeMixer>;
 
 template <typename... T>
 using QHashMultiReturnType = decltype(
@@ -356,7 +375,7 @@ QtPrivate::QHashMultiReturnType<T...>
 qHashMulti(size_t seed, const T &... args)
     noexcept(std::conjunction_v<QtPrivate::QNothrowHashable<T>...>)
 {
-    QtPrivate::QHashCombine hash;
+    QtPrivate::QHashCombine hash(seed);
     return ((seed = hash(seed, args)), ...), seed;
 }
 
@@ -370,7 +389,7 @@ QtPrivate::QHashMultiReturnType<T...>
 qHashMultiCommutative(size_t seed, const T &... args)
     noexcept(std::conjunction_v<QtPrivate::QNothrowHashable<T>...>)
 {
-    QtPrivate::QHashCombineCommutative hash;
+    QtPrivate::QHashCombineCommutative hash(seed);
     return ((seed = hash(seed, args)), ...), seed;
 }
 
@@ -378,14 +397,14 @@ template <typename InputIterator>
 inline size_t qHashRange(InputIterator first, InputIterator last, size_t seed = 0)
     noexcept(noexcept(qHash(*first))) // assume iterator operations don't throw
 {
-    return std::accumulate(first, last, seed, QtPrivate::QHashCombine());
+    return std::accumulate(first, last, seed, QtPrivate::QHashCombine(seed));
 }
 
 template <typename InputIterator>
 inline size_t qHashRangeCommutative(InputIterator first, InputIterator last, size_t seed = 0)
     noexcept(noexcept(qHash(*first))) // assume iterator operations don't throw
 {
-    return std::accumulate(first, last, seed, QtPrivate::QHashCombineCommutative());
+    return std::accumulate(first, last, seed, QtPrivate::QHashCombineCommutative(seed));
 }
 
 namespace QHashPrivate {

@@ -810,7 +810,7 @@ private:
             return seed;
         // don't use qHashRange to avoid its compile-time overhead:
         return std::accumulate(key.d->m.begin(), key.d->m.end(), seed,
-                               QtPrivate::QHashCombine{});
+                               QtPrivate::QHashCombine{seed});
     }
 #endif // !Q_QDOC
 };
