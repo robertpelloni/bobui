@@ -1598,7 +1598,6 @@ void tst_QByteArray::replaceWithEmptyNeedleInsertsBeforeEachChar()
     QFETCH(const QByteArray, result);
 
     const auto check = [](auto haystack, auto needle, auto replacement, auto result) {
-        constexpr bool isByteArray = std::is_same_v<decltype(haystack), QByteArray>;
         {
             // shared
             auto copy = haystack;
