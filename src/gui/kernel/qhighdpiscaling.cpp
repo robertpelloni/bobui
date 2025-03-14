@@ -440,7 +440,8 @@ void QHighDpiScaling::initHighDpiScaling()
         QByteArray policyText = envScaleFactorRoundingPolicy.value();
         auto policyEnumValue = lookupScaleFactorRoundingPolicy(policyText);
         if (policyEnumValue != Qt::HighDpiScaleFactorRoundingPolicy::Unset) {
-            QGuiApplication::setHighDpiScaleFactorRoundingPolicy(policyEnumValue);
+            // set directly to avoid setHighDpiScaleFactorRoundingPolicy() warning
+            QGuiApplicationPrivate::highDpiScaleFactorRoundingPolicy = policyEnumValue;
         } else {
             auto values = joinEnumValues(std::begin(scaleFactorRoundingPolicyLookup),
                                          std::end(scaleFactorRoundingPolicyLookup));
