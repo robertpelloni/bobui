@@ -121,73 +121,73 @@ QWasmWindow::QWasmWindow(QWindow *w, QWasmDeadKeySupport *deadKeySupport,
 
 void QWasmWindow::registerEventHandlers()
 {
-    m_pointerDownCallback = std::make_unique<qstdweb::EventCallback>(m_window, "pointerdown",
+    m_pointerDownCallback = QWasmEventHandler(m_window, "pointerdown",
         [this](emscripten::val event){ processPointer(PointerEvent(EventType::PointerDown, event)); }
     );
-    m_pointerMoveCallback = std::make_unique<qstdweb::EventCallback>(m_window, "pointermove",
+    m_pointerMoveCallback = QWasmEventHandler(m_window, "pointermove",
         [this](emscripten::val event){ processPointer(PointerEvent(EventType::PointerMove, event)); }
     );
-    m_pointerUpCallback = std::make_unique<qstdweb::EventCallback>(m_window, "pointerup",
+    m_pointerUpCallback = QWasmEventHandler(m_window, "pointerup",
         [this](emscripten::val event){ processPointer(PointerEvent(EventType::PointerUp, event)); }
     );
-    m_pointerCancelCallback = std::make_unique<qstdweb::EventCallback>(m_window, "pointercancel",
+    m_pointerCancelCallback = QWasmEventHandler(m_window, "pointercancel",
         [this](emscripten::val event){ processPointer(PointerEvent(EventType::PointerCancel, event)); }
     );
-    m_pointerEnterCallback = std::make_unique<qstdweb::EventCallback>(m_window, "pointerenter",
+    m_pointerEnterCallback = QWasmEventHandler(m_window, "pointerenter",
         [this](emscripten::val event) { this->handlePointerEnterLeaveEvent(PointerEvent(EventType::PointerEnter, event)); }
     );
-    m_pointerLeaveCallback = std::make_unique<qstdweb::EventCallback>(m_window, "pointerleave",
+    m_pointerLeaveCallback = QWasmEventHandler(m_window, "pointerleave",
         [this](emscripten::val event) { this->handlePointerEnterLeaveEvent(PointerEvent(EventType::PointerLeave, event)); }
     );
 
     m_window.call<void>("setAttribute", emscripten::val("draggable"), emscripten::val("true"));
-    m_dragStartCallback = std::make_unique<qstdweb::EventCallback>(m_window, "dragstart",
+    m_dragStartCallback = QWasmEventHandler(m_window, "dragstart",
         [this](emscripten::val event) {
             DragEvent dragEvent(EventType::DragStart, event, window());
             QWasmDrag::instance()->onNativeDragStarted(&dragEvent);
         }
     );
-    m_dragOverCallback = std::make_unique<qstdweb::EventCallback>(m_window, "dragover",
+    m_dragOverCallback = QWasmEventHandler(m_window, "dragover",
         [this](emscripten::val event) {
             DragEvent dragEvent(EventType::DragOver, event, window());
             QWasmDrag::instance()->onNativeDragOver(&dragEvent);
         }
     );
-    m_dropCallback = std::make_unique<qstdweb::EventCallback>(m_window, "drop",
+    m_dropCallback = QWasmEventHandler(m_window, "drop",
         [this](emscripten::val event) {
             DragEvent dragEvent(EventType::Drop, event, window());
             QWasmDrag::instance()->onNativeDrop(&dragEvent);
         }
     );
-    m_dragEndCallback = std::make_unique<qstdweb::EventCallback>(m_window, "dragend",
+    m_dragEndCallback = QWasmEventHandler(m_window, "dragend",
         [this](emscripten::val event) {
             DragEvent dragEvent(EventType::DragEnd, event, window());
             QWasmDrag::instance()->onNativeDragFinished(&dragEvent);
         }
     );
-    m_dragLeaveCallback = std::make_unique<qstdweb::EventCallback>(m_window, "dragleave",
+    m_dragLeaveCallback = QWasmEventHandler(m_window, "dragleave",
         [this](emscripten::val event) {
             DragEvent dragEvent(EventType::DragLeave, event, window());
             QWasmDrag::instance()->onNativeDragLeave(&dragEvent);
         }
     );
 
-    m_wheelEventCallback = std::make_unique<qstdweb::EventCallback>( m_window, "wheel",
+    m_wheelEventCallback = QWasmEventHandler(m_window, "wheel",
         [this](emscripten::val event) { this->handleWheelEvent(event); });
 
     QWasmInputContext *wasmInput = QWasmIntegration::get()->wasmInputContext();
     if (wasmInput) {
         m_keyDownCallbackForInputContext =
-            std::make_unique<qstdweb::EventCallback>(wasmInput->m_inputElement, "keydown",
+            QWasmEventHandler(wasmInput->m_inputElement, "keydown",
             [this](emscripten::val event) { this->handleKeyForInputContextEvent(EventType::KeyDown, event); });
         m_keyUpCallbackForInputContext =
-            std::make_unique<qstdweb::EventCallback>(wasmInput->m_inputElement, "keyup",
+            QWasmEventHandler(wasmInput->m_inputElement, "keyup",
             [this](emscripten::val event) { this->handleKeyForInputContextEvent(EventType::KeyUp, event); });
     }
 
-    m_keyDownCallback = std::make_unique<qstdweb::EventCallback>(m_window, "keydown",
+    m_keyDownCallback = QWasmEventHandler(m_window, "keydown",
         [this](emscripten::val event) { this->handleKeyEvent(KeyEvent(EventType::KeyDown, event, m_deadKeySupport)); });
-    m_keyUpCallback =std::make_unique<qstdweb::EventCallback>(m_window, "keyup",
+    m_keyUpCallback =QWasmEventHandler(m_window, "keyup",
         [this](emscripten::val event) {this->handleKeyEvent(KeyEvent(EventType::KeyUp, event, m_deadKeySupport)); });
 }
 

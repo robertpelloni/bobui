@@ -151,25 +151,25 @@ private:
 
     QWasmWindowTreeNode *m_commitedParent = nullptr;
 
-    std::unique_ptr<qstdweb::EventCallback> m_keyDownCallback;
-    std::unique_ptr<qstdweb::EventCallback> m_keyUpCallback;
-    std::unique_ptr<qstdweb::EventCallback> m_keyDownCallbackForInputContext;
-    std::unique_ptr<qstdweb::EventCallback> m_keyUpCallbackForInputContext;
+    QWasmEventHandler m_keyDownCallback;
+    QWasmEventHandler m_keyUpCallback;
+    QWasmEventHandler m_keyDownCallbackForInputContext;
+    QWasmEventHandler m_keyUpCallbackForInputContext;
 
-    std::unique_ptr<qstdweb::EventCallback> m_pointerDownCallback;
-    std::unique_ptr<qstdweb::EventCallback> m_pointerMoveCallback;
-    std::unique_ptr<qstdweb::EventCallback> m_pointerUpCallback;
-    std::unique_ptr<qstdweb::EventCallback> m_pointerCancelCallback;
-    std::unique_ptr<qstdweb::EventCallback> m_pointerLeaveCallback;
-    std::unique_ptr<qstdweb::EventCallback> m_pointerEnterCallback;
+    QWasmEventHandler m_pointerDownCallback;
+    QWasmEventHandler m_pointerMoveCallback;
+    QWasmEventHandler m_pointerUpCallback;
+    QWasmEventHandler m_pointerCancelCallback;
+    QWasmEventHandler m_pointerLeaveCallback;
+    QWasmEventHandler m_pointerEnterCallback;
 
-    std::unique_ptr<qstdweb::EventCallback> m_dragOverCallback;
-    std::unique_ptr<qstdweb::EventCallback> m_dragStartCallback;
-    std::unique_ptr<qstdweb::EventCallback> m_dragEndCallback;
-    std::unique_ptr<qstdweb::EventCallback> m_dropCallback;
-    std::unique_ptr<qstdweb::EventCallback> m_dragLeaveCallback;
+    QWasmEventHandler m_dragOverCallback;
+    QWasmEventHandler m_dragStartCallback;
+    QWasmEventHandler m_dragEndCallback;
+    QWasmEventHandler m_dropCallback;
+    QWasmEventHandler m_dragLeaveCallback;
 
-    std::unique_ptr<qstdweb::EventCallback> m_wheelEventCallback;
+    QWasmEventHandler m_wheelEventCallback;
 
     QMap<int, QWindowSystemInterface::TouchPoint> m_pointerIdToTouchPoints;
 
