@@ -1920,6 +1920,28 @@ void tst_QWindow::mouseEventSequence()
     QCOMPARE(window.mouseReleasedCount, 4);
     QCOMPARE(window.mouseDoubleClickedCount, 0);
     QCOMPARE(window.mouseSequenceSignature, QLatin1String("prprprpr"));
+
+    // Test double click across windows
+    InputTestWindow windowNew;
+    windowNew.setGeometry(QRect(m_availableTopLeft + QPoint(80, 80), m_testWindowSize));
+    windowNew.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&windowNew));
+
+    timestamp += doubleClickInterval;
+    windowNew.resetCounters();
+    window.resetCounters();
+
+    simulateMouseClick(&windowNew, timestamp, local, local);
+    simulateMouseClick(&window, timestamp, local, local);
+    QCoreApplication::processEvents();
+    QCOMPARE(windowNew.mousePressedCount, 1);
+    QCOMPARE(windowNew.mouseReleasedCount, 1);
+    QCOMPARE(windowNew.mouseDoubleClickedCount, 0);
+    QCOMPARE(windowNew.mouseSequenceSignature, QLatin1String("pr"));
+    QCOMPARE(window.mousePressedCount, 1);
+    QCOMPARE(window.mouseReleasedCount, 1);
+    QCOMPARE(window.mouseDoubleClickedCount, 0);
+    QCOMPARE(window.mouseSequenceSignature, QLatin1String("pr"));
 }
 
 void tst_QWindow::windowModality()

@@ -2395,13 +2395,16 @@ void QGuiApplicationPrivate::processMouseEvent(QWindowSystemInterfacePrivate::Mo
             mousePressButton = Qt::NoButton;
     } else {
         static unsigned long lastPressTimestamp = 0;
+        static QPointer<QWindow> lastPressWindow = nullptr;
         mouse_buttons = e->buttons;
         if (mousePress) {
             ulong doubleClickInterval = static_cast<ulong>(QGuiApplication::styleHints()->mouseDoubleClickInterval());
             const auto timestampDelta = e->timestamp - lastPressTimestamp;
-            doubleClick = timestampDelta > 0 && timestampDelta < doubleClickInterval && button == mousePressButton;
+            doubleClick = timestampDelta > 0 && timestampDelta < doubleClickInterval
+                          && button == mousePressButton && lastPressWindow == e->window;
             mousePressButton = button;
             lastPressTimestamp = e ->timestamp;
+            lastPressWindow = e->window;
         }
     }
 
