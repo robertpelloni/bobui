@@ -211,7 +211,9 @@ public:
 
     static Qt::MouseButton mousePressButton;
     static struct QLastCursorPosition {
-        constexpr inline QLastCursorPosition() noexcept : thePoint(qt_inf(), qt_inf()) {}
+        // Initialize to a far-offscreen position.  2^23 is small enough for accurate arithmetic
+        // (even manhattanLength()) even when stored in the mantissa of a 32-bit float.
+        constexpr inline QLastCursorPosition() noexcept : thePoint(1 << 23, 1 << 23) {}
         constexpr inline Q_IMPLICIT QLastCursorPosition(QPointF p) noexcept : thePoint(p) {}
         constexpr inline Q_IMPLICIT operator QPointF() const noexcept { return thePoint; }
         constexpr inline qreal x() const noexcept{ return thePoint.x(); }
