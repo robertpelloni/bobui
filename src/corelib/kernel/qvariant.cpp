@@ -2297,23 +2297,6 @@ static int numericTypePromotion(const QtPrivate::QMetaTypeInterface *iface1,
     return QMetaType::Int;
 }
 
-template <typename Numeric> static QPartialOrdering spaceShip(Numeric lhs, Numeric rhs)
-{
-    if (lhs == rhs)
-        return QPartialOrdering::Equivalent;
-    if constexpr (std::numeric_limits<Numeric>::has_quiet_NaN) {
-        if (std::isnan(lhs) || std::isnan(rhs))
-            return QPartialOrdering::Unordered;
-    }
-
-    bool smaller;
-    if constexpr (std::is_same_v<Numeric, QObject *>)
-        smaller = std::less<QObject *>()(lhs, rhs); // can't use less all the time because of bool
-    else
-        smaller = lhs < rhs;
-    return smaller ? QPartialOrdering::Less : QPartialOrdering::Greater;
-}
-
 static QPartialOrdering integralCompare(uint promotedType, const QVariant::Private *d1, const QVariant::Private *d2)
 {
     // use toLongLong to retrieve the data, it gets us all the bits
@@ -2322,13 +2305,13 @@ static QPartialOrdering integralCompare(uint promotedType, const QVariant::Priva
     if (!l1 || !l2)
         return QPartialOrdering::Unordered;
     if (promotedType == QMetaType::UInt)
-        return spaceShip<uint>(*l1, *l2);
+        return Qt::compareThreeWay(uint(*l1), uint(*l2));
     if (promotedType == QMetaType::LongLong)
-        return spaceShip<qlonglong>(*l1, *l2);
+        return Qt::compareThreeWay(qlonglong(*l1), qlonglong(*l2));
     if (promotedType == QMetaType::ULongLong)
-        return spaceShip<qulonglong>(*l1, *l2);
+        return Qt::compareThreeWay(qulonglong(*l1), qulonglong(*l2));
 
-    return spaceShip<int>(*l1, *l2);
+    return Qt::compareThreeWay(int(*l1), int(*l2));
 }
 
 static QPartialOrdering numericCompare(const QVariant::Private *d1, const QVariant::Private *d2)
@@ -2342,10 +2325,8 @@ static QPartialOrdering numericCompare(const QVariant::Private *d1, const QVaria
     const auto r2 = qConvertToRealNumber(d2);
     if (!r1 || !r2)
         return QPartialOrdering::Unordered;
-    if (*r1 == *r2)
-        return QPartialOrdering::Equivalent;
 
-    return spaceShip(*r1, *r2);
+    return Qt::compareThreeWay(*r1, *r2);
 }
 
 static bool qvCanConvertMetaObject(QMetaType fromType, QMetaType toType)
@@ -2361,7 +2342,8 @@ static bool qvCanConvertMetaObject(QMetaType fromType, QMetaType toType)
 
 static QPartialOrdering pointerCompare(const QVariant::Private *d1, const QVariant::Private *d2)
 {
-    return spaceShip<QObject *>(d1->get<QObject *>(), d2->get<QObject *>());
+    return Qt::compareThreeWay(Qt::totally_ordered_wrapper(d1->get<QObject *>()),
+                               Qt::totally_ordered_wrapper(d2->get<QObject *>()));
 }
 
 /*!
