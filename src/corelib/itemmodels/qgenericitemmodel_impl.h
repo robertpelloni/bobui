@@ -20,6 +20,7 @@
 #include <QtCore/qvariant.h>
 
 #include <functional>
+#include <iterator>
 #include <type_traits>
 #include <QtCore/q20type_traits.h>
 #include <tuple>
@@ -70,6 +71,20 @@ namespace QGenericItemModelDetails
         std::declval<typename C::const_iterator>(),
         std::declval<typename C::size_type>(),
         std::declval<typename C::value_type>()
+    ))>>
+        : std::true_type
+    {};
+
+    // Can we insert from another (identical) range? Required to support
+    // move-only types
+    template <typename C, typename = void>
+    struct test_insert_range : std::false_type {};
+
+    template <typename C>
+    struct test_insert_range<C, std::void_t<decltype(std::declval<C&>().insert(
+      std::declval<typename C::const_iterator&>(),
+      std::declval<std::move_iterator<typename C::iterator>&>(),
+      std::declval<std::move_iterator<typename C::iterator>&>()
     ))>>
         : std::true_type
     {};
@@ -127,6 +142,7 @@ namespace QGenericItemModelDetails
     struct range_traits : std::false_type {
         static constexpr bool is_mutable = !std::is_const_v<C>;
         static constexpr bool has_insert = false;
+        static constexpr bool has_insert_range = false;
         static constexpr bool has_erase = false;
         static constexpr bool has_resize = false;
     };
@@ -139,6 +155,7 @@ namespace QGenericItemModelDetails
         using value_type = std::remove_reference_t<decltype(*std::begin(std::declval<C&>()))>;
         static constexpr bool is_mutable = !std::is_const_v<C> && !std::is_const_v<value_type>;
         static constexpr bool has_insert = test_insert<C>();
+        static constexpr bool has_insert_range = test_insert_range<C>();
         static constexpr bool has_erase = test_erase<C>();
         static constexpr bool has_resize = test_resize<C>();
     };

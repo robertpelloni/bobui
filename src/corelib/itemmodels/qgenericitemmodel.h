@@ -196,6 +196,38 @@ protected:
                                                     std::is_pointer_v<Range>,
                                                     Range, std::remove_reference_t<Range>>
                                                 >;
+
+    // A iterator type to use as the input iterator with the
+    // range_type::insert(pos, start, end) overload if available (it is in
+    // std::vector, but not in QList). Generates a prvalue when dereferenced,
+    // which then gets moved into the newly constructed row, which allows us to
+    // implement insertRows() for move-only row types.
+    struct EmptyRowGenerator
+    {
+        using value_type = row_type;
+        using reference = value_type;
+        using pointer = value_type *;
+        using iterator_category = std::input_iterator_tag;
+        using difference_type = int;
+
+        value_type operator*() { return impl.makeEmptyRow(parent); }
+        EmptyRowGenerator &operator++() { ++n; return *this; }
+        friend bool operator==(const EmptyRowGenerator &lhs, const EmptyRowGenerator &rhs) noexcept
+        { return lhs.n == rhs.n; }
+        friend bool operator!=(const EmptyRowGenerator &lhs, const EmptyRowGenerator &rhs) noexcept
+        { return !(lhs == rhs); }
+
+        difference_type n = 0;
+        Structure &impl;
+        const QModelIndex parent;
+    };
+
+    // If we have a move-only row_type and can add/remove rows, then the range
+    // must have an insert-from-range overload.
+    static_assert(static_row_count || range_features::has_insert_range
+                                   || std::is_copy_constructible_v<row_type>,
+                  "The range holding a move-only row-type must support insert(pos, start, end)");
+
 public:
     explicit QGenericItemModelImpl(Range &&model, QGenericItemModel *itemModel)
         : QGenericItemModelImplBase(itemModel, static_cast<const Self*>(nullptr))
@@ -473,8 +505,13 @@ public:
                 using multi_role = QGenericItemModelDetails::is_multi_role<value_type>;
                 if constexpr (has_metaobject<value_type>) {
                     if (QMetaType::fromType<value_type>() == data.metaType()) {
-                        target = data.value<value_type>();
-                        return true;
+                        if constexpr (std::is_copy_assignable_v<value_type>) {
+                            target = std::move(data).value<value_type>();
+                            return true;
+                        } else {
+                            qCritical("Cannot assign %s", QMetaType::fromType<value_type>().name());
+                            return false;
+                        }
                     } else if (row_traits::fixed_size() <= 1) {
                         return writeRole(role, target, data);
                     } else if (column <= row_traits::fixed_size()
@@ -739,14 +776,19 @@ public:
             beginInsertRows(parent, row, row + count - 1);
 
             const auto pos = std::next(std::begin(*children), row);
-            if constexpr (rows_are_pointers) {
+            if constexpr (range_features::has_insert_range) {
+                EmptyRowGenerator first{0, that(), parent};
+                EmptyRowGenerator last{count, that(), parent};
+                children->insert(pos, first, last);
+            } else if constexpr (rows_are_pointers) {
                 auto start = children->insert(pos, count, nullptr);
                 auto end = std::next(start, count);
                 for (auto it = start; it != end; ++it)
                     *it = that().makeEmptyRow(parent);
             } else {
-                row_type empty_value = that().makeEmptyRow(parent);
-                children->insert(pos, count, empty_value);
+                children->insert(pos, count, that().makeEmptyRow(parent));
+            }
+            if constexpr (!rows_are_pointers) {
                 // fix the parent in all children of the modified row, as the
                 // references back to the parent might have become invalid.
                 that().resetParentInChildren(children);

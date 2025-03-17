@@ -145,7 +145,7 @@ namespace std {
 }
 
 struct tree_row;
-using value_tree = QList<tree_row>;
+using value_tree = std::vector<tree_row>;
 using pointer_tree = QList<tree_row *>;
 
 struct tree_row
@@ -159,22 +159,6 @@ public:
     {
         if (m_childrenPointers)
             qDeleteAll(*m_childrenPointers);
-    }
-
-    tree_row(const tree_row &other)
-        : m_value(other.m_value), m_description(other.m_description)
-        , m_parent(other.m_parent), m_children(other.m_children)
-        , m_childrenPointers(other.m_childrenPointers)
-    {}
-
-    tree_row &operator=(const tree_row &other)
-    {
-        m_parent = other.m_parent;
-        m_children = other.m_children;
-        m_childrenPointers = other.m_childrenPointers;
-        m_value = other.m_value;
-        m_description = other.m_description;
-        return *this;
     }
 
     tree_row(tree_row &&other) = default;
@@ -384,11 +368,13 @@ private:
             if (children) {
                 for (const auto &child : *children) {
                     const bool match = [&child, &row]{
+                        tree_row emptyRow;
                         if constexpr (pointerTree) {
                             if (child->parentRow() != row) {
                                 qCritical().noquote() << "Parent out of sync for:" << *child;
                                 qCritical().noquote() << "  Actual: " << child->parentRow()
-                                        << (child->parentRow() ? *child->parentRow() : tree_row{});
+                                        << std::move(child->parentRow() ? *child->parentRow()
+                                                                        : emptyRow);
                                 qCritical().noquote() << "Expected: " << row << *row;
                                 return false;
                             }
@@ -396,7 +382,8 @@ private:
                             if (child.parentRow() != std::addressof(row)) {
                                 qCritical().noquote() << "Parent out of sync for:" << child;
                                 qCritical().noquote() << "  Actual: " << child.parentRow()
-                                        << (child.parentRow() ? *child.parentRow() : tree_row{});
+                                        << std::move(child.parentRow() ? *child.parentRow()
+                                                                       : emptyRow);
                                 qCritical().noquote() << "Expected: " << std::addressof(row) << row;
                                 return false;
                             }
@@ -1210,13 +1197,15 @@ enum class TreeProtocol { ValueImplicit, ValueReadOnly, PointerExplicit, Pointer
 
 void tst_QGenericItemModel::createTree()
 {
-    m_data->m_tree.reset(new value_tree{
+    tree_row root[] = {
         {"1", "one"},
         {"2", "two"},
         {"3", "three"},
         {"4", "four"},
         {"5", "five"},
-    });
+    };
+    m_data->m_tree.reset(new value_tree{std::make_move_iterator(std::begin(root)),
+                                        std::make_move_iterator(std::end(root))});
 
     (*m_data->m_tree)[1].addChild("2.1", "two.one");
     (*m_data->m_tree)[1].addChild("2.2", "two.two");
