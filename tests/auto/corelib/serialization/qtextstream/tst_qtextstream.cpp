@@ -45,11 +45,11 @@ private slots:
     void construction();
 
     // lines
-    void readLineFromDevice_data();
+    void readLineFromDevice_data() { generateLineData(false); }
     void readLineFromDevice();
-    void readLineFromString_data();
+    void readLineFromString_data() { generateLineData(true); }
     void readLineFromString();
-    void readLineFromTextDevice_data();
+    void readLineFromTextDevice_data() { generateLineData(false); }
     void readLineFromTextDevice();
     void readLineUntilNull();
     void readLineMaxlen_data();
@@ -58,9 +58,9 @@ private slots:
     void readLineInto();
 
     // all
-    void readAllFromDevice_data();
+    void readAllFromDevice_data() { generateAllData(false); }
     void readAllFromDevice();
-    void readAllFromString_data();
+    void readAllFromString_data() { generateAllData(true); }
     void readAllFromString();
     void readLineFromStringThenChangeString();
 
@@ -68,25 +68,25 @@ private slots:
     void setDevice();
 
     // char operators
-    void QChar_operators_FromDevice_data();
+    void QChar_operators_FromDevice_data() { generateOperatorCharData(false); }
     void QChar_operators_FromDevice();
-    void char16_t_operators_FromDevice_data();
+    void char16_t_operators_FromDevice_data() { generateOperatorCharData(false); }
     void char16_t_operators_FromDevice();
-    void char_operators_FromDevice_data();
+    void char_operators_FromDevice_data() { generateOperatorCharData(false); }
     void char_operators_FromDevice();
 
     // natural number read operator
-    void signedShort_read_operator_FromDevice_data();
+    void signedShort_read_operator_FromDevice_data() { generateNaturalNumbersData(false); }
     void signedShort_read_operator_FromDevice();
-    void unsignedShort_read_operator_FromDevice_data();
+    void unsignedShort_read_operator_FromDevice_data() { generateNaturalNumbersData(false); }
     void unsignedShort_read_operator_FromDevice();
-    void signedInt_read_operator_FromDevice_data();
+    void signedInt_read_operator_FromDevice_data() { generateNaturalNumbersData(false); }
     void signedInt_read_operator_FromDevice();
-    void unsignedInt_read_operator_FromDevice_data();
+    void unsignedInt_read_operator_FromDevice_data() { generateNaturalNumbersData(false); }
     void unsignedInt_read_operator_FromDevice();
-    void qlonglong_read_operator_FromDevice_data();
+    void qlonglong_read_operator_FromDevice_data() { generateNaturalNumbersData(false); }
     void qlonglong_read_operator_FromDevice();
-    void qulonglong_read_operator_FromDevice_data();
+    void qulonglong_read_operator_FromDevice_data() { generateNaturalNumbersData(false); }
     void qulonglong_read_operator_FromDevice();
 
     // natural number write operator
@@ -110,15 +110,15 @@ private slots:
     void int_write_with_locale();
 
     // real number read operator
-    void float_read_operator_FromDevice_data();
+    void float_read_operator_FromDevice_data() { generateRealNumbersData(false); }
     void float_read_operator_FromDevice();
-    void double_read_operator_FromDevice_data();
+    void double_read_operator_FromDevice_data() { generateRealNumbersData(false); }
     void double_read_operator_FromDevice();
 
     // real number write operator
-    void float_write_operator_ToDevice_data();
+    void float_write_operator_ToDevice_data() { generateRealNumbersDataWrite(); }
     void float_write_operator_ToDevice();
-    void double_write_operator_ToDevice_data();
+    void double_write_operator_ToDevice_data() { generateRealNumbersDataWrite(); }
     void double_write_operator_ToDevice();
 
     void double_write_with_flags_data();
@@ -128,11 +128,11 @@ private slots:
     void double_write_with_precision();
 
     // text read operators
-    void charPtr_read_operator_FromDevice_data();
+    void charPtr_read_operator_FromDevice_data() { generateStringData(false); }
     void charPtr_read_operator_FromDevice();
-    void stringRef_read_operator_FromDevice_data();
+    void stringRef_read_operator_FromDevice_data() { generateStringData(false); }
     void stringRef_read_operator_FromDevice();
-    void byteArray_read_operator_FromDevice_data();
+    void byteArray_read_operator_FromDevice_data() { generateStringData(false); }
     void byteArray_read_operator_FromDevice();
 
     // text write operators
@@ -210,13 +210,13 @@ private slots:
     void autodetectUnicode();
 
 private:
-    void generateLineData(bool for_QString);
-    void generateAllData(bool for_QString);
-    void generateOperatorCharData(bool for_QString);
-    void generateNaturalNumbersData(bool for_QString);
-    void generateRealNumbersData(bool for_QString);
-    void generateStringData(bool for_QString);
-    void generateRealNumbersDataWrite();
+    void generateLineData(bool for_QString) const;
+    void generateAllData(bool for_QString) const;
+    void generateOperatorCharData(bool for_QString) const;
+    void generateNaturalNumbersData(bool for_QString) const;
+    void generateRealNumbersData(bool for_QString) const;
+    void generateStringData(bool for_QString) const;
+    void generateRealNumbersDataWrite() const;
 
     QTemporaryDir tempDir;
     QString testFileName;
@@ -398,7 +398,7 @@ void tst_QTextStream::construction()
 
 }
 
-void tst_QTextStream::generateLineData(bool for_QString)
+void tst_QTextStream::generateLineData(bool for_QString) const
 {
     QTest::addColumn<QByteArray>("data");
     QTest::addColumn<QStringList>("lines");
@@ -486,12 +486,6 @@ void tst_QTextStream::generateLineData(bool for_QString)
     QTest::newRow("oneline/cr") << QByteArray("ole\r") << (QStringList() << "ole");
     if (!for_QString)
         QTest::newRow("utf16-BE/cr") << QByteArray("\xfe\xff\x00\xe5\x00\x67\x00\x65\x00\x0d", 10) << (QStringList() << QLatin1String("\345ge"));
-}
-
-// ------------------------------------------------------------------------------
-void tst_QTextStream::readLineFromDevice_data()
-{
-    generateLineData(false);
 }
 
 // ------------------------------------------------------------------------------
@@ -646,12 +640,6 @@ void tst_QTextStream::readLineInto()
 }
 
 // ------------------------------------------------------------------------------
-void tst_QTextStream::readLineFromString_data()
-{
-    generateLineData(true);
-}
-
-// ------------------------------------------------------------------------------
 void tst_QTextStream::readLineFromString()
 {
     QFETCH(QByteArray, data);
@@ -706,12 +694,6 @@ void tst_QTextStream::setDevice()
 }
 
 // ------------------------------------------------------------------------------
-void tst_QTextStream::readLineFromTextDevice_data()
-{
-    generateLineData(false);
-}
-
-// ------------------------------------------------------------------------------
 void tst_QTextStream::readLineFromTextDevice()
 {
     QFETCH(QByteArray, data);
@@ -753,7 +735,7 @@ void tst_QTextStream::readLineFromTextDevice()
 }
 
 // ------------------------------------------------------------------------------
-void tst_QTextStream::generateAllData(bool for_QString)
+void tst_QTextStream::generateAllData(bool for_QString) const
 {
     QTest::addColumn<QByteArray>("input");
     QTest::addColumn<QString>("output");
@@ -832,12 +814,6 @@ void tst_QTextStream::readLineUntilNull()
 }
 
 // ------------------------------------------------------------------------------
-void tst_QTextStream::readAllFromDevice_data()
-{
-    generateAllData(false);
-}
-
-// ------------------------------------------------------------------------------
 void tst_QTextStream::readAllFromDevice()
 {
     QFETCH(QByteArray, input);
@@ -848,12 +824,6 @@ void tst_QTextStream::readAllFromDevice()
 
     QTextStream stream(&buffer);
     QCOMPARE(stream.readAll(), output);
-}
-
-// ------------------------------------------------------------------------------
-void tst_QTextStream::readAllFromString_data()
-{
-    generateAllData(true);
 }
 
 // ------------------------------------------------------------------------------
@@ -1847,7 +1817,7 @@ void tst_QTextStream::writeSeekWriteNoBOM()
 }
 
 // ------------------------------------------------------------------------------
-void tst_QTextStream::generateOperatorCharData(bool for_QString)
+void tst_QTextStream::generateOperatorCharData(bool for_QString) const
 {
     QTest::addColumn<QByteArray>("input");
     QTest::addColumn<QChar>("qchar_output");
@@ -1881,12 +1851,6 @@ void tst_QTextStream::generateOperatorCharData(bool for_QString)
 }
 
 // ------------------------------------------------------------------------------
-void tst_QTextStream::QChar_operators_FromDevice_data()
-{
-    generateOperatorCharData(false);
-}
-
-// ------------------------------------------------------------------------------
 void tst_QTextStream::QChar_operators_FromDevice()
 {
     QFETCH(QByteArray, input);
@@ -1912,12 +1876,6 @@ void tst_QTextStream::QChar_operators_FromDevice()
 
     QCOMPARE(writeBuf.buffer().size(), write_output.size());
     QCOMPARE(writeBuf.buffer().constData(), write_output.constData());
-}
-
-// ------------------------------------------------------------------------------
-void tst_QTextStream::char16_t_operators_FromDevice_data()
-{
-    generateOperatorCharData(false);
 }
 
 // ------------------------------------------------------------------------------
@@ -1950,12 +1908,6 @@ void tst_QTextStream::char16_t_operators_FromDevice()
 }
 
 // ------------------------------------------------------------------------------
-void tst_QTextStream::char_operators_FromDevice_data()
-{
-    generateOperatorCharData(false);
-}
-
-// ------------------------------------------------------------------------------
 void tst_QTextStream::char_operators_FromDevice()
 {
     QFETCH(QByteArray, input);
@@ -1984,7 +1936,7 @@ void tst_QTextStream::char_operators_FromDevice()
 }
 
 // ------------------------------------------------------------------------------
-void tst_QTextStream::generateNaturalNumbersData(bool for_QString)
+void tst_QTextStream::generateNaturalNumbersData(bool for_QString) const
 {
     QTest::addColumn<QByteArray>("input");
     QTest::addColumn<qulonglong>("output");
@@ -2081,8 +2033,6 @@ void tst_QTextStream::generateNaturalNumbersData(bool for_QString)
 
 // ------------------------------------------------------------------------------
 #define IMPLEMENT_STREAM_RIGHT_INT_OPERATOR_TEST(texttype, type) \
-    void tst_QTextStream:: texttype##_read_operator_FromDevice_data() \
-    { generateNaturalNumbersData(false); } \
     void tst_QTextStream:: texttype##_read_operator_FromDevice() \
     { \
         QFETCH(QByteArray, input); \
@@ -2101,7 +2051,7 @@ IMPLEMENT_STREAM_RIGHT_INT_OPERATOR_TEST(qulonglong, qulonglong)
     ;
 
 // ------------------------------------------------------------------------------
-void tst_QTextStream::generateRealNumbersData(bool for_QString)
+void tst_QTextStream::generateRealNumbersData(bool for_QString) const
 {
     QTest::addColumn<QByteArray>("input");
     QTest::addColumn<double>("output");
@@ -2129,8 +2079,6 @@ void tst_QTextStream::generateRealNumbersData(bool for_QString)
 
 // ------------------------------------------------------------------------------
 #define IMPLEMENT_STREAM_RIGHT_REAL_OPERATOR_TEST(texttype, type) \
-    void tst_QTextStream:: texttype##_read_operator_FromDevice_data() \
-    { generateRealNumbersData(false); } \
     void tst_QTextStream:: texttype##_read_operator_FromDevice() \
     { \
         QFETCH(QByteArray, input); \
@@ -2145,7 +2093,7 @@ IMPLEMENT_STREAM_RIGHT_REAL_OPERATOR_TEST(double, double)
     ;
 
 // ------------------------------------------------------------------------------
-void tst_QTextStream::generateStringData(bool for_QString)
+void tst_QTextStream::generateStringData(bool for_QString) const
 {
     QTest::addColumn<QByteArray>("input");
     QTest::addColumn<QByteArray>("array_output");
@@ -2175,12 +2123,6 @@ void tst_QTextStream::generateStringData(bool for_QString)
 }
 
 // ------------------------------------------------------------------------------
-void tst_QTextStream::charPtr_read_operator_FromDevice_data()
-{
-    generateStringData(false);
-}
-
-// ------------------------------------------------------------------------------
 void tst_QTextStream::charPtr_read_operator_FromDevice()
 {
     QFETCH(QByteArray, input);
@@ -2200,12 +2142,6 @@ void tst_QTextStream::charPtr_read_operator_FromDevice()
 }
 
 // ------------------------------------------------------------------------------
-void tst_QTextStream::stringRef_read_operator_FromDevice_data()
-{
-    generateStringData(false);
-}
-
-// ------------------------------------------------------------------------------
 void tst_QTextStream::stringRef_read_operator_FromDevice()
 {
     QFETCH(QByteArray, input);
@@ -2222,12 +2158,6 @@ void tst_QTextStream::stringRef_read_operator_FromDevice()
     QCOMPARE(static_cast<bool>(stream >> tmp), status);
 
     QCOMPARE(tmp, string_output);
-}
-
-// ------------------------------------------------------------------------------
-void tst_QTextStream::byteArray_read_operator_FromDevice_data()
-{
-    generateStringData(false);
 }
 
 // ------------------------------------------------------------------------------
@@ -2444,7 +2374,7 @@ IMPLEMENT_STREAM_LEFT_INT_OPERATOR_TEST(qulonglong, qulonglong)
 
 
 // ------------------------------------------------------------------------------
-void tst_QTextStream::generateRealNumbersDataWrite()
+void tst_QTextStream::generateRealNumbersDataWrite() const
 {
     QTest::addColumn<double>("number");
     QTest::addColumn<QByteArray>("data");
@@ -2460,8 +2390,6 @@ void tst_QTextStream::generateRealNumbersDataWrite()
 
 // ------------------------------------------------------------------------------
 #define IMPLEMENT_STREAM_LEFT_REAL_OPERATOR_TEST(texttype, type) \
-    void tst_QTextStream:: texttype##_write_operator_ToDevice_data() \
-    { generateRealNumbersDataWrite(); } \
     void tst_QTextStream:: texttype##_write_operator_ToDevice() \
     { \
         QFETCH(double, number); \
