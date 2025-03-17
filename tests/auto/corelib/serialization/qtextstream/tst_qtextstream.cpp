@@ -77,31 +77,31 @@ private slots:
 
     // natural number read operator
     void signedShort_read_operator_FromDevice_data() { generateNaturalNumbersData(false); }
-    void signedShort_read_operator_FromDevice();
+    void signedShort_read_operator_FromDevice() { integral_read_operator_FromDevice<signed short>(); }
     void unsignedShort_read_operator_FromDevice_data() { generateNaturalNumbersData(false); }
-    void unsignedShort_read_operator_FromDevice();
+    void unsignedShort_read_operator_FromDevice() { integral_read_operator_FromDevice<unsigned short>(); }
     void signedInt_read_operator_FromDevice_data() { generateNaturalNumbersData(false); }
-    void signedInt_read_operator_FromDevice();
+    void signedInt_read_operator_FromDevice() { integral_read_operator_FromDevice<signed int>(); }
     void unsignedInt_read_operator_FromDevice_data() { generateNaturalNumbersData(false); }
-    void unsignedInt_read_operator_FromDevice();
+    void unsignedInt_read_operator_FromDevice() { integral_read_operator_FromDevice<unsigned int>(); }
     void qlonglong_read_operator_FromDevice_data() { generateNaturalNumbersData(false); }
-    void qlonglong_read_operator_FromDevice();
+    void qlonglong_read_operator_FromDevice() { integral_read_operator_FromDevice<qlonglong>(); }
     void qulonglong_read_operator_FromDevice_data() { generateNaturalNumbersData(false); }
-    void qulonglong_read_operator_FromDevice();
+    void qulonglong_read_operator_FromDevice() { integral_read_operator_FromDevice<qulonglong>(); }
 
     // natural number write operator
     void signedShort_write_operator_ToDevice_data();
-    void signedShort_write_operator_ToDevice();
+    void signedShort_write_operator_ToDevice() { integral_write_operator_ToDevice<signed short>(); }
     void unsignedShort_write_operator_ToDevice_data();
-    void unsignedShort_write_operator_ToDevice();
+    void unsignedShort_write_operator_ToDevice() { integral_write_operator_ToDevice<unsigned short>(); }
     void signedInt_write_operator_ToDevice_data();
-    void signedInt_write_operator_ToDevice();
+    void signedInt_write_operator_ToDevice() { integral_write_operator_ToDevice<signed int>(); }
     void unsignedInt_write_operator_ToDevice_data();
-    void unsignedInt_write_operator_ToDevice();
+    void unsignedInt_write_operator_ToDevice() { integral_write_operator_ToDevice<unsigned int>(); }
     void qlonglong_write_operator_ToDevice_data();
-    void qlonglong_write_operator_ToDevice();
+    void qlonglong_write_operator_ToDevice() { integral_write_operator_ToDevice<qlonglong>(); }
     void qulonglong_write_operator_ToDevice_data();
-    void qulonglong_write_operator_ToDevice();
+    void qulonglong_write_operator_ToDevice() { integral_write_operator_ToDevice<qulonglong>(); }
 
     void int_read_with_locale_data();
     void int_read_with_locale();
@@ -111,15 +111,15 @@ private slots:
 
     // real number read operator
     void float_read_operator_FromDevice_data() { generateRealNumbersData(false); }
-    void float_read_operator_FromDevice();
+    void float_read_operator_FromDevice() { real_read_operator_FromDevice<float>(); }
     void double_read_operator_FromDevice_data() { generateRealNumbersData(false); }
-    void double_read_operator_FromDevice();
+    void double_read_operator_FromDevice() { real_read_operator_FromDevice<double>(); }
 
     // real number write operator
     void float_write_operator_ToDevice_data() { generateRealNumbersDataWrite(); }
-    void float_write_operator_ToDevice();
+    void float_write_operator_ToDevice() { real_write_operator_ToDevice<float>(); }
     void double_write_operator_ToDevice_data() { generateRealNumbersDataWrite(); }
-    void double_write_operator_ToDevice();
+    void double_write_operator_ToDevice() { real_write_operator_ToDevice<double>(); }
 
     void double_write_with_flags_data();
     void double_write_with_flags();
@@ -213,9 +213,13 @@ private:
     void generateLineData(bool for_QString) const;
     void generateAllData(bool for_QString) const;
     void generateOperatorCharData(bool for_QString) const;
+    template <typename Whole> void integral_read_operator_FromDevice() const;
     void generateNaturalNumbersData(bool for_QString) const;
+    template <typename Whole> void integral_write_operator_ToDevice() const;
+    template <typename Real> void real_read_operator_FromDevice() const;
     void generateRealNumbersData(bool for_QString) const;
     void generateStringData(bool for_QString) const;
+    template <typename Real> void real_write_operator_ToDevice() const;
     void generateRealNumbersDataWrite() const;
 
     QTemporaryDir tempDir;
@@ -2032,23 +2036,16 @@ void tst_QTextStream::generateNaturalNumbersData(bool for_QString) const
 }
 
 // ------------------------------------------------------------------------------
-#define IMPLEMENT_STREAM_RIGHT_INT_OPERATOR_TEST(texttype, type) \
-    void tst_QTextStream:: texttype##_read_operator_FromDevice() \
-    { \
-        QFETCH(QByteArray, input); \
-        QFETCH(qulonglong, output); \
-        type sh; \
-        QTextStream stream(&input); \
-        stream >> sh; \
-        QCOMPARE(sh, (type)output); \
-    }
-IMPLEMENT_STREAM_RIGHT_INT_OPERATOR_TEST(signedShort, signed short)
-IMPLEMENT_STREAM_RIGHT_INT_OPERATOR_TEST(unsignedShort, unsigned short)
-IMPLEMENT_STREAM_RIGHT_INT_OPERATOR_TEST(signedInt, signed int)
-IMPLEMENT_STREAM_RIGHT_INT_OPERATOR_TEST(unsignedInt, unsigned int)
-IMPLEMENT_STREAM_RIGHT_INT_OPERATOR_TEST(qlonglong, qlonglong)
-IMPLEMENT_STREAM_RIGHT_INT_OPERATOR_TEST(qulonglong, qulonglong)
-    ;
+template <typename Whole>
+void tst_QTextStream::integral_read_operator_FromDevice() const
+{
+    QFETCH(QByteArray, input);
+    QFETCH(qulonglong, output);
+    QTextStream stream(&input);
+    Whole sh;
+    stream >> sh;
+    QCOMPARE(sh, Whole(output));
+}
 
 // ------------------------------------------------------------------------------
 void tst_QTextStream::generateRealNumbersData(bool for_QString) const
@@ -2078,19 +2075,16 @@ void tst_QTextStream::generateRealNumbersData(bool for_QString) const
 }
 
 // ------------------------------------------------------------------------------
-#define IMPLEMENT_STREAM_RIGHT_REAL_OPERATOR_TEST(texttype, type) \
-    void tst_QTextStream:: texttype##_read_operator_FromDevice() \
-    { \
-        QFETCH(QByteArray, input); \
-        QFETCH(double, output); \
-        type sh; \
-        QTextStream stream(&input); \
-        stream >> sh; \
-        QCOMPARE(sh, (type)output); \
-    }
-IMPLEMENT_STREAM_RIGHT_REAL_OPERATOR_TEST(float, float)
-IMPLEMENT_STREAM_RIGHT_REAL_OPERATOR_TEST(double, double)
-    ;
+template <typename Real>
+void tst_QTextStream::real_read_operator_FromDevice() const
+{
+    QFETCH(QByteArray, input);
+    QFETCH(double, output);
+    QTextStream stream(&input);
+    Real sh;
+    stream >> sh;
+    QCOMPARE(sh, Real(output));
+}
 
 // ------------------------------------------------------------------------------
 void tst_QTextStream::generateStringData(bool for_QString) const
@@ -2180,42 +2174,42 @@ void tst_QTextStream::byteArray_read_operator_FromDevice()
 }
 
 // ------------------------------------------------------------------------------
-#define IMPLEMENT_STREAM_LEFT_INT_OPERATOR_TEST(texttype, type) \
-    void tst_QTextStream:: texttype##_write_operator_ToDevice() \
-    { \
-        QFETCH(qulonglong, number); \
-        QFETCH(QByteArray, data); \
-        QFETCH(QByteArray, dataWithSeparators); \
-        \
-        QBuffer buffer; \
-        buffer.open(QBuffer::WriteOnly); \
-        QTextStream stream(&buffer); \
-        stream.setLocale(QLocale::c()); \
-        QVERIFY(stream << (type)number); \
-        stream.flush(); \
-        QCOMPARE(buffer.data().constData(), data.constData()); \
-        \
-        QLocale locale("en-US"); \
-        buffer.reset(); buffer.buffer().clear(); \
-        stream.setLocale(locale); \
-        QVERIFY(stream << (type)number); \
-        stream.flush(); \
-        QCOMPARE(buffer.data(), dataWithSeparators); \
-        \
-        locale.setNumberOptions(QLocale::OmitGroupSeparator); \
-        buffer.reset(); buffer.buffer().clear(); \
-        stream.setLocale(locale); \
-        QVERIFY(stream << (type)number); \
-        stream.flush(); \
-        QCOMPARE(buffer.data().constData(), data.constData()); \
-        \
-        locale = QLocale("de-DE"); \
-        buffer.reset(); buffer.buffer().clear(); \
-        stream.setLocale(locale); \
-        QVERIFY(stream << (type)number); \
-        stream.flush(); \
-        QCOMPARE(buffer.data(), dataWithSeparators.replace(',', '.')); \
-    }
+template <typename Whole>
+void tst_QTextStream::integral_write_operator_ToDevice() const
+{
+    QFETCH(qulonglong, number);
+    QFETCH(QByteArray, data);
+    QFETCH(QByteArray, dataWithSeparators);
+
+    QBuffer buffer;
+    buffer.open(QBuffer::WriteOnly);
+    QTextStream stream(&buffer);
+    stream.setLocale(QLocale::c());
+    QVERIFY(stream << Whole(number));
+    stream.flush();
+    QCOMPARE(buffer.data().constData(), data.constData());
+
+    QLocale locale("en-US");
+    buffer.reset(); buffer.buffer().clear();
+    stream.setLocale(locale);
+    QVERIFY(stream << Whole(number));
+    stream.flush();
+    QCOMPARE(buffer.data(), dataWithSeparators);
+
+    locale.setNumberOptions(QLocale::OmitGroupSeparator);
+    buffer.reset(); buffer.buffer().clear();
+    stream.setLocale(locale);
+    QVERIFY(stream << Whole(number));
+    stream.flush();
+    QCOMPARE(buffer.data().constData(), data.constData());
+
+    locale = QLocale("de-DE");
+    buffer.reset(); buffer.buffer().clear();
+    stream.setLocale(locale);
+    QVERIFY(stream << Whole(number));
+    stream.flush();
+    QCOMPARE(buffer.data(), dataWithSeparators.replace(',', '.'));
+}
 
 // ------------------------------------------------------------------------------
 void tst_QTextStream::signedShort_write_operator_ToDevice_data()
@@ -2235,8 +2229,6 @@ void tst_QTextStream::signedShort_write_operator_ToDevice_data()
     QTest::newRow("65537") << Q_UINT64_C(65537) << QByteArray("1") << QByteArray("1");
     QTest::newRow("-32768") << quint64(-32768) << QByteArray("-32768") << QByteArray("-32,768");
 }
-IMPLEMENT_STREAM_LEFT_INT_OPERATOR_TEST(signedShort, signed short)
-    ;
 
 // ------------------------------------------------------------------------------
 void tst_QTextStream::unsignedShort_write_operator_ToDevice_data()
@@ -2255,8 +2247,6 @@ void tst_QTextStream::unsignedShort_write_operator_ToDevice_data()
     QTest::newRow("65536") << Q_UINT64_C(65536) << QByteArray("0") << QByteArray("0");
     QTest::newRow("65537") << Q_UINT64_C(65537) << QByteArray("1") << QByteArray("1");
 }
-IMPLEMENT_STREAM_LEFT_INT_OPERATOR_TEST(unsignedShort, unsigned short)
-    ;
 
 // ------------------------------------------------------------------------------
 void tst_QTextStream::signedInt_write_operator_ToDevice_data()
@@ -2282,8 +2272,6 @@ void tst_QTextStream::signedInt_write_operator_ToDevice_data()
     QTest::newRow("4294967297") << Q_UINT64_C(4294967297) << QByteArray("1") << QByteArray("1");
     QTest::newRow("-2147483648") << quint64(-2147483648) << QByteArray("-2147483648") << QByteArray("-2,147,483,648");
 }
-IMPLEMENT_STREAM_LEFT_INT_OPERATOR_TEST(signedInt, signed int)
-    ;
 
 // ------------------------------------------------------------------------------
 void tst_QTextStream::unsignedInt_write_operator_ToDevice_data()
@@ -2308,8 +2296,6 @@ void tst_QTextStream::unsignedInt_write_operator_ToDevice_data()
     QTest::newRow("4294967296") << Q_UINT64_C(4294967296) << QByteArray("0") << QByteArray("0");
     QTest::newRow("4294967297") << Q_UINT64_C(4294967297) << QByteArray("1") << QByteArray("1");
 }
-IMPLEMENT_STREAM_LEFT_INT_OPERATOR_TEST(unsignedInt, unsigned int)
-    ;
 
 // ------------------------------------------------------------------------------
 void tst_QTextStream::qlonglong_write_operator_ToDevice_data()
@@ -2339,8 +2325,6 @@ void tst_QTextStream::qlonglong_write_operator_ToDevice_data()
     QTest::newRow("18446744073709551615") << Q_UINT64_C(18446744073709551615) << QByteArray("-1") << QByteArray("-1");
     QTest::newRow("-9223372036854775808") << quint64(Q_INT64_C(-9223372036854775807) - 1) << QByteArray("-9223372036854775808") << QByteArray("-9,223,372,036,854,775,808");
 }
-IMPLEMENT_STREAM_LEFT_INT_OPERATOR_TEST(qlonglong, qlonglong)
-    ;
 
 // ------------------------------------------------------------------------------
 void tst_QTextStream::qulonglong_write_operator_ToDevice_data()
@@ -2369,9 +2353,6 @@ void tst_QTextStream::qulonglong_write_operator_ToDevice_data()
     QTest::newRow("9223372036854775809") << Q_UINT64_C(9223372036854775809) << QByteArray("9223372036854775809") << QByteArray("9,223,372,036,854,775,809");
     QTest::newRow("18446744073709551615") << Q_UINT64_C(18446744073709551615) << QByteArray("18446744073709551615") << QByteArray("18,446,744,073,709,551,615");
 }
-IMPLEMENT_STREAM_LEFT_INT_OPERATOR_TEST(qulonglong, qulonglong)
-    ;
-
 
 // ------------------------------------------------------------------------------
 void tst_QTextStream::generateRealNumbersDataWrite() const
@@ -2389,31 +2370,28 @@ void tst_QTextStream::generateRealNumbersDataWrite() const
 }
 
 // ------------------------------------------------------------------------------
-#define IMPLEMENT_STREAM_LEFT_REAL_OPERATOR_TEST(texttype, type) \
-    void tst_QTextStream:: texttype##_write_operator_ToDevice() \
-    { \
-        QFETCH(double, number); \
-        QFETCH(QByteArray, data); \
-        QFETCH(QByteArray, dataWithSeparators); \
-        \
-        QBuffer buffer; \
-        buffer.open(QBuffer::WriteOnly); \
-        QTextStream stream(&buffer); \
-        stream.setLocale(QLocale::c()); \
-        type f = type(number); \
-        QVERIFY(stream << f); \
-        stream.flush(); \
-        QCOMPARE(buffer.data().constData(), data.constData()); \
-        \
-        buffer.reset(); \
-        stream.setLocale(QLocale("en-US")); \
-        QVERIFY(stream << f); \
-        stream.flush(); \
-        QCOMPARE(buffer.data(), dataWithSeparators); \
-    }
-IMPLEMENT_STREAM_LEFT_REAL_OPERATOR_TEST(float, float)
-IMPLEMENT_STREAM_LEFT_REAL_OPERATOR_TEST(double, double)
-    ;
+template <typename Real>
+void tst_QTextStream::real_write_operator_ToDevice() const
+{
+    QFETCH(double, number);
+    QFETCH(QByteArray, data);
+    QFETCH(QByteArray, dataWithSeparators);
+
+    QBuffer buffer;
+    buffer.open(QBuffer::WriteOnly);
+    QTextStream stream(&buffer);
+    stream.setLocale(QLocale::c());
+    Real f = Real(number);
+    QVERIFY(stream << f);
+    stream.flush();
+    QCOMPARE(buffer.data().constData(), data.constData());
+
+    buffer.reset();
+    stream.setLocale(QLocale("en-US"));
+    QVERIFY(stream << f);
+    stream.flush();
+    QCOMPARE(buffer.data(), dataWithSeparators);
+}
 
 // ------------------------------------------------------------------------------
 void tst_QTextStream::string_write_operator_ToDevice_data()
