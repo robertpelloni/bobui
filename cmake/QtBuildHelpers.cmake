@@ -444,6 +444,7 @@ macro(qt_internal_setup_build_and_global_variables)
     qt_internal_setup_build_examples()
 
     qt_internal_set_qt_host_path()
+    qt_internal_setup_find_host_info_package()
 
     qt_internal_setup_build_docs()
 
@@ -465,7 +466,6 @@ macro(qt_internal_setup_build_and_global_variables)
     qt_internal_check_msvc_versions()
     qt_internal_check_host_path_set_for_cross_compiling()
     qt_internal_setup_android_platform_specifics()
-    qt_internal_setup_find_host_info_package()
     qt_internal_setup_tool_path_command()
     qt_internal_setup_default_target_function_options()
     qt_internal_set_default_rpath_settings()

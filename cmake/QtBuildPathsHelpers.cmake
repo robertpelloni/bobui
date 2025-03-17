@@ -263,3 +263,20 @@ macro(qt_internal_setup_paths_and_prefixes)
 
     qt_internal_set_qt_apple_support_files_path()
 endmacro()
+
+# Returns the prefix for the variables defined by HostInfo package. The prefix
+# is based on version information provided by HostInfo. Falls back to current
+# project version if ${INSTALL_CMAKE_NAMESPACE}HostInfo_VERSION_MAJOR is not
+# defined.
+function(qt_internal_get_host_info_var_prefix out_var)
+    if(${INSTALL_CMAKE_NAMESPACE}HostInfo_VERSION_MAJOR)
+        set(${out_var} "QT${${INSTALL_CMAKE_NAMESPACE}HostInfo_VERSION_MAJOR}_HOST_INFO"
+            PARENT_SCOPE)
+    else()
+        # This is not a valid way to define the host info versioned prefix, but
+        # it's backward compatible with Qt versions older than 6.10.
+        #
+        # TODO: remove once Qt LTS versions older than 6.10 reach end of life.
+        set(${out_var} "QT${PROJECT_VERSION_MAJOR}_HOST_INFO" PARENT_SCOPE)
+    endif()
+endfunction()

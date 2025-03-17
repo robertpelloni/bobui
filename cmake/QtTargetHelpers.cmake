@@ -1239,9 +1239,10 @@ function(qt_internal_create_tracepoints name tracepoints_file)
         endif()
 
         if(NOT "${QT_HOST_PATH}" STREQUAL "")
+            qt_internal_get_host_info_var_prefix(host_info_var_prefix)
             qt_path_join(tracegen
                 "${QT_HOST_PATH}"
-                "${QT${PROJECT_VERSION_MAJOR}_HOST_INFO_LIBEXECDIR}"
+                "${${host_info_var_prefix}_LIBEXECDIR}"
                 "tracegen")
         else()
             set(tracegen "${QT_CMAKE_EXPORT_NAMESPACE}::tracegen")
@@ -1276,9 +1277,10 @@ function(qt_internal_generate_tracepoints name provider)
         endforeach()
 
         if(NOT "${QT_HOST_PATH}" STREQUAL "")
+            qt_internal_get_host_info_var_prefix(host_info_var_prefix)
             qt_path_join(tracepointgen
                 "${QT_HOST_PATH}"
-                "${QT${PROJECT_VERSION_MAJOR}_HOST_INFO_LIBEXECDIR}"
+                "${${host_info_var_prefix}_LIBEXECDIR}"
                 "tracepointgen")
         else()
             set(tracepointgen "${QT_CMAKE_EXPORT_NAMESPACE}::tracepointgen")
@@ -1309,9 +1311,10 @@ function(qt_internal_generate_tracepoints name provider)
         endif()
 
         if(NOT "${QT_HOST_PATH}" STREQUAL "")
+            qt_internal_get_host_info_var_prefix(host_info_var_prefix)
             qt_path_join(tracegen
                 "${QT_HOST_PATH}"
-                "${QT${PROJECT_VERSION_MAJOR}_HOST_INFO_LIBEXECDIR}"
+                "${${host_info_var_prefix}_LIBEXECDIR}"
                 "tracegen")
         else()
             set(tracegen "${QT_CMAKE_EXPORT_NAMESPACE}::tracegen")

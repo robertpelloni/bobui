@@ -961,9 +961,10 @@ if (QT_FEATURE_vulkan)
         if(CMAKE_HOST_WIN32)
             set(host_executable_suffix ".exe")
         endif()
+        qt_internal_get_host_info_var_prefix(host_info_var_prefix)
         qt_path_join(qvkgen
             "${QT_HOST_PATH}"
-            "${QT${PROJECT_VERSION_MAJOR}_HOST_INFO_LIBEXECDIR}"
+            "${${host_info_var_prefix}_LIBEXECDIR}"
             "qvkgen${host_executable_suffix}")
     elseif(QT_OPTIONAL_TOOLS_PATH)
         qt_path_join(qvkgen
