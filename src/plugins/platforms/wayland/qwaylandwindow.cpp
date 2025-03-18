@@ -697,7 +697,6 @@ void QWaylandWindow::applyConfigure()
     // This could be improved in future as we 're blocking for not just the frame to finish but one additional extra frame.
     if (mInFrameRender)
         QWindowSystemInterface::handleExposeEvent<QWindowSystemInterface::SynchronousDelivery>(window(), QRect(QPoint(0, 0), geometry().size()));
-    Q_ASSERT(!mInFrameRender);
     if (mShellSurface)
         mShellSurface->applyConfigure();
 
