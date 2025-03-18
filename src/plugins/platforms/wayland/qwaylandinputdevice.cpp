@@ -245,7 +245,8 @@ void QWaylandInputDevice::Pointer::updateCursor()
         return;
 
     // Set from shape using theme
-    uint time = seat()->mCursor.animationTimer.elapsed();
+    const QElapsedTimer &timer = seat()->mCursor.animationTimer;
+    const uint time = timer.isValid() ? timer.elapsed() : 0;
 
     if (struct ::wl_cursor *waylandCursor = mCursor.theme->cursor(shape)) {
         uint duration = 0;

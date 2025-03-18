@@ -113,7 +113,8 @@ void QWaylandTabletToolV2::updateCursor()
         return;
 
     // Set from shape using theme
-    uint time = m_tabletSeat->seat()->mCursor.animationTimer.elapsed();
+    QElapsedTimer &timer = m_tabletSeat->seat()->mCursor.animationTimer;
+    const uint time = timer.isValid() ? timer.elapsed() : 0;
 
     if (struct ::wl_cursor *waylandCursor = mCursor.theme->cursor(shape)) {
         uint duration = 0;

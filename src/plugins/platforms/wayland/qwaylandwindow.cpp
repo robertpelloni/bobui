@@ -1682,12 +1682,13 @@ void QWaylandWindow::timerEvent(QTimerEvent *event)
     {
         QMutexLocker lock(&mFrameSyncMutex);
 
-        bool callbackTimerExpired = mFrameCallbackElapsedTimer.hasExpired(mFrameCallbackTimeout);
-        if (!mFrameCallbackElapsedTimer.isValid() || callbackTimerExpired ) {
+        const bool callbackTimerValid = mFrameCallbackElapsedTimer.isValid();
+        const bool callbackTimerExpired = callbackTimerValid && mFrameCallbackElapsedTimer.hasExpired(mFrameCallbackTimeout);
+        if (!callbackTimerValid || callbackTimerExpired) {
             killTimer(mFrameCallbackCheckIntervalTimerId);
             mFrameCallbackCheckIntervalTimerId = -1;
         }
-        if (!mFrameCallbackElapsedTimer.isValid() || !callbackTimerExpired) {
+        if (!callbackTimerValid || !callbackTimerExpired) {
             return;
         }
         mFrameCallbackElapsedTimer.invalidate();
