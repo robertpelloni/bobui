@@ -125,10 +125,6 @@ static void convertLineOffset(QAccessibleTextInterface *text, int *line, int *of
                 if (iface->tableInterface()) {
                     [self updateTableModel];
                 } else if (const auto *cell = iface->tableCellInterface()) {
-                    // Called with role when populating a row with placeholder cells. The caller
-                    // inserts us into the correct array, so we don't have to look for it.
-                    if (role == NSAccessibilityCellRole)
-                        return self;
                     // If we create an element for a table cell, initialize it with row/column
                     // and insert it into the corresponding row's columns array.
                     m_rowIndex = cell->rowIndex();
