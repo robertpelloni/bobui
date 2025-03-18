@@ -4455,6 +4455,13 @@ public:
     inline int asBmpDigit(char16_t digit) const;
     inline bool isInfNanChar(char ch) const { return matchInfNaN.matches(ch); }
     char nextToken();
+    bool fractionGroupClash() const
+    {
+        // If the user's hand-configuration of the system makes group and
+        // fractional part separators coincide, we have some kludges to apply,
+        // though we can skip them in integer mode.
+        return Q_UNLIKELY(m_mode != QLocaleData::IntegerMode && m_guide.group == m_guide.decimal);
+    }
 };
 
 int NumericTokenizer::asBmpDigit(char16_t digit) const
@@ -4522,6 +4529,12 @@ char NumericTokenizer::nextToken()
     }
     if (!m_guide.group.isEmpty() && tail.startsWith(m_guide.group)) {
         m_index += m_guide.group.size();
+        // When group and decimal coincide, and a fractional part is not
+        // unexpected, treat the last as a fractional part separator (and leave
+        // the caller to special-case the situations where that causes a
+        // parse-fail that we can dodge by not reading it that way).
+        if (fractionGroupClash() && tail.indexOf(m_guide.decimal, m_guide.group.size()) == -1)
+            return '.';
         return ',';
     }
     if (m_mode != QLocaleData::IntegerMode && tail.startsWith(m_guide.decimal)) {
@@ -4658,10 +4671,22 @@ bool QLocaleData::numberToCLocale(QStringView s, QLocale::NumberOptions number_o
         if (out == '.') {
             if (stage > Grouped) // Too late to start a fractional part.
                 return false;
-            // That's the end of the integral part - check size of last group:
-            if (badLeastGroup())
-                return false;
-            stage = Fraction;
+
+            if (tokens.fractionGroupClash() && badLeastGroup()
+                && digitsInGroup == grouping.higher) {
+                // Reinterpret '.' as ',' (as they're indistinguishable) to
+                // interpret the recent digits as a group, with the least to
+                // follow (hopefully of a suitable length):
+                out = ',';
+                stage = Grouped;
+                needHigherGroup = false;
+                digitsInGroup = 0;
+            } else {
+                // That's the end of the integral part - check size of last group:
+                if (badLeastGroup())
+                    return false;
+                stage = Fraction;
+            }
         } else if (out == 'e') {
             if (wantDigits || stage == Name || stage > Fraction)
                 return false;
@@ -4678,6 +4703,11 @@ bool QLocaleData::numberToCLocale(QStringView s, QLocale::NumberOptions number_o
             stage = Exponent;
             wantDigits = true; // We need some in the exponent
         } else if (out == ',') {
+            // (If tokens.fractionGroupClash(), a comma only comes out of
+            // nextToken() if there's a later separator, since the last is
+            // always treated as dot. So if we have a comma here, treating it as
+            // a dot wouldn't save the parse: the later dot-or-comma would make
+            // the text malformed.)
             if (number_options.testFlag(QLocale::RejectGroupSeparator))
                 return false;
 
