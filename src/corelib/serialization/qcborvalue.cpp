@@ -3192,12 +3192,8 @@ size_t qHash(const QCborValue &value, size_t seed)
         return qHash(value.toArray(), seed);
     case QCborValue::Map:
         return qHash(value.toMap(), seed);
-    case QCborValue::Tag: {
-        QtPrivate::QHashCombine hash;
-        seed = hash(seed, value.tag());
-        seed = hash(seed, value.taggedValue());
-        return seed;
-    }
+    case QCborValue::Tag:
+        return qHashMulti(seed, value.tag(), value.taggedValue());
     case QCborValue::SimpleType:
         break;
     case QCborValue::False:

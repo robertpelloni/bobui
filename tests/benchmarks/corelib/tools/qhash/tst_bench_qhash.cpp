@@ -12,7 +12,7 @@
 #include <QTest>
 
 static constexpr quint64 RandomSeed32 = 1045982819;
-static constexpr quint64 RandomSeed64 = QtPrivate::QHashCombine{}(RandomSeed32, RandomSeed32);
+static constexpr quint64 RandomSeed64 = qHashMulti(0, RandomSeed32, RandomSeed32);
 
 class tst_QHash : public QObject
 {
