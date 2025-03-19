@@ -762,6 +762,15 @@ inline void swap(QVariant &value1, QVariant &value2) noexcept
 
 #ifndef QT_MOC
 
+namespace QtPrivate {
+template<typename T> inline T qvariant_cast_qmetatype_converted(const QVariant &v, QMetaType targetType)
+{
+    T t{};
+    QMetaType::convert(v.metaType(), v.constData(), targetType, &t);
+    return t;
+}
+} // namespace QtPrivate
+
 template<typename T> inline T qvariant_cast(const QVariant &v)
 {
     QMetaType targetType = QMetaType::fromType<T>();
@@ -774,9 +783,7 @@ template<typename T> inline T qvariant_cast(const QVariant &v)
             return v.d.get<nonConstT>();
     }
 
-    T t{};
-    QMetaType::convert(v.metaType(), v.constData(), targetType, &t);
-    return t;
+    return QtPrivate::qvariant_cast_qmetatype_converted<T>(v, targetType);
 }
 
 template<typename T> inline T qvariant_cast(QVariant &&v)
@@ -803,9 +810,7 @@ template<typename T> inline T qvariant_cast(QVariant &&v)
             return v.d.get<nonConstT>();
     }
 
-    T t{};
-    QMetaType::convert(v.metaType(), v.constData(), targetType, &t);
-    return t;
+    return QtPrivate::qvariant_cast_qmetatype_converted<T>(v, targetType);
 }
 
 #  ifndef QT_NO_VARIANT

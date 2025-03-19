@@ -70,20 +70,24 @@ public:
     FinalizeResult finalize() { return finalize(nullptr, 0); }
 
 private:
-    QByteArray encodeAsByteArray(QStringView in)
+    QByteArray invalidateAndReturnNull()
     {
-        if (!iface) {
-            // ensure that hasError returns true
-            state.invalidChars = 1;
-            return {};
-        }
+        // ensure that hasError returns true
+        state.invalidChars = 1;
+        return QByteArray();
+    }
+    QByteArray encodeAsByteArrayImpl(QStringView in)
+    {
         QByteArray result(iface->fromUtf16Len(in.size()), Qt::Uninitialized);
         char *out = result.data();
         out = iface->fromUtf16(out, in, &state);
         result.truncate(out - result.constData());
         return result;
     }
-
+    QByteArray encodeAsByteArray(QStringView in)
+    {
+        return iface ? encodeAsByteArrayImpl(in) : invalidateAndReturnNull();
+    }
 };
 
 class QStringDecoder : public QStringConverter
@@ -153,17 +157,22 @@ public:
     Q_CORE_EXPORT static QStringDecoder decoderForHtml(QByteArrayView data);
 
 private:
-    QString decodeAsString(QByteArrayView in)
+    QString invalidateAndReturnNull()
     {
-        if (!iface) {
-            // ensure that hasError returns true
-            state.invalidChars = 1;
-            return {};
-        }
+        // ensure that hasError returns true
+        state.invalidChars = 1;
+        return QString();
+    }
+    QString decodeAsStringImpl(QByteArrayView in)
+    {
         QString result(iface->toUtf16Len(in.size()), Qt::Uninitialized);
         const QChar *out = iface->toUtf16(result.data(), in, &state);
         result.truncate(out - result.constData());
         return result;
+    }
+    QString decodeAsString(QByteArrayView in)
+    {
+        return iface ? decodeAsStringImpl(in) : invalidateAndReturnNull();
     }
 };
 

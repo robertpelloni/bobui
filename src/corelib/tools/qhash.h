@@ -1031,9 +1031,11 @@ private:
 
         if (it.isUnused())
             return T();
-        T value = it.node()->takeValue();
-        d->erase(it);
-        return value;
+        return [&] {
+            T value = it.node()->takeValue();
+            d->erase(it);
+            return value;
+        }();
     }
 
 public:

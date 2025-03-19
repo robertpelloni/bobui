@@ -387,10 +387,12 @@ public:
     {
         if (!hasCustomVTable())
             return location;
-        QPropertyBindingSourceLocation result;
-        constexpr auto msg = "Custom location";
-        result.fileName = msg;
-        return result;
+        return []() {
+            constexpr auto msg = "Custom location";
+            QPropertyBindingSourceLocation result;
+            result.fileName = msg;
+            return result;
+        }();
     }
     QPropertyBindingError bindingError() const { return m_error; }
     QMetaType valueMetaType() const { return metaType; }
