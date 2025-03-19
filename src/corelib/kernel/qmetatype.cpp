@@ -1129,7 +1129,8 @@ static constexpr struct : QMetaTypeModuleHelper
     CONVERT_CBOR_AND_JSON(To)
 
         switch (makePair(toTypeId, fromTypeId)) {
-
+QT_WARNING_PUSH
+QT_WARNING_DISABLE_CLANG("-Wtautological-compare")
         // integral conversions
         INTEGRAL_CONVERTER(Bool);
         INTEGRAL_CONVERTER(Char);
@@ -1667,6 +1668,7 @@ static constexpr struct : QMetaTypeModuleHelper
         );
 #endif
 
+QT_WARNING_POP
         }
         return false;
     }
