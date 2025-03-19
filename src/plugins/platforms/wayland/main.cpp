@@ -12,7 +12,7 @@ namespace QtWaylandClient {
 class QWaylandIntegrationPlugin : public QPlatformIntegrationPlugin
 {
     Q_OBJECT
-    Q_PLUGIN_METADATA(IID QPlatformIntegrationFactoryInterface_iid FILE "qwayland-generic.json")
+    Q_PLUGIN_METADATA(IID QPlatformIntegrationFactoryInterface_iid FILE "qwayland.json")
 public:
     QPlatformIntegration *create(const QString&, const QStringList&) override;
 };

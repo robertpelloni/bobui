@@ -95,6 +95,19 @@ qt_internal_add_module(WaylandClient
         ../3rdparty/protocol/wlr-data-control
 )
 
+qt_internal_add_plugin(QWaylandIntegrationPlugin
+    OUTPUT_NAME qwayland
+    PLUGIN_TYPE platforms
+    DEFAULT_IF "wayland" IN_LIST QT_QPA_PLATFORMS
+    SOURCES
+        main.cpp
+    LIBRARIES
+        Qt::Core
+        Qt::Gui
+        Qt::WaylandClientPrivate
+    QT_LICENSE_ID QT_COMMERCIAL_OR_LGPL3
+)
+
 qt6_generate_wayland_protocol_client_sources(WaylandClient
     PRIVATE_CODE
     FILES
