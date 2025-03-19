@@ -564,7 +564,6 @@ private:
         return Qt::compareThreeWay(res, 0);
     }
     Q_DECLARE_STRONGLY_ORDERED(QByteArray)
-    Q_DECLARE_STRONGLY_ORDERED(QByteArray, QByteArrayView)
     Q_DECLARE_STRONGLY_ORDERED(QByteArray, const char *)
 #if defined(__GLIBCXX__) && defined(__cpp_lib_three_way_comparison)
     // libstdc++ has a bug [0] when `operator const void *()` is preferred over

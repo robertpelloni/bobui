@@ -832,7 +832,7 @@ QByteArray qUncompress(const uchar* data, qsizetype nbytes)
     \reentrant
 
     \compares strong
-    \compareswith strong {const char *} QByteArrayView
+    \compareswith strong {const char *}
     \endcompareswith
     \compareswith strong QChar char16_t QString QStringView QLatin1StringView \
                   QUtf8StringView

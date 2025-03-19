@@ -15,8 +15,6 @@
     \reentrant
 
     \compares strong
-    \compareswith strong QByteArray {const char *}
-    \endcompareswith
     \compareswith strong QString QStringView QUtf8StringView QLatin1StringView \
                   QChar char16_t
     When comparing with string and Unicode character types, the content is

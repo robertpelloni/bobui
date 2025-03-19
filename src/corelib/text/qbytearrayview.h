@@ -366,13 +366,6 @@ private:
     }
     Q_DECLARE_STRONGLY_ORDERED(QByteArrayView)
 
-    friend bool comparesEqual(const QByteArrayView &lhs, const char *rhs) noexcept
-    { return comparesEqual(lhs, QByteArrayView(rhs)); }
-    friend Qt::strong_ordering
-    compareThreeWay(const QByteArrayView &lhs, const char *rhs) noexcept
-    { return compareThreeWay(lhs, QByteArrayView(rhs)); }
-    Q_DECLARE_STRONGLY_ORDERED(QByteArrayView, const char *)
-
     // defined in qstring.cpp
     friend Q_CORE_EXPORT bool
     comparesEqual(const QByteArrayView &lhs, const QChar &rhs) noexcept;
