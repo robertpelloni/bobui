@@ -265,7 +265,7 @@ QIcon QGenericUnixTheme::xdgFileIcon(const QFileInfo &fileInfo)
         return QIcon();
     const QString &iconName = mimeType.iconName();
     if (!iconName.isEmpty()) {
-        const QIcon icon = QIcon::fromTheme(iconName);
+        QIcon icon = QIcon::fromTheme(iconName);
         if (!icon.isNull())
             return icon;
     }
