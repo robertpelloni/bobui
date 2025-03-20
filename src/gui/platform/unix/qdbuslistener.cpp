@@ -219,8 +219,9 @@ std::optional<QDBusListener::ChangeSignal>
 {
     const DBusKey dkey(location, key);
     std::optional<QDBusListener::ChangeSignal> ret;
-    if (m_signalMap.contains(dkey))
-        ret.emplace(m_signalMap.value(dkey));
+    const auto it = m_signalMap.find(dkey);
+    if (it != m_signalMap.cend())
+        ret.emplace(it.value());
 
     return ret;
 }

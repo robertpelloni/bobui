@@ -70,7 +70,6 @@ private:
         Provider provider;
         Setting setting;
         ChangeSignal(Provider p, Setting s) : provider(p), setting(s) {}
-        ChangeSignal() {}
     };
 
     QFlatMap <DBusKey, ChangeSignal> m_signalMap;
