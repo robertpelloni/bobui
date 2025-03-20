@@ -169,7 +169,7 @@ VkSpecParser::Command VkSpecParser::parseCommand()
     // skip commands with api="vulkansc", but the api attribute is optional
     if (!api.isEmpty() && !api.split(',').contains(QStringLiteral("vulkan"))) {
         skip();
-        return c;
+        return {};
     }
 
     while (!m_reader.atEnd()) {
