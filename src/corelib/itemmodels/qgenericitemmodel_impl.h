@@ -155,6 +155,18 @@ namespace QGenericItemModelDetails
     template <typename T> static auto pointerTo(T &t) { return std::addressof(t); }
     template <typename T> static auto pointerTo(const T &&t) = delete;
 
+    template <typename It>
+    auto key(It&& it) -> decltype(it.key()) { return it.key(); }
+
+    template <typename It>
+    auto key(It&& it) -> decltype((it->first) /*pars for ref type*/ ) { return it->first; }
+
+    template <typename It>
+    auto value(It&& it) -> decltype(it.value()) { return it.value(); }
+
+    template <typename It>
+    auto value(It&& it) -> decltype((it->second)) { return it->second; }
+
     // The storage of the model data. We might store it as a pointer, or as a
     // (copied- or moved-into) value. But we always return a pointer.
     template <typename ModelStorage>
