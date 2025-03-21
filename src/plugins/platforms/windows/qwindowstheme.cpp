@@ -39,7 +39,6 @@
 #include <QtGui/private/qabstractfileiconengine_p.h>
 #include <QtGui/private/qwindowsfontdatabase_p.h>
 #include <private/qhighdpiscaling_p.h>
-#include <private/qsystemlibrary_p.h>
 #include <private/qwinregistry_p.h>
 #include <QtCore/private/qfunctions_win_p.h>
 
@@ -806,15 +805,15 @@ Q_GUI_EXPORT QPixmap qt_pixmapFromWinHICON(HICON icon);
 
 static QPixmap loadIconFromShell32(int resourceId, QSizeF size)
 {
-    if (const HMODULE hmod = QSystemLibrary::load(L"shell32")) {
-        auto iconHandle =
-            static_cast<HICON>(LoadImage(hmod, MAKEINTRESOURCE(resourceId),
-                                         IMAGE_ICON, int(size.width()), int(size.height()), 0));
-        if (iconHandle) {
-            QPixmap iconpixmap = qt_pixmapFromWinHICON(iconHandle);
-            DestroyIcon(iconHandle);
-            return iconpixmap;
-        }
+    HMODULE shell32 = ::GetModuleHandleW(L"shell32.dll");
+    Q_ASSERT(shell32);
+    auto iconHandle =
+        static_cast<HICON>(LoadImage(shell32, MAKEINTRESOURCE(resourceId),
+                                     IMAGE_ICON, int(size.width()), int(size.height()), 0));
+    if (iconHandle) {
+        QPixmap iconpixmap = qt_pixmapFromWinHICON(iconHandle);
+        DestroyIcon(iconHandle);
+        return iconpixmap;
     }
     return QPixmap();
 }

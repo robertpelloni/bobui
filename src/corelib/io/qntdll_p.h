@@ -17,6 +17,7 @@
 
 #include <QtCore/private/qglobal_p.h>
 
+#include <QtCore/qt_windows.h>
 #include <winternl.h>
 
 QT_BEGIN_NAMESPACE
