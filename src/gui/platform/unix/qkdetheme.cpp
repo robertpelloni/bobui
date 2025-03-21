@@ -544,6 +544,9 @@ QKdeTheme::QKdeTheme(const QStringList& kdeDirs, int kdeVersion)
     d_func()->refresh();
 }
 
+QKdeTheme::~QKdeTheme()
+    = default;
+
 QFont *QKdeThemePrivate::kdeFont(const QVariant &fontValue)
 {
     if (fontValue.isValid()) {

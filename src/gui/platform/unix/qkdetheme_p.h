@@ -29,7 +29,8 @@ class Q_GUI_EXPORT QKdeTheme : public QGenericUnixTheme
 {
     Q_DECLARE_PRIVATE(QKdeTheme)
 public:
-    QKdeTheme(const QStringList& kdeDirs, int kdeVersion);
+    explicit QKdeTheme(const QStringList& kdeDirs, int kdeVersion);
+    ~QKdeTheme() override;
 
     static QPlatformTheme *createKdeTheme();
     QVariant themeHint(ThemeHint hint) const override;
