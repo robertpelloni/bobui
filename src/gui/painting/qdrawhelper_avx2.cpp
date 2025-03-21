@@ -287,7 +287,7 @@ void qt_blend_rgb32_on_rgb32_avx2(uchar *destPixels, int dbpl,
     }
 }
 
-static Q_NEVER_INLINE
+Q_NEVER_INLINE static
 void Q_DECL_VECTORCALL qt_memfillXX_avx2(uchar *dest, __m256i value256, qsizetype bytes)
 {
     __m128i value128 = _mm256_castsi256_si128(value256);

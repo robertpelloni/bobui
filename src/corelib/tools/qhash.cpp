@@ -106,7 +106,7 @@ struct HashSeedStorage
     }
 
 private:
-    Q_DECL_COLD_FUNCTION Q_NEVER_INLINE StateResult initialize(int which) noexcept;
+    Q_NEVER_INLINE Q_DECL_COLD_FUNCTION StateResult initialize(int which) noexcept;
 };
 
 [[maybe_unused]] HashSeedStorage::StateResult HashSeedStorage::initialize(int which) noexcept
@@ -413,7 +413,7 @@ namespace {
     }
 
     // hash 16 bytes, running 3 scramble rounds of AES on itself (like label "final1")
-    static void Q_ALWAYS_INLINE QT_FUNCTION_TARGET(AES) QT_VECTORCALL
+    Q_ALWAYS_INLINE static void QT_FUNCTION_TARGET(AES) QT_VECTORCALL
     hash16bytes(__m128i &state0, __m128i data)
     {
         state0 = _mm_xor_si128(state0, data);

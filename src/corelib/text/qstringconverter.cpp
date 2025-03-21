@@ -64,7 +64,7 @@ enum { Endian = 0, Data = 1 };
 static const uchar utf8bom[] = { 0xef, 0xbb, 0xbf };
 
 #if defined(__SSE2__) || defined(__ARM_NEON__)
-static Q_ALWAYS_INLINE uint qBitScanReverse(unsigned v) noexcept
+Q_ALWAYS_INLINE static uint qBitScanReverse(unsigned v) noexcept
 {
 #if defined(__cpp_lib_int_pow2) && __cpp_lib_int_pow2 >= 202002L
      return std::bit_width(v) - 1;
@@ -80,7 +80,7 @@ static Q_ALWAYS_INLINE uint qBitScanReverse(unsigned v) noexcept
 #endif
 
 #if defined(__SSE2__)
-template <QCpuFeatureType Cpu = _compilerCpuFeatures> static Q_ALWAYS_INLINE bool
+template <QCpuFeatureType Cpu = _compilerCpuFeatures> Q_ALWAYS_INLINE static bool
 simdEncodeAscii(uchar *&dst, const char16_t *&nextAscii, const char16_t *&src, const char16_t *end)
 {
     size_t sizeBytes = reinterpret_cast<const char *>(end) - reinterpret_cast<const char *>(src);
@@ -247,7 +247,7 @@ simdEncodeAscii(uchar *&dst, const char16_t *&nextAscii, const char16_t *&src, c
     return src == end;
 }
 
-template <QCpuFeatureType Cpu = _compilerCpuFeatures> static Q_ALWAYS_INLINE bool
+template <QCpuFeatureType Cpu = _compilerCpuFeatures> Q_ALWAYS_INLINE static bool
 simdDecodeAscii(char16_t *&dst, const uchar *&nextAscii, const uchar *&src, const uchar *end)
 {
     // do sixteen characters at a time

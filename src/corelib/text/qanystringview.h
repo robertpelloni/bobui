@@ -200,7 +200,7 @@ public:
     inline constexpr QAnyStringView(QLatin1StringView str) noexcept;
 
     template <typename Container, if_compatible_container<Container> = true>
-    constexpr Q_ALWAYS_INLINE QAnyStringView(const Container &c) noexcept
+    Q_ALWAYS_INLINE constexpr QAnyStringView(const Container &c) noexcept
         : QAnyStringView(std::data(c), QtPrivate::lengthHelperContainer(c)) {}
 
     template <typename Container, if_convertible_to<QString, Container> = true>

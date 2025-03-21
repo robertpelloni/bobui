@@ -166,7 +166,7 @@ public:
 #endif
 
     template <typename Container, if_compatible_container<Container> = true>
-    constexpr Q_ALWAYS_INLINE QStringView(const Container &c) noexcept
+    Q_ALWAYS_INLINE constexpr QStringView(const Container &c) noexcept
         : QStringView(std::data(c), QtPrivate::lengthHelperContainer(c)) {}
 
     template <typename Char, size_t Size, if_compatible_char<Char> = true>

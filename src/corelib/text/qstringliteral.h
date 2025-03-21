@@ -25,7 +25,7 @@ using QStringPrivate = QArrayDataPointer<char16_t>;
 
 namespace QtPrivate {
 template <qsizetype N>
-static Q_ALWAYS_INLINE QStringPrivate qMakeStringPrivate(const char16_t (&literal)[N])
+Q_ALWAYS_INLINE static QStringPrivate qMakeStringPrivate(const char16_t (&literal)[N])
 {
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
     auto str = const_cast<char16_t *>(literal);
