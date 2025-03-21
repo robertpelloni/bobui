@@ -67,6 +67,7 @@ public:
     };
 
     QKdeThemePrivate(const QStringList &kdeDirs, int kdeVersion);
+    ~QKdeThemePrivate() { clearResources(); }
 
     static QString kdeGlobals(const QString &kdeDir, int kdeVersion)
     {
