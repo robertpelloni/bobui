@@ -198,7 +198,7 @@ namespace QGenericItemModelDetails
     template <typename T> static auto pointerTo(const T &&t) = delete;
 
     template <typename T>
-    static bool isValid(T &&t)
+    static constexpr bool isValid(T &&t) noexcept
     {
         if constexpr (std::is_constructible_v<bool, T>)
             return bool(t);

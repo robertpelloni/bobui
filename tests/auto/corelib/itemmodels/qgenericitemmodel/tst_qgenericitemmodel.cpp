@@ -65,6 +65,38 @@ private:
     int m_number = 42;
 };
 
+// a class that can be both and requires disambiguation
+class MetaObjectTuple : public QObject
+{
+    Q_OBJECT
+    Q_PROPERTY(QString display MEMBER m_string)
+    Q_PROPERTY(int number MEMBER m_number)
+public:
+    using QObject::QObject;
+
+private:
+    QString m_string = "4321";
+    int m_number = 24;
+
+    template <size_t I, typename G,
+        std::enable_if_t<(I < 2), bool> = true,
+        std::enable_if_t<std::is_same_v<q20::remove_cvref_t<G>, MetaObjectTuple>, bool> = true
+    >
+    friend inline decltype(auto) get(G &&item)
+    {
+        if constexpr (I == 0)
+            return q23::forward_like<G>(item.m_string);
+        else if constexpr (I == 1)
+            return q23::forward_like<G>(item.m_number);
+    }
+};
+
+namespace std {
+    template <> struct tuple_size<MetaObjectTuple> : std::integral_constant<size_t, 2> {};
+    template <> struct tuple_element<0, MetaObjectTuple> { using type = QString; };
+    template <> struct tuple_element<1, MetaObjectTuple> { using type = int; };
+}
+
 struct Row
 {
     Item m_item;
@@ -198,6 +230,23 @@ private:
         Object row3;
         std::list<Object *> listOfObjects = {
             &row1, &row2, &row3
+        };
+
+        MetaObjectTuple mot1;
+        MetaObjectTuple mot2;
+        MetaObjectTuple mot3;
+        std::vector<QGenericItemModel::SingleColumn<MetaObjectTuple *>> listOfMetaObjectTuple = {
+            &mot1,
+            &mot2,
+            &mot3,
+        };
+        MetaObjectTuple mot4;
+        MetaObjectTuple mot5;
+        MetaObjectTuple mot6;
+        std::vector<QGenericItemModel::MultiColumn<MetaObjectTuple *>> tableOfMetaObjectTuple = {
+            {&mot4},
+            {&mot5},
+            {&mot6},
         };
 
         // bad (but legal) get() overload that never returns a mutable reference
@@ -363,6 +412,10 @@ void tst_QGenericItemModel::createTestData()
     ADD_POINTER(listOfGadgets)
         << 1 << (ChangeAction::ChangeRows | ChangeAction::SetData | ChangeAction::SetItemData);
     ADD_COPY(listOfObjects)
+        << 2 << (ChangeAction::ChangeRows | ChangeAction::SetData);
+    ADD_COPY(listOfMetaObjectTuple)
+        << 1 << (ChangeAction::ChangeRows | ChangeAction::SetData | ChangeAction::SetItemData);
+    ADD_COPY(tableOfMetaObjectTuple)
         << 2 << (ChangeAction::ChangeRows | ChangeAction::SetData);
 
     ADD_COPY(tableOfNumbers)
@@ -694,6 +747,8 @@ void tst_QGenericItemModel::insertRows()
     QEXPECT_FAIL("tableOfPointersPointer", "No item created", Continue);
     QEXPECT_FAIL("tableOfRowPointersPointer", "No row created", Continue);
     QEXPECT_FAIL("listOfObjectsCopy", "No object created", Continue);
+    QEXPECT_FAIL("listOfMetaObjectTupleCopy", "No object created", Continue);
+    QEXPECT_FAIL("tableOfMetaObjectTupleCopy", "No object created", Continue);
 
     // associative containers are default constructed with no valid data
     ignoreFailureFromAssociativeContainers();

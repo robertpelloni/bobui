@@ -172,7 +172,77 @@ QT_BEGIN_NAMESPACE
     \note The implementation of \c{get} above requires C++23. A C++17 compliant
     implementation can be found in the unit test code for QGenericItemModel.
 
+    Types that have a meta objects, and implement the C++ tuple protocol, also
+    can cause compile-time ambiguity when used as the row type, as the framework
+    won't know which API to use to access the individual values. Use the
+    QGenericItemModel::SingleColumn and QGenericItemModel::MultiColumns wrapper
+    to disambiguate.
+
     \sa {Model/View Programming}
+*/
+
+/*!
+    \typedef QGenericItemModel::SingleColumn
+
+    Use this type to disambiguate when using the type \c{T} as the row type in
+    the range. If \c{T} provides a metaobject, then the framework will by
+    default represent the type as multiple columns, resulting in a table model.
+
+    \snippet qgenericitemmodel/main.cpp color_gadget_0
+
+    When stored in a sequential range, this type will be interpreted as
+    multi-column rows with each property being one column. The range will be
+    represented as a table.
+
+    \code
+    QList<ColorEntry> colors = {
+        // ...
+    };
+    QGenericItemModel tableModel(colors); // columnCount() == 3
+    \endcode
+
+    When wrapped into QGenericItemModel::SingleColumn, the model will be a list,
+    with each instance of \c{T} represented as an item with multiple roles.
+
+    \code
+    QList<QGenericItemModel::SingleColumn<ColorEntry>> colors = {
+        // ...
+    };
+    QGenericItemModel listModel(colors); // columnCount() == 1
+    \endcode
+
+    \sa QGenericItemModel::MultiColumn
+*/
+
+/*!
+    \class QGenericItemModel::MultiColumn
+    \brief Represents the wrapped type \c{T} as multiple columns in a QGenericItemModel.
+    \inmodule QtCore
+    \ingroup model-view
+    \since 6.10
+
+    Use this type to disambiguate when the type \c{T} has both a metaobject, and
+    implements \l{the C++ tuple protocol}. The type will be represented as
+    multiple columns, and the individual values will be accessed through the
+    tuple protocol.
+
+    \snippet qgenericitemmodel/main.cpp color_gadget_0
+    \code
+    namespace std {
+        template <> struct tuple_size<ColorEntry> : integral_constant<size_t, 3> {};
+        // ...
+    }
+
+    QList<QGenericItemModel::MultiColumn<ColorEntry>> colors = {
+        // ...
+    };
+    QGenericItemModel colorList(colors);
+    \endcode
+
+    To represent the type a single column value with multiple roles, use
+    QGenericItemModel::SingleColumn instead.
+
+    \sa QGenericItemModel::SingleColumn
 */
 
 /*!
