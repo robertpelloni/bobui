@@ -345,6 +345,18 @@ Q_DECLARE_OPERATORS_FOR_FLAGS(tst_QGenericItemModel::ChangeActions)
 
 using Factory = std::function<std::unique_ptr<QAbstractItemModel>()>;
 
+// Pointer- and reference-tests will modify the data structure that lives in
+// m_data, so we have to keep backup copies of that data.
+template <typename T, std::enable_if_t<std::is_copy_assignable_v<T>, bool> = true>
+void createBackup(QObject* object, T& model) {
+    QObject::connect(object, &QObject::destroyed, object, [backup = model, &model]() mutable {
+        model = backup;
+    });
+}
+
+template <typename T, std::enable_if_t<!std::is_copy_assignable_v<T>, bool> = true>
+void createBackup(QObject* , T& ) {}
+
 void tst_QGenericItemModel::createTestData()
 {
     m_data.reset(new Data);
@@ -354,116 +366,78 @@ void tst_QGenericItemModel::createTestData()
     QTest::addColumn<int>("expectedColumnCount");
     QTest::addColumn<ChangeActions>("changeActions");
 
-    Factory factory;
+#define ADD_HELPER(Model, Tag, Ref, ColumnCount, Actions) \
+    { \
+        Factory factory = [this]() -> std::unique_ptr<QAbstractItemModel> { \
+            auto result = std::make_unique<QGenericItemModel>(Ref(m_data->Model)); \
+            createBackup(result.get(), m_data->Model); \
+            return result; \
+        }; \
+        QTest::addRow(#Model #Tag) << std::move(factory) << int(std::size(m_data->Model)) \
+                                   << int(ColumnCount) << ChangeActions(Actions); \
+    }
 
-#define ADD_HELPER(Model, Tag, Ref) \
-    factory = [this]() -> std::unique_ptr<QAbstractItemModel> { \
-        return std::unique_ptr<QAbstractItemModel>(new QGenericItemModel(Ref->Model)); \
-    }; \
-    QTest::addRow(#Model #Tag) << factory << int(std::size(m_data->Model)) \
+#define ADD_POINTER(Model, ColumnCount, Actions) ADD_HELPER(Model, Pointer, &, ColumnCount, Actions)
+#define ADD_COPY(Model, ColumnCount, Actions) ADD_HELPER(Model, Copy, *&, ColumnCount, Actions)
+#define ADD_REF(Model, ColumnCount, Actions) ADD_HELPER(Model, Ref, std::ref, ColumnCount, Actions)
+#define ADD_ALL(Model, ColumnCount, Actions) \
+    ADD_COPY(Model, ColumnCount, Actions) \
+    ADD_POINTER(Model, ColumnCount, Actions) \
+    ADD_REF(Model, ColumnCount, Actions)
 
-#define ADD_POINTER(Model) \
-    ADD_HELPER(Model, Pointer, &m_data) \
-
-#define ADD_COPY(Model) \
-    ADD_HELPER(Model, Copy, m_data) \
-
-    // POINTER-tests will modify the data structure that lives in m_data,
-    // so we have to run tests on copies of that data first for each type,
-    // or only run POINTER-tests.
     // The entire test data is recreated for each test function, but test
     // functions must not change data structures other than the one tested.
 
-    ADD_COPY(fixedArrayOfNumbers)
-        << 1 << ChangeActions(ChangeAction::SetData);
-    ADD_POINTER(fixedArrayOfNumbers)
-        << 1 << ChangeActions(ChangeAction::SetData);
-    ADD_POINTER(cArrayOfNumbers)
-        << 1 << ChangeActions(ChangeAction::SetData);
+    ADD_ALL(fixedArrayOfNumbers, 1, ChangeAction::SetData);
 
-    ADD_POINTER(cArrayFixedColumns)
-        << int(std::tuple_size_v<Row>) << (ChangeAction::SetData | ChangeAction::SetItemData);
+    ADD_POINTER(cArrayOfNumbers, 1, ChangeAction::SetData);
 
-    ADD_COPY(vectorOfFixedColumns)
-        << 2 << (ChangeAction::ChangeRows | ChangeAction::SetData);
-    ADD_POINTER(vectorOfFixedColumns)
-        << 2 << (ChangeAction::ChangeRows | ChangeAction::SetData);
-    ADD_COPY(vectorOfArrays)
-        << 10 << (ChangeAction::ChangeRows | ChangeAction::SetData);
-    ADD_POINTER(vectorOfArrays)
-        << 10 << (ChangeAction::ChangeRows | ChangeAction::SetData);
-    ADD_COPY(vectorOfStructs)
-        << int(std::tuple_size_v<Row>) << (ChangeAction::ChangeRows | ChangeAction::SetData
-                                                                    | ChangeAction::SetItemData);
-    ADD_POINTER(vectorOfStructs)
-        << int(std::tuple_size_v<Row>) << (ChangeAction::ChangeRows | ChangeAction::SetData
-                                                                    | ChangeAction::SetItemData);
-    ADD_COPY(vectorOfConstStructs)
-        << int(std::tuple_size_v<ConstRow>) << ChangeActions(ChangeAction::ChangeRows);
-    ADD_POINTER(vectorOfConstStructs)
-        << int(std::tuple_size_v<ConstRow>) << ChangeActions(ChangeAction::ChangeRows);
+    ADD_POINTER(cArrayFixedColumns,
+                std::tuple_size_v<Row>,
+                ChangeAction::SetData | ChangeAction::SetItemData);
 
-    ADD_COPY(vectorOfGadgets)
-        << 3 << (ChangeAction::ChangeRows | ChangeAction::SetData | ChangeAction::SetItemData);
-    ADD_POINTER(vectorOfGadgets)
-        << 3 << (ChangeAction::ChangeRows | ChangeAction::SetData | ChangeAction::SetItemData);
-    ADD_COPY(listOfGadgets)
-        << 1 << (ChangeAction::ChangeRows | ChangeAction::SetData | ChangeAction::SetItemData);
-    ADD_POINTER(listOfGadgets)
-        << 1 << (ChangeAction::ChangeRows | ChangeAction::SetData | ChangeAction::SetItemData);
-    ADD_COPY(listOfObjects)
-        << 2 << (ChangeAction::ChangeRows | ChangeAction::SetData);
-    ADD_COPY(listOfMetaObjectTuple)
-        << 1 << (ChangeAction::ChangeRows | ChangeAction::SetData | ChangeAction::SetItemData);
-    ADD_COPY(tableOfMetaObjectTuple)
-        << 2 << (ChangeAction::ChangeRows | ChangeAction::SetData);
+    ADD_ALL(vectorOfFixedColumns, 2, ChangeAction::ChangeRows | ChangeAction::SetData);
 
-    ADD_COPY(tableOfNumbers)
-        << 5 << ChangeActions(ChangeAction::All);
-    ADD_POINTER(tableOfNumbers)
-        << 5 << ChangeActions(ChangeAction::All);
+    ADD_ALL(vectorOfArrays, 10, ChangeAction::ChangeRows | ChangeAction::SetData);
+
+    ADD_ALL(vectorOfStructs,
+            std::tuple_size_v<Row>,
+            ChangeAction::ChangeRows | ChangeAction::SetData | ChangeAction::SetItemData);
+
+    ADD_ALL(vectorOfConstStructs, std::tuple_size_v<ConstRow>, ChangeAction::ChangeRows);
+
+    ADD_ALL(vectorOfGadgets, 3, ChangeAction::ChangeRows | ChangeAction::SetData | ChangeAction::SetItemData);
+
+    ADD_ALL(listOfGadgets, 1, ChangeAction::ChangeRows | ChangeAction::SetData | ChangeAction::SetItemData);
+
+    ADD_COPY(listOfObjects, 2, ChangeAction::ChangeRows | ChangeAction::SetData);
+
+    ADD_ALL(tableOfNumbers, 5, ChangeAction::All);
+
     // only adding as pointer, copy would operate on the same data
-    ADD_POINTER(tableOfPointers)
-        << 2 << ChangeActions(ChangeAction::All | ChangeAction::SetItemData);
-    ADD_POINTER(tableOfRowPointers)
-        << int(std::tuple_size_v<Row>) << (ChangeAction::ChangeRows | ChangeAction::SetData
-                                                                    | ChangeAction::SetItemData);
+    ADD_POINTER(tableOfPointers, 2, ChangeAction::All | ChangeAction::SetItemData);
+    ADD_POINTER(tableOfRowPointers,
+                std::tuple_size_v<Row>,
+                ChangeAction::ChangeRows | ChangeAction::SetData | ChangeAction::SetItemData);
 
-    ADD_COPY(arrayOfConstNumbers)
-        << 1 << ChangeActions(ChangeAction::ReadOnly);
-    ADD_POINTER(arrayOfConstNumbers)
-        << 1 << ChangeActions(ChangeAction::ReadOnly);
+    ADD_ALL(arrayOfConstNumbers, 1, ChangeAction::ReadOnly);
 
-    ADD_COPY(constListOfNumbers)
-        << 1 << ChangeActions(ChangeAction::ReadOnly);
-    ADD_POINTER(constListOfNumbers)
-        << 1 << ChangeActions(ChangeAction::ReadOnly);
+    ADD_ALL(constListOfNumbers, 1, ChangeAction::ReadOnly);
 
-    ADD_COPY(constTableOfNumbers)
-        << 5 << ChangeActions(ChangeAction::ReadOnly);
-    ADD_POINTER(constTableOfNumbers)
-        << 5 << ChangeActions(ChangeAction::ReadOnly);
+    ADD_ALL(constTableOfNumbers, 5, ChangeAction::ReadOnly);
 
-    ADD_COPY(listOfNamedRoles)
-        << 1 << (ChangeAction::ChangeRows | ChangeAction::SetData | ChangeAction::SetItemData);
-    ADD_POINTER(listOfNamedRoles)
-        << 1 << (ChangeAction::ChangeRows | ChangeAction::SetData | ChangeAction::SetItemData);
-    ADD_COPY(tableOfEnumRoles)
-        << 1 << ChangeActions(ChangeAction::All | ChangeAction::SetItemData);
-    ADD_POINTER(tableOfEnumRoles)
-        << 1 << ChangeActions(ChangeAction::All | ChangeAction::SetItemData);
-    ADD_COPY(tableOfIntRoles)
-        << 1 << ChangeActions(ChangeAction::All | ChangeAction::SetItemData);
-    ADD_POINTER(tableOfIntRoles)
-        << 1 << ChangeActions(ChangeAction::All | ChangeAction::SetItemData);
-    ADD_COPY(stdTableOfIntRoles)
-        << 1 << ChangeActions(ChangeAction::All | ChangeAction::SetItemData);
-    ADD_POINTER(stdTableOfIntRoles)
-        << 1 << ChangeActions(ChangeAction::All | ChangeAction::SetItemData);
+    ADD_ALL(listOfNamedRoles, 1, ChangeAction::ChangeRows | ChangeAction::SetData | ChangeAction::SetItemData);
+
+    ADD_ALL(tableOfEnumRoles, 1, ChangeAction::All | ChangeAction::SetItemData);
+
+    ADD_ALL(tableOfIntRoles, 1, ChangeAction::All | ChangeAction::SetItemData);
+
+    ADD_ALL(stdTableOfIntRoles, 1, ChangeAction::All | ChangeAction::SetItemData);
 
 #undef ADD_COPY
 #undef ADD_POINTER
 #undef ADD_HELPER
+#undef ADD_ALL
 
     QTest::addRow("Moved table") << Factory([]{
         QList<std::vector<QString>> movedTable = {
@@ -727,15 +701,19 @@ void tst_QGenericItemModel::insertRows()
     QCOMPARE(model->rowCount() == expectedRowCount + 1,
              changeActions.testFlag(ChangeAction::InsertRows));
 
-    auto ignoreFailureFromAssociativeContainers = []{
-        QEXPECT_FAIL("listOfNamedRolesPointer", "QVariantMap is empty by design", Continue);
-        QEXPECT_FAIL("listOfNamedRolesCopy", "QVariantMap is empty by design", Continue);
-        QEXPECT_FAIL("tableOfEnumRolesPointer", "QVariantMap is empty by design", Continue);
-        QEXPECT_FAIL("tableOfEnumRolesCopy", "QVariantMap is empty by design", Continue);
-        QEXPECT_FAIL("tableOfIntRolesPointer", "QVariantMap is empty by design", Continue);
-        QEXPECT_FAIL("tableOfIntRolesCopy", "QVariantMap is empty by design", Continue);
-        QEXPECT_FAIL("stdTableOfIntRolesPointer", "std::map is empty by design", Continue);
-        QEXPECT_FAIL("stdTableOfIntRolesCopy", "std::map is empty by design", Continue);
+    auto ignoreFailureFromAssociativeContainers = [] {
+        for (auto suffix : { "Pointer", "Copy", "Ref" }) {
+            auto addCase = [suffix](const std::string& testName,
+                                    const std::string& containerName) {
+              QEXPECT_FAIL((testName + suffix).c_str(),
+                           (containerName + " is empty by design").c_str(),
+                           Continue);
+            };
+            addCase("listOfNamedRoles", "QVariantMap");
+            addCase("tableOfEnumRoles", "QVariantMap");
+            addCase("tableOfIntRoles", "QVariantMap");
+            addCase("stdTableOfIntRoles", "std::map");
+        }
     };
     // get and put data into the new row
     const QModelIndex firstItem = model->index(0, 0);

@@ -29,6 +29,34 @@ QT_BEGIN_NAMESPACE
 
 namespace QGenericItemModelDetails
 {
+    template <typename T, size_t N> static decltype(auto) refTo(T (&t)[N]) { return t; }
+    template <typename T> static T&& refTo(T&& t) { return std::forward<T>(t); }
+    template <typename T> static T& refTo(std::reference_wrapper<T> t) { return t.get(); }
+    // template <typename T> static auto refTo(T& t) -> decltype(*t) { return *t; }
+
+    template <typename T> static auto pointerTo(T *t) { return t; }
+    template <typename T> static auto pointerTo(T &t) { return std::addressof(refTo(t)); }
+    template <typename T> static auto pointerTo(const T &&t) = delete;
+
+    template <typename It>
+    auto key(It&& it) -> decltype(it.key()) { return it.key(); }
+    template <typename It>
+    auto key(It&& it) -> decltype((it->first)) { return it->first; }
+
+    template <typename It>
+    auto value(It&& it) -> decltype(it.value()) { return it.value(); }
+    template <typename It>
+    auto value(It&& it) -> decltype((it->second)) { return it->second; }
+
+    template <typename T>
+    static constexpr bool isValid(const T &t) noexcept
+    {
+        if constexpr (std::is_constructible_v<bool, T>)
+            return bool(t);
+        else
+            return true;
+    }
+
     // Test if a type is a range, and whether we can modify it using the
     // standard C++ container member functions insert, erase, and resize.
     // For the sake of QAIM, we cannot modify a range if it holds const data
@@ -135,11 +163,14 @@ namespace QGenericItemModelDetails
     template <typename T> struct range_traits<const T *> : iterable_value<Mutable::No> {};
     template <> struct range_traits<QLatin1StringView> : iterable_value<Mutable::No> {};
 
+    template <typename T>
+    using remove_ptr_and_ref_t =
+        std::remove_pointer_t<std::remove_reference_t<decltype(refTo(std::declval<T&>()))>>;
+
     template <typename C>
     [[maybe_unused]] static constexpr bool is_range_v = range_traits<C>();
     template <typename CC>
-    using if_is_range = std::enable_if_t<
-                        is_range_v<std::remove_pointer_t<std::remove_reference_t<CC>>>, bool>;
+    using if_is_range = std::enable_if_t<is_range_v<remove_ptr_and_ref_t<CC>>, bool>;
 
     // Find out how many fixed elements can be retrieved from a row element.
     // main template for simple values and ranges. Specializing for ranges
@@ -193,43 +224,13 @@ namespace QGenericItemModelDetails
     [[maybe_unused]] static constexpr int static_size_v =
                             row_traits<q20::remove_cvref_t<std::remove_pointer_t<T>>>::static_size;
 
-    template <typename T> static auto pointerTo(T *t) { return t; }
-    template <typename T> static auto pointerTo(T &t) { return std::addressof(t); }
-    template <typename T> static auto pointerTo(const T &&t) = delete;
-
-    template <typename T>
-    static constexpr bool isValid(T &&t) noexcept
-    {
-        if constexpr (std::is_constructible_v<bool, T>)
-            return bool(t);
-        else
-            return true;
-    }
-
-    template <typename It>
-    auto key(It&& it) -> decltype(it.key()) { return it.key(); }
-
-    template <typename It>
-    auto key(It&& it) -> decltype((it->first) /*pars for ref type*/ ) { return it->first; }
-
-    template <typename It>
-    auto value(It&& it) -> decltype(it.value()) { return it.value(); }
-
-    template <typename It>
-    auto value(It&& it) -> decltype((it->second)) { return it->second; }
-
     // The storage of the model data. We might store it as a pointer, or as a
     // (copied- or moved-into) value. But we always return a pointer.
     template <typename ModelStorage>
     struct ModelData
     {
-        using ModelPtr = std::conditional_t<std::is_pointer_v<ModelStorage>,
-                                            ModelStorage, ModelStorage *>;
-        using ConstModelPtr = std::conditional_t<std::is_pointer_v<ModelStorage>,
-                                            const ModelStorage, const ModelStorage *>;
-
-        ModelPtr model() { return pointerTo(m_model); }
-        ConstModelPtr model() const { return pointerTo(m_model); }
+        auto model() { return pointerTo(m_model); }
+        auto model() const { return pointerTo(m_model); }
 
         ModelStorage m_model;
     };

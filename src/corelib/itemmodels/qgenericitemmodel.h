@@ -124,7 +124,7 @@ class QGenericItemModelImpl : public QGenericItemModelImplBase
 {
     Q_DISABLE_COPY_MOVE(QGenericItemModelImpl)
 public:
-    using range_type = std::remove_pointer_t<std::remove_reference_t<Range>>;
+    using range_type = QGenericItemModelDetails::remove_ptr_and_ref_t<Range>;
     using row_reference = decltype(*std::begin(std::declval<range_type&>()));
     using const_row_reference = decltype(*std::cbegin(std::declval<range_type&>()));
     using row_type = std::remove_reference_t<row_reference>;
