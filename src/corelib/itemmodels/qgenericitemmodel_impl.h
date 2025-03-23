@@ -178,6 +178,15 @@ namespace QGenericItemModelDetails
     template <typename T> static auto pointerTo(T &t) { return std::addressof(t); }
     template <typename T> static auto pointerTo(const T &&t) = delete;
 
+    template <typename T>
+    static bool isValid(T &&t)
+    {
+        if constexpr (std::is_constructible_v<bool, T>)
+            return bool(t);
+        else
+            return true;
+    }
+
     template <typename It>
     auto key(It&& it) -> decltype(it.key()) { return it.key(); }
 

@@ -277,7 +277,7 @@ public:
                 readData(*std::next(std::cbegin(row), index.column()));
             else if constexpr (static_column_count == 0)
                 readData(row);
-            else
+            else if (QGenericItemModelDetails::isValid(row))
                 for_element_at(row, index.column(), readData);
         }
         return result;
@@ -328,7 +328,7 @@ public:
                 success = writeData(*std::next(std::begin(row), index.column()));
             } else if constexpr (static_column_count == 0) {
                 success = writeData(row);
-            } else {
+            } else if (QGenericItemModelDetails::isValid(row)) {
                 for_element_at(row, index.column(), [&writeData, &success](auto &&target){
                     using target_type = decltype(target);
                     // we can only assign to an lvalue reference
@@ -361,7 +361,7 @@ public:
             } else if constexpr (static_column_count == 0) {
                 row = row_type{};
                 success = true;
-            } else {
+            } else if (QGenericItemModelDetails::isValid(row)) {
                 for_element_at(row, index.column(), [&success](auto &&target){
                     using target_type = decltype(target);
                     if constexpr (std::is_lvalue_reference_v<target_type>
