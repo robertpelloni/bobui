@@ -107,3 +107,10 @@ qt_internal_extend_target(QCocoaIntegrationPlugin CONDITION QT_FEATURE_sessionma
     SOURCES
         qcocoasessionmanager.cpp qcocoasessionmanager.h
 )
+
+# Work around CMake issue 23464
+if(CMAKE_VERSION VERSION_LESS "3.25" AND NOT QT_FEATURE_sessionmanager)
+    set_target_properties(QCocoaIntegrationPlugin PROPERTIES
+        DISABLE_PRECOMPILE_HEADERS ON
+    )
+endif()
