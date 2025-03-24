@@ -944,9 +944,6 @@ bool QFileSystemEngine::fillMetaData(const QFileSystemEntry &entry, QFileSystemM
                     data.fillFromStatxBuf(statxBuffer);
                 else
                     data.fillFromStatBuf(statBuffer);
-                data.knownFlagsMask |= QFileSystemMetaData::PosixStatFlags
-                        | QFileSystemMetaData::ExistsAttribute;
-                data.entryFlags |= QFileSystemMetaData::ExistsAttribute;
             }
         } else {
             // it doesn't exist
@@ -981,11 +978,11 @@ bool QFileSystemEngine::fillMetaData(const QFileSystemEntry &entry, QFileSystemM
             data.size_ = 0;
             data.userId_ = (uint) -2;
             data.groupId_ = (uint) -2;
-        }
 
-        // reset the mask
-        data.knownFlagsMask |= QFileSystemMetaData::PosixStatFlags
-            | QFileSystemMetaData::ExistsAttribute;
+            // reset the mask
+            data.knownFlagsMask |= QFileSystemMetaData::PosixStatFlags
+                | QFileSystemMetaData::ExistsAttribute;
+        }
     }
 
     // third, we try access(2)
