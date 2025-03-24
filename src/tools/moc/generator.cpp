@@ -233,6 +233,7 @@ void Generator::generateCode()
             QByteArray alias = cdef->flagAliases.value(def.name);
             if (cdef->enumDeclarations.contains(alias)) {
                 def.name = alias;
+                def.flags |= cdef->enumDeclarations[alias];
                 enumList += def;
             }
         }
