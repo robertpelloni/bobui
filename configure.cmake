@@ -1265,6 +1265,7 @@ qt_configure_add_summary_entry(
 qt_configure_add_summary_entry(
     ARGS "optimize_full"
 )
+qt_configure_add_summary_entry(ARGS "force_asserts" CONDITION QT_FEATURE_force_asserts)
 qt_configure_add_summary_entry(ARGS "shared")
 qt_configure_add_summary_entry(
     ARGS "ccache"
