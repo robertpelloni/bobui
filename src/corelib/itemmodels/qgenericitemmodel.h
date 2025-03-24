@@ -149,10 +149,9 @@ protected:
                                                 >;
 public:
     explicit QGenericItemModelImpl(Range &&model, QGenericItemModel *itemModel)
-        : QGenericItemModelImplBase(itemModel)
+        : QGenericItemModelImplBase(itemModel, static_cast<const Self*>(nullptr))
         , m_data{std::forward<Range>(model)}
     {
-        initFrom(this);
     }
 
     // static interface, called by QGenericItemModelImplBase

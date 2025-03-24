@@ -326,8 +326,9 @@ private:
     CallTupleFN *call_fn;
 
 protected:
-    explicit QGenericItemModelImplBase(QGenericItemModel *itemModel)
-        : m_itemModel(itemModel)
+    template <typename Impl> // type deduction
+    explicit QGenericItemModelImplBase(QGenericItemModel *itemModel, const Impl *)
+        : callConst_fn(&Impl::callConst), call_fn(&Impl::call), m_itemModel(itemModel)
     {}
     ~QGenericItemModelImplBase() = default;
 
@@ -345,13 +346,6 @@ protected:
     inline void endInsertRows();
     inline void beginRemoveRows(const QModelIndex &parent, int start, int count);
     inline void endRemoveRows();
-
-    template <typename Impl>
-    void initFrom(Impl *)
-    {
-        callConst_fn = &Impl::callConst;
-        call_fn = &Impl::call;
-    }
 
 public:
     template <typename Ret, typename ...Args>
