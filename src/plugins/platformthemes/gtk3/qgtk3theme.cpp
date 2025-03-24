@@ -165,6 +165,7 @@ void QGtk3Theme::requestColorScheme(Qt::ColorScheme scheme)
         return;
     qCDebug(lcQGtk3Interface) << scheme << "has been requested. Theme supports color scheme:"
                               << m_storage->colorScheme();
+    QPlatformTheme::requestColorScheme(scheme);
     m_requestedColorScheme = scheme;
     m_storage->handleThemeChange();
 }

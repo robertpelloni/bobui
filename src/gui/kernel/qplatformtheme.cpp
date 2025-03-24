@@ -376,7 +376,8 @@ QPlatformThemePrivate::QPlatformThemePrivate()
 
 QPlatformThemePrivate::~QPlatformThemePrivate()
 {
-    delete systemPalette;
+    if (systemPalette)
+        delete systemPalette;
 }
 
 Q_GUI_EXPORT QPalette qt_fusionPalette()
@@ -476,8 +477,22 @@ Qt::ColorScheme QPlatformTheme::colorScheme() const
 void QPlatformTheme::requestColorScheme(Qt::ColorScheme scheme)
 {
     Q_UNUSED(scheme);
+    Q_D(QPlatformTheme);
+    if (d->systemPalette) {
+        delete d->systemPalette;
+        d->systemPalette = nullptr;
+    }
 }
 
+/*!
+    \internal
+    \brief Return a color palette for type \a type.
+
+    When relying on system color palette keep in mind that it is
+    lazily initialized and cached. If it needs to be updated
+    (i.e. due to ColorScheme changes), it's up to the caller
+    to take care of it. See \c requestColorScheme.
+*/
 const QPalette *QPlatformTheme::palette(Palette type) const
 {
     Q_D(const QPlatformTheme);
