@@ -3165,11 +3165,13 @@ endif()
 
 # These are internal implementation details. They may be removed at any time.
 set(__QT_DEPLOY_SYSTEM_NAME \"${CMAKE_SYSTEM_NAME}\")
+set(__QT_DEPLOY_SHARED_LIBRARY_SUFFIX \"${CMAKE_SHARED_LIBRARY_SUFFIX}\")
 set(__QT_DEPLOY_IS_SHARED_LIBS_BUILD \"${QT6_IS_SHARED_LIBS_BUILD}\")
 set(__QT_DEPLOY_TOOL \"${__QT_DEPLOY_TOOL}\")
 set(__QT_DEPLOY_IMPL_DIR \"${deploy_impl_dir}\")
 set(__QT_DEPLOY_VERBOSE \"${QT_ENABLE_VERBOSE_DEPLOYMENT}\")
 set(__QT_CMAKE_EXPORT_NAMESPACE \"${QT_CMAKE_EXPORT_NAMESPACE}\")
+set(__QT_LIBINFIX \"${QT_LIBINFIX}\")
 set(__QT_DEPLOY_GENERATOR_IS_MULTI_CONFIG \"${is_multi_config}\")
 set(__QT_DEPLOY_ACTIVE_CONFIG \"$<CONFIG>\")
 set(__QT_NO_CREATE_VERSIONLESS_FUNCTIONS \"${QT_NO_CREATE_VERSIONLESS_FUNCTIONS}\")
@@ -3178,11 +3180,11 @@ set(__QT_DEPLOY_QT_ADDITIONAL_PACKAGES_PREFIX_PATH \"${QT_ADDITIONAL_PACKAGES_PR
 set(__QT_DEPLOY_QT_INSTALL_PREFIX \"${QT6_INSTALL_PREFIX}\")
 set(__QT_DEPLOY_QT_INSTALL_BINS \"${QT6_INSTALL_BINS}\")
 set(__QT_DEPLOY_QT_INSTALL_DATA \"${QT6_INSTALL_DATA}\")
+set(__QT_DEPLOY_QT_INSTALL_DESCRIPTIONSDIR \"${QT6_INSTALL_DESCRIPTIONSDIR}\")
 set(__QT_DEPLOY_QT_INSTALL_LIBEXECS \"${QT6_INSTALL_LIBEXECS}\")
 set(__QT_DEPLOY_QT_INSTALL_PLUGINS \"${QT6_INSTALL_PLUGINS}\")
 set(__QT_DEPLOY_QT_INSTALL_TRANSLATIONS \"${QT6_INSTALL_TRANSLATIONS}\")
 set(__QT_DEPLOY_TARGET_QT_PATHS_PATH \"${target_qtpaths_path}\")
-set(__QT_DEPLOY_PLUGINS \"\")
 set(__QT_DEPLOY_MUST_ADJUST_PLUGINS_RPATH \"${must_adjust_plugins_rpath}\")
 set(__QT_DEPLOY_USE_PATCHELF \"${QT_DEPLOY_USE_PATCHELF}\")
 set(__QT_DEPLOY_PATCHELF_EXECUTABLE \"${QT_DEPLOY_PATCHELF_EXECUTABLE}\")
@@ -3629,16 +3631,6 @@ function(qt6_generate_deploy_script)
                 "qt_finalize_target(${arg_TARGET}) after generating the deployment script."
             )
         endif()
-    endif()
-
-    # Mark the target as "to be deployed".
-    set_property(TARGET ${arg_TARGET} PROPERTY _qt_marked_for_deployment ON)
-
-    # If the target already was finalized, maybe because it was defined in a subdirectory, generate
-    # the plugin deployment information here.
-    get_target_property(is_finalized "${arg_TARGET}" _qt_is_finalized)
-    if(is_finalized)
-        __qt_internal_generate_plugin_deployment_info(${arg_TARGET})
     endif()
 
     # Create a file name that will be unique for this target and the combination

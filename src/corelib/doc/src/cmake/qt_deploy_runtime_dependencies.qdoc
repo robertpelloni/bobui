@@ -208,7 +208,7 @@ example \c qjpeg.
 Qt6::QJpegPlugin target's plugin name is \c qjpeg.
 
 \note The arguments \c EXCLUDE_PLUGINS, \c EXCLUDE_PLUGIN_TYPES, \c
-INCLUDE_PLUGINS, and \c INCLUDE_PLUGIN_TYPES only work on Windows.
+INCLUDE_PLUGINS, and \c INCLUDE_PLUGIN_TYPES only work on Windows and Linux.
 
 \section1 Example
 
