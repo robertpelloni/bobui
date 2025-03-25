@@ -35,7 +35,6 @@ public:
     void** get() const;
     void** set(void* p);
 
-    static void finish(void**);
     int id;
 };
 

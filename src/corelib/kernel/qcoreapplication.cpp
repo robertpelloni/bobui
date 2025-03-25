@@ -491,8 +491,7 @@ void QCoreApplicationPrivate::cleanupThreadData()
 
     if (thisThreadData && !threadData_clean) {
 #if QT_CONFIG(thread)
-        void *data = &thisThreadData->tls;
-        QThreadStorageData::finish((void **)data);
+        QThreadStoragePrivate::finish(&thisThreadData->tls);
 #endif
 
         // need to clear the state of the mainData, just in case a new QCoreApplication comes along.

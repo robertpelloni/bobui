@@ -22,6 +22,7 @@ QT_BEGIN_NAMESPACE
 
 namespace QThreadStoragePrivate {
 void init();
+void finish(QList<void *> *tls);
 } // namespace QThreadStoragePrivate
 
 QT_END_NAMESPACE

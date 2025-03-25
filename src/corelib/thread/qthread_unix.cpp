@@ -460,8 +460,7 @@ void QThreadPrivate::finish()
         emit thr->finished(QThread::QPrivateSignal());
         QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
 
-        void *data = &d->data->tls;
-        QThreadStorageData::finish((void **)data);
+        QThreadStoragePrivate::finish(&d->data->tls);
     });
 
     if constexpr (QT_CONFIG(broken_threadlocal_dtors))
