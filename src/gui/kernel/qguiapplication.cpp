@@ -1589,8 +1589,7 @@ void QGuiApplicationPrivate::createPlatformIntegration()
     Q_UNUSED(platformExplicitlySelected);
 
     init_platform(QLatin1StringView(platformName), platformPluginPath, platformThemeName, argc, argv);
-    if (const QPlatformTheme *theme = platformTheme())
-        QStyleHintsPrivate::get(QGuiApplication::styleHints())->updateColorScheme(theme->colorScheme());
+    QStyleHintsPrivate::get(QGuiApplication::styleHints())->update(platformTheme());
 
     if (!icon.isEmpty())
         forcedWindowIcon = QDir::isAbsolutePath(icon) ? QIcon(icon) : QIcon::fromTheme(icon);
@@ -2820,10 +2819,7 @@ void QGuiApplicationPrivate::processThemeChanged(QWindowSystemInterfacePrivate::
 
 void QGuiApplicationPrivate::handleThemeChanged()
 {
-    const auto newColorScheme = platformTheme() ? platformTheme()->colorScheme()
-                                                : Qt::ColorScheme::Unknown;
-    QStyleHintsPrivate::get(QGuiApplication::styleHints())->updateColorScheme(newColorScheme);
-
+    QStyleHintsPrivate::get(QGuiApplication::styleHints())->update(platformTheme());
     updatePalette();
 
     QIconLoader::instance()->updateSystemTheme();

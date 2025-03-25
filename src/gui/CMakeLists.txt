@@ -90,6 +90,7 @@ qt_internal_add_module(Gui
         image/qppmhandler.cpp image/qppmhandler_p.h
         image/qxbmhandler.cpp image/qxbmhandler_p.h
         image/qxpmhandler.cpp image/qxpmhandler_p.h
+        kernel/qaccessibilityhints.cpp kernel/qaccessibilityhints.h kernel/qaccessibilityhints_p.h
         kernel/qclipboard.cpp kernel/qclipboard.h
         kernel/qcursor.cpp kernel/qcursor.h kernel/qcursor_p.h
         kernel/qeventpoint.cpp kernel/qeventpoint.h kernel/qeventpoint_p.h
