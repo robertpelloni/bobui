@@ -1931,6 +1931,7 @@ public:
         VariableRateShadingMap,
         VariableRateShadingMapWithTexture,
         PerRenderTargetBlending,
+        SampleVariables
     };
 
     enum BeginFrameFlag {
