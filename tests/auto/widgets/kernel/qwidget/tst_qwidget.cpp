@@ -725,7 +725,9 @@ void tst_QWidget::initTestCase()
 
 void tst_QWidget::cleanup()
 {
-    QTRY_VERIFY(QApplication::topLevelWidgets().isEmpty());
+    QTRY_COMPARE(QApplication::topLevelWidgets(), QWidgetList());
+    if (!QApplication::allWidgets().isEmpty())
+        qWarning() << "Test function has leaked" << QApplication::allWidgets();
 }
 
 template <typename T>
