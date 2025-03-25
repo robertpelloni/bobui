@@ -406,6 +406,7 @@ qt_internal_extend_target(Network CONDITION WIN32
         kernel/qnetworkinterface_win.cpp
         kernel/qnetworkproxy_win.cpp
         socket/qabstractsocket.cpp
+        socket/qabstractsocketengine.cpp
         socket/qlocalserver.cpp
         socket/qlocalserver_win.cpp
         socket/qlocalsocket_win.cpp
