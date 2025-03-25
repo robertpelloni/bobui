@@ -309,10 +309,12 @@ void QLoggingRegistry::initializeRules()
     qr = loadRulesFromFile(qtConfigPath);
 
     // get rules from user's/system configuration
-    const QString envPath = QStandardPaths::locate(QStandardPaths::GenericConfigLocation,
-                                                   QString::fromLatin1("QtProject/") + configFileName);
-    if (!envPath.isEmpty())
-        cr = loadRulesFromFile(envPath);
+    // locateAll() returns the user's file (most overriding) first
+    const QStringList configPaths =
+            QStandardPaths::locateAll(QStandardPaths::GenericConfigLocation,
+                                      QString::fromLatin1("QtProject/") + configFileName);
+    for (qsizetype i = configPaths.size(); i > 0; --i)
+        cr += loadRulesFromFile(configPaths[i - 1]);
 
     const QMutexLocker locker(&registryMutex);
 
