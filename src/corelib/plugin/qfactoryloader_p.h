@@ -48,6 +48,7 @@ public:
 #if QT_CONFIG(library)
     ~QFactoryLoader();
 
+    void setLoadHints(QLibrary::LoadHints hints);
     void update();
     static void refreshAll();
 
@@ -79,6 +80,7 @@ private:
         QString suffix;
         QString extraSearchPath;
         Qt::CaseSensitivity cs;
+        QLibrary::LoadHints loadHints;
         void updateSinglePath(const QString &pluginDir);
 #endif
 

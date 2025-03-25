@@ -359,6 +359,11 @@ inline void QFactoryLoader::Private::updateSinglePath(const QString &path)
     loadedLibraries.resize(libraries.size());
 }
 
+void QFactoryLoader::setLoadHints(QLibrary::LoadHints loadHints)
+{
+    d->loadHints = loadHints;
+}
+
 void QFactoryLoader::update()
 {
 #ifdef QT_SHARED
@@ -549,6 +554,7 @@ inline QObject *QFactoryLoader::instanceHelper_locked(int index) const
     if (size_t(index) < d->libraries.size()) {
         QLibraryPrivate *library = d->libraries[index].get();
         d->loadedLibraries[index] = true;
+        library->setLoadHints(d->loadHints);
         return library->pluginInstance();
     }
     // we know d->libraries.size() <= index <= numeric_limits<decltype(index)>::max() → no overflow
