@@ -684,8 +684,6 @@ function(_qt_internal_create_executable target)
         )
 
         qt6_android_apply_arch_suffix("${target}")
-        # TODO: remove after the successful submodule update round.
-        set_property(TARGET "${target}" PROPERTY _qt_is_android_executable TRUE)
     else()
         cmake_policy(PUSH)
         __qt_internal_set_cmp0156()
