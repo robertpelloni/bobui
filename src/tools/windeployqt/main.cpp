@@ -406,10 +406,6 @@ static inline int parseArguments(const QStringList &arguments, QCommandLineParse
                                        QStringLiteral("Skip plugin deployment."));
     parser->addOption(noPluginsOption);
 
-    QCommandLineOption includeSoftPluginsOption(QStringLiteral("include-soft-plugins"),
-                                                QStringLiteral("Include in the deployment all relevant plugins by taking into account all soft dependencies."));
-    parser->addOption(includeSoftPluginsOption);
-
     QCommandLineOption skipPluginTypesOption(QStringLiteral("skip-plugin-types"),
                                          QStringLiteral("A comma-separated list of plugin types that are not deployed (qmltooling,generic)."),
                                          QStringLiteral("plugin types"));
@@ -579,8 +575,6 @@ static inline int parseArguments(const QStringList &arguments, QCommandLineParse
         *errorMessage = QStringLiteral("Deployment of the compiler runtime is implemented for Desktop MSVC/g++ only.");
         return CommandLineParseError;
     }
-
-    options->pluginSelections.includeSoftPlugins = parser->isSet(includeSoftPluginsOption);
 
     if (parser->isSet(skipPluginTypesOption))
         options->pluginSelections.disabledPluginTypes = parser->value(skipPluginTypesOption).split(u',');
@@ -1127,7 +1121,7 @@ QStringList findQtPlugins(ModuleBitset *usedQtModules, const ModuleBitset &disab
 
     // If missing Qt modules were added during plugin deployment make additional pass, because we may need
     // additional plugins.
-    if (pluginSelections.includeSoftPlugins && missingQtModulesAdded) {
+    if (missingQtModulesAdded) {
         if (optVerboseLevel) {
             std::wcout << "Performing additional pass of finding Qt plugins due to updated Qt module list: "
                        << formatQtModules(*usedQtModules).constData() << "\n";
