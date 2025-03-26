@@ -1718,7 +1718,6 @@ void QNetworkAccessManagerPrivate::clearAuthenticationCache(QNetworkAccessManage
 
 void QNetworkAccessManagerPrivate::clearConnectionCache(QNetworkAccessManager *manager)
 {
-    manager->d_func()->objectCache.clear();
     manager->d_func()->destroyThread();
 }
 
