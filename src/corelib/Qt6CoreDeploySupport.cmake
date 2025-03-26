@@ -183,6 +183,7 @@ endfunction()
 
 function(_qt_internal_generic_deployqt)
     set(no_value_options
+        NO_PLUGINS
         NO_TRANSLATIONS
         VERBOSE
     )
@@ -209,6 +210,12 @@ function(_qt_internal_generic_deployqt)
         message(FATAL_ERROR "Unparsed arguments: ${arg_UNPARSED_ARGUMENTS}")
     endif()
 
+    if(arg_NO_PLUGINS)
+        set(plugins "")
+    else()
+        set(plugins ${__QT_DEPLOY_PLUGINS})
+    endif()
+
     if(arg_VERBOSE OR __QT_DEPLOY_VERBOSE)
         set(verbose TRUE)
     endif()
@@ -225,7 +232,9 @@ function(_qt_internal_generic_deployqt)
     endforeach()
 
     # We need to get the runtime dependencies of plugins too.
-    list(APPEND arg_MODULES ${__QT_DEPLOY_PLUGINS})
+    if(NOT plugins STREQUAL "")
+        list(APPEND arg_MODULES ${plugins})
+    endif()
 
     # Forward the arguments that are exactly the same for file(GET_RUNTIME_DEPENDENCIES).
     set(file_GRD_args "")
@@ -280,7 +289,7 @@ function(_qt_internal_generic_deployqt)
     endif()
 
     # Deploy the Qt plugins.
-    foreach(file_path IN LISTS __QT_DEPLOY_PLUGINS)
+    foreach(file_path IN LISTS plugins)
         file(RELATIVE_PATH destination
             "${__QT_DEPLOY_QT_INSTALL_PREFIX}/${__QT_DEPLOY_QT_INSTALL_PLUGINS}"
             "${file_path}"
@@ -326,6 +335,7 @@ function(qt6_deploy_runtime_dependencies)
         VERBOSE
         NO_OVERWRITE
         NO_APP_STORE_COMPLIANCE   # TODO: Might want a better name
+        NO_PLUGINS
         NO_TRANSLATIONS
         NO_COMPILER_RUNTIME
     )
@@ -450,6 +460,9 @@ function(qt6_deploy_runtime_dependencies)
         if(arg_NO_COMPILER_RUNTIME)
             list(APPEND tool_options --no-compiler-runtime)
         endif()
+        if(arg_NO_PLUGINS)
+            list(APPEND tool_options --no-plugins)
+        endif()
 
         # Specify path to target Qt's qtpaths .exe or .bat file, so windeployqt deploys the correct
         # libraries when cross-compiling from x86_64 to arm64 windows.
@@ -465,6 +478,9 @@ function(qt6_deploy_runtime_dependencies)
         list(APPEND tool_options ${arg_DEPLOY_TOOL_OPTIONS})
     elseif(__QT_DEPLOY_SYSTEM_NAME STREQUAL Darwin)
         set(extra_binaries_option "-executable=")
+        if(arg_NO_PLUGINS)
+            list(APPEND tool_options -no-plugins)
+        endif()
         if(NOT arg_NO_APP_STORE_COMPLIANCE)
             list(APPEND tool_options -appstore-compliant)
         endif()
@@ -507,6 +523,9 @@ function(qt6_deploy_runtime_dependencies)
             endif()
         endforeach()
 
+        if(arg_NO_PLUGINS)
+            list(APPEND tool_options NO_PLUGINS)
+        endif()
         if(arg_NO_TRANSLATIONS)
             list(APPEND tool_options NO_TRANSLATIONS)
         endif()

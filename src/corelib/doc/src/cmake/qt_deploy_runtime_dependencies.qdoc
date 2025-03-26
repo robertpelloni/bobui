@@ -38,6 +38,7 @@ qt_deploy_runtime_dependencies(
     [VERBOSE]
     [NO_OVERWRITE]
     [NO_APP_STORE_COMPLIANCE]
+    [NO_PLUGINS]                                  # since Qt 6.10
     [NO_TRANSLATIONS]
     [NO_COMPILER_RUNTIME]
     [DEPLOY_TOOL_OPTIONS]
@@ -183,6 +184,12 @@ The default value of \c{POST_EXCLUDE_REGEXES} is constructed from the value of
 \sa {qt6_generate_deploy_app_script}{qt_generate_deploy_app_script()},
     {qt6_deploy_qt_conf}{qt_deploy_qt_conf()},
     {qt6_deploy_qml_imports}{qt_deploy_qml_imports()}
+
+\section1 Controlling deployment of Qt plugins
+
+Qt plugins are automatically deployed into \l QT_DEPLOY_PLUGINS_DIR.
+
+You can turn off plugin deployment with the \c NO_PLUGINS argument.
 
 \section1 Example
 
