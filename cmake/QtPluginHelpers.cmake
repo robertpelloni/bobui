@@ -380,6 +380,7 @@ function(qt_internal_add_plugin target)
 
         # For test plugins we need to make sure plugins are not loaded from the Qt installation
         # when building standalone tests.
+        set(test_plugin_arg "")
         if(QT_INTERNAL_CONFIGURING_TESTS OR arg_TEST_PLUGIN)
             if(NOT arg_TEST_PLUGIN)
                 message(WARNING "The installable test plugin ${target} is built as part of a test"
@@ -387,13 +388,7 @@ function(qt_internal_add_plugin target)
                     "\nThis warning will soon become an error."
                 )
             endif()
-            set(skip_internal_test_plugin
-"if(QT_BUILD_STANDALONE_TESTS AND \"\${PROJECT_NAME}\" STREQUAL \"${PROJECT_NAME}\")
-    message(DEBUG \"Skipping loading ${target}Config.cmake during \"
-        \"standalone tests run of ${PROJECT_NAME}\")
-    return()
-endif()"
-            )
+            set(test_plugin_arg TEST_PLUGIN)
         endif()
 
         configure_package_config_file(
@@ -410,8 +405,9 @@ endif()"
 _qt_internal_should_include_targets(
     TARGETS ${target}
     NAMESPACE ${INSTALL_CMAKE_NAMESPACE}::
+    PROJECT_NAME ${PROJECT_NAME}
     OUT_VAR_SHOULD_SKIP __qt_${target}_skip_include_targets_file
-    CHECK_QT_NO_CREATE_TARGETS
+    ${test_plugin_arg}
 )
 ")
         write_basic_package_version_file(

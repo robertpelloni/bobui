@@ -1012,6 +1012,8 @@ endfunction()
 #       TARGETS <target1> ...
 #       NAMESPACE <str>
 #       OUT_VAR_SHOULD_SKIP <var>
+#       [PROJECT_NAME <str>]
+#       [TEST_PLUGIN]
 #       [CHECK_QT_NO_CREATE_TARGETS]
 #   )
 #
@@ -1026,15 +1028,25 @@ endfunction()
 # `OUT_VAR_SHOULD_SKIP`
 #   Output variable indicating if the `include(*Targets.cmake)` should be skipped
 #
+# `PROJECT_NAME`
+#   The original project that defined the current Config.cmake file at the time of the
+#   generation. For now only used for plugins.
+#
+# `TEST_PLUGIN`
+#   If the module is a TEST_PLUGIN, we do additional checks based on
+#   `QT_BUILD_STANDALONE_TESTS`
+#
 # `CHECK_QT_NO_CREATE_TARGETS`
 #   Whether to check `QT_NO_CREATE_TARGETS` as a compatibility step
 function(_qt_internal_should_include_targets)
     set(option_args
+        TEST_PLUGIN
         CHECK_QT_NO_CREATE_TARGETS
     )
     set(single_args
         NAMESPACE
         OUT_VAR_SHOULD_SKIP
+        PROJECT_NAME
     )
     set(multi_args
         TARGETS
@@ -1049,7 +1061,7 @@ function(_qt_internal_should_include_targets)
     endforeach()
 
     # Check for inputs that will be required in the future
-    foreach(check_arg IN ITEMS )
+    foreach(check_arg IN ITEMS)
         if(NOT arg_${check_arg})
             get_property(skip_warning GLOBAL
                 PROPERTY _qt_skip_warning__qt_internal_should_include_targets
@@ -1085,12 +1097,31 @@ function(_qt_internal_should_include_targets)
         endif()
     endforeach()
 
+    if(arg_PROJECT_NAME)
+        # Check if we are in a top-level build and which submodules will be included
+        if(NOT QT_INTERNAL_BUILD_STANDALONE_PARTS AND DEFINED Qt_SOURCE_DIR)
+            # All projects will be rebuilt so skip any include targets
+            set(${arg_OUT_VAR_SHOULD_SKIP} ON PARENT_SCOPE)
+            return()
+        endif()
+
+        # Check if we are building the current project
+        if(NOT QT_INTERNAL_BUILD_STANDALONE_PARTS AND
+            PROJECT_NAME STREQUAL arg_PROJECT_NAME)
+            # We are currently building the project, so skip the include targets
+            set(${arg_OUT_VAR_SHOULD_SKIP} ON PARENT_SCOPE)
+            return()
+        endif()
+
+        # Check if we are building the standalone tests
+        if(arg_TEST_PLUGIN AND QT_BUILD_STANDALONE_TESTS AND
+            PROJECT_NAME STREQUAL arg_PROJECT_NAME)
+            set(${arg_OUT_VAR_SHOULD_SKIP} ON PARENT_SCOPE)
+            return()
+        endif()
+    endif()
+
     # Compatibility using the old global `QT_NO_CREATE_TARGETS`
-    # Currently needed for top-level builds because when a module has plugins,
-    # the plugins are included from the Config.cmake, before the plugin project
-    # is processed, so the build-time targets are not used in the
-    # `_qt_internal_check_multiple_inclusion` step.
-    # TODO: Use another method to detect if we have a project that need
     # TODO: Remove these once developers have reconfigured their project.
     if(arg_CHECK_QT_NO_CREATE_TARGETS AND QT_NO_CREATE_TARGETS)
         set(${arg_OUT_VAR_SHOULD_SKIP} ON PARENT_SCOPE)

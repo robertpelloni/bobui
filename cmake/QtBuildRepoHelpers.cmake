@@ -11,6 +11,8 @@ macro(qt_internal_project_setup)
     # Check for the minimum CMake version.
     qt_internal_require_suitable_cmake_version()
     qt_internal_upgrade_cmake_policies()
+    # Make sure QT_INTERNAL_BUILD_STANDALONE_PARTS is defined as early as possible
+    qt_internal_setup_standalone_parts()
 endmacro()
 
 macro(qt_build_internals_set_up_private_api)
