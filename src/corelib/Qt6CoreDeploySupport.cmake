@@ -366,6 +366,10 @@ function(qt6_deploy_runtime_dependencies)
         ADDITIONAL_EXECUTABLES
         ADDITIONAL_LIBRARIES
         ADDITIONAL_MODULES
+        EXCLUDE_PLUGINS
+        EXCLUDE_PLUGIN_TYPES
+        INCLUDE_PLUGINS
+        INCLUDE_PLUGIN_TYPES
         ${file_GRD_options}
         DEPLOY_TOOL_OPTIONS
     )
@@ -462,6 +466,22 @@ function(qt6_deploy_runtime_dependencies)
         endif()
         if(arg_NO_PLUGINS)
             list(APPEND tool_options --no-plugins)
+        endif()
+        if(DEFINED arg_EXCLUDE_PLUGIN_TYPES)
+            string(REPLACE ";" "," plugin_list "${arg_EXCLUDE_PLUGIN_TYPES}")
+            list(APPEND tool_options --skip-plugin-types "${plugin_list}")
+        endif()
+        if(DEFINED arg_INCLUDE_PLUGIN_TYPES)
+            string(REPLACE ";" "," plugin_list "${arg_INCLUDE_PLUGIN_TYPES}")
+            list(APPEND tool_options --add-plugin-types "${plugin_list}")
+        endif()
+        if(DEFINED arg_INCLUDE_PLUGINS)
+            string(REPLACE ";" "," plugin_list "${arg_INCLUDE_PLUGINS}")
+            list(APPEND tool_options --include-plugins "${plugin_list}")
+        endif()
+        if(DEFINED arg_EXCLUDE_PLUGINS)
+            string(REPLACE ";" "," plugin_list "${arg_EXCLUDE_PLUGINS}")
+            list(APPEND tool_options --exclude-plugins "${plugin_list}")
         endif()
 
         # Specify path to target Qt's qtpaths .exe or .bat file, so windeployqt deploys the correct
