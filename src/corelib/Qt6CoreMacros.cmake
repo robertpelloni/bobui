@@ -3692,6 +3692,7 @@ function(qt6_generate_deploy_app_script)
     # package). We would add an EXECUTABLE keyword for that, which would be
     # mutually exclusive with the TARGET keyword.
     set(no_value_options
+        NO_PLUGINS
         NO_TRANSLATIONS
         NO_COMPILER_RUNTIME
         NO_UNSUPPORTED_PLATFORM_ERROR
@@ -3703,6 +3704,10 @@ function(qt6_generate_deploy_app_script)
     set(qt_deploy_runtime_dependencies_options
         # These options are forwarded as is to qt_deploy_runtime_dependencies.
         DEPLOY_TOOL_OPTIONS
+        EXCLUDE_PLUGINS
+        EXCLUDE_PLUGIN_TYPES
+        INCLUDE_PLUGINS
+        INCLUDE_PLUGIN_TYPES
         PRE_INCLUDE_REGEXES
         PRE_EXCLUDE_REGEXES
         POST_INCLUDE_REGEXES
@@ -3752,6 +3757,9 @@ function(qt6_generate_deploy_app_script)
     )
 
     set(common_deploy_args "")
+    if(arg_NO_PLUGINS)
+        string(APPEND common_deploy_args "    NO_PLUGINS\n")
+    endif()
     if(arg_NO_TRANSLATIONS)
         string(APPEND common_deploy_args "    NO_TRANSLATIONS\n")
     endif()
