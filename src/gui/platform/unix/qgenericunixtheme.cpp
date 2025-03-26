@@ -161,11 +161,12 @@ QStringList QGenericUnixTheme::themeNames()
                              << "LXDE";
         const QList<QByteArray> desktopNames = desktopEnvironment.split(':');
         for (const QByteArray &desktopName : desktopNames) {
+#if !defined QT_NO_DBUS && QT_CONFIG(settings) && (QT_CONFIG(xcb) || QT_CONFIG(wayland))
             if (desktopEnvironment == "KDE") {
-#if !defined QT_NO_DBUS && QT_CONFIG(settings)
                 result.push_back(QLatin1StringView(QKdeTheme::name));
+            } else
 #endif
-            } else if (gtkBasedEnvironments.contains(desktopName)) {
+           if (gtkBasedEnvironments.contains(desktopName)) {
                 // prefer the GTK3 theme implementation with native dialogs etc.
                 result.push_back(QStringLiteral("gtk3"));
                 // fallback to the generic Gnome theme if loading the GTK3 theme fails
@@ -190,7 +191,7 @@ QPlatformTheme *QGenericUnixTheme::createUnixTheme(const QString &name)
 {
     if (name == QLatin1StringView(QGenericUnixTheme::name))
         return new QGenericUnixTheme;
-#if !defined QT_NO_DBUS && QT_CONFIG(settings)
+#if !defined QT_NO_DBUS && QT_CONFIG(settings) && (QT_CONFIG(xcb) || QT_CONFIG(wayland))
     if (name == QLatin1StringView(QKdeTheme::name))
         return QKdeTheme::createKdeTheme();
 #endif
