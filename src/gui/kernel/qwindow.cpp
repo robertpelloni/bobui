@@ -184,6 +184,12 @@ QWindow::QWindow(QWindowPrivate &dd, QWindow *parent)
 QWindow::~QWindow()
 {
     Q_D(QWindow);
+
+    // Delete child windows up front, instead of waiting for ~QObject,
+    // in case the destruction of the child references its parent as
+    // a (no longer valid) QWindow.
+    qDeleteAll(findChildren<QWindow *>(Qt::FindDirectChildrenOnly));
+
     d->destroy();
     // Decouple from parent before window goes under
     setParent(nullptr);
