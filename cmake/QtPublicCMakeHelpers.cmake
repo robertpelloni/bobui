@@ -1003,3 +1003,98 @@ function(_qt_internal_get_moc_compiler_flavor_flags out_var)
 
     set(${out_var} "${flags}" PARENT_SCOPE)
 endfunction()
+
+# Check if we should be including the `Targets.cmake` file
+#
+# Synopsis
+#
+#   _qt_internal_should_include_targets(
+#       TARGETS <target1> ...
+#       NAMESPACE <str>
+#       OUT_VAR_SHOULD_SKIP <var>
+#   )
+#
+# Arguments
+#
+# `TARGETS`
+#   The targets added via `export(TARGETS ...)`
+#
+# `NAMESPACE`
+#   The `NAMESPACE` used in the `export` command. Make sure to include the `::`
+#
+# `OUT_VAR_SHOULD_SKIP`
+#   Output variable indicating if the `include(*Targets.cmake)` should be skipped
+function(_qt_internal_should_include_targets)
+    set(option_args "")
+    set(single_args
+        NAMESPACE
+        OUT_VAR_SHOULD_SKIP
+    )
+    set(multi_args
+        TARGETS
+    )
+    cmake_parse_arguments(PARSE_ARGV 0 arg "${option_args}" "${single_args}" "${multi_args}")
+
+    # Check for required inputs
+    foreach(check_arg IN ITEMS NAMESPACE OUT_VAR_SHOULD_SKIP)
+        if(NOT arg_${check_arg})
+            message(FATAL_ERROR "Missing input ${check_arg}")
+        endif()
+    endforeach()
+
+    # Check for inputs that will be required in the future
+    foreach(check_arg IN ITEMS )
+        if(NOT arg_${check_arg})
+            get_property(skip_warning GLOBAL
+                PROPERTY _qt_skip_warning__qt_internal_should_include_targets
+            )
+            if(NOT skip_warning)
+                message(WARNING
+                    "The current module was generated before ${check_arg} was introduced.\n"
+                    "Consider reconfiguring the current module (see backtrace)."
+                )
+                set_property(GLOBAL
+                    PROPERTY _qt_skip_warning__qt_internal_should_include_targets ON
+                )
+            endif()
+        endif()
+    endforeach()
+
+    # Check for deprecated inputs, i.e. the Config.cmake were already created
+    # with a version of qtbase that removed the specific compatibilities
+    foreach(check_arg IN ITEMS )
+        if(arg_${check_arg})
+            get_property(skip_warning GLOBAL
+                PROPERTY _qt_skip_warning__qt_internal_should_include_targets
+            )
+            if(NOT skip_warning)
+                message(WARNING
+                    "The input ${check_arg} is deprecated and has no effect.\n"
+                    "Consider reconfiguring the current module (see backtrace)."
+                )
+                set_property(GLOBAL
+                    PROPERTY _qt_skip_warning__qt_internal_should_include_targets ON
+                )
+            endif()
+        endif()
+    endforeach()
+
+    # We might still be generating the Targets.cmake file, so we do the same
+    # checks as in the Targets.cmake, but with the targets that were defined
+    # in the current build tree.
+    _qt_internal_check_multiple_inclusion(tgt_not_defined
+        TARGETS ${arg_TARGETS}
+        NAMESPACE ${arg_NAMESPACE}
+    )
+
+    # In Targets.cmake, if there are no expected targets that are undefined,
+    # the script returns, otherwise it creates all expected targets.
+    if(NOT tgt_not_defined)
+        set(${arg_OUT_VAR_SHOULD_SKIP} ON PARENT_SCOPE)
+        return()
+    endif()
+
+    # If no special setup is detected, use the normal logic, i.e. include
+    # the Targets.cmake
+    set(${arg_OUT_VAR_SHOULD_SKIP} OFF PARENT_SCOPE)
+endfunction()
