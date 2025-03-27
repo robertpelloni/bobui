@@ -240,13 +240,19 @@ public:
             // we didn't remove the const of the range first.
             const_row_reference row = rowData(index);
             row_reference mutableRow = const_cast<row_reference>(row);
-            for_element_at(mutableRow, index.column(), [&f](auto &&ref){
-                using target_type = decltype(ref);
-                if constexpr (std::is_const_v<std::remove_reference_t<target_type>>)
-                    f &= ~Qt::ItemIsEditable;
-                else if constexpr (std::is_lvalue_reference_v<target_type>)
-                    f |= Qt::ItemIsEditable;
-            });
+            if (QGenericItemModelDetails::isValid(mutableRow)) {
+                for_element_at(mutableRow, index.column(), [&f](auto &&ref){
+                    using target_type = decltype(ref);
+                    if constexpr (std::is_const_v<std::remove_reference_t<target_type>>)
+                        f &= ~Qt::ItemIsEditable;
+                    else if constexpr (std::is_lvalue_reference_v<target_type>)
+                        f |= Qt::ItemIsEditable;
+                });
+            } else {
+                // If there's no usable value stored in the row, then we can't
+                // do anything with this item.
+                f &= ~Qt::ItemIsEditable;
+            }
         }
         return f;
     }
