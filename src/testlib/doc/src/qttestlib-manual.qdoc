@@ -185,7 +185,7 @@
 
     The following is an example of a CMakeLists.txt file that specifies the
     project name and the language used (here, \e mytest and C++), the Qt
-    modules required for building the test (Qt5Test), and the files that are
+    modules required for building the test (Qt Test), and the files that are
     included in the test (\e tst_mytest.cpp).
 
     \quotefile code/doc_src_cmakelists.txt
