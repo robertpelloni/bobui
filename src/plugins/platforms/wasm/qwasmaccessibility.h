@@ -79,6 +79,19 @@ private:
     void initialize() override;
     void cleanup() override;
 
+    void setAttribute(emscripten::val element, const std::string &attr, const std::string &val);
+    void setAttribute(emscripten::val element, const std::string &attr, const char *val);
+    void setAttribute(emscripten::val element, const std::string &attr, bool val);
+
+    void setProperty(emscripten::val element, const std::string &attr, const std::string &val);
+    void setProperty(emscripten::val element, const std::string &attr, const char *val);
+    void setProperty(emscripten::val element, const std::string &attr, bool val);
+
+    void addEventListener(emscripten::val element, const char *eventType);
+
+public: // public for EMSCRIPTEN_BINDINGS
+    static void onHtmlEventReceived(emscripten::val event);
+
 private:
     static QWasmAccessibility *s_instance;
     QObject *m_rootObject = nullptr;
