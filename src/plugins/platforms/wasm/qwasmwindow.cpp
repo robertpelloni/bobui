@@ -193,6 +193,9 @@ void QWasmWindow::registerEventHandlers()
 
 QWasmWindow::~QWasmWindow()
 {
+#if QT_CONFIG(accessibility)
+    QWasmAccessibility::removeAccessibilityEnableButton(window());
+#endif
     shutdown();
 
     emscripten::val::module_property("specialHTMLTargets").delete_(canvasSelector());
@@ -201,9 +204,6 @@ QWasmWindow::~QWasmWindow()
     commitParent(nullptr);
     if (m_requestAnimationFrameId > -1)
         emscripten_cancel_animation_frame(m_requestAnimationFrameId);
-#if QT_CONFIG(accessibility)
-    QWasmAccessibility::removeAccessibilityEnableButton(window());
-#endif
 }
 
 QSurfaceFormat QWasmWindow::format() const
@@ -274,7 +274,7 @@ void QWasmWindow::initialize()
 #if QT_CONFIG(accessibility)
     // Add accessibility-enable button. The user can activate this
     // button to opt-in to accessibility.
-     if (window()->isTopLevel())
+    if (window()->isTopLevel())
         QWasmAccessibility::addAccessibilityEnableButton(window());
 #endif
 }
@@ -383,8 +383,12 @@ void QWasmWindow::setVisible(bool visible)
     if (window() == QGuiApplication::focusWindow())
         focus();
 
-    if (visible)
+    if (visible) {
         applyWindowState();
+#if QT_CONFIG(accessibility)
+        QWasmAccessibility::onShowWindow(window());
+#endif
+    }
 }
 
 bool QWasmWindow::isVisible() const

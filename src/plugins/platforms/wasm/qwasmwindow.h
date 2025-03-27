@@ -140,11 +140,11 @@ private:
     QWasmDeadKeySupport *m_deadKeySupport;
     QRect m_normalGeometry {0, 0, 0 ,0};
 
-    emscripten::val m_document;
-    emscripten::val m_decoratedWindow;
-    emscripten::val m_window;
-    emscripten::val m_a11yContainer;
-    emscripten::val m_canvas;
+    emscripten::val m_document = emscripten::val::undefined();
+    emscripten::val m_decoratedWindow = emscripten::val::undefined();
+    emscripten::val m_window = emscripten::val::undefined();
+    emscripten::val m_a11yContainer = emscripten::val::undefined();
+    emscripten::val m_canvas = emscripten::val::undefined();
     emscripten::val m_context2d = emscripten::val::undefined();
 
     std::unique_ptr<NonClientArea> m_nonClientArea;

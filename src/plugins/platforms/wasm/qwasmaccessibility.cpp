@@ -25,8 +25,10 @@ Q_LOGGING_CATEGORY(lcQpaAccessibility, "qt.qpa.accessibility")
 
 QWasmAccessibility::QWasmAccessibility()
 {
-
     s_instance = this;
+
+    if (qEnvironmentVariableIntValue("QT_WASM_ENABLE_ACCESSIBILITY") == 1)
+        enableAccessibility();
 }
 
 QWasmAccessibility::~QWasmAccessibility()
@@ -51,6 +53,11 @@ void QWasmAccessibility::removeAccessibilityEnableButton(QWindow *window)
     get()->removeAccessibilityEnableButtonImpl(window);
 }
 
+void QWasmAccessibility::onShowWindow(QWindow *window)
+{
+    get()->onShowWindowImpl(window);
+}
+
 void QWasmAccessibility::addAccessibilityEnableButtonImpl(QWindow *window)
 {
     if (m_accessibilityEnabled)
@@ -68,6 +75,14 @@ void QWasmAccessibility::addAccessibilityEnableButtonImpl(QWindow *window)
     m_enableButtons.insert(std::make_pair(window, std::move(enableContext)));
 }
 
+void QWasmAccessibility::onShowWindowImpl(QWindow *window)
+{
+    if (!m_accessibilityEnabled)
+        return;
+
+    populateAccessibilityTree(QAccessible::queryAccessibleInterface(window));
+}
+
 void QWasmAccessibility::removeAccessibilityEnableButtonImpl(QWindow *window)
 {
     auto it = m_enableButtons.find(window);
@@ -83,8 +98,8 @@ void QWasmAccessibility::removeAccessibilityEnableButtonImpl(QWindow *window)
 
 void QWasmAccessibility::enableAccessibility()
 {
-    // Enable accessibility globally for the applicaton. Remove all "enable"
-    // buttons and populate the accessibility tree, starting from the root object.
+    // Enable accessibility. Remove all "enable" buttons and populate the
+    // accessibility tree for each window.
 
     Q_ASSERT(!m_accessibilityEnabled);
     m_accessibilityEnabled = true;
@@ -93,16 +108,16 @@ void QWasmAccessibility::enableAccessibility()
         const auto &[element, callback] = value;
         Q_UNUSED(key);
         Q_UNUSED(callback);
+        onShowWindowImpl(key);
         element["parentElement"].call<void>("removeChild", element);
     }
     m_enableButtons.clear();
-    populateAccessibilityTree(QAccessible::queryAccessibleInterface(m_rootObject));
 }
 
 emscripten::val QWasmAccessibility::getContainer(QWindow *window)
 {
-    return window ? static_cast<QWasmWindow *>(window->handle())->a11yContainer()
-                  : emscripten::val::undefined();
+    const auto wasmWindow = QWasmWindow::fromWindow(window);
+    return (wasmWindow) ? wasmWindow->a11yContainer() : emscripten::val::undefined();
 }
 
 emscripten::val QWasmAccessibility::getContainer(QAccessibleInterface *iface)
@@ -549,13 +564,19 @@ void QWasmAccessibility::populateAccessibilityTree(QAccessibleInterface *iface)
     if (!iface)
         return;
 
-    // Create html element for the interface, sync up properties.
-    ensureHtmlElement(iface);
-    setHtmlElementVisibility(iface, true);
-    setHtmlElementGeometry(iface);
-    setHtmlElementTextName(iface);
-    setHtmlElementDescription(iface);
+    // We ignore toplevel windows which is categorized
+    // by getWindow(iface->parent()) != getWindow(iface)
+    QWindow *window1 = getWindow(iface);
+    QWindow *window0 = (iface->parent()) ? getWindow(iface->parent()) : nullptr;
 
+    if (window1 && window0 == window1) {
+        // Create html element for the interface, sync up properties.
+        ensureHtmlElement(iface);
+        setHtmlElementVisibility(iface, true);
+        setHtmlElementGeometry(iface);
+        setHtmlElementTextName(iface);
+        setHtmlElementDescription(iface);
+    }
     for (int i = 0; i < iface->childCount(); ++i)
         populateAccessibilityTree(iface->child(i));
 }

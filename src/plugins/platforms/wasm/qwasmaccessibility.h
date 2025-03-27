@@ -31,11 +31,13 @@ public:
 
     static void addAccessibilityEnableButton(QWindow *window);
     static void removeAccessibilityEnableButton(QWindow *window);
+    static void onShowWindow(QWindow *);
 
 private:
     void addAccessibilityEnableButtonImpl(QWindow *window);
     void removeAccessibilityEnableButtonImpl(QWindow *window);
     void enableAccessibility();
+    void onShowWindowImpl(QWindow *);
 
     static emscripten::val getContainer(QWindow *window);
     static emscripten::val getContainer(QAccessibleInterface *iface);
@@ -84,7 +86,6 @@ private:
     bool m_accessibilityEnabled = false;
     std::map<QWindow *, std::tuple<emscripten::val, std::shared_ptr<qstdweb::EventCallback>>> m_enableButtons;
     QHash<QAccessibleInterface *, emscripten::val> m_elements;
-
 };
 
 #endif // QT_CONFIG(accessibility)
