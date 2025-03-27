@@ -88,6 +88,7 @@ void QWasmAccessibility::enableAccessibility()
 
     Q_ASSERT(!m_accessibilityEnabled);
     m_accessibilityEnabled = true;
+    setActive(true);
     for (const auto& [key, value] : m_enableButtons) {
         const auto &[element, callback] = value;
         Q_UNUSED(key);
