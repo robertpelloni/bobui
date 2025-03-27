@@ -278,6 +278,7 @@ public:
 
     bool readNextStartElement();
     void skipCurrentElement();
+    QString readRawInnerData();
 
     TokenType tokenType() const;
     QString tokenString() const;

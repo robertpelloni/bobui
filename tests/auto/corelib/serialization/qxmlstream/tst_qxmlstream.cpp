@@ -579,6 +579,8 @@ private slots:
     void readNextStartElement() const;
     void readElementText() const;
     void readElementText_data() const;
+    void readRawInnerData() const;
+    void readRawInnerData_data() const;
     void crashInUTF16Codec() const;
     void hasAttributeSignature() const;
     void hasAttribute() const;
@@ -1583,6 +1585,161 @@ void tst_QXmlStream::readElementText_data() const
     QTest::newRow("SkipChildElements Invalid")
             << QXmlStreamReader::SkipChildElements
             << invalidInput << invalidOutput;
+}
+
+void tst_QXmlStream::readRawInnerData() const
+{
+    QFETCH(QString, input);
+    QFETCH(QString, expected);
+    QFETCH(QXmlStreamReader::Error, expectedError);
+    QXmlStreamReader reader(input);
+
+    reader.readNextStartElement();
+    QCOMPARE(reader.readRawInnerData(), expected);
+
+    if (reader.hasError())
+        QCOMPARE(reader.error(), expectedError);
+}
+
+void tst_QXmlStream::readRawInnerData_data() const
+{
+    QTest::addColumn<QString>("input");
+    QTest::addColumn<QString>("expected");
+    QTest::addColumn<QXmlStreamReader::Error>("expectedError");
+    // Valid cases
+    const QString mixedTags =
+            u"<root>\n"
+            "    <!-- A comment -->\n"
+            "    Some text\n"
+            "    <b attr=\"val\">bold <![CDATA[stuff]]></b>\n"
+            "    <?pi info?>\n"
+            "</root>"_s;
+    const QString mixedTagsResult =
+            u"\n    <!-- A comment -->\n"
+            "    Some text\n"
+            "    <b attr=\"val\">bold <![CDATA[stuff]]></b>\n"
+            "    <?pi info?>\n"_s;
+    const QString nestedTokensEntities =
+            u"<root>\n"
+            "    <firstChild attr=\"&quot;attrValue&quot;\">\n"
+            "        <secondChild attr=\"&lt;child&gt;\">Some &amp; text\n"
+            "        </secondChild>\n"
+            "    </firstChild>\n"
+            "</root>"_s;
+    const QString nestedTokensEntitiesResult =
+            u"\n    <firstChild attr=\"&quot;attrValue&quot;\">"
+            "\n        <secondChild attr=\"&lt;child&gt;\">"
+            "Some &amp; text\n"
+            "        </secondChild>\n"
+            "    </firstChild>\n"_s;
+    const QString emptyNested =
+            u"<root>\n"
+            "   <!-- A comment -->\n"
+            "   <empty />\n"
+            "</root>"_s;
+    const QString emptyNestedResult =
+            u"\n   <!-- A comment -->\n"
+            "   <empty></empty>\n"_s;
+
+    const QString plainText = u"<root>Just some text</root>"_s;
+    const QString expectedPlainText = "Just some text";
+
+    const QString cdataInput =
+            u"<root>"
+            "<![CDATA[Some <cdata> content]]>"
+            "</root>"_s;
+    const QString expectedCdata = u"<![CDATA[Some <cdata> content]]>"_s;
+
+    const QString commentInput = u"<root><!-- A comment --></root>"_s;
+    const QString expectedComment = u"<!-- A comment -->"_s;
+
+    const QString PIInput =u"<root>\n    <?pi data?>\n</root>"_s;
+    const QString expectedPI =u"\n    <?pi data?>\n"_s;
+
+    const QString nestedInput = u"<root>\n"
+                          "    <outer>\n    <inner>text</inner>\n"
+                          "    </outer>\n</root>"_s;
+    const QString expectedNested = u"\n    <outer>\n"
+                             "    <inner>text</inner>\n"
+                             "    </outer>\n"_s;
+    const QString customEntity =
+            u"<!DOCTYPE root [<!ENTITY ent \"Resolved entity\">]>\n"
+            "<root>\n"
+            "    <child>Some text and &ent;</child>\n"
+            "</root>"_s;
+    const QString customEntityResult =
+            u"\n    <child>Some text and Resolved entity</child>\n"_s;
+
+    //Invalid cases
+    const QString noTokensText = u"Just text without tokens"_s;
+    const QString mismatchedTags = u"<root>\n    <child></differentChild>\n</root>"_s;
+    const QString mismatchedTagsResult = u"\n    <child>"_s;
+    const QString unclosedComment = u"<root>\n    <!-- Comment starts\n"
+                              "    <child>Text</child>\n"
+                              "</root>"_s;
+    const QString nestedComment =
+            u"<root>\n"
+            "    <!-- A comment <!-- Nested comment --> -->\n"
+            "</root>"_s;
+    const QString unclosedCDATA = u" <root>\n    <![CDATA[ Unclosed CDATA\n"
+                            "    <child>Text</child>\n"
+                            "</root>"_s;
+    const QString missingClosingTag = u"<root>\n    <child>Text\n</root>"_s;
+    const QString missingClosingTagResult = u"\n    <child>Text\n"_s;
+    const QString noValueAttr = u"<root>\n    <child attr=>text</child>\n</root>"_s;
+    const QString invalidAttrName =
+            u"<root>\n"
+            "    <child 123attr=\"value\"></child>\n"
+            "</root>"_s;
+    const QString invalidChars = u"<root>\n    <ch@ld></ch@ld>\n</root>"_s;
+    const QString tooManyElements = u"<first></first><second></second>"_s;
+    const QString misplacedDecl =
+            u"<root>\n    <?xml version=\"1.0\"?>\n"
+            "<child>Text</child></root>"_s;
+
+    const QString emptyResult = u"\n    "_s;
+
+    QTest::newRow("allTokens")            << mixedTags             << mixedTagsResult
+                                          << QXmlStreamReader::NoError;
+    QTest::newRow("plainTextOnly")        << plainText             << expectedPlainText
+                                          << QXmlStreamReader::NoError;
+    QTest::newRow("CDATAOnly")            << cdataInput            << expectedCdata
+                                          << QXmlStreamReader::NoError;
+    QTest::newRow("commentOnly")          << commentInput          << expectedComment
+                                          << QXmlStreamReader::NoError;
+    QTest::newRow("PIOnly")               << PIInput               << expectedPI
+                                          << QXmlStreamReader::NoError;
+    QTest::newRow("nestedElements")       << nestedInput           << expectedNested
+                                          << QXmlStreamReader::NoError;
+    QTest::newRow("nestedTokensEntities") << nestedTokensEntities  << nestedTokensEntitiesResult
+                                          << QXmlStreamReader::NoError;
+    QTest::newRow("emptyNested")          << emptyNested           << emptyNestedResult
+                                          << QXmlStreamReader::NoError;
+    QTest::newRow("customEntity")         << customEntity          << customEntityResult
+                                          << QXmlStreamReader::NoError;
+
+    QTest::newRow("noTokensText")       << noTokensText      << QString()
+                                        << QXmlStreamReader::NotWellFormedError;
+    QTest::newRow("mismatchedTags")     << mismatchedTags    << mismatchedTagsResult
+                                        << QXmlStreamReader::NotWellFormedError;
+    QTest::newRow("unclosedComment")    << unclosedComment   << emptyResult
+                                        << QXmlStreamReader::PrematureEndOfDocumentError;
+    QTest::newRow("nestedComment")      << nestedComment     << emptyResult
+                                        << QXmlStreamReader::NotWellFormedError;
+    QTest::newRow("unclosedCDATA")      << unclosedCDATA     << emptyResult
+                                        << QXmlStreamReader::PrematureEndOfDocumentError;
+    QTest::newRow("missingClosingTag")  << missingClosingTag << missingClosingTagResult
+                                        << QXmlStreamReader::NotWellFormedError;
+    QTest::newRow("noValueAttr")        << noValueAttr       << emptyResult
+                                        << QXmlStreamReader::NotWellFormedError;
+    QTest::newRow("invalidAttrName")    << invalidAttrName   << emptyResult
+                                        << QXmlStreamReader::NotWellFormedError;
+    QTest::newRow("invalidChars")       << invalidChars      << emptyResult
+                                        << QXmlStreamReader::NotWellFormedError;
+    QTest::newRow("tooManyElements")    << tooManyElements   << QString()
+                                        << QXmlStreamReader::NotWellFormedError;
+    QTest::newRow("misplacedDecl")      << misplacedDecl     << emptyResult
+                                        << QXmlStreamReader::NotWellFormedError;
 }
 
 void tst_QXmlStream::crashInUTF16Codec() const

@@ -778,6 +778,115 @@ void QXmlStreamReader::skipCurrentElement()
     }
 }
 
+/*!
+    Reads and returns the raw inner XML content of the current element.
+    This function is useful for retrieving the full contents embedded inside
+    an element, including nested tags, text, comments, processing instructions,
+    CDATA sections, and other markup — preserving the original XML structure.
+
+    The current element is the element matching the most recently parsed start
+    element of which a matching end element has not yet been reached. When the
+    parser has reached the end element, the current element becomes the parent
+    element.
+
+    \note Entity references defined in the DTD are resolved during parsing
+    and returned as plain text, since DTD declarations are processed
+    separately and are not part of the element’s content.
+    Only the five predefined XML entities (\c &lt;, \c &gt;, \c &amp;,
+    \c &apos;, \c &quot;) are re-escaped in the output.
+
+    \since 6.10
+*/
+QString QXmlStreamReader::readRawInnerData()
+{
+    Q_D(QXmlStreamReader);
+    QString raw;
+
+    auto specialToEntities = [](QStringView text, QString &output) {
+        qsizetype chunk = 0;
+        QLatin1StringView replacement;
+        const qsizetype sz = text.size();
+        for (qsizetype i = 0; i < sz; ++i) {
+            switch (text[i].unicode()) {
+            case '<':
+                replacement = "&lt;"_L1;
+                break;
+            case '>':
+                replacement = "&gt;"_L1;
+                break;
+            case '&':
+                replacement = "&amp;"_L1;
+                break;
+            case '"':
+                replacement = "&quot;"_L1;
+                break;
+            case '\'':
+                replacement = "&apos;"_L1;
+                break;
+            default:
+                continue;
+            }
+            if (chunk < i)
+                output += text.mid(chunk, i - chunk);
+            output += replacement;
+            chunk = i + 1;
+        }
+        if (chunk < text.size())
+            output += text.mid(chunk);
+    };
+
+    if (isStartElement()) {
+        int depth = 1;
+        while (!atEnd() && depth) {
+            switch (readNext()) {
+            case StartElement: {
+                raw += '<'_L1 + name();
+                const QXmlStreamAttributes attrs = attributes();
+                for (auto it = attrs.begin(); it != attrs.end(); ++it) {
+                    raw += ' '_L1 + it->name() + "=\""_L1;
+                    specialToEntities(it->value(), raw);
+                    raw += '"'_L1;
+                }
+                raw += '>'_L1;
+                ++depth;
+                break;
+            }
+            case EndElement:
+                --depth;
+                if (depth > 0)
+                    raw += "</"_L1 + name() + '>'_L1;
+                break;
+            case Characters:
+                if (isCDATA())
+                    raw += "<![CDATA["_L1 + text() + "]]>"_L1;
+                else
+                    specialToEntities(text(), raw);
+                break;
+            case Comment:
+                raw += "<!--"_L1 + text() + "-->"_L1;
+                break;
+            case EntityReference:
+                raw += '&'_L1 + name() + ';'_L1;
+                break;
+            case ProcessingInstruction:
+                raw += "<?"_L1 + processingInstructionTarget()
+                        + ' '_L1 + processingInstructionData()
+                        + "?>"_L1;
+                break;
+                Q_FALLTHROUGH();
+            default:
+                if (!hasError()) {
+                    d->raiseError(NotWellFormedError,
+                                  QXmlStream::tr("Unexpected token while "
+                                                 "reading raw inner data."));
+                }
+                return raw;
+            }
+        }
+    }
+    return raw;
+}
+
 static constexpr auto QXmlStreamReader_tokenTypeString = qOffsetStringArray(
     "NoToken",
     "Invalid",
