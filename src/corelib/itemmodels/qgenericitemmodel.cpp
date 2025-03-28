@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qgenericitemmodel.h"
+#include <QtCore/qsize.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -760,6 +761,153 @@ bool QGenericItemModel::moveRows(const QModelIndex &sourceParent, int sourceRow,
     return impl->call<bool>(QGenericItemModelImplBase::MoveRows,
                             sourceParent, sourceRow, count,
                             destinationParent, destinationRow);
+}
+
+/*!
+    \reimp
+*/
+bool QGenericItemModel::canFetchMore(const QModelIndex &parent) const
+{
+    return QAbstractItemModel::canFetchMore(parent);
+}
+
+/*!
+    \reimp
+*/
+void QGenericItemModel::fetchMore(const QModelIndex &parent)
+{
+    QAbstractItemModel::fetchMore(parent);
+}
+
+/*!
+    \reimp
+*/
+bool QGenericItemModel::hasChildren(const QModelIndex &parent) const
+{
+    return QAbstractItemModel::hasChildren(parent);
+}
+
+/*!
+    \reimp
+*/
+QModelIndex QGenericItemModel::buddy(const QModelIndex &index) const
+{
+    return QAbstractItemModel::buddy(index);
+}
+
+/*!
+    \reimp
+*/
+bool QGenericItemModel::canDropMimeData(const QMimeData *data, Qt::DropAction action,
+                                        int row, int column, const QModelIndex &parent) const
+{
+    return QAbstractItemModel::canDropMimeData(data, action, row, column, parent);
+}
+
+/*!
+    \reimp
+*/
+bool QGenericItemModel::dropMimeData(const QMimeData *data, Qt::DropAction action,
+                                     int row, int column, const QModelIndex &parent)
+{
+    return QAbstractItemModel::dropMimeData(data, action, row, column, parent);
+}
+
+/*!
+    \reimp
+*/
+QMimeData *QGenericItemModel::mimeData(const QModelIndexList &indexes) const
+{
+    return QAbstractItemModel::mimeData(indexes);
+}
+
+/*!
+    \reimp
+*/
+QStringList QGenericItemModel::mimeTypes() const
+{
+    return QAbstractItemModel::mimeTypes();
+}
+
+/*!
+    \reimp
+*/
+QModelIndexList QGenericItemModel::match(const QModelIndex &start, int role, const QVariant &value,
+                                         int hits, Qt::MatchFlags flags) const
+{
+    return QAbstractItemModel::match(start, role, value, hits, flags);
+}
+
+/*!
+    \reimp
+*/
+void QGenericItemModel::multiData(const QModelIndex &index, QModelRoleDataSpan roleDataSpan) const
+{
+    QAbstractItemModel::multiData(index, roleDataSpan);
+}
+
+/*!
+    \reimp
+*/
+QHash<int, QByteArray> QGenericItemModel::roleNames() const
+{
+    return QAbstractItemModel::roleNames();
+}
+
+/*!
+    \reimp
+*/
+void QGenericItemModel::sort(int column, Qt::SortOrder order)
+{
+    return QAbstractItemModel::sort(column, order);
+}
+
+/*!
+    \reimp
+*/
+QSize QGenericItemModel::span(const QModelIndex &index) const
+{
+    return QAbstractItemModel::span(index);
+}
+
+/*!
+    \reimp
+*/
+Qt::DropActions QGenericItemModel::supportedDragActions() const
+{
+    return QAbstractItemModel::supportedDragActions();
+}
+
+/*!
+    \reimp
+*/
+Qt::DropActions QGenericItemModel::supportedDropActions() const
+{
+    return QAbstractItemModel::supportedDropActions();
+}
+
+/*!
+    \reimp
+*/
+void QGenericItemModel::resetInternalData()
+{
+    QAbstractItemModel::resetInternalData();
+}
+
+/*!
+    \reimp
+*/
+bool QGenericItemModel::event(QEvent *event)
+{
+    return QAbstractItemModel::event(event);
+}
+
+/*!
+    \reimp
+*/
+bool QGenericItemModel::eventFilter(QObject *object, QEvent *event)
+{
+    return QAbstractItemModel::eventFilter(object, event);
 }
 
 QT_END_NAMESPACE

@@ -75,6 +75,33 @@ public:
     bool moveRows(const QModelIndex &sourceParent, int sourceRow, int count,
                   const QModelIndex &destParent, int destRow) override;
 
+    bool canFetchMore(const QModelIndex &parent) const override;
+    void fetchMore(const QModelIndex &parent) override;
+
+    bool hasChildren(const QModelIndex &parent = QModelIndex()) const override;
+    QModelIndex buddy(const QModelIndex &index) const override;
+    bool canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column,
+                         const QModelIndex &parent) const override;
+    bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column,
+                      const QModelIndex &parent) override;
+    QMimeData *mimeData(const QModelIndexList &indexes) const override;
+    QStringList mimeTypes() const override;
+    QModelIndexList match(const QModelIndex &start, int role, const QVariant &value, int hits,
+                          Qt::MatchFlags flags) const override;
+    void multiData(const QModelIndex &index, QModelRoleDataSpan roleDataSpan) const override;
+    QHash<int, QByteArray> roleNames() const override;
+    void sort(int column, Qt::SortOrder order = Qt::AscendingOrder) override;
+    QSize span(const QModelIndex &index) const override;
+    Qt::DropActions supportedDragActions() const override;
+    Qt::DropActions supportedDropActions() const override;
+
+protected Q_SLOTS:
+    void resetInternalData() override;
+
+protected:
+    bool event(QEvent *) override;
+    bool eventFilter(QObject *, QEvent *) override;
+
 private:
     Q_DISABLE_COPY_MOVE(QGenericItemModel)
 
