@@ -16,6 +16,7 @@
 #include "qlist.h"
 #include "qlocale.h"
 #include "qdebug.h"
+#include "private/qnumeric_p.h"
 #if QT_CONFIG(easingcurve)
 #include "qeasingcurve.h"
 #endif
@@ -972,6 +973,28 @@ static const struct { const char * typeName; int typeNameLength; int type; } typ
     {nullptr, 0, QMetaType::UnknownType}
 };
 
+template <typename From, typename To>
+static bool qIntegerConversionFromFPHelper(From from, To *to)
+{
+#ifndef Q_CC_GHS
+    // actually is_floating_point, but include qfloat16:
+    static_assert(std::numeric_limits<From>::is_iec559);
+#endif
+    static_assert(std::is_integral_v<To>);
+    static_assert(sizeof(From) <= sizeof(double));
+    const double fromD = static_cast<double>(from);
+
+    if (qt_is_nan(fromD)) {
+        *to = To(0);
+        return false;
+    }
+
+    qint64 result;
+    convertDoubleTo(std::round(fromD), &result);
+    *to = To(result);
+    return true;
+}
+
 // NOLINTNEXTLINE(cppcoreguidelines-virtual-class-destructor): this is not a base class
 static constexpr struct : QMetaTypeModuleHelper
 {
@@ -1074,9 +1097,9 @@ static constexpr struct : QMetaTypeModuleHelper
     QMETATYPE_CONVERTER_ASSIGN(To, ULong); \
     QMETATYPE_CONVERTER_ASSIGN(To, LongLong); \
     QMETATYPE_CONVERTER_ASSIGN(To, ULongLong); \
-    QMETATYPE_CONVERTER(To, Float16, result = qRound64(source); return true;); \
-    QMETATYPE_CONVERTER(To, Float, result = qRound64(source); return true;); \
-    QMETATYPE_CONVERTER(To, Double, result = qRound64(source); return true;); \
+    QMETATYPE_CONVERTER(To, Float16, return qIntegerConversionFromFPHelper(source, &result);); \
+    QMETATYPE_CONVERTER(To, Float, return qIntegerConversionFromFPHelper(source, &result);); \
+    QMETATYPE_CONVERTER(To, Double, return qIntegerConversionFromFPHelper(source, &result);); \
     QMETATYPE_CONVERTER(To, QChar, result = source.unicode(); return true;); \
     QMETATYPE_CONVERTER(To, QString, \
         bool ok = false; \

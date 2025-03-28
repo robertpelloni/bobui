@@ -914,8 +914,20 @@ template <typename To> static void addNumberConversions()
         }
     }
 
-    if constexpr (std::is_integral_v<To>)
+    if constexpr (std::is_integral_v<To>) {
         QTest::newRow("QChar") << QVariant(QChar('a')) << To('a') << true;
+
+        QTest::newRow("NaN") << QVariant::fromValue(qQNaN()) << To(0) << false;
+
+        constexpr qint64 maximal = std::numeric_limits<qint64>::max();
+        constexpr qint64 minimal = std::numeric_limits<qint64>::min();
+
+        QTest::newRow("positive overflow") << QVariant(1.0e200) << To(maximal) << true;
+        QTest::newRow("positive inf") << QVariant(qInf()) << To(maximal) << true;
+        QTest::newRow("negative overflow") << QVariant(-1.0e200) << To(minimal) << true;
+        QTest::newRow("negative inf") << QVariant(-qInf()) << To(minimal) << true;
+    }
+
     QTest::newRow("nonint-QByteArray") << QVariant(QByteArray("zzzz")) << To{} << false;
     QTest::newRow("nonint-QString") << QVariant(QString("zzzz")) << To{} << false;
     QTest::newRow("undefined-QCborValue") << QVariant::fromValue<QCborValue>({}) << To{} << false;
