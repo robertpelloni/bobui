@@ -1532,7 +1532,7 @@ std::optional<QDateTime> QHttpHeaders::dateTimeValue(QAnyStringView name) const
         return std::nullopt;
     QDateTime dt = QNetworkHeadersPrivate::fromHttpDate(*v);
     if (dt.isValid())
-        return std::move(dt);
+        return dt;
     return std::nullopt;
 }
 
