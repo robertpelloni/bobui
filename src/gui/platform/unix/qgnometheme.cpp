@@ -31,30 +31,51 @@ const char *QGnomeTheme::name = "gnome";
 QGnomeThemePrivate::QGnomeThemePrivate()
 {
 #ifndef QT_NO_DBUS
-    QDBusMessage message = QDBusMessage::createMethodCall(QLatin1String("org.freedesktop.portal.Desktop"),
-                                             QLatin1String("/org/freedesktop/portal/desktop"),
-                                             QLatin1String("org.freedesktop.portal.Settings"),
-                                             QLatin1String("ReadOne"));
     static constexpr QLatin1String appearanceNamespace("org.freedesktop.appearance");
+    static constexpr QLatin1String colorSchemeKey("color-scheme");
     static constexpr QLatin1String contrastKey("contrast");
 
-    message << appearanceNamespace << contrastKey;
-
     QDBusConnection dbus = QDBusConnection::sessionBus();
-    if (!dbus.isConnected())
-        qCWarning(lcQpaThemeGnome) << "dbus connection failed. Last error: " << dbus.lastError();
+    if (dbus.isConnected()) {
+        // ReadAll appears to omit the contrast setting on Ubuntu.
+        QDBusMessage message = QDBusMessage::createMethodCall(QLatin1String("org.freedesktop.portal.Desktop"),
+                                                              QLatin1String("/org/freedesktop/portal/desktop"),
+                                                              QLatin1String("org.freedesktop.portal.Settings"),
+                                                              QLatin1String("ReadOne"));
 
-    QDBusPendingCall pendingCall = dbus.asyncCall(message);
-    QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(pendingCall);
-    QObject::connect(watcher, &QDBusPendingCallWatcher::finished, watcher, [this](QDBusPendingCallWatcher *watcher) {
-        if (!watcher->isError()) {
-            QDBusPendingReply<QVariant> reply = *watcher;
-            if (Q_LIKELY(reply.isValid()))
-                m_contrast = static_cast<Qt::ContrastPreference>(reply.value().toUInt());
+        message << appearanceNamespace << colorSchemeKey;
+        QDBusReply<QVariant> reply = dbus.call(message);
+        if (Q_LIKELY(reply.isValid())) {
+            uint xdgColorSchemeValue = reply.value().toUInt();
+            switch (xdgColorSchemeValue) {
+            case 1:
+                m_colorScheme = Qt::ColorScheme::Dark;
+                QWindowSystemInterface::handleThemeChange();
+                break;
+            case 2:
+                m_colorScheme = Qt::ColorScheme::Light;
+                QWindowSystemInterface::handleThemeChange();
+                break;
+            default:
+                break;
+            }
         }
-        watcher->deleteLater();
-        initDbus();
-    });
+
+        message.setArguments({});
+        message << appearanceNamespace << contrastKey;
+        QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(dbus.asyncCall(message));
+        QObject::connect(watcher, &QDBusPendingCallWatcher::finished, watcher, [this](QDBusPendingCallWatcher *watcher) {
+            if (!watcher->isError()) {
+                QDBusPendingReply<QVariant> reply = *watcher;
+                if (Q_LIKELY(reply.isValid()))
+                    updateHighContrast(static_cast<Qt::ContrastPreference>(reply.value().toUInt()));
+            }
+            initDbus();
+            watcher->deleteLater();
+        });
+    } else {
+        qCWarning(lcQpaThemeGnome) << "dbus connection failed. Last error: " << dbus.lastError();
+    }
 #endif // QT_NO_DBUS
 }
 QGnomeThemePrivate::~QGnomeThemePrivate()
