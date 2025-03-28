@@ -576,13 +576,17 @@ function(qt_internal_add_test name)
 
         # Manual tests can be bundle apps
         if(NOT arg_MANUAL)
-            # Tests should not be bundles on macOS even if arg_GUI is true, because some tests make
-            # assumptions about the location of helper processes, and those paths would be different
-            # if a test is built as a bundle.
-            set_property(TARGET "${name}" PROPERTY MACOSX_BUNDLE FALSE)
-            # The same goes for WIN32_EXECUTABLE, but because it will detach from the console window
-            # and not print anything.
-            set_property(TARGET "${name}" PROPERTY WIN32_EXECUTABLE FALSE)
+            if(NOT DEFINED CMAKE_MACOSX_BUNDLE)
+                # Tests should not be bundles on macOS even if arg_GUI is true, because some tests make
+                # assumptions about the location of helper processes, and those paths would be different
+                # if a test is built as a bundle.
+                set_property(TARGET "${name}" PROPERTY MACOSX_BUNDLE FALSE)
+            endif()
+            if(NOT DEFINED CMAKE_WIN32_EXECUTABLE)
+                # The same goes for WIN32_EXECUTABLE, but because it will detach from the console window
+                # and not print anything.
+                set_property(TARGET "${name}" PROPERTY WIN32_EXECUTABLE FALSE)
+            endif()
         endif()
 
         # Tests on iOS must be app bundles.

@@ -184,9 +184,16 @@ function(qt_internal_add_executable name)
     set_target_properties("${name}" PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${arg_OUTPUT_DIRECTORY}"
         LIBRARY_OUTPUT_DIRECTORY "${arg_OUTPUT_DIRECTORY}"
-        WIN32_EXECUTABLE "${arg_GUI}"
-        MACOSX_BUNDLE "${arg_GUI}"
     )
+
+    if(arg_GUI)
+        # Only override if GUI is set. Otherwise leave up to
+        # CMake defaults, which may be set by the user elsewhere.
+        set_target_properties("${name}" PROPERTIES
+            MACOSX_BUNDLE ON
+            WIN32_EXECUTABLE ON
+    )
+    endif()
 
     if(NOT arg_EXCEPTIONS)
         qt_internal_set_exceptions_flags("${name}" "DEFAULT")
