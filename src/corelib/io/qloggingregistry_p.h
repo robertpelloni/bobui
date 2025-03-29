@@ -99,7 +99,7 @@ class QLoggingRegistry
 {
     Q_DISABLE_COPY_MOVE(QLoggingRegistry)
 public:
-    Q_AUTOTEST_EXPORT QLoggingRegistry();
+    QLoggingRegistry();
 
     Q_AUTOTEST_EXPORT void initializeRules();
 

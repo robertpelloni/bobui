@@ -232,12 +232,14 @@ private slots:
         out << "Digia.*=false\n";
         file.close();
 
-        QLoggingRegistry registry;
+        QLoggingRegistry &registry = *QLoggingRegistry::instance();
+        auto cleanup = qScopeGuard([&] {
+            file.remove();
+            registry.initializeRules(); // reset rules
+        });
+
         registry.initializeRules();
         QCOMPARE(registry.ruleSets[QLoggingRegistry::ConfigRules].size(), 1);
-
-        // remove file again
-        QVERIFY(file.remove());
     }
 
     void QLoggingRegistry_rulePriorities()
