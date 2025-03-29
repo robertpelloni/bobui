@@ -10,6 +10,9 @@
 #include <private/qdbustrayicon_p.h>
 #include <private/qdbusplatformmenu_p.h>
 #include <private/qdbusmenubar_p.h>
+#include <QtDBus/QDBusMessage>
+#include <QtDBus/QDBusPendingCall>
+#include <QtDBus/QDBusReply>
 #endif
 #include <qpa/qwindowsysteminterface.h>
 
