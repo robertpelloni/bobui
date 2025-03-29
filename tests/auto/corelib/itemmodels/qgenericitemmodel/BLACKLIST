@@ -1,0 +1,23 @@
+# QTBUG-135419
+[setData:value tree]
+vxworks
+[setData:pointer tree]
+vxworks
+[clearItemData:value tree]
+vxworks
+[clearItemData:pointer tree]
+vxworks
+[insertRows:value tree]
+vxworks
+[insertRows:pointer tree]
+vxworks
+[removeRows:value tree]
+vxworks
+[removeRows:pointer tree]
+vxworks
+[treeModifyBranch]
+vxworks
+[treeCreateBranch]
+vxworks
+[treeRemoveBranch]
+vxworks

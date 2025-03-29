@@ -144,6 +144,140 @@ namespace std {
     template <> struct tuple_element<0, ConstRow> { using type = QString; };
 }
 
+struct tree_row;
+using value_tree = QList<tree_row>;
+using pointer_tree = QList<tree_row *>;
+
+struct tree_row
+{
+public:
+    tree_row(const QString &value = {}, const QString &description = {})
+        : m_value(value), m_description(description)
+    {}
+
+    ~tree_row()
+    {
+        if (m_childrenPointers)
+            qDeleteAll(*m_childrenPointers);
+    }
+
+    tree_row(const tree_row &other)
+        : m_value(other.m_value), m_description(other.m_description)
+        , m_parent(other.m_parent), m_children(other.m_children)
+        , m_childrenPointers(other.m_childrenPointers)
+    {}
+
+    tree_row &operator=(const tree_row &other)
+    {
+        m_parent = other.m_parent;
+        m_children = other.m_children;
+        m_childrenPointers = other.m_childrenPointers;
+        m_value = other.m_value;
+        m_description = other.m_description;
+        return *this;
+    }
+
+    tree_row(tree_row &&other) = default;
+    tree_row &operator=(tree_row &&other) = default;
+
+    QString &value() { return m_value; }
+    const QString &value() const { return m_value; }
+    QString &description() { return m_description; }
+    const QString &description() const { return m_description; }
+
+    template <typename ...Args>
+    tree_row &addChild(Args&& ...args)
+    {
+        if (!m_children)
+            m_children.emplace(value_tree{});
+        tree_row &res = m_children->emplace_back(args...);
+        res.m_parent = this;
+        return res;
+    }
+
+    template <typename ...Args>
+    tree_row *addChildPointer(Args&& ...args)
+    {
+        if (!m_childrenPointers)
+            m_childrenPointers.emplace(pointer_tree{});
+        auto *res = new tree_row(args...);
+        m_childrenPointers->push_back(res);
+        res->m_parent = this;
+        return res;
+    }
+
+    const tree_row *parentRow() const { return m_parent; }
+    void setParentRow(tree_row *parent) { m_parent = parent; }
+    const std::optional<value_tree> &childRows() const { return m_children; }
+    std::optional<value_tree> &childRows() { return m_children; }
+
+    static void prettyPrint(QDebug dbg, const value_tree &tree, int depth = 0)
+    {
+        dbg.nospace().noquote();
+        const QString indent(depth * 2, ' ');
+        bool first = true;
+        for (const auto &row : tree) {
+            dbg << indent;
+            if (first && depth) {
+                dbg << "\\";
+                first = false;
+            } else {
+                dbg << "|";
+            }
+            dbg << row << "\n";
+            if (const auto &children = row.childRows())
+                prettyPrint(dbg, *children, depth + 1);
+        }
+    }
+
+    struct ProtocolPointerImpl {
+        tree_row *newRow() const { return new tree_row; }
+        void deleteRow(tree_row *row) { delete row; }
+        const tree_row *parentRow(const tree_row *row) const { return row->m_parent; }
+        void setParentRow(tree_row *row, tree_row *parent) { row->m_parent = parent; }
+
+        const std::optional<pointer_tree> &childRows(const tree_row *row) const
+        { return row->m_childrenPointers; }
+        std::optional<pointer_tree> &childRows(tree_row *row)
+        { return row->m_childrenPointers; }
+    };
+
+private:
+    QString m_value;
+    QString m_description;
+
+    tree_row *m_parent = nullptr;
+    std::optional<value_tree> m_children = std::nullopt;
+    std::optional<pointer_tree> m_childrenPointers = std::nullopt;
+
+    friend inline QDebug operator<<(QDebug dbg, const tree_row &row)
+    {
+        QDebugStateSaver saver(dbg);
+        dbg.nospace() << row.m_value << " : " << row.m_description;
+        if (row.parentRow())
+            dbg << " ^ " << row.parentRow()->value();
+        if (row.childRows())
+            dbg << " v " << row.childRows()->size();
+        return dbg;
+    }
+
+    template<size_t I, typename Row,
+        std::enable_if_t<std::is_same_v<q20::remove_cvref_t<Row>, tree_row>, bool> = true>
+    friend inline decltype(auto) get(Row &&row)
+    {
+        if constexpr (I == 0)
+            return row.value();
+        else if constexpr (I == 1)
+            return row.description();
+    }
+};
+
+namespace std {
+    template <> struct tuple_size<tree_row> : std::integral_constant<size_t, 2> {};
+    template <size_t I> struct tuple_element<I, tree_row>
+    { using type = decltype(get<I>(std::declval<tree_row>())); };
+}
+
 class tst_QGenericItemModel : public QObject
 {
     Q_OBJECT
@@ -154,6 +288,7 @@ private slots:
     void minimalIterator();
     void ranges();
     void json();
+    void ownership();
 
     void dimensions_data() { createTestData(); }
     void dimensions();
@@ -180,8 +315,114 @@ private slots:
 
     void inconsistentColumnCount();
 
+    void tree_data();
+    void tree();
+    void treeModifyBranch_data() { tree_data(); }
+    void treeModifyBranch();
+    void treeCreateBranch_data() { tree_data(); }
+    void treeCreateBranch();
+    void treeRemoveBranch_data() { tree_data(); }
+    void treeRemoveBranch();
+
 private:
-    void createTestData();
+    enum TestedModels {
+        Lists   = 0x01,
+        Tables  = 0x02,
+        Trees   = 0x04,
+        All     = Lists|Tables|Trees,
+    };
+    void createTestData(TestedModels tested = All);
+    void createTree();
+
+    QList<QPersistentModelIndex> allIndexes(QAbstractItemModel *model, const QModelIndex &parent = {})
+    {
+        QList<QPersistentModelIndex> pmiList;
+        for (int row = 0; row < model->rowCount(parent); ++row) {
+            const QModelIndex mi = model->index(row, 0, parent);
+            pmiList += mi;
+            if (model->hasChildren(mi))
+                pmiList += allIndexes(model, mi);
+        }
+        return pmiList;
+    }
+
+    void verifyPmiList(const QList<QPersistentModelIndex> &pmiList)
+    {
+        for (const auto &pmi : pmiList) {
+            auto debug = qScopeGuard([&pmi]{
+                qCritical() << "Failing index" << pmi << pmi.isValid();
+            });
+            QVERIFY(pmi.isValid());
+            QVERIFY(pmi.data().isValid());
+            QCOMPARE(pmi.parent().isValid(), pmi.parent().data().isValid());
+            debug.dismiss();
+        }
+    }
+
+    template <typename Tree>
+    static bool integrityCheck(const Tree &tree, int depth = 0)
+    {
+        static constexpr bool pointerTree = std::is_pointer_v<typename std::remove_reference_t<Tree>::value_type>;
+        bool result = true;
+        for (const auto &row : tree) {
+            if constexpr (pointerTree) {
+                if (!row) {
+                    qCritical() << "Unexpected null pointer in tree!";
+                    return false;
+                }
+            }
+            const auto &children = [&row]() -> const auto &{
+                if constexpr (pointerTree) {
+                    const auto protocol = tree_row::ProtocolPointerImpl{};
+                    return protocol.childRows(row);
+                } else {
+                    return row.childRows();
+                }
+            }();
+            if (children) {
+                for (const auto &child : *children) {
+                    const bool match = [&child, &row]{
+                        if constexpr (pointerTree) {
+                            if (child->parentRow() != row) {
+                                qCritical().noquote() << "Parent out of sync for:" << *child;
+                                qCritical().noquote() << "  Actual: " << child->parentRow()
+                                        << (child->parentRow() ? *child->parentRow() : tree_row{});
+                                qCritical().noquote() << "Expected: " << row << *row;
+                                return false;
+                            }
+                        } else {
+                            if (child.parentRow() != std::addressof(row)) {
+                                qCritical().noquote() << "Parent out of sync for:" << child;
+                                qCritical().noquote() << "  Actual: " << child.parentRow()
+                                        << (child.parentRow() ? *child.parentRow() : tree_row{});
+                                qCritical().noquote() << "Expected: " << std::addressof(row) << row;
+                                return false;
+                            }
+                        }
+                        return true;
+                    }();
+                    if (!match)
+                        return false;
+                }
+                result &= integrityCheck(*children, depth + 1);
+            }
+        }
+        return result;
+    }
+    bool treeIntegrityCheck()
+    {
+        if (!integrityCheck(*m_data->m_tree)) {
+            tree_row::prettyPrint(qDebug().nospace() << "\nTree of Values:\n", *m_data->m_tree);
+            return false;
+        }
+        if (!integrityCheck(*m_data->m_pointer_tree)) {
+            tree_row::prettyPrint(qDebug().nospace() << "\nTree of Pointers:\n", *m_data->m_tree);
+            return false;
+        }
+        return true;
+    }
+
+    std::unique_ptr<QAbstractItemModel> makeTreeModel();
 
     struct Data {
 
@@ -320,6 +561,17 @@ private:
             {{{Qt::DisplayRole, "DISPLAY2"}, {Qt::DecorationRole, "DECORATION2"}}},
             {{{Qt::DisplayRole, "DISPLAY3"}, {Qt::DecorationRole, "DECORATION3"}}},
         };
+
+        std::unique_ptr<value_tree> m_tree;
+        struct TreeDeleter {
+            void operator()(pointer_tree *tree)
+            {
+                for (auto *row : *tree)
+                    delete row;
+                delete tree;
+            }
+        };
+        std::unique_ptr<pointer_tree, TreeDeleter> m_pointer_tree;
     };
 
     std::unique_ptr<Data> m_data;
@@ -357,9 +609,11 @@ void createBackup(QObject* object, T& model) {
 template <typename T, std::enable_if_t<!std::is_copy_assignable_v<T>, bool> = true>
 void createBackup(QObject* , T& ) {}
 
-void tst_QGenericItemModel::createTestData()
+void tst_QGenericItemModel::createTestData(TestedModels tested)
 {
     m_data.reset(new Data);
+
+    createTree();
 
     QTest::addColumn<Factory>("factory");
     QTest::addColumn<int>("expectedRowCount");
@@ -448,6 +702,33 @@ void tst_QGenericItemModel::createTestData()
         };
         return std::unique_ptr<QAbstractItemModel>(new QGenericItemModel(std::move(movedTable)));
     }) << 4 << 4 << ChangeActions(ChangeAction::All);
+
+    // moved list of pointers -> model takes ownership
+    QTest::addRow("movedListOfObjects") << Factory([]{
+        std::list<Object *> movedListOfObjects = {
+            new Object, new Object, new Object,
+            new Object, new Object, new Object
+        };
+
+        return std::unique_ptr<QAbstractItemModel>(
+            new QGenericItemModel(std::move(movedListOfObjects))
+        );
+    }) << 6 << 2 << (ChangeAction::ChangeRows | ChangeAction::SetData);
+
+    // special case: tree
+    if (tested & Trees) {
+        QTest::addRow("value tree") << Factory([this]{
+            return std::unique_ptr<QAbstractItemModel>(new QGenericItemModel(m_data->m_tree.get()));
+        }) << int(std::size(*m_data->m_tree.get())) << int(std::tuple_size_v<tree_row>)
+           << (ChangeAction::ChangeRows | ChangeAction::SetData);
+
+        QTest::addRow("pointer tree") << Factory([this]{
+            return std::unique_ptr<QAbstractItemModel>(
+                new QGenericItemModel(m_data->m_pointer_tree.get(), tree_row::ProtocolPointerImpl{})
+            );
+        }) << int(std::size(*m_data->m_pointer_tree.get())) << int(std::tuple_size_v<tree_row>)
+           << (ChangeAction::ChangeRows | ChangeAction::SetData);
+    }
 }
 
 void tst_QGenericItemModel::basics()
@@ -530,6 +811,74 @@ void tst_QGenericItemModel::json()
     const QModelIndex index = model.index(1, 0);
     QVERIFY(index.isValid());
     QCOMPARE(index.data().toString(), "two");
+}
+
+void tst_QGenericItemModel::ownership()
+{
+    { // a list of pointers to objects
+        Object *object = new Object;
+        QPointer guard = object;
+        std::vector<Object *> objects {
+            object
+        };
+        { // model does not take ownership
+            QGenericItemModel modelOnCopy(objects);
+        }
+        QVERIFY(guard);
+        { // model does not take ownership
+            QGenericItemModel modelOnRef(&objects);
+        }
+        QVERIFY(guard);
+        { // model does take ownership
+            QGenericItemModel movedIntoModel(std::move(objects));
+        }
+        QVERIFY(!guard);
+    }
+
+    { // a list of shared_ptr
+        Object *object = new Object;
+        QPointer guard = object;
+        std::vector<std::shared_ptr<Object>> objects {
+            std::shared_ptr<Object>(object)
+        };
+        { // model does not take ownership
+            QGenericItemModel modelOnCopy(objects);
+            QCOMPARE(modelOnCopy.rowCount(), 1);
+            QCOMPARE(objects[0].use_count(), 2);
+        }
+        QCOMPARE(objects[0].use_count(), 1);
+        { // model does not take ownership
+            QGenericItemModel modelOnRef(&objects);
+            QCOMPARE(objects[0].use_count(), 1);
+        }
+        QCOMPARE(objects[0].use_count(), 1);
+        QVERIFY(guard);
+        { // model owns the last shared copy
+            QGenericItemModel movedIntoModel(std::move(objects));
+        }
+        QVERIFY(!guard);
+    }
+
+    { // a table of pointers
+        Object *object = new Object;
+        QPointer guard = object;
+        std::vector<std::vector<Object *>> table {
+            {object}
+        };
+        { // model does not take ownership
+            QGenericItemModel modelOnCopy(table);
+        }
+        QVERIFY(guard);
+        { // model does not take ownership
+            QGenericItemModel modelOnRef(&table);
+        }
+        QVERIFY(guard);
+        { // model does take ownership of rows, but not of objects within each row
+            QGenericItemModel movedIntoModel(std::move(table));
+        }
+        QVERIFY(guard);
+        delete object;
+    }
 }
 
 void tst_QGenericItemModel::dimensions()
@@ -696,6 +1045,8 @@ void tst_QGenericItemModel::insertRows()
     QFETCH(const ChangeActions, changeActions);
     const bool canSetData = changeActions.testFlag(ChangeAction::SetData);
 
+    const QList<QPersistentModelIndex> pmiList = allIndexes(model.get());
+
     QCOMPARE(model->rowCount(), expectedRowCount);
     QCOMPARE(model->insertRow(0), changeActions.testFlag(ChangeAction::InsertRows));
     QCOMPARE(model->rowCount() == expectedRowCount + 1,
@@ -727,6 +1078,7 @@ void tst_QGenericItemModel::insertRows()
     QEXPECT_FAIL("listOfObjectsCopy", "No object created", Continue);
     QEXPECT_FAIL("listOfMetaObjectTupleCopy", "No object created", Continue);
     QEXPECT_FAIL("tableOfMetaObjectTupleCopy", "No object created", Continue);
+    QEXPECT_FAIL("movedListOfObjects", "No object created", Continue);
 
     // associative containers are default constructed with no valid data
     ignoreFailureFromAssociativeContainers();
@@ -742,6 +1094,8 @@ void tst_QGenericItemModel::insertRows()
              changeActions.testFlag(ChangeAction::InsertRows));
     QCOMPARE(model->rowCount() == expectedRowCount + 6,
              changeActions.testFlag(ChangeAction::InsertRows));
+
+    verifyPmiList(pmiList);
 }
 
 void tst_QGenericItemModel::removeRows()
@@ -823,6 +1177,277 @@ void tst_QGenericItemModel::inconsistentColumnCount()
         QCOMPARE(model.clearItemData(index), shouldWork);
         debug.dismiss();
     }
+}
+
+enum class TreeProtocol { ValueImplicit, ValueReadOnly, PointerExplicit, PointerExplicitMoved };
+
+void tst_QGenericItemModel::createTree()
+{
+    m_data->m_tree.reset(new value_tree{
+        {"1", "one"},
+        {"2", "two"},
+        {"3", "three"},
+        {"4", "four"},
+        {"5", "five"},
+    });
+
+    (*m_data->m_tree)[1].addChild("2.1", "two.one");
+    (*m_data->m_tree)[1].addChild("2.2", "two.two");
+
+    tree_row &row23 = (*m_data->m_tree)[1].addChild("2.3", "two.three");
+
+    row23.addChild("2.3.1", "two.three.one");
+    row23.addChild("2.3.2", "two.three.two");
+    row23.addChild("2.3.3", "two.three.three");
+
+    // assert the integrity of the tree; this is not a test.
+    Q_ASSERT(!m_data->m_tree->at(0).childRows());
+    Q_ASSERT(m_data->m_tree->at(1).childRows());
+    Q_ASSERT(!m_data->m_tree->at(1).childRows()->at(1).childRows());
+    Q_ASSERT(m_data->m_tree->at(1).childRows()->at(2).childRows());
+
+    m_data->m_pointer_tree.reset(new pointer_tree{
+        new tree_row("1", "one"),
+        new tree_row("2", "one"),
+        new tree_row("3", "one"),
+        new tree_row("4", "one"),
+        new tree_row("5", "one"),
+    });
+
+    m_data->m_pointer_tree->at(1)->addChildPointer("2.1", "two.one");
+    m_data->m_pointer_tree->at(1)->addChildPointer("2.2", "two.two");
+}
+
+void tst_QGenericItemModel::tree_data()
+{
+    m_data.reset(new Data);
+    createTree();
+
+    QTest::addColumn<TreeProtocol>("protocol");
+    QTest::addColumn<int>("expectedRootRowCount");
+    QTest::addColumn<int>("expectedColumnCount");
+    QTest::addColumn<QList<int>>("rowsWithChildren");
+    QTest::addColumn<ChangeActions>("changeActions");
+
+    const int expectedRootRowCount = int(m_data->m_tree->size());
+    const int expectedColumnCount = int(std::tuple_size_v<tree_row>);
+    const auto rowsWithChildren = QList{1};
+
+    QTest::addRow("ValueImplicit")
+        << TreeProtocol::ValueImplicit
+        << expectedRootRowCount << expectedColumnCount << rowsWithChildren
+        << ChangeActions(ChangeAction::All);
+    QTest::addRow("ValueReadOnly")
+        << TreeProtocol::ValueReadOnly
+        << expectedRootRowCount << expectedColumnCount << rowsWithChildren
+        << ChangeActions(ChangeAction::ReadOnly);
+    QTest::addRow("PointerExplicit")
+        << TreeProtocol::PointerExplicit
+        << expectedRootRowCount << expectedColumnCount << rowsWithChildren
+        << ChangeActions(ChangeAction::All);
+    QTest::addRow("PointerExplicitMoved")
+        << TreeProtocol::PointerExplicitMoved
+        << expectedRootRowCount << expectedColumnCount << rowsWithChildren
+        << ChangeActions(ChangeAction::All);
+}
+
+std::unique_ptr<QAbstractItemModel> tst_QGenericItemModel::makeTreeModel()
+{
+    createTree();
+
+    std::unique_ptr<QAbstractItemModel> model;
+
+    QFETCH(const TreeProtocol, protocol);
+    switch (protocol) {
+    case TreeProtocol::ValueImplicit:
+        model.reset(new QGenericItemModel(m_data->m_tree.get()));
+        break;
+    case TreeProtocol::ValueReadOnly: {
+        struct { // minimal (read-only) implementation of the tree traversal protocol
+            const tree_row *parentRow(const tree_row &row) const { return row.parentRow(); }
+            const std::optional<value_tree> &childRows(const tree_row &row) const
+            { return row.childRows(); }
+        } readOnlyProtocol;
+        model.reset(new QGenericItemModel(m_data->m_tree.get(), readOnlyProtocol));
+        break;
+    }
+    case TreeProtocol::PointerExplicit:
+        model.reset(new QGenericItemModel(m_data->m_pointer_tree.get(),
+                    tree_row::ProtocolPointerImpl{}));
+        break;
+    case TreeProtocol::PointerExplicitMoved: {
+        pointer_tree moved_tree{
+            new tree_row("m1", "m_one"),
+            new tree_row("m2", "m_two"),
+            new tree_row("m3", "m_three"),
+            new tree_row("m4", "m_four"),
+            new tree_row("m5", "m_five"),
+        };
+        moved_tree.at(1)->addChildPointer("2.1", "two.one");
+        moved_tree.at(1)->addChildPointer("2.2", "two.two");
+
+        model.reset(new QGenericItemModel(std::move(moved_tree),
+                    tree_row::ProtocolPointerImpl{}));
+        break;
+    }
+    }
+
+    return model;
+}
+
+void tst_QGenericItemModel::tree()
+{
+    auto model = makeTreeModel();
+    QFETCH(const int, expectedRootRowCount);
+    QFETCH(const int, expectedColumnCount);
+    QFETCH(QList<int>, rowsWithChildren);
+
+    QCOMPARE(model->rowCount(), expectedRootRowCount);
+    QCOMPARE(model->columnCount(), expectedColumnCount);
+
+    for (int row = 0; row < model->rowCount(); ++row) {
+        const bool expectedChildren = rowsWithChildren.contains(row);
+        const QModelIndex parent = model->index(row, 0);
+        QVERIFY(parent.isValid());
+        QCOMPARE(model->hasChildren(parent), expectedChildren);
+        if (expectedChildren)
+            QCOMPARE_GT(model->rowCount(parent), 0);
+        else
+            QCOMPARE(model->rowCount(parent), 0);
+        QCOMPARE(model->columnCount(parent), expectedColumnCount);
+        const QModelIndex child = model->index(0, 0, parent);
+        QCOMPARE(child.isValid(), expectedChildren);
+        if (expectedChildren)
+            QCOMPARE(child.parent(), parent);
+        else
+            QCOMPARE(child.parent(), QModelIndex());
+    }
+
+#if QT_CONFIG(itemmodeltester)
+    QAbstractItemModelTester modelTest(model.get());
+#endif
+}
+
+void tst_QGenericItemModel::treeModifyBranch()
+{
+    auto model = makeTreeModel();
+    QFETCH(QList<int>, rowsWithChildren);
+    QFETCH(const ChangeActions, changeActions);
+
+    int rowWithChildren = rowsWithChildren.first();
+    QCOMPARE_GT(rowWithChildren, 0);
+
+    // removing or inserting a row adjusts the parents of the direct children
+    // of the following branches
+    {
+        QVERIFY(treeIntegrityCheck());
+        QCOMPARE(model->removeRow(--rowWithChildren),
+                 changeActions.testFlag(ChangeAction::RemoveRows));
+        QVERIFY(treeIntegrityCheck());
+        QCOMPARE(model->insertRow(rowWithChildren++),
+                 changeActions.testFlag(ChangeAction::InsertRows));
+        QVERIFY(treeIntegrityCheck());
+        if (!changeActions.testFlag(ChangeAction::ChangeRows))
+            return; // nothing else to test with a read-only model
+    }
+
+    const QModelIndex parent = model->index(rowWithChildren, 0);
+    int oldRowCount = model->rowCount(parent);
+
+    // append
+    {
+        QVERIFY(model->insertRow(oldRowCount, parent));
+        QModelIndex newChild = model->index(oldRowCount, 0, parent);
+        QVERIFY(newChild.isValid());
+        QCOMPARE(model->rowCount(parent), ++oldRowCount);
+        QCOMPARE(newChild.parent(), parent);
+    }
+
+    // prepend
+    {
+        QVERIFY(model->insertRow(0, parent));
+        QModelIndex newChild = model->index(0, 0, parent);
+        QVERIFY(newChild.isValid());
+        QCOMPARE(model->rowCount(parent), ++oldRowCount);
+        QCOMPARE(newChild.parent(), parent);
+    }
+
+    // remove last
+    {
+        QVERIFY(model->removeRow(model->rowCount(parent) - 1, parent));
+        QCOMPARE(model->rowCount(parent), --oldRowCount);
+    }
+
+    // remove first
+    {
+        QVERIFY(model->rowCount(parent) > 0);
+        QVERIFY(model->removeRow(0, parent));
+        QCOMPARE(model->rowCount(parent), --oldRowCount);
+    }
+
+#if QT_CONFIG(itemmodeltester)
+    QAbstractItemModelTester modelTest(model.get());
+#endif
+}
+
+void tst_QGenericItemModel::treeCreateBranch()
+{
+    auto model = makeTreeModel();
+    QFETCH(QList<int>, rowsWithChildren);
+    QFETCH(const ChangeActions, changeActions);
+
+#if QT_CONFIG(itemmodeltester)
+    QAbstractItemModelTester modelTest(model.get());
+#endif
+
+    const QList<QPersistentModelIndex> pmiList = allIndexes(model.get());
+
+    // new branch
+    QVERIFY(!rowsWithChildren.contains(0));
+    const QModelIndex parent = model->index(0, 0);
+    QVERIFY(!model->hasChildren(parent));
+    QCOMPARE(model->insertRows(0, 5, parent),
+             changeActions.testFlag(ChangeAction::InsertRows));
+    if (!changeActions.testFlag(ChangeAction::InsertRows))
+        return; // nothing else to test with a read-only model
+    QVERIFY(model->hasChildren(parent));
+    QCOMPARE(model->rowCount(parent), 5);
+
+    for (int i = 0; i < model->rowCount(parent); ++i) {
+        QModelIndex newChild = model->index(i, 0, parent);
+        QVERIFY(newChild.isValid());
+        QCOMPARE(newChild.parent(), parent);
+        QVERIFY(!model->hasChildren(newChild));
+    }
+
+    verifyPmiList(pmiList);
+}
+
+void tst_QGenericItemModel::treeRemoveBranch()
+{
+    auto model = makeTreeModel();
+    QFETCH(QList<int>, rowsWithChildren);
+    QFETCH(const ChangeActions, changeActions);
+
+#if QT_CONFIG(itemmodeltester)
+    QAbstractItemModelTester modelTest(model.get());
+#endif
+
+    const QModelIndex parent = model->index(rowsWithChildren.first(), 0);
+    QVERIFY(parent.isValid());
+    QVERIFY(model->hasChildren(parent));
+    const int oldRowCount = model->rowCount(parent);
+    QCOMPARE_GT(oldRowCount, 0);
+
+    // out of bounds asserts in QAIM::removeRows
+    // QVERIFY(model->removeRows(0, oldRowCount * 2, parent));
+
+    QCOMPARE(model->removeRows(0, oldRowCount, parent),
+             changeActions.testFlag(ChangeAction::RemoveRows));
+    if (!changeActions.testFlag(ChangeAction::RemoveRows))
+        return; // nothing else to test with a read-only model
+    QVERIFY(!model->hasChildren(parent));
+    QCOMPARE(model->rowCount(parent), 0);
 }
 
 QTEST_MAIN(tst_QGenericItemModel)

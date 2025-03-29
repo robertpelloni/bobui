@@ -169,8 +169,6 @@ namespace QGenericItemModelDetails
 
     template <typename C>
     [[maybe_unused]] static constexpr bool is_range_v = range_traits<C>();
-    template <typename CC>
-    using if_is_range = std::enable_if_t<is_range_v<remove_ptr_and_ref_t<CC>>, bool>;
 
     // Find out how many fixed elements can be retrieved from a row element.
     // main template for simple values and ranges. Specializing for ranges
@@ -223,6 +221,156 @@ namespace QGenericItemModelDetails
     template <typename T>
     [[maybe_unused]] static constexpr int static_size_v =
                             row_traits<q20::remove_cvref_t<std::remove_pointer_t<T>>>::static_size;
+
+    // tests for tree protocol implementation in the row type
+    template <typename R, typename = void>
+    struct test_parentRow : std::false_type {};
+
+    template <typename R>
+    struct test_parentRow<R, std::void_t<decltype(std::declval<R>().parentRow())>>
+        : std::true_type
+    {};
+
+    template <typename R, typename = void>
+    struct test_childRows : std::false_type {};
+    template <typename R>
+    struct test_childRows<R, std::void_t<decltype(std::declval<const R>().childRows())>>
+        : std::true_type
+    {};
+
+    // Default tree traversal protocol implementation for row types that have
+    // the respective member functions. The trailing return type implicitly
+    // removes those functions that are not available.
+    template <typename row_type>
+    struct DefaultTreeProtocol
+    {
+        using row_ptr = std::remove_pointer_t<row_type> *;
+
+        template <typename R = row_type>
+        auto newRow() const -> std::enable_if_t<std::is_pointer_v<R>, row_ptr>
+        {
+            return new std::remove_pointer_t<row_ptr>{};
+        }
+        template <typename R = row_type>
+        auto newRow(...) const -> decltype(R{})
+        {
+            return R{};
+        }
+
+        template <typename R>
+        auto deleteRow(R& row) -> decltype(delete row)
+        {
+            delete row;
+        }
+
+        template <typename R>
+        auto parentRow(const R &row) const -> decltype(row.parentRow())
+        {
+            return row.parentRow();
+        }
+        template <typename R>
+        auto parentRow(const R &row) const -> decltype(row->parentRow())
+        {
+            return row->parentRow();
+        }
+
+        template <typename R>
+        auto childRows(const R &row) const -> decltype(row.childRows())
+        {
+            return row.childRows();
+        }
+        template <typename R>
+        auto childRows(const R &row) const -> decltype(row->childRows())
+        {
+            return row->childRows();
+        }
+
+        template <typename R>
+        auto setParentRow(R &row, row_ptr parent) -> decltype(row.setParentRow(parent))
+        {
+            row.setParentRow(parent);
+        }
+        template <typename R>
+        auto setParentRow(R &row, row_ptr parent) -> decltype(row->setParentRow(parent))
+        {
+            row->setParentRow(parent);
+        }
+
+        template <typename R>
+        auto childRows(R &row) -> decltype(row.childRows())
+        {
+            return row.childRows();
+        }
+        template <typename R>
+        auto childRows(R &row) -> decltype(row->childRows())
+        {
+            return row->childRows();
+        }
+    };
+
+    // the protocol must implement getters for parent/children, but setters are
+    // optional, so test for those.
+    template <typename P, typename R, typename = void>
+    struct protocol_setParentRow : std::false_type {};
+    template <typename P, typename R>
+    struct protocol_setParentRow<P, R, std::void_t<decltype(std::declval<P>().
+                                                   setParentRow(std::declval<R&>(), nullptr))>>
+        : std::true_type {};
+    template <typename P, typename R, typename = void>
+    struct protocol_mutable_childRows : std::false_type {};
+    template <typename P, typename R>
+    struct protocol_mutable_childRows<P, R, std::void_t<decltype(std::declval<P>().
+                                                        childRows(std::declval<R&>()) = {})>>
+        : std::true_type {};
+
+    // Selected for row-types R that don't have parent/children member
+    // functions. If the TreeProtocol is explicitly set (to not be void *),
+    // then we have a tree.
+    template <typename C, typename R, typename TreeProtocol, typename = void>
+    struct tree_traits : std::integral_constant<bool, !std::is_void_v<TreeProtocol>>
+    {
+        using tree_protocol = TreeProtocol;
+
+        static constexpr bool has_setParentRow = protocol_setParentRow<tree_protocol, R>::value;
+        static constexpr bool has_mutable_childRows =
+                                              protocol_mutable_childRows<tree_protocol, R>::value;
+    };
+
+    // Selected for row-types that do have const parent/children member functions.
+    // If the TreeProtocol is explicitly set (not to be void *), then we use it
+    // (ignoring, for now, whether it correctly implements the protocol functions).
+    // Otherwise we use the default tree protocol implementation that calls member
+    // functions of the row type.
+    template <typename C, typename R, typename TreeProtocol>
+    struct tree_traits<C, R, TreeProtocol,
+                       std::enable_if_t<std::conjunction_v<test_parentRow<R>,
+                                                           test_childRows<R>>
+                                       >
+                      > : std::true_type
+    {
+        using tree_protocol = std::conditional_t<std::is_void_v<TreeProtocol>,
+                                                 DefaultTreeProtocol<R>, TreeProtocol>;
+        static constexpr bool has_setParentRow = protocol_setParentRow<tree_protocol, R>::value;
+        static constexpr bool has_mutable_childRows =
+                                              protocol_mutable_childRows<tree_protocol, R>::value;
+    };
+
+    template <typename C, typename TreeProtocol = void,
+              typename range_type = remove_ptr_and_ref_t<C>>
+    using tree_protocol_t = typename tree_traits<
+                range_type,
+                std::remove_reference_t<decltype(*std::begin(std::declval<range_type&>()))>,
+                TreeProtocol>::tree_protocol;
+
+    template <typename C, typename range_type = remove_ptr_and_ref_t<C>>
+    using if_is_table_range = std::enable_if_t<
+                            is_range_v<range_type> && std::is_void_v<tree_protocol_t<range_type>>,
+                            bool>;
+
+    template <typename C, typename Protocol = void, typename range_type = remove_ptr_and_ref_t<C>>
+    using if_is_tree_range = std::enable_if_t<
+                            is_range_v<range_type> && !std::is_void_v<tree_protocol_t<range_type, Protocol>>,
+                            bool>;
 
     // The storage of the model data. We might store it as a pointer, or as a
     // (copied- or moved-into) value. But we always return a pointer.
@@ -355,6 +503,7 @@ protected:
     QGenericItemModel *m_itemModel;
 
     inline QModelIndex createIndex(int row, int column, const void *ptr = nullptr) const;
+    inline void changePersistentIndexList(const QModelIndexList &from, const QModelIndexList &to);
     inline QHash<int, QByteArray> roleNames() const;
     inline void dataChanged(const QModelIndex &from, const QModelIndex &to,
                             const QList<int> &roles);

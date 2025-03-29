@@ -64,11 +64,11 @@ QT_BEGIN_NAMESPACE
     to remove or insert columns and rows through the QAbstractItemModel API.
     For more granular control, implement \l{the C++ tuple protocol}.
 
-    \section1 List or Table
+    \section1 List, Table, or Tree
 
     The elements in the range are interpreted as rows of the model. Depending
-    on the type of these rows, QGenericItemModel exposes the range as a list or
-    a table.
+    on the type of these rows, QGenericItemModel exposes the range as a list,
+    a table, or a tree.
 
     If the row type is not an iterable range, and does not implement the
     C++ tuple protocol, then the range gets represented as a list.
@@ -108,6 +108,147 @@ QT_BEGIN_NAMESPACE
     comes with some runtime overhead. For performance critical models, consider
     implementing the tuple protocol for compile-time generation of the access
     code.
+
+    \section2 Trees of data
+
+    QGenericItemModel can represent a data structure as a tree model. Such a
+    tree data structure needs to be homomorphic: on all levels of the tree, the
+    list of child rows needs to use the exact same representation as the tree
+    itself. In addition, the row type needs be of a static size: either a gadget
+    or QObject type, or a type that implements the {C++ tuple protocol}.
+
+    To represent such data as a tree, the row type has to implement a traversal
+    protocol that allows QGenericItemModel to navigate up and down the tree.
+    For any given row, the model needs to be able to retrieve the parent row,
+    and the span of children for any given row.
+
+    \snippet qgenericitemmodel/main.cpp tree_protocol_0
+
+    The tree itself is a vector of \c{TreeRow} values. See \l{Rows as pointers
+    or values} for the considerations on whether to use values or pointers of
+    items for the rows.
+
+    \snippet qgenericitemmodel/main.cpp tree_protocol_1
+
+    The row class can be of any fixed-size type described above: a type that
+    implements the tuple protocol, a gadget, or a QObject. In this example, we
+    use a gadget.
+
+    Each row item needs to maintain a pointer to the parent row, as well as an
+    optional range of child rows that is identical to the structure used for the
+    tree.
+
+    Making the row type default constructible is optional, and allows the model
+    to construct new row data elements, for instance in the insertRow() or
+    moveRows() implementations.
+
+    \snippet qgenericitemmodel/main.cpp tree_protocol_2
+
+    The tree traversal protocol can then be implemented as member functions of
+    the row data type. A const \c{parentRow()} function has to return a pointer
+    to a const row item; and the \c{childRows()} function has to return a
+    reference to a const \c{std::optional} that can hold the optional child
+    range.
+
+    These two functions are sufficient for the model to navigate the tree as a
+    read-only data structure. To allow the user to edit data in a view, and the
+    model to implement mutating model APIs such as insertRows(), removeRows(),
+    and moveRows(), we have to implement additional functions for write-access:
+
+    \snippet qgenericitemmodel/main.cpp tree_protocol_3
+
+    The model calls the \c{setParentRow()} function and mutable \c{childRows()}
+    overload to move or insert rows into an existing tree branch, and to update
+    the parent pointer should the old value have become invalid. The non-const
+    overload of \c{childRows()} provides in addition write-access to the row
+    data.
+
+    \note The model performs setting the parent of a row, removing that row
+    from the old parent, and adding it to the list of the new parent's children,
+    as separate steps. This keeps the protocol interface small.
+
+    \dots
+    \snippet qgenericitemmodel/main.cpp tree_protocol_4
+
+    The rest of the class implementation is not relevant for the model, but
+    a \c{addChild()} helper provides us with a convenient way to construct the
+    initial state of the tree.
+
+    \snippet qgenericitemmodel/main.cpp tree_protocol_5
+
+    A QGenericItemModel instantiated with an instance of such a range will
+    represent the data as a tree.
+
+    \snippet qgenericitemmodel/main.cpp tree_protocol_6
+
+    \section3 Tree traversal protocol in a separate class
+
+    The tree traversal protocol can also be implemented in a separate class.
+
+    \snippet qgenericitemmodel/main.cpp explicit_tree_protocol_0
+
+    Pass an instance of this protocol implementation to the QGenericItemModel
+    constructor:
+
+    \snippet qgenericitemmodel/main.cpp explicit_tree_protocol_1
+
+    \section2 Rows as pointers or values
+
+    The row type of the data range can be either a value, or a pointer. In
+    the code above we have been using the tree rows as values in a vector,
+    which avoids that we have to deal with explicit memory management. However,
+    a vector as a contiguous block of memory invalidates all iterators and
+    references when it has to reallocate the storage, or when inserting or
+    removing elements. This impacts the pointer to the parent item, which is
+    the location of the parent row within the vector. Making sure that this
+    parent (and QPersistentModelIndex instances referring to items within it)
+    stays valid can incurr substantial performance overhead. The
+    QGenericItemModel implementation has to assume that all references into the
+    range become invalid when modifying the range.
+
+    Alternatively, we can also use a range of row pointers as the tree type:
+
+    \snippet qgenericitemmodel/main.cpp tree_of_pointers_0
+
+    In this case, we have to allocate all TreeRow instances explicitly using
+    operator \c{new}, and implement the destructor to \c{delete} all items in
+    the vector of children.
+
+    \snippet qgenericitemmodel/main.cpp tree_of_pointers_1
+    \snippet qgenericitemmodel/main.cpp tree_of_pointers_2
+
+    Before we can construct a model that represents this data as a tree, we need
+    to also implement the tree traversal protocol.
+
+    \snippet qgenericitemmodel/main.cpp tree_of_pointers_3
+
+    An explicit protocol implementation for mutable trees of pointers has to
+    provide two additional member functions, \c{newRow()} and
+    \c{deleteRow(RowType *)}.
+
+    \snippet qgenericitemmodel/main.cpp tree_of_pointers_4
+
+    The model will call those functions when creating new rows in insertRows(),
+    and when removing rows in removeRows(). In addition, if the model has
+    ownership of the data, then it will also delete all top-level rows upon
+    destruction. Note how in this example, we move the tree into the model, so
+    we must no longer perform any operations on it. QGenericItemModel, when
+    constructed by moving tree-data with row-pointers into it, will take
+    ownership of the data, and delete the row pointers in it's destructor.
+
+    \note This is not the case for tables and lists that use pointers as their
+    row type. QGenericItemModel will never allocate new rows in lists and tables
+    using operator new, and will never free any rows.
+
+    So, using pointers at rows comes with some memory allocation and management
+    overhead. However, when using rows through pointers the references to the
+    row items remain stable, even when they are moved around in the range,
+    or when the range reallocates. This can significantly reduce the cost
+    of making modifications to the model's structure when using insertRows(),
+    removeRows(), or moveRows().
+
+    So, each choice has different performance and memory overhead trade-offs.
+    The best option depends on the exact use case and data structure used.
 
     \section2 Multi-role items
 
@@ -246,12 +387,15 @@ QT_BEGIN_NAMESPACE
 */
 
 /*!
-    \fn template <typename Range, QGenericItemModelDetails::if_is_range<Range>> QGenericItemModel::QGenericItemModel(Range &&range, QObject *parent)
+    \fn template <typename Range, QGenericItemModelDetails::if_is_table_range<Range>> QGenericItemModel::QGenericItemModel(Range &&range, QObject *parent)
+    \fn template <typename Range, QGenericItemModelDetails::if_is_tree_range<Range>> QGenericItemModel::QGenericItemModel(Range &&range, QObject *parent)
+    \fn template <typename Range, typename Protocol, QGenericItemModelDetails::if_is_tree_range<Range, Protocol>> QGenericItemModel::QGenericItemModel(Range &&range, Protocol &&protocol, QObject *parent)
 
-    Constructs a generic item model instance that operates on the data in
-    \a range. The \a range has to be a sequential range for which
-    \c{std::cbegin} and \c{std::cend} are available. The model instance becomes
-    a child of \a parent.
+    Constructs a generic item model instance that operates on the data in \a
+    range. The \a range has to be a sequential range for which \c{std::cbegin}
+    and \c{std::cend} are available. If \a protocol is provided, then the model
+    will represent the range as a tree using the protocol implementation.
+    The model instance becomes a child of \a parent.
 
     The \a range can be a pointer, in which case mutating model APIs will
     modify the data in that range instance. If \a range is a value (or moved
@@ -293,7 +437,9 @@ QModelIndex QGenericItemModel::index(int row, int column, const QModelIndex &par
     Returns the parent of the item at the \a child index.
 
     This function always produces an invalid index for models that operate on
-    list and table ranges.
+    list and table ranges. For models operation on a tree, this function
+    returns the index for the row item returned by the parent() implementation
+    of the tree traversal protocol.
 
     \sa index(), hasChildren()
 */
@@ -309,7 +455,9 @@ QModelIndex QGenericItemModel::parent(const QModelIndex &child) const
     items in the root range for an invalid \a parent index.
 
     If the \a parent index is valid, then this function always returns 0 for
-    models that operate on list and table ranges.
+    models that operate on list and table ranges. For trees, this returns the
+    size of the range returned by the childRows() implementation of the tree
+    traversal protocol.
 
     \sa columnCount(), insertRows(), hasChildren()
 */
@@ -491,7 +639,8 @@ bool QGenericItemModel::clearItemData(const QModelIndex &index)
 
     For models operating on a read-only range, or on a range with a
     statically sized row type (such as a tuple, array, or struct), this
-    implementation does nothing and returns \c{false} immediately.
+    implementation does nothing and returns \c{false} immediately. This is
+    always the case for tree models.
 //! [column-change-requirement]
 */
 

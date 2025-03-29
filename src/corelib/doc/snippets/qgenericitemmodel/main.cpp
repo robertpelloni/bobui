@@ -5,6 +5,7 @@
 
 #ifndef QT_NO_WIDGETS
 
+#include <QtWidgets/qapplication.h>
 #include <QtWidgets/qlistview.h>
 #include <QtWidgets/qtableview.h>
 #include <QtWidgets/qtreeview.h>
@@ -144,6 +145,199 @@ private:
 };
 //! [gadget]
 } // namespace gadget
+
+namespace tree_protocol
+{
+//! [tree_protocol_0]
+class TreeRow;
+
+using Tree = std::vector<TreeRow>;
+//! [tree_protocol_0]
+
+//! [tree_protocol_1]
+class TreeRow
+{
+    Q_GADGET
+    // properties
+
+    TreeRow *m_parent;
+    std::optional<Tree> m_children;
+
+public:
+    TreeRow() = default;
+
+    // rule of 0: copy, move, and destructor implicitly defaulted
+//! [tree_protocol_1]
+
+    friend struct TreeTraversal;
+    TreeRow(const QString &) {}
+
+//! [tree_protocol_2]
+    // tree traversal protocol implementation
+    const TreeRow *parentRow() const { return m_parent; }
+    const std::optional<Tree> &childRows() const { return m_children; }
+//! [tree_protocol_2]
+//! [tree_protocol_3]
+    void setParentRow(TreeRow *parent) { m_parent = parent; }
+    std::optional<Tree> &childRows() { return m_children; }
+//! [tree_protocol_3]
+//! [tree_protocol_4]
+    // Helper to assembly a tree of rows, not used by QGenericItemModel
+    template <typename ...Args>
+    TreeRow &addChild(Args &&...args)
+    {
+        if (!m_children)
+            m_children.emplace(Tree{});
+        auto &child = m_children->emplace_back(std::forward<Args>(args)...);
+        child.m_parent = this;
+        return child;
+    }
+};
+//! [tree_protocol_4]
+
+void tree_protocol()
+{
+//! [tree_protocol_5]
+Tree tree = {
+    {"..."},
+    {"..."},
+    {"..."},
+};
+
+// each toplevel row has three children
+tree[0].addChild("...");
+tree[0].addChild("...");
+tree[0].addChild("...");
+
+tree[1].addChild("...");
+tree[1].addChild("...");
+tree[1].addChild("...");
+
+tree[2].addChild("...");
+tree[2].addChild("...");
+tree[2].addChild("...");
+//! [tree_protocol_5]
+
+{
+//! [tree_protocol_6]
+// instantiate the model with a pointer to the tree, not a copy!
+QGenericItemModel model(&tree);
+QTreeView view;
+view.setModel(&model);
+//! [tree_protocol_6]
+}
+}
+
+//! [explicit_tree_protocol_0]
+struct TreeTraversal
+{
+    TreeRow newRow() const { return TreeRow{}; }
+    const TreeRow *parentRow(const TreeRow &row) const { return row.m_parent; }
+    void setParentRow(TreeRow &row, TreeRow *parent) const { row.m_parent = parent; }
+    const std::optional<Tree> &childRows(const TreeRow &row) const { return row.m_children; }
+    std::optional<Tree> &childRows(TreeRow &row) const { return row.m_children; }
+};
+//! [explicit_tree_protocol_0]
+void explicit_tree_protocol()
+{
+Tree tree;
+//! [explicit_tree_protocol_1]
+QGenericItemModel model(&tree, TreeTraversal{});
+//! [explicit_tree_protocol_1]
+}
+} // namespace tree_protocol
+
+namespace tree_of_pointers
+{
+//! [tree_of_pointers_0]
+struct TreeRow;
+using Tree = std::vector<TreeRow *>;
+//! [tree_of_pointers_0]
+
+//! [tree_of_pointers_1]
+struct TreeRow
+{
+    Q_GADGET
+public:
+    TreeRow(const QString &value = {})
+        : m_value(value)
+    {}
+    ~TreeRow()
+    {
+        if (m_children)
+            qDeleteAll(*m_children);
+    }
+
+    // move-only
+    TreeRow(TreeRow &&) = default;
+    TreeRow &operator=(TreeRow &&) = default;
+
+    // helper to populate
+    template <typename ...Args>
+    TreeRow *addChild(Args &&...args)
+    {
+        if (!m_children)
+            m_children.emplace(Tree{});
+        auto *child = m_children->emplace_back(new TreeRow(std::forward<Args>(args)...));
+        child->m_parent = this;
+        return child;
+    }
+
+private:
+    friend struct TreeTraversal;
+    QString m_value;
+    std::optional<Tree> m_children;
+    TreeRow *m_parent = nullptr;
+};
+//! [tree_of_pointers_1]
+
+Tree make_tree_of_pointers()
+{
+//! [tree_of_pointers_2]
+Tree tree = {
+    new TreeRow("1"),
+    new TreeRow("2"),
+    new TreeRow("3"),
+    new TreeRow("4"),
+};
+tree[0]->addChild("1.1");
+tree[1]->addChild("2.1");
+tree[2]->addChild("3.1")->addChild("3.1.1");
+tree[3]->addChild("4.1");
+//! [tree_of_pointers_2]
+return tree;
+}
+
+//! [tree_of_pointers_3]
+struct TreeTraversal
+{
+    TreeRow *newRow() const { return new TreeRow; }
+    void deleteRow(TreeRow *row) { delete row; }
+
+    const TreeRow *parentRow(const TreeRow *row) const { return row->m_parent; }
+    void setParentRow(TreeRow *row, TreeRow *parent) { row->m_parent = parent; }
+    const std::optional<Tree> &childRows(const TreeRow *row) const { return row->m_children; }
+    std::optional<Tree> &childRows(TreeRow *row) { return row->m_children; }
+};
+//! [tree_of_pointers_3]
+
+//! [tree_of_pointers_4]
+int main(int argc, char **argv)
+{
+    QApplication app(argc, argv);
+
+    Tree tree = make_tree_of_pointers();
+
+    QGenericItemModel model(std::move(tree), TreeTraversal{});
+    QTreeView treeView;
+    treeView.setModel(&model);
+    treeView.show();
+
+    return app.exec();
+}
+//! [tree_of_pointers_4]
+
+} // namespace tree_of_pointers
 
 void color_map()
 {
