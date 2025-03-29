@@ -9,9 +9,29 @@
 #define VMA_STATIC_VULKAN_FUNCTIONS 0
 #define VMA_RECORDING_ENABLED 0
 #define VMA_DEDICATED_ALLOCATION 0
+QT_BEGIN_NAMESPACE
+Q_STATIC_LOGGING_CATEGORY(QRHI_LOG_VMA, "qt.rhi.vma")
+QT_END_NAMESPACE
+#define VMA_ASSERT(expr) Q_ASSERT(expr)
 #ifdef QT_DEBUG
 #define VMA_DEBUG_INITIALIZE_ALLOCATIONS 1
+#define VMA_DEBUG_LOG(str) QT_PREPEND_NAMESPACE(qDebug)(QT_PREPEND_NAMESPACE(QRHI_LOG_VMA), (str))
+#define VMA_DEBUG_LOG_FORMAT(format, ...) QT_PREPEND_NAMESPACE(qDebug)(QT_PREPEND_NAMESPACE(QRHI_LOG_VMA), format, __VA_ARGS__)
 #endif
+template<typename... Args>
+static void debugVmaLeak(const char *format, Args&&... args)
+{
+#ifndef QT_NO_DEBUG
+    // debug builds: just do it always
+    static bool leakCheck = true;
+#else
+    // release builds: opt-in
+    static bool leakCheck = QT_PREPEND_NAMESPACE(qEnvironmentVariableIntValue)("QT_RHI_LEAK_CHECK");
+#endif
+    if (leakCheck)
+        QT_PREPEND_NAMESPACE(qWarning)(QT_PREPEND_NAMESPACE(QRHI_LOG_VMA), format, std::forward<Args>(args)...);
+}
+#define VMA_LEAK_LOG_FORMAT(format, ...) debugVmaLeak(format, __VA_ARGS__)
 QT_WARNING_PUSH
 QT_WARNING_DISABLE_GCC("-Wsuggest-override")
 QT_WARNING_DISABLE_GCC("-Wundef")
@@ -4075,6 +4095,7 @@ void QRhiVulkan::enqueueResourceUpdates(QVkCommandBuffer *cbD, QRhiResourceUpdat
                                                &bufD->stagingBuffers[currentFrameSlot], &allocation, nullptr);
                 if (err == VK_SUCCESS) {
                     bufD->stagingAllocations[currentFrameSlot] = allocation;
+                    setAllocationName(allocation, bufD->name());
                 } else {
                     qWarning("Failed to create staging buffer of size %u: %d", bufD->m_size, err);
                     printExtraErrorInfo(err);
@@ -4161,6 +4182,7 @@ void QRhiVulkan::enqueueResourceUpdates(QVkCommandBuffer *cbD, QRhiResourceUpdat
                 VkResult err = vmaCreateBuffer(toVmaAllocator(allocator), &bufferInfo, &allocInfo, &readback.stagingBuf, &allocation, nullptr);
                 if (err == VK_SUCCESS) {
                     readback.stagingAlloc = allocation;
+                    setAllocationName(allocation, bufD->name());
                 } else {
                     qWarning("Failed to create readback buffer of size %u: %d", readback.byteSize, err);
                     printExtraErrorInfo(err);
@@ -4217,6 +4239,7 @@ void QRhiVulkan::enqueueResourceUpdates(QVkCommandBuffer *cbD, QRhiResourceUpdat
                 continue;
             }
             utexD->stagingAllocations[currentFrameSlot] = allocation;
+            setAllocationName(allocation, utexD->name());
 
             BufferImageCopyList copyInfos;
             size_t curOfs = 0;
@@ -4374,6 +4397,7 @@ void QRhiVulkan::enqueueResourceUpdates(QVkCommandBuffer *cbD, QRhiResourceUpdat
             VkResult err = vmaCreateBuffer(toVmaAllocator(allocator), &bufferInfo, &allocInfo, &readback.stagingBuf, &allocation, nullptr);
             if (err == VK_SUCCESS) {
                 readback.stagingAlloc = allocation;
+                setAllocationName(allocation, texD ? texD->name() : swapChainD->name());
             } else {
                 qWarning("Failed to create readback buffer of size %u: %d", readback.byteSize, err);
                 printExtraErrorInfo(err);
@@ -6284,6 +6308,19 @@ double QRhiVulkan::lastCompletedGpuTime(QRhiCommandBuffer *cb)
     return cbD->lastGpuTime;
 }
 
+void QRhiVulkan::setAllocationName(QVkAlloc allocation, const QByteArray &name, int slot)
+{
+    if (!debugMarkers || name.isEmpty())
+        return;
+
+    QByteArray decoratedName = name;
+    if (slot >= 0) {
+        decoratedName += '/';
+        decoratedName += QByteArray::number(slot);
+    }
+    vmaSetAllocationName(toVmaAllocator(allocator), toVmaAllocation(allocation), decoratedName.constData());
+}
+
 void QRhiVulkan::setObjectName(uint64_t object, VkObjectType type, const QByteArray &name, int slot)
 {
 #ifdef VK_EXT_debug_utils
@@ -6803,6 +6840,7 @@ bool QVkBuffer::create()
             if (err != VK_SUCCESS)
                 break;
             allocations[i] = allocation;
+            rhiD->setAllocationName(allocation, m_objectName, m_type == Dynamic ? i : -1);
             rhiD->setObjectName(uint64_t(buffers[i]), VK_OBJECT_TYPE_BUFFER, m_objectName,
                                 m_type == Dynamic ? i : -1);
         }
@@ -7250,6 +7288,7 @@ bool QVkTexture::create()
         return false;
     }
     imageAlloc = allocation;
+    rhiD->setAllocationName(allocation, m_objectName);
 
     if (!finishCreate())
         return false;

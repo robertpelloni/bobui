@@ -857,6 +857,7 @@ public:
     void executeDeferredReleases(bool forced = false);
     void finishActiveReadbacks(bool forced = false);
 
+    void setAllocationName(QVkAlloc allocation, const QByteArray &name, int slot = -1);
     void setObjectName(uint64_t object, VkObjectType type, const QByteArray &name, int slot = -1);
     void trackedBufferBarrier(QVkCommandBuffer *cbD, QVkBuffer *bufD, int slot,
                               VkAccessFlags access, VkPipelineStageFlags stage);
