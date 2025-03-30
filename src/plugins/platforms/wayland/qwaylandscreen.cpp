@@ -60,9 +60,10 @@ uint QWaylandScreen::requiredEvents() const
     uint ret = OutputDoneEvent;
 
     if (mWaylandDisplay->xdgOutputManager()) {
-        if (mWaylandDisplay->xdgOutputManager()->version() >= 2)
+        if (mWaylandDisplay->xdgOutputManager()->version() >= ZXDG_OUTPUT_V1_NAME_SINCE_VERSION)
             ret |= XdgOutputNameEvent;
 
+        // For objects version 3 onwards, zxdg_output_v1.done is deprecated.
         if (mWaylandDisplay->xdgOutputManager()->version() < 3)
             ret |= XdgOutputDoneEvent;
     }
@@ -387,12 +388,23 @@ void QWaylandScreen::zxdg_output_v1_name(const QString &name)
     if (Q_UNLIKELY(mInitialized))
         qCWarning(lcQpaWayland) << "zxdg_output_v1.name received after output has been initialized, this is most likely a bug in the compositor";
 
-    mOutputName = name;
+    if (Q_UNLIKELY(mProcessedEvents & XdgOutputNameEvent)) {
+        qCWarning(lcQpaWayland) << "zxdg_output_v1.name received more than once, this is most likely a bug in the compositor";
+        return;
+    }
+
+    // This event is deprecated, instead clients should use wl_output.name.
+    if (!(mProcessedEvents & OutputNameEvent)) {
+        if (!name.isEmpty())
+            mOutputName = name;
+    }
+
     mProcessedEvents |= XdgOutputNameEvent;
 }
 
 void QWaylandScreen::updateXdgOutputProperties()
 {
+    Q_ASSERT(mInitialized);
     Q_ASSERT(zxdg_output_v1::isInitialized());
     QWindowSystemInterface::handleScreenGeometryChange(screen(), geometry(), geometry());
 }
