@@ -93,6 +93,7 @@ protected:
         XdgOutputDoneEvent = 0x1,
         OutputDoneEvent = 0x2,
         XdgOutputNameEvent = 0x4,
+        OutputNameEvent = 0x8,
     };
     uint requiredEvents() const;
 
@@ -105,6 +106,7 @@ protected:
                          int32_t transform) override;
     void output_scale(int32_t factor) override;
     void output_done() override;
+    void output_name(const QString &name) override;
     void updateOutputProperties();
 
     // XdgOutput

@@ -28,7 +28,7 @@ QWaylandXdgOutputManagerV1::~QWaylandXdgOutputManagerV1()
 }
 
 QWaylandScreen::QWaylandScreen(QWaylandDisplay *waylandDisplay, int version, uint32_t id)
-    : QtWayland::wl_output(waylandDisplay->wl_registry(), id, qMin(version, 3))
+    : QtWayland::wl_output(waylandDisplay->wl_registry(), id, qMin(version, 4))
     , m_outputId(id)
     , mWaylandDisplay(waylandDisplay)
     , mOutputName(QStringLiteral("Screen%1").arg(id))
@@ -322,8 +322,28 @@ void QWaylandScreen::output_done()
     }
 }
 
+void QWaylandScreen::output_name(const QString &name)
+{
+    if (Q_UNLIKELY(mInitialized)) {
+        qCWarning(lcQpaWayland) << "wl_output.name received after output has been initialized, this is most likely a bug in the compositor";
+        return;
+    }
+
+    if (Q_UNLIKELY(mProcessedEvents & OutputNameEvent)) {
+        qCWarning(lcQpaWayland) << "wl_output.name received more than once, this is most likely a bug in the compositor";
+        return;
+    }
+
+    if (!name.isEmpty())
+        mOutputName = name;
+
+    mProcessedEvents |= OutputNameEvent;
+}
+
 void QWaylandScreen::updateOutputProperties()
 {
+    Q_ASSERT(mInitialized);
+
     if (mTransform >= 0) {
         auto newOrientation = toScreenOrientation(mTransform, m_orientation);
         if (m_orientation != newOrientation) {
