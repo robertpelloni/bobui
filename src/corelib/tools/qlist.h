@@ -142,6 +142,10 @@ public:
         inline T &operator*() const { return *i; }
         inline T *operator->() const { return i; }
         inline T &operator[](qsizetype j) const { return *(i + j); }
+#ifdef __cpp_lib_three_way_comparison
+        friend constexpr auto operator<=>(iterator, iterator) noexcept = default;
+        friend constexpr bool operator==(iterator, iterator) noexcept = default;
+#else
         inline constexpr bool operator==(iterator o) const { return i == o.i; }
         inline constexpr bool operator!=(iterator o) const { return i != o.i; }
         inline constexpr bool operator<(iterator other) const { return i < other.i; }
@@ -154,6 +158,7 @@ public:
         inline constexpr bool operator<=(const_iterator other) const { return i <= other.i; }
         inline constexpr bool operator>(const_iterator other) const { return i > other.i; }
         inline constexpr bool operator>=(const_iterator other) const { return i >= other.i; }
+#endif // __cpp_lib_three_way_comparison
         inline constexpr bool operator==(pointer p) const { return i == p; }
         inline constexpr bool operator!=(pointer p) const { return i != p; }
         inline iterator &operator++() { ++i; return *this; }
@@ -213,6 +218,14 @@ public:
         inline const T &operator*() const { return *i; }
         inline const T *operator->() const { return i; }
         inline const T &operator[](qsizetype j) const { return *(i + j); }
+#ifdef __cpp_lib_three_way_comparison
+        friend constexpr auto operator<=>(const_iterator, const_iterator) noexcept = default;
+        friend constexpr auto operator<=>(const_iterator a, iterator b) noexcept
+        { return a <=> const_iterator(b); }
+        friend constexpr bool operator==(const_iterator, const_iterator) noexcept = default;
+        friend constexpr bool operator==(const_iterator a, iterator b) noexcept
+        { return a == const_iterator(b); }
+#else
         inline constexpr bool operator==(const_iterator o) const { return i == o.i; }
         inline constexpr bool operator!=(const_iterator o) const { return i != o.i; }
         inline constexpr bool operator<(const_iterator other) const { return i < other.i; }
@@ -225,6 +238,7 @@ public:
         inline constexpr bool operator<=(iterator other) const { return i <= other.i; }
         inline constexpr bool operator>(iterator other) const { return i > other.i; }
         inline constexpr bool operator>=(iterator other) const { return i >= other.i; }
+#endif // __cpp_lib_three_way_comparison
         inline constexpr bool operator==(pointer p) const { return i == p; }
         inline constexpr bool operator!=(pointer p) const { return i != p; }
         inline const_iterator &operator++() { ++i; return *this; }

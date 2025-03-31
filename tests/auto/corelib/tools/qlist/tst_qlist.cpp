@@ -6,13 +6,14 @@
 #    undef QT_STRICT_QLIST_ITERATORS
 #  endif
 #endif
+#include <qlist.h>
 
 #include <QTest>
 #include <QAtomicInt>
+#include <QAtomicScopedValueRollback>
 #include <QThread>
 #include <QSemaphore>
-#include <QAtomicScopedValueRollback>
-#include <qlist.h>
+#include <QtTest/private/qcomparisontesthelper_p.h>
 
 #include <cstdio>
 #include <QtCore/q20memory.h>
@@ -2616,10 +2617,23 @@ void tst_QList::iterators() const
 
     QCOMPARE(v.begin(), v.end());
     QCOMPARE(v.rbegin(), v.rend());
+    QT_TEST_ALL_COMPARISON_OPS(v.begin(), v.end(), Qt::strong_ordering::equal);
+    QT_TEST_ALL_COMPARISON_OPS(v.rbegin(), v.rend(), Qt::strong_ordering::equal);
+    QT_TEST_ALL_COMPARISON_OPS(v.cbegin(), v.end(), Qt::strong_ordering::equal);
+    QT_TEST_ALL_COMPARISON_OPS(v.crbegin(), v.rend(), Qt::strong_ordering::equal);
+    QT_TEST_ALL_COMPARISON_OPS(v.begin(), v.cend(), Qt::strong_ordering::equal);
+    QT_TEST_ALL_COMPARISON_OPS(v.rbegin(), v.crend(), Qt::strong_ordering::equal);
 
     qsizetype idx = 0;
     for (; idx < 10; ++idx)
         v.push_back(idx);
+    QCOMPARE_LT(v.begin(), v.end());
+    QT_TEST_ALL_COMPARISON_OPS(v.begin(), v.end(), Qt::strong_ordering::less);
+    QT_TEST_ALL_COMPARISON_OPS(v.rbegin(), v.rend(), Qt::strong_ordering::less);
+    QT_TEST_ALL_COMPARISON_OPS(v.cbegin(), v.end(), Qt::strong_ordering::less);
+    QT_TEST_ALL_COMPARISON_OPS(v.crbegin(), v.rend(), Qt::strong_ordering::less);
+    QT_TEST_ALL_COMPARISON_OPS(v.begin(), v.cend(), Qt::strong_ordering::less);
+    QT_TEST_ALL_COMPARISON_OPS(v.rbegin(), v.crend(), Qt::strong_ordering::less);
 
     // stl-style iterators
     idx = 0;
@@ -2629,6 +2643,10 @@ void tst_QList::iterators() const
 
     std::advance(it, 7);
     idx += 7;
+    QT_TEST_ALL_COMPARISON_OPS(it, v.end(), Qt::strong_ordering::less);
+    QT_TEST_ALL_COMPARISON_OPS(it, v.cend(), Qt::strong_ordering::less);
+    QT_TEST_ALL_COMPARISON_OPS(v.begin(), it, Qt::strong_ordering::less);
+    QT_TEST_ALL_COMPARISON_OPS(v.cbegin(), it, Qt::strong_ordering::less);
     QCOMPARE(*it, idx);
     // idx == 7
 
@@ -2765,8 +2783,19 @@ void tst_QList::constIterators() const
     QCOMPARE(constEmptyList.constBegin(), constEmptyList.cbegin());
     QCOMPARE(constEmptyList.constEnd(), constEmptyList.cend());
     QVERIFY(!constEmptyList.isDetached());
+    QT_TEST_ALL_COMPARISON_OPS(constEmptyList.begin(), constEmptyList.end(),
+                               Qt::strong_ordering::equal);
+    QT_TEST_ALL_COMPARISON_OPS(constEmptyList.rbegin(), constEmptyList.rend(),
+                               Qt::strong_ordering::equal);
 
     const QList<int> v { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+    QCOMPARE_LT(v.begin(), v.end());
+    QT_TEST_ALL_COMPARISON_OPS(v.begin(), v.end(), Qt::strong_ordering::less);
+    QT_TEST_ALL_COMPARISON_OPS(v.rbegin(), v.rend(), Qt::strong_ordering::less);
+    QT_TEST_ALL_COMPARISON_OPS(v.cbegin(), v.end(), Qt::strong_ordering::less);
+    QT_TEST_ALL_COMPARISON_OPS(v.crbegin(), v.rend(), Qt::strong_ordering::less);
+    QT_TEST_ALL_COMPARISON_OPS(v.begin(), v.cend(), Qt::strong_ordering::less);
+    QT_TEST_ALL_COMPARISON_OPS(v.rbegin(), v.crend(), Qt::strong_ordering::less);
 
     // stl-style iterators
     qsizetype idx = 0;
@@ -2776,6 +2805,10 @@ void tst_QList::constIterators() const
 
     std::advance(it, 7);
     idx += 7;
+    QT_TEST_ALL_COMPARISON_OPS(it, v.end(), Qt::strong_ordering::less);
+    QT_TEST_ALL_COMPARISON_OPS(it, v.cend(), Qt::strong_ordering::less);
+    QT_TEST_ALL_COMPARISON_OPS(v.begin(), it, Qt::strong_ordering::less);
+    QT_TEST_ALL_COMPARISON_OPS(v.cbegin(), it, Qt::strong_ordering::less);
     QCOMPARE(*it, idx);
     // idx == 7
 
