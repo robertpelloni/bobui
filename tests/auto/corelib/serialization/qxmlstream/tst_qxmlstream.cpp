@@ -1324,12 +1324,6 @@ void tst_QXmlStream::appendToRawDocumentWithNonUtf8Encoding()
     QVERIFY(reader.readNextStartElement()); // a
     text = reader.readElementText();
 
-    QEXPECT_FAIL("l1+utf16",
-                 "Parser expects the data in the initial encoding, but we convert to UTF-8",
-                 Continue);
-    QEXPECT_FAIL("l1+utf8",
-                 "Parser expects the data in the initial encoding, but we convert to UTF-8",
-                 Continue);
     QCOMPARE(text, expectedNextElementText);
 }
 

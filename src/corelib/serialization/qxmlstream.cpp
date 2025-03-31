@@ -455,6 +455,42 @@ QXmlStreamReader::QXmlStreamReader(QIODevice *device)
 */
 
 /*!
+    \internal
+
+    Append a chunk \a data which uses \a enc as encoding.
+
+    Passing \l QStringDecoder::System as \a enc means that the encoding is
+    unknown and a document-global decoder should be used. Otherwise, a
+    chunk decoder with the specified encoding will be created and used, so
+    the document-global decoder will not be used and/or modified.
+*/
+void QXmlStreamReaderPrivate::appendDataWithEncoding(const QByteArray &data,
+                                                     QStringDecoder::Encoding enc)
+{
+    if (data.isEmpty())
+        return;
+    // Joining the buffers might be useful for a stateful decoder, or when
+    // e == System, meaning that we have to try to guess the decoder
+    if (!dataInfo.empty()) {
+        auto &last = dataInfo.last();
+        if (last.encoding == enc) {
+            last.buffer.append(data);
+            return;
+        }
+    }
+    dataInfo.emplace_back(data, enc);
+}
+
+void QXmlStreamReaderPrivate::addData(const QByteArray &data, QStringDecoder::Encoding enc)
+{
+    if (device) {
+        qWarning("QXmlStreamReader: addData() with device()");
+        return;
+    }
+    appendDataWithEncoding(data, enc);
+}
+
+/*!
     Creates a new stream reader that reads from \a data.
 
     \note In Qt versions prior to 6.5, this constructor was overloaded
@@ -468,17 +504,15 @@ QXmlStreamReader::QXmlStreamReader(QAnyStringView data)
     Q_D(QXmlStreamReader);
     data.visit([d](auto data) {
         if constexpr (std::is_same_v<decltype(data), QStringView>) {
-            d->dataBuffer = data.toUtf8();
-            d->decoder = QStringDecoder(QStringDecoder::Utf8);
-            d->lockEncoding = true;
+            d->appendDataWithEncoding(QByteArray(reinterpret_cast<const char *>(data.utf16()),
+                                                 data.size() * 2),
+                                      QStringDecoder::Utf16);
         } else if constexpr (std::is_same_v<decltype(data), QLatin1StringView>) {
-            // Conversion to a QString is required, to avoid breaking
-            // pre-existing (before porting to QAnyStringView) behavior.
-            d->dataBuffer = QString::fromLatin1(data).toUtf8();
-            d->decoder = QStringDecoder(QStringDecoder::Utf8);
-            d->lockEncoding = true;
+            d->appendDataWithEncoding(QByteArray(data.data(), data.size()),
+                                      QStringDecoder::Latin1);
         } else {
-            d->dataBuffer = QByteArray(data.data(), data.size());
+            d->appendDataWithEncoding(QByteArray(data.data(), data.size()),
+                                      QStringDecoder::Utf8);
         }
     });
 }
@@ -493,7 +527,7 @@ QXmlStreamReader::QXmlStreamReader(const QByteArray &data, PrivateConstructorTag
     : d_ptr(new QXmlStreamReaderPrivate(this))
 {
     Q_D(QXmlStreamReader);
-    d->dataBuffer = data;
+    d->appendDataWithEncoding(data, QStringDecoder::System);
 }
 
 /*!
@@ -574,35 +608,15 @@ static bool isDecoderForEncoding(const QStringDecoder &dec, QStringDecoder::Enco
 void QXmlStreamReader::addData(QAnyStringView data)
 {
     Q_D(QXmlStreamReader);
-    data.visit([this, d](auto data) {
+    data.visit([d](auto data) {
         if constexpr (std::is_same_v<decltype(data), QStringView>) {
-            if (d->lockEncoding && isDecoderForEncoding(d->decoder, QStringDecoder::Utf16)) {
-                // We already expect the data in the proper encoding, no need
-                // to recode the data.
-                addDataImpl(QByteArray{reinterpret_cast<const char *>(data.utf16()),
-                                       data.size() * 2});
-                return;
-            }
-            // keep the pre-existing behavior
-            d->lockEncoding = true;
-            if (!d->decoder.isValid())
-                d->decoder = QStringDecoder(QStringDecoder::Utf8);
-            addDataImpl(data.toUtf8());
+            d->addData(QByteArray(reinterpret_cast<const char *>(data.utf16()),
+                                  data.size() * 2),
+                       QStringDecoder::Utf16);
         } else if constexpr (std::is_same_v<decltype(data), QLatin1StringView>) {
-            if (d->lockEncoding && isDecoderForEncoding(d->decoder, QStringDecoder::Latin1)) {
-                // We already expect the data in the proper encoding, no need
-                // to recode the data.
-                addDataImpl(QByteArray{data.data(), data.size()});
-                return;
-            }
-            // Conversion to a QString is required, to avoid breaking
-            // pre-existing (before porting to QAnyStringView) behavior.
-            d->lockEncoding = true;
-            if (!d->decoder.isValid())
-                d->decoder = QStringDecoder(QStringDecoder::Utf8);
-            addDataImpl(QString::fromLatin1(data).toUtf8());
+            d->addData(QByteArray(data.data(), data.size()), QStringDecoder::Latin1);
         } else {
-            addDataImpl(QByteArray(data.data(), data.size()));
+            d->addData(QByteArray(data.data(), data.size()), QStringDecoder::Utf8);
         }
     });
 }
@@ -616,11 +630,7 @@ void QXmlStreamReader::addData(QAnyStringView data)
 void QXmlStreamReader::addDataImpl(const QByteArray &data)
 {
     Q_D(QXmlStreamReader);
-    if (d->device) {
-        qWarning("QXmlStreamReader: addData() with device()");
-        return;
-    }
-    d->dataBuffer += data;
+    d->addData(data, QStringDecoder::System);
 }
 
 /*!
@@ -664,7 +674,7 @@ bool QXmlStreamReader::atEnd() const
         if (d->device)
             return d->device->atEnd();
         else
-            return !d->dataBuffer.size();
+            return d->dataInfo.empty();
     }
     return (d->atEnd || d->type == QXmlStreamReader::Invalid);
 }
@@ -1030,7 +1040,8 @@ void QXmlStreamReaderPrivate::init()
     lockEncoding = false;
     namespaceProcessing = true;
     rawReadBuffer.clear();
-    dataBuffer.clear();
+    chunkDecoder = QStringDecoder();
+    dataInfo.clear();
     readBuffer.clear();
     tagStackStringStorageSize = initialTagStackStringStorageSize;
 
@@ -1666,42 +1677,78 @@ uint QXmlStreamReaderPrivate::getChar_helper()
         readBuffer.resize(0);
     if (decoder.isValid())
         nbytesread = 0;
+
+    auto tryDecodeWithGlobalDecoder = [this]() -> bool {
+        if (!decoder.isValid()) {
+            // Need 4 bytes: three for BOM (EF BB BF) plus one for the UTF-8 codec
+            if (nbytesread < 4) {
+                atEnd = true;
+                return false;
+            }
+            auto encoding = QStringDecoder::encodingForData(rawReadBuffer, u'<');
+            if (!encoding) // assume utf-8
+                encoding = QStringDecoder::Utf8;
+            decoder = QStringDecoder(*encoding);
+        }
+
+        readBuffer = decoder(QByteArrayView(rawReadBuffer).first(nbytesread));
+
+        if (lockEncoding && decoder.hasError()) {
+            readBuffer.clear();
+            return false;
+        }
+
+        return true;
+    };
+
     if (device) {
         rawReadBuffer.resize(BUFFER_SIZE);
         qint64 nbytesreadOrMinus1 = device->read(rawReadBuffer.data() + nbytesread, BUFFER_SIZE - nbytesread);
         nbytesread += qMax(nbytesreadOrMinus1, qint64{0});
-    } else {
-        if (nbytesread)
-            rawReadBuffer += dataBuffer;
-        else
-            rawReadBuffer = dataBuffer;
-        nbytesread = rawReadBuffer.size();
-        dataBuffer.clear();
-    }
-    if (!nbytesread) {
-        atEnd = true;
-        return StreamEOF;
-    }
 
-    if (!decoder.isValid()) {
-        if (nbytesread < 4) { // the 4 is to cover 0xef 0xbb 0xbf plus
-                              // one extra for the utf8 codec
+        if (!nbytesread) {
             atEnd = true;
             return StreamEOF;
         }
-        auto encoding = QStringDecoder::encodingForData(rawReadBuffer, char16_t('<'));
-        if (!encoding)
-            // assume utf-8
-            encoding = QStringDecoder::Utf8;
-        decoder = QStringDecoder(*encoding);
-    }
 
-    readBuffer = decoder(QByteArrayView(rawReadBuffer).first(nbytesread));
-
-    if (lockEncoding && decoder.hasError()) {
-        raiseWellFormedError(QXmlStream::tr("Encountered incorrectly encoded content."));
-        readBuffer.clear();
+        if (!tryDecodeWithGlobalDecoder())
+            return StreamEOF;
+    } else if (dataInfo.empty()) {
+        atEnd = true;
         return StreamEOF;
+    } else {
+        const BufferAndEncoding bufAndEnc = dataInfo.takeFirst();
+
+        // Use global decoder if the encoding is not set explicitly.
+        // Here we'll use rawReadBuffer to cache the data from the previous
+        // chunk with unknown encoding. We need to do it because the size
+        // of the previous chunk might be too small, and we need to wait
+        // for more data before we can determine the encoding.
+        if (bufAndEnc.encoding == QStringDecoder::System) {
+            if (nbytesread)
+                rawReadBuffer += bufAndEnc.buffer;
+            else
+                rawReadBuffer = bufAndEnc.buffer;
+            nbytesread = rawReadBuffer.size();
+
+            if (!tryDecodeWithGlobalDecoder()) {
+                // try decoding with the previous chunk decoder
+                bool hasError = true;
+                if (chunkDecoder.isValid() && !chunkDecoder.hasError()) {
+                    readBuffer = chunkDecoder(QByteArrayView(rawReadBuffer).first(nbytesread));
+                    hasError = chunkDecoder.hasError();
+                }
+                if (hasError) {
+                    raiseWellFormedError(
+                            QXmlStream::tr("Encountered incorrectly encoded content."));
+                    return StreamEOF;
+                }
+            }
+        } else {
+            if (!isDecoderForEncoding(chunkDecoder, bufAndEnc.encoding))
+                chunkDecoder = QStringDecoder(bufAndEnc.encoding);
+            readBuffer = chunkDecoder(bufAndEnc.buffer);
+        }
     }
 
     readBuffer.reserve(1); // keep capacity when calling resize() next time
@@ -1973,9 +2020,22 @@ void QXmlStreamReaderPrivate::startDocument()
                 if (!lockEncoding) {
                     decoder = QStringDecoder(enc.constData());
                     if (!decoder.isValid()) {
-                        err = QXmlStream::tr("Encoding %1 is unsupported").arg(value);
-                    } else {
-                        readBuffer = decoder(QByteArrayView(rawReadBuffer).first(nbytesread));
+                        // Raise an error only if the data was not already processed
+                        // by the chunk decoder. Otherwise simply fall back to
+                        // UTF-8 for backwards compatibility
+                        if (!chunkDecoder.isValid() || chunkDecoder.hasError())
+                            err = QXmlStream::tr("Encoding %1 is unsupported").arg(value);
+                        else
+                            decoder = QStringDecoder(QStringDecoder::Utf8);
+                    } else if (!rawReadBuffer.isEmpty() && nbytesread) {
+                        // Try to decode with the newly-determined encoding.
+                        // If the decoding is successful, consider it as a
+                        // better match for the decoded data.
+                        // That is only applicable if the previous chunk had
+                        // unspecified (i.e. System) encoding.
+                        QString buf = decoder(QByteArrayView(rawReadBuffer).first(nbytesread));
+                        if (!decoder.hasError())
+                            readBuffer = buf;
                     }
                 }
             }
