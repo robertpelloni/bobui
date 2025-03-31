@@ -95,6 +95,9 @@ private:
         QWasmScreen *wasmScreen;
     };
 
+    // m_suspendResume should be created first and destroyed early as other fields depend on it
+    std::shared_ptr<QWasmSuspendResumeControl> m_suspendResume;
+
     mutable QWasmFontDatabase *m_fontDb;
     mutable QWasmServices *m_desktopServices;
     mutable QHash<QWindow *, QWasmBackingStore *> m_backingStores;
@@ -107,7 +110,6 @@ private:
     static QWasmIntegration *s_instance;
 
     QWasmInputContext *m_wasmInputContext = nullptr;
-    std::shared_ptr<QWasmSuspendResumeControl> m_suspendResume;
 
 #if QT_CONFIG(draganddrop)
     std::unique_ptr<QWasmDrag> m_drag;

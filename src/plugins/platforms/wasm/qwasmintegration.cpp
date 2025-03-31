@@ -89,13 +89,13 @@ EMSCRIPTEN_BINDINGS(qtQWasmIntegraton)
 QWasmIntegration *QWasmIntegration::s_instance;
 
 QWasmIntegration::QWasmIntegration()
-    : m_fontDb(nullptr)
+    : m_suspendResume(std::make_shared<QWasmSuspendResumeControl>()) // create early in order to register event handlers at startup
+    , m_fontDb(nullptr)
     , m_desktopServices(nullptr)
     , m_clipboard(new QWasmClipboard)
 #if QT_CONFIG(accessibility)
     , m_accessibility(new QWasmAccessibility)
 #endif
-    , m_suspendResume(std::make_shared<QWasmSuspendResumeControl>()) // create early in order to register event handlers at startup
 {
     s_instance = this;
 
