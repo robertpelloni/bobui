@@ -7,6 +7,7 @@
 #include <QtGui/qtguiglobal.h>
 #include <QtGui/qevent.h>
 #include <QtCore/qmap.h>
+#include <QtCore/qtestsupport_core.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -22,9 +23,12 @@ Q_GUI_EXPORT bool qt_handleTouchEventv2(QWindow *w, const QPointingDevice *devic
 
 namespace QTest {
 
-[[nodiscard]] Q_GUI_EXPORT bool qWaitForWindowActive(QWindow *window, int timeout = 5000);
-[[nodiscard]] Q_GUI_EXPORT bool qWaitForWindowFocused(QWindow *window, QDeadlineTimer timeout = std::chrono::seconds{5});
-[[nodiscard]] Q_GUI_EXPORT bool qWaitForWindowExposed(QWindow *window, int timeout = 5000);
+[[nodiscard]] Q_GUI_EXPORT bool qWaitForWindowActive(QWindow *window,
+    int timeout = static_cast<int>(Internal::defaultTryTimeout.count()));
+[[nodiscard]] Q_GUI_EXPORT bool qWaitForWindowFocused(QWindow *window,
+    QDeadlineTimer timeout = Internal::defaultTryTimeout);
+[[nodiscard]] Q_GUI_EXPORT bool qWaitForWindowExposed(QWindow *window,
+    int timeout = static_cast<int>(Internal::defaultTryTimeout.count()));
 
 Q_GUI_EXPORT QPointingDevice * createTouchDevice(QInputDevice::DeviceType devType = QInputDevice::DeviceType::TouchScreen,
                                                  QInputDevice::Capabilities caps = QInputDevice::Capability::Position);
