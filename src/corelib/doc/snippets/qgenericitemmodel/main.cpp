@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
 
 #include <QtCore/qgenericitemmodel.h>
+
+#ifndef QT_NO_WIDGETS
+
 #include <QtWidgets/qlistview.h>
 #include <QtWidgets/qtableview.h>
 #include <QtWidgets/qtreeview.h>
@@ -203,3 +206,5 @@ list.setModel(&colorModel);
 //! [color_gadget_1]
 }
 } // namespace multirole_gadget
+
+#endif // QT_NO_WIDGETS

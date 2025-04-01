@@ -8,8 +8,13 @@ add_library(corelib_snippets OBJECT
 target_link_libraries(corelib_snippets PRIVATE
     Qt::Core
     Qt::Gui
-    Qt::Widgets
 )
+
+if (TARGET Qt::Widgets)
+    target_link_libraries(corelib_snippets PRIVATE
+        Qt::Widgets
+    )
+endif()
 
 if ("${CMAKE_CXX_COMPILE_FEATURES}" MATCHES "cxx_std_23")
     set_property(TARGET corelib_snippets PROPERTY CXX_STANDARD 23)
