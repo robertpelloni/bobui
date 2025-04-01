@@ -729,11 +729,13 @@ void QWasmAccessibility::notifyAccessibilityUpdate(QAccessibleEvent *event)
         setHtmlElementDescription(iface);
 
         return;
-    break;
     case QAccessible::ObjectHide:
         setHtmlElementVisibility(iface, false);
         return;
-    break;
+    case QAccessible::LocationChanged:
+        setHtmlElementGeometry(iface);
+        return;
+
     // TODO: maybe handle more types here
     default:
     break;
