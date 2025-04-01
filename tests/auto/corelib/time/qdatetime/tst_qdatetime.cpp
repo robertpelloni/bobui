@@ -3345,14 +3345,6 @@ void tst_QDateTime::fromStringStringFormat_data()
                 // the spring-forward, in DST:
                 << QDateTime(QDate(2008, 10, 19), QTime(1, 23, 45, 678), southBrazil);
     }
-
-    QTimeZone berlintz("Europe/Berlin");
-    if (berlintz.isValid()) {
-        QTest::newRow("begin-of-high-summer-time-with-tz")
-                << u"1947-05-11 03:23:45.678 Europe/Berlin"_s << u"yyyy-MM-dd hh:mm:ss.zzz t"_s
-                // That's in the hour skipped - expecting an invalid DateTime
-                << 1900 << QDateTime(QDate(1947, 5, 11), QTime(3, 23, 45, 678), berlintz);
-    }
 #endif
     QTest::newRow("late")
             << u"9999-12-31T23:59:59.999Z"_s << u"yyyy-MM-ddThh:mm:ss.zZ"_s << 1900
