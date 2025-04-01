@@ -7,12 +7,6 @@
 
 - (void)initDrawing
 {
-    if (qt_mac_resolveOption(-1, m_platformWindow->window(),
-        "_q_mac_wantsLayer", "QT_MAC_WANTS_LAYER") != -1) {
-        qCWarning(lcQpaDrawing) << "Layer-backing is always enabled."
-            << " QT_MAC_WANTS_LAYER/_q_mac_wantsLayer has no effect.";
-    }
-
     // Pick up and persist requested color space from surface format
     const QSurfaceFormat surfaceFormat = m_platformWindow->format();
     if (QColorSpace colorSpace = surfaceFormat.colorSpace(); colorSpace.isValid()) {
