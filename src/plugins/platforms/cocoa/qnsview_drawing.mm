@@ -85,7 +85,12 @@
         }
     }
 
-    return [super makeBackingLayer];
+    // We handle drawing via displayLayer instead of drawRect or updateLayer,
+    // as the latter two do not work for CAMetalLayer. And we handle content
+    // scale manually for the same reason. Which means we don't really need
+    // NSViewBackingLayer. In fact it just gets in the way, by assuming that
+    // if we don't have a drawRect function we "draw nothing".
+    return [CALayer layer];
 }
 
 /*
@@ -200,21 +205,9 @@
 // ----------------------- Draw callbacks -----------------------
 
 /*
-    This method is called by AppKit for the non-layer case, where we are
-    drawing into the NSWindow's surface.
-*/
-- (void)drawRect:(NSRect)dirtyBoundingRect
-{
-    Q_UNUSED(dirtyBoundingRect);
-    // As we are layer backed we shouldn't really end up here, but AppKit will
-    // in some cases call this method just because we implement it.
-    // FIXME: Remove drawRect and switch from displayLayer to updateLayer
-    qCWarning(lcQpaDrawing) << "[QNSView drawRect] called for layer backed view";
-}
-
-/*
-    This method is called by AppKit when we are layer-backed, where
-    we are drawing into the layer.
+    We set our view up as the layer's delegate, which means we get
+    first dibs on displaying the layer, without needing to go through
+    updateLayer or drawRect.
 */
 - (void)displayLayer:(CALayer *)layer
 {
