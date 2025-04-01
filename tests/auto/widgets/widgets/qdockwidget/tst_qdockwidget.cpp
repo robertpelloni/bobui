@@ -874,7 +874,8 @@ void tst_QDockWidget::titleBarDoubleClick()
     win.show();
     dock.setFloating(true);
 
-    QEvent e(QEvent::NonClientAreaMouseButtonDblClick);
+    QMouseEvent e(QEvent::NonClientAreaMouseButtonDblClick, {}, {}, {}, {}, {}, {}, {},
+                  QPointingDevice::primaryPointingDevice());
     QApplication::sendEvent(&dock, &e);
     QVERIFY(dock.isFloating());
     QCOMPARE(win.dockWidgetArea(&dock), Qt::NoDockWidgetArea);
