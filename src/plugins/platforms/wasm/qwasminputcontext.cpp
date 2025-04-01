@@ -246,6 +246,7 @@ QWasmInputContext::QWasmInputContext()
     m_inputElement = document.call<emscripten::val>("createElement", std::string("input"));
     m_inputElement.set("type", "text");
     m_inputElement.set("contenteditable","true");
+    m_inputElement.call<void>("setAttribute", std::string("aria-hidden"), std::string("true"));
 
     m_inputElement["style"].set("position", "absolute");
     m_inputElement["style"].set("left", 0);
