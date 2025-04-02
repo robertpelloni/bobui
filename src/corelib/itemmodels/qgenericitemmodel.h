@@ -36,11 +36,7 @@ public:
         friend inline decltype(auto) get(V &&multiColumn)
         {
             static_assert(I < std::tuple_size_v<type>, "Index out of bounds for wrapped type");
-            Q_ASSERT(multiColumn);
-            if constexpr (std::is_pointer_v<T>)
-                return get<I>(*multiColumn.data);
-            else
-                return get<I>(q23::forward_like<V>(multiColumn.data));
+            return get<I>(QGenericItemModelDetails::refTo(q23::forward_like<V>(multiColumn.data)));
         }
     };
 
