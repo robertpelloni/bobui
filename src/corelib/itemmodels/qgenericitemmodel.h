@@ -157,7 +157,8 @@ void QGenericItemModelImplBase::endMoveRows()
     m_itemModel->endMoveRows();
 }
 
-template <typename Structure, typename Range>
+template <typename Structure, typename Range,
+          typename Protocol = QGenericItemModelDetails::table_protocol_t<Range>>
 class QGenericItemModelImpl : public QGenericItemModelImplBase
 {
     Q_DISABLE_COPY_MOVE(QGenericItemModelImpl)
@@ -166,9 +167,10 @@ public:
     using row_reference = decltype(*QGenericItemModelDetails::begin(std::declval<range_type&>()));
     using const_row_reference = decltype(*QGenericItemModelDetails::cbegin(std::declval<range_type&>()));
     using row_type = std::remove_reference_t<row_reference>;
+    using protocol_type = QGenericItemModelDetails::wrapped_t<Protocol>;
 
 protected:
-    using Self = QGenericItemModelImpl<Structure, Range>;
+    using Self = QGenericItemModelImpl<Structure, Range, Protocol>;
     Structure& that() { return static_cast<Structure &>(*this); }
     const Structure& that() const { return static_cast<const Structure &>(*this); }
 
@@ -196,6 +198,7 @@ protected:
     using wrapped_row_type = QGenericItemModelDetails::wrapped_t<row_type>;
     using row_features = QGenericItemModelDetails::range_traits<wrapped_row_type>;
     using row_traits = QGenericItemModelDetails::row_traits<std::remove_cv_t<wrapped_row_type>>;
+    using protocol_traits = QGenericItemModelDetails::protocol_traits<Range, protocol_type>;
 
     static constexpr bool isMutable()
     {
@@ -261,9 +264,10 @@ protected:
                   "The range holding a move-only row-type must support insert(pos, start, end)");
 
 public:
-    explicit QGenericItemModelImpl(Range &&model, QGenericItemModel *itemModel)
+    explicit QGenericItemModelImpl(Range &&model, Protocol&& protocol, QGenericItemModel *itemModel)
         : QGenericItemModelImplBase(itemModel, static_cast<const Self*>(nullptr))
         , m_data{std::forward<Range>(model)}
+        , m_protocol(std::forward<Protocol>(protocol))
     {
     }
 
@@ -790,11 +794,7 @@ public:
 
     bool insertRows(int row, int count, const QModelIndex &parent)
     {
-        if constexpr (Structure::canInsertRows()) {
-            // If we operate on dynamic columns and cannot resize a newly
-            // constructed row, then we cannot insert.
-            if constexpr (dynamicColumns() && !row_features::has_resize)
-                return false;
+        if constexpr (canInsertRows()) {
             range_type *children = childRange(parent);
             if (!children)
                 return false;
@@ -915,12 +915,38 @@ public:
 protected:
     ~QGenericItemModelImpl()
     {
-        if constexpr (rows_are_raw_pointers && !std::is_pointer_v<Range>) {
+        if constexpr (rows_are_raw_pointers && !std::is_pointer_v<Range>
+                   && !QGenericItemModelDetails::is_any_of<Range, std::reference_wrapper,
+                                                                  std::shared_ptr,
+                                                                  QSharedPointer,
+                                                                  std::unique_ptr>()) {
             // If data with rows as pointers was moved in, then we own it and
             // have to delete those rows.
             using ref = decltype(std::forward<Range>(std::declval<range_type>()));
             if constexpr (std::is_rvalue_reference_v<ref>)
                 that().destroyOwnedModel(*m_data.model());
+        }
+    }
+
+    static constexpr bool canInsertRows()
+    {
+        if constexpr (dynamicColumns() && !row_features::has_resize) {
+            // If we operate on dynamic columns and cannot resize a newly
+            // constructed row, then we cannot insert.
+            return false;
+        } else if constexpr (!one_dimensional_range && !rows_are_raw_pointers
+                          && !protocol_traits::initializes_rows) {
+            // We also cannot insert if the row we have to create is not
+            // default-initialized by the protocol
+            return false;
+        } else if constexpr (!range_features::has_insert_range
+                          && !std::is_copy_constructible_v<row_type>) {
+            // And if the row is a move-only type, then the range needs to be
+            // backed by a container that can move-insert default-constructed
+            // row elements.
+            return false;
+        } else {
+            return Structure::canInsertRows();
         }
     }
 
@@ -1153,7 +1179,12 @@ protected:
         return that().childRangeImpl(index);
     }
 
+
+    const protocol_type& protocol() const { return QGenericItemModelDetails::refTo(m_protocol); }
+    protocol_type& protocol() { return QGenericItemModelDetails::refTo(m_protocol); }
+
     ModelData m_data;
+    Protocol m_protocol;
 };
 
 // Implementations that depends on the model structure (flat vs tree) that will
@@ -1161,12 +1192,10 @@ protected:
 // support through a protocol type.
 template <typename Range, typename Protocol>
 class QGenericTreeItemModelImpl
-    : public QGenericItemModelImpl<QGenericTreeItemModelImpl<Range, Protocol>, Range>
+    : public QGenericItemModelImpl<QGenericTreeItemModelImpl<Range, Protocol>, Range, Protocol>
 {
-    using Base = QGenericItemModelImpl<QGenericTreeItemModelImpl<Range, Protocol>, Range>;
-    friend class QGenericItemModelImpl<QGenericTreeItemModelImpl<Range, Protocol>, Range>;
-
-    std::remove_reference_t<Protocol> m_protocol;
+    using Base = QGenericItemModelImpl<QGenericTreeItemModelImpl<Range, Protocol>, Range, Protocol>;
+    friend class QGenericItemModelImpl<QGenericTreeItemModelImpl<Range, Protocol>, Range, Protocol>;
 
     using range_type = typename Base::range_type;
     using range_features = typename Base::range_features;
@@ -1174,9 +1203,7 @@ class QGenericTreeItemModelImpl
     using row_ptr = typename Base::row_ptr;
     using const_row_ptr = typename Base::const_row_ptr;
 
-    using tree_traits = QGenericItemModelDetails::tree_traits<typename Base::range_type,
-                                                              typename Base::row_type,
-                                                              Protocol>;
+    using tree_traits = typename Base::protocol_traits;
     static constexpr bool is_mutable_impl = tree_traits::has_mutable_childRows;
 
     static constexpr bool rows_are_any_refs_or_pointers = Base::rows_are_raw_pointers ||
@@ -1186,8 +1213,7 @@ class QGenericTreeItemModelImpl
 
 public:
     QGenericTreeItemModelImpl(Range &&model, Protocol &&p, QGenericItemModel *itemModel)
-        : Base(std::forward<Range>(model), itemModel)
-        , m_protocol(std::forward<Protocol>(p))
+        : Base(std::forward<Range>(model), std::forward<Protocol>(p), itemModel)
     {};
 
 protected:
@@ -1216,12 +1242,8 @@ protected:
             return {};
 
         // get the siblings of the parent via the grand parent
-        const_row_ptr grandParent;
-        if constexpr (Base::rows_are_raw_pointers)
-            grandParent = m_protocol.parentRow(parentRow);
-        else
-            grandParent = m_protocol.parentRow(*parentRow);
-        const range_type &parentSiblings = childrenOf(grandParent);
+        decltype(auto) grandParent = this->protocol().parentRow(QGenericItemModelDetails::refTo(parentRow));
+        const range_type &parentSiblings = childrenOf(QGenericItemModelDetails::pointerTo(grandParent));
         // find the index of parentRow
         const auto begin = QGenericItemModelDetails::cbegin(parentSiblings);
         const auto end = QGenericItemModelDetails::cend(parentSiblings);
@@ -1236,8 +1258,7 @@ protected:
 
     int rowCount(const QModelIndex &parent) const
     {
-        const auto *children = this->childRange(parent);
-        return int(children ? Base::size(*children) : 0);
+        return Base::size(this->childRange(parent));
     }
 
     int columnCount(const QModelIndex &) const
@@ -1339,7 +1360,7 @@ protected:
                 // only fix the parent pointer
                 if constexpr (!range_features::has_insert_range)
                     *write = std::move(*read);
-                m_protocol.setParentRow(*write, parentRow);
+                this->protocol().setParentRow(QGenericItemModelDetails::refTo(*write), parentRow);
             }
             // remove the old rows from the source parent
             source->erase(sourceStart, sourceEnd);
@@ -1361,10 +1382,10 @@ protected:
         // tree traversal protocol: if we are here, then it must be possible
         // to change the parent of a row.
         static_assert(tree_traits::has_setParentRow);
-        row_type empty_row = m_protocol.newRow();
-        if (parent.isValid()) {
-            m_protocol.setParentRow(empty_row,
-                                    QGenericItemModelDetails::pointerTo(this->rowData(parent)));
+        row_type empty_row = this->protocol().newRow();
+        if (QGenericItemModelDetails::isValid(empty_row) && parent.isValid()) {
+            this->protocol().setParentRow(QGenericItemModelDetails::refTo(empty_row),
+                                        QGenericItemModelDetails::pointerTo(this->rowData(parent)));
         }
         return empty_row;
     }
@@ -1381,7 +1402,7 @@ protected:
     void deleteRemovedRows(It &&begin, Sentinel &&end)
     {
         for (auto it = begin; it != end; ++it)
-            m_protocol.deleteRow(*it);
+            this->protocol().deleteRow(*it);
     }
 
     void resetParentInChildren(range_type *children)
@@ -1390,7 +1411,7 @@ protected:
             const auto begin = QGenericItemModelDetails::begin(*children);
             const auto end = QGenericItemModelDetails::end(*children);
             for (auto it = begin; it != end; ++it) {
-                if (auto &maybeChildren = m_protocol.childRows(*it)) {
+                if (auto &maybeChildren = this->protocol().childRows(*it)) {
                     QModelIndexList fromIndexes;
                     QModelIndexList toIndexes;
                     fromIndexes.reserve(Base::size(*maybeChildren));
@@ -1399,11 +1420,11 @@ protected:
 
                     int row = 0;
                     for (auto &child : *maybeChildren) {
-                        const_row_ptr oldParent = m_protocol.parentRow(child);
+                        const_row_ptr oldParent = this->protocol().parentRow(child);
                         if (oldParent != parentRow) {
                             fromIndexes.append(this->createIndex(row, 0, oldParent));
                             toIndexes.append(this->createIndex(row, 0, parentRow));
-                            m_protocol.setParentRow(child, parentRow);
+                            this->protocol().setParentRow(child, parentRow);
                         }
                         ++row;
                     }
@@ -1430,50 +1451,45 @@ protected:
         return *QGenericItemModelDetails::pos(siblings, index.row());
     }
 
-    auto childRangeImpl(const QModelIndex &index) const
+    const range_type *childRangeImpl(const QModelIndex &index) const
     {
         const auto &row = this->rowData(index);
-        if constexpr (Base::rows_are_raw_pointers) {
-            if (!row)
-                return static_cast<const range_type *>(nullptr);
-        }
-        const auto &children = m_protocol.childRows(row);
-        return children ? std::addressof(*children) : nullptr;
+        if (!QGenericItemModelDetails::isValid(row))
+            return static_cast<const range_type *>(nullptr);
+
+        decltype(auto) children = this->protocol().childRows(QGenericItemModelDetails::refTo(row));
+        return QGenericItemModelDetails::pointerTo(std::forward<decltype(children)>(children));
     }
 
-    auto childRangeImpl(const QModelIndex &index)
+    range_type *childRangeImpl(const QModelIndex &index)
     {
         auto &row = this->rowData(index);
-        if constexpr (Base::rows_are_raw_pointers) {
-            if (!row)
-                return static_cast<range_type *>(nullptr);
+        if (!QGenericItemModelDetails::isValid(row))
+            return static_cast<range_type *>(nullptr);
+
+        decltype(auto) children = this->protocol().childRows(QGenericItemModelDetails::refTo(row));
+        using Children = std::remove_reference_t<decltype(children)>;
+
+        if constexpr (QGenericItemModelDetails::is_any_of<Children, std::optional>()
+                   && std::is_default_constructible<typename Children::value_type>()) {
+            if (!children)
+                children.emplace(range_type{});
         }
 
-        auto &children = m_protocol.childRows(row);
-        if (!children)
-            children.emplace(typename Base::range_type{});
-        return std::addressof(*children);
+        return QGenericItemModelDetails::pointerTo(std::forward<decltype(children)>(children));
     }
 
     const range_type &childrenOf(const_row_ptr row) const
     {
-        if (!row)
-            return *this->m_data.model();
-        if constexpr (Base::rows_are_raw_pointers)
-            return *m_protocol.childRows(row);
-        else
-            return *m_protocol.childRows(*row);
+        return row ? QGenericItemModelDetails::refTo(this->protocol().childRows(*row))
+                   : *this->m_data.model();
     }
 
 private:
     range_type &childrenOf(row_ptr row)
     {
-        if (!row)
-            return *this->m_data.model();
-        if constexpr (Base::rows_are_raw_pointers)
-            return *m_protocol.childRows(row);
-        else
-            return *m_protocol.childRows(*row);
+        return row ? QGenericItemModelDetails::refTo(*this->protocol().childRows(*row))
+                   : *this->m_data.model();
     }
 };
 
@@ -1496,7 +1512,7 @@ class QGenericTableItemModelImpl
 
 public:
     explicit QGenericTableItemModelImpl(Range &&model, QGenericItemModel *itemModel)
-        : Base(std::forward<Range>(model), itemModel)
+        : Base(std::forward<Range>(model), {}, itemModel)
     {}
 
 protected:
@@ -1576,15 +1592,15 @@ protected:
 
     auto makeEmptyRow(const QModelIndex &)
     {
-        if constexpr (Base::dynamicColumns()) {
-            // all rows have to have the same column count
-            row_type empty_row;
-            if constexpr (row_features::has_resize)
-                empty_row.resize(Base::m_itemModel->columnCount());
-            return empty_row;
-        } else {
-            return row_type{};
+        row_type empty_row = this->protocol().newRow();
+
+        // dynamically sized rows all have to have the same column count
+        if constexpr (Base::dynamicColumns() && row_features::has_resize) {
+            if (QGenericItemModelDetails::isValid(empty_row))
+                QGenericItemModelDetails::refTo(empty_row).resize(Base::m_itemModel->columnCount());
         }
+
+        return empty_row;
     }
 
     template <typename R>
@@ -1646,17 +1662,15 @@ template <typename Range,
          QGenericItemModelDetails::if_is_tree_range<Range>>
 QGenericItemModel::QGenericItemModel(Range &&range, QObject *parent)
     : QGenericItemModel(std::forward<Range>(range),
-                        QGenericItemModelDetails::tree_protocol_t<Range>{}, parent)
+                        QGenericItemModelDetails::DefaultTreeProtocol<Range>{}, parent)
 {}
 
 template <typename Range, typename Protocol,
           QGenericItemModelDetails::if_is_tree_range<Range, Protocol>>
 QGenericItemModel::QGenericItemModel(Range &&range, Protocol &&protocol, QObject *parent)
     : QAbstractItemModel(parent)
-    , impl(new QGenericTreeItemModelImpl<Range,
-                                         QGenericItemModelDetails::tree_protocol_t<Range, Protocol>
-                                        >(std::forward<Range>(range),
-                                          std::forward<Protocol>(protocol), this))
+   , impl(new QGenericTreeItemModelImpl<Range, Protocol>(std::forward<Range>(range),
+                                                         std::forward<Protocol>(protocol), this))
 {}
 
 QT_END_NAMESPACE

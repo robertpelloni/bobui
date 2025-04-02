@@ -19,6 +19,17 @@
 #include <ranges>
 #endif
 
+template <typename T>
+auto asUPtr(T&& model) {
+    return std::make_unique<std::remove_reference_t<T>>(std::forward<T>(model));
+}
+
+template <typename T>
+auto asSPtr(T&& model) {
+    return std::make_shared<std::remove_reference_t<T>>(std::forward<T>(model));
+}
+
+
 class Item
 {
     Q_GADGET
@@ -217,13 +228,13 @@ public:
     struct ProtocolPointerImpl {
         tree_row *newRow() const { return new tree_row; }
         void deleteRow(tree_row *row) { delete row; }
-        const tree_row *parentRow(const tree_row *row) const { return row->m_parent; }
-        void setParentRow(tree_row *row, tree_row *parent) { row->m_parent = parent; }
+        const tree_row *parentRow(const tree_row &row) const { return row.m_parent; }
+        void setParentRow(tree_row &row, tree_row *parent) { row.m_parent = parent; }
 
-        const std::optional<pointer_tree> &childRows(const tree_row *row) const
-        { return row->m_childrenPointers; }
-        std::optional<pointer_tree> &childRows(tree_row *row)
-        { return row->m_childrenPointers; }
+        const std::optional<pointer_tree> &childRows(const tree_row &row) const
+        { return row.m_childrenPointers; }
+        std::optional<pointer_tree> &childRows(tree_row &row)
+        { return row.m_childrenPointers; }
     };
 
 private:
@@ -269,6 +280,8 @@ class tst_QGenericItemModel : public QObject
 private slots:
     void basics_data() { createTestData(); }
     void basics();
+    void modifies_data();
+    void modifies();
     void minimalIterator();
     void ranges();
     void json();
@@ -362,7 +375,7 @@ private:
             const auto &children = [&row]() -> const auto &{
                 if constexpr (pointerTree) {
                     const auto protocol = tree_row::ProtocolPointerImpl{};
-                    return protocol.childRows(row);
+                    return protocol.childRows(*row);
                 } else {
                     return row.childRows();
                 }
@@ -513,6 +526,14 @@ private:
             &rowAsPointer,
         };
 
+        // rows are refs
+        Row rowAsRef = {{"blue", Qt::blue, "0x0000ff"}, 0x0000ff, "Blau"};
+        std::vector<std::reference_wrapper<Row>> tableOfRowRefs = {
+            std::ref(rowAsRef),
+            std::ref(rowAsRef),
+            std::ref(rowAsRef)
+        };
+
         // constness
         std::array<const int, 5> arrayOfConstNumbers = { 1, 2, 3, 4 };
         // note: std::vector doesn't allow for const value types
@@ -546,11 +567,19 @@ private:
             {{{Qt::DisplayRole, "DISPLAY2"}, {Qt::DecorationRole, "DECORATION2"}}},
             {{{Qt::DisplayRole, "DISPLAY3"}, {Qt::DecorationRole, "DECORATION3"}}},
         };
-        std::vector<std::vector<std::map<int, QVariant>>> stdTableOfIntRoles = {
+
+        using VectorOfIntRoleMaps = std::vector<std::map<int, QVariant>>;
+        std::vector<VectorOfIntRoleMaps> stdTableOfIntRoles = {
             {{{Qt::DisplayRole, "DISPLAY0"}, {Qt::DecorationRole, "DECORATION0"}}},
             {{{Qt::DisplayRole, "DISPLAY1"}, {Qt::DecorationRole, "DECORATION1"}}},
             {{{Qt::DisplayRole, "DISPLAY2"}, {Qt::DecorationRole, "DECORATION2"}}},
             {{{Qt::DisplayRole, "DISPLAY3"}, {Qt::DecorationRole, "DECORATION3"}}},
+        };
+        std::vector<std::shared_ptr<VectorOfIntRoleMaps>> stdTableOfIntRolesWithSharedRows = {
+            asSPtr(VectorOfIntRoleMaps{{{Qt::DisplayRole, "DISPLAY0"}, {Qt::DecorationRole, "DECORATION0"}}}),
+            asSPtr(VectorOfIntRoleMaps{{{Qt::DisplayRole, "DISPLAY1"}, {Qt::DecorationRole, "DECORATION1"}}}),
+            asSPtr(VectorOfIntRoleMaps{{{Qt::DisplayRole, "DISPLAY2"}, {Qt::DecorationRole, "DECORATION2"}}}),
+            asSPtr(VectorOfIntRoleMaps{{{Qt::DisplayRole, "DISPLAY3"}, {Qt::DecorationRole, "DECORATION3"}}}),
         };
 
         std::unique_ptr<value_tree> m_tree;
@@ -611,10 +640,10 @@ void tst_QGenericItemModel::createTestData()
     QTest::addColumn<int>("expectedColumnCount");
     QTest::addColumn<ChangeActions>("changeActions");
 
-#define ADD_HELPER(Model, Tag, Ref, ColumnCount, Actions) \
+#define ADD_HELPER(Model, Tag, Policy, ColumnCount, Actions) \
     { \
         Factory factory = [this]() -> std::unique_ptr<QAbstractItemModel> { \
-            auto result = std::make_unique<QGenericItemModel>(Ref(m_data->Model)); \
+            auto result = std::make_unique<QGenericItemModel>(Policy(m_data->Model)); \
             createBackup(result.get(), m_data->Model); \
             return result; \
         }; \
@@ -625,21 +654,27 @@ void tst_QGenericItemModel::createTestData()
 #define ADD_POINTER(Model, ColumnCount, Actions) ADD_HELPER(Model, Pointer, &, ColumnCount, Actions)
 #define ADD_COPY(Model, ColumnCount, Actions) ADD_HELPER(Model, Copy, *&, ColumnCount, Actions)
 #define ADD_REF(Model, ColumnCount, Actions) ADD_HELPER(Model, Ref, std::ref, ColumnCount, Actions)
+#define ADD_UPTR(Model, ColumnCount, Actions) ADD_HELPER(Model, UPtr, asUPtr, ColumnCount, Actions)
+#define ADD_SPTR(Model, ColumnCount, Actions) ADD_HELPER(Model, SPtr, asSPtr, ColumnCount, Actions)
 #define ADD_ALL(Model, ColumnCount, Actions) \
     ADD_COPY(Model, ColumnCount, Actions) \
+    ADD_REF(Model, ColumnCount, Actions) \
     ADD_POINTER(Model, ColumnCount, Actions) \
-    ADD_REF(Model, ColumnCount, Actions)
+    ADD_UPTR(Model, ColumnCount, Actions) \
+    ADD_SPTR(Model, ColumnCount, Actions)
 
     // The entire test data is recreated for each test function, but test
     // functions must not change data structures other than the one tested.
+    // For ranges that can't be copied, or that operate on pointers or
+    // references, only adding either pointer, ref, or copy, as they all operate
+    // on the same data.
 
     ADD_ALL(fixedArrayOfNumbers, 1, ChangeAction::SetData);
 
     ADD_POINTER(cArrayOfNumbers, 1, ChangeAction::SetData);
-
-    ADD_POINTER(cArrayFixedColumns,
-                std::tuple_size_v<Row>,
-                ChangeAction::SetData | ChangeAction::SetItemData);
+    ADD_REF(cArrayFixedColumns,
+            std::tuple_size_v<Row>,
+            ChangeAction::SetData | ChangeAction::SetItemData);
 
     ADD_ALL(vectorOfFixedColumns, 2, ChangeAction::ChangeRows | ChangeAction::SetData);
 
@@ -659,11 +694,10 @@ void tst_QGenericItemModel::createTestData()
 
     ADD_ALL(tableOfNumbers, 5, ChangeAction::All);
 
-    // only adding as pointer, copy would operate on the same data
     ADD_POINTER(tableOfPointers, 2, ChangeAction::All | ChangeAction::SetItemData);
-    ADD_POINTER(tableOfRowPointers,
-                std::tuple_size_v<Row>,
-                ChangeAction::ChangeRows | ChangeAction::SetData | ChangeAction::SetItemData);
+    ADD_REF(tableOfRowRefs,
+            std::tuple_size_v<Row>,
+            ChangeAction::RemoveRows | ChangeAction::SetData | ChangeAction::SetItemData);
 
     ADD_ALL(arrayOfConstNumbers, 1, ChangeAction::ReadOnly);
 
@@ -679,8 +713,12 @@ void tst_QGenericItemModel::createTestData()
 
     ADD_ALL(stdTableOfIntRoles, 1, ChangeAction::All | ChangeAction::SetItemData);
 
+    ADD_COPY(stdTableOfIntRolesWithSharedRows, 1, ChangeAction::All | ChangeAction::SetItemData);
+
 #undef ADD_COPY
 #undef ADD_POINTER
+#undef ADD_UPTR
+#undef ADD_SPTR
 #undef ADD_HELPER
 #undef ADD_ALL
 
@@ -707,8 +745,8 @@ void tst_QGenericItemModel::createTestData()
     }) << 6 << 2 << (ChangeAction::ChangeRows | ChangeAction::SetData);
 
     // special case: tree
-    QTest::addRow("value tree") << Factory([this]{
-        return std::unique_ptr<QAbstractItemModel>(new QGenericItemModel(m_data->m_tree.get()));
+    QTest::addRow("value tree (ref)") << Factory([this]{
+        return std::unique_ptr<QAbstractItemModel>(new QGenericItemModel(std::ref(*m_data->m_tree)));
     }) << int(std::size(*m_data->m_tree.get())) << int(std::tuple_size_v<tree_row>)
        << (ChangeAction::ChangeRows | ChangeAction::SetData);
 
@@ -730,6 +768,54 @@ void tst_QGenericItemModel::basics()
 #else
     QSKIP("QAbstractItemModelTester not available");
 #endif
+}
+
+using ModelFromData = std::function<std::unique_ptr<QAbstractItemModel>(std::vector<int> &)>;
+
+void tst_QGenericItemModel::modifies_data()
+{
+    QTest::addColumn<ModelFromData>("modelFromData");
+    QTest::addColumn<bool>("modifiesOriginal");
+
+    QTest::newRow("copy") << ModelFromData([](std::vector<int> &numbers){
+        return std::unique_ptr<QAbstractItemModel>(new QGenericItemModel(numbers));
+    }) << false;
+
+    QTest::newRow("reference_wrapper") << ModelFromData([](std::vector<int> &numbers){
+        return std::unique_ptr<QAbstractItemModel>(new QGenericItemModel(std::ref(numbers)));
+    }) << true;
+
+    QTest::newRow("pointer") << ModelFromData([](std::vector<int> &numbers){
+        return std::unique_ptr<QAbstractItemModel>(new QGenericItemModel(&numbers));
+    }) << true;
+}
+
+void tst_QGenericItemModel::modifies()
+{
+    QFETCH(ModelFromData, modelFromData);
+    QFETCH(bool, modifiesOriginal);
+
+    int dataSize = 1;
+    std::vector<int> numbers { 1 };
+    auto model = modelFromData(numbers);
+
+    {
+        QCOMPARE(model->rowCount(), numbers.size());
+        const QModelIndex index = model->index(model->rowCount() - 1, 0);
+        QCOMPARE(index.data(), numbers[index.row()]);
+    }
+
+    {
+        QVERIFY(model->insertRows(0, 1));
+        QCOMPARE(model->rowCount(), ++dataSize);
+        QCOMPARE(int(numbers.size()) == model->rowCount(), modifiesOriginal);
+    }
+
+    {
+        const QModelIndex index = model->index(0, 0);
+        QVERIFY(model->setData(index, 2));
+        QCOMPARE(index.data() == numbers[index.row()], modifiesOriginal);
+    }
 }
 
 void tst_QGenericItemModel::minimalIterator()
@@ -815,9 +901,14 @@ void tst_QGenericItemModel::ownership()
         }
         QVERIFY(guard);
         { // model does not take ownership
-            QGenericItemModel modelOnRef(&objects);
+            QGenericItemModel modelOnPointer(&objects);
         }
         QVERIFY(guard);
+        { // model does not take ownership
+            QGenericItemModel modelOnRef(std::ref(objects));
+        }
+        QVERIFY(guard);
+
         { // model does take ownership
             QGenericItemModel movedIntoModel(std::move(objects));
         }
@@ -831,13 +922,20 @@ void tst_QGenericItemModel::ownership()
             std::shared_ptr<Object>(object)
         };
         { // model does not take ownership
+            QCOMPARE(objects[0].use_count(), 1);
             QGenericItemModel modelOnCopy(objects);
             QCOMPARE(modelOnCopy.rowCount(), 1);
             QCOMPARE(objects[0].use_count(), 2);
         }
         QCOMPARE(objects[0].use_count(), 1);
         { // model does not take ownership
-            QGenericItemModel modelOnRef(&objects);
+            QGenericItemModel modelOnPointer(&objects);
+            QCOMPARE(objects[0].use_count(), 1);
+        }
+        QCOMPARE(objects[0].use_count(), 1);
+        QVERIFY(guard);
+        { // model does not take ownership
+            QGenericItemModel modelOnRef(std::ref(objects));
             QCOMPARE(objects[0].use_count(), 1);
         }
         QCOMPARE(objects[0].use_count(), 1);
@@ -859,7 +957,11 @@ void tst_QGenericItemModel::ownership()
         }
         QVERIFY(guard);
         { // model does not take ownership
-            QGenericItemModel modelOnRef(&table);
+            QGenericItemModel modelOnPointer(&table);
+        }
+        QVERIFY(guard);
+        { // model does not take ownership
+            QGenericItemModel modelOnRef(std::ref(table));
         }
         QVERIFY(guard);
         { // model does take ownership of rows, but not of objects within each row
@@ -867,6 +969,33 @@ void tst_QGenericItemModel::ownership()
         }
         QVERIFY(guard);
         delete object;
+    }
+
+    { // a table of shared pointers to rows
+        std::vector<std::shared_ptr<Object>> objects = { std::make_shared<Object>() };
+
+        {
+            QGenericItemModel model(objects);
+            QCOMPARE(objects.front().use_count(), 2);
+        }
+
+        QCOMPARE(objects.front().use_count(), 1);
+    }
+
+    { // a table of shared pointers to rows
+        using SharedObjectsList = std::vector<std::shared_ptr<Object>>;
+        std::vector<std::shared_ptr<SharedObjectsList>> table = {
+            std::make_shared<SharedObjectsList>(SharedObjectsList{ std::make_shared<Object>() })
+        };
+
+        {
+            QGenericItemModel model(table);
+            QCOMPARE(table.front().use_count(), 2);
+            QCOMPARE(table.front()->front().use_count(), 1);
+        }
+
+        QCOMPARE(table.front().use_count(), 1);
+        QCOMPARE(table.front()->front().use_count(), 1);
     }
 }
 
@@ -1067,7 +1196,7 @@ void tst_QGenericItemModel::insertRows()
              changeActions.testFlag(ChangeAction::InsertRows));
 
     auto ignoreFailureFromAssociativeContainers = [] {
-        for (auto suffix : { "Pointer", "Copy", "Ref" }) {
+        for (auto suffix : { "Pointer", "Copy", "Ref", "UPtr", "SPtr" }) {
             auto addCase = [suffix](const std::string& testName,
                                     const std::string& containerName) {
               QEXPECT_FAIL((testName + suffix).c_str(),
@@ -1078,6 +1207,7 @@ void tst_QGenericItemModel::insertRows()
             addCase("tableOfEnumRoles", "QVariantMap");
             addCase("tableOfIntRoles", "QVariantMap");
             addCase("stdTableOfIntRoles", "std::map");
+            addCase("stdTableOfIntRolesWithSharedRows", "std::map");
         }
     };
     // get and put data into the new row
@@ -1087,8 +1217,9 @@ void tst_QGenericItemModel::insertRows()
     QVERIFY(lastItem.isValid());
     const QVariant firstValue = firstItem.data();
     const QVariant lastValue = lastItem.data();
+
     QEXPECT_FAIL("tableOfPointersPointer", "No item created", Continue);
-    QEXPECT_FAIL("tableOfRowPointersPointer", "No row created", Continue);
+    QEXPECT_FAIL("tableOfPointersRef", "No item created", Continue);
     QEXPECT_FAIL("listOfObjectsCopy", "No object created", Continue);
     QEXPECT_FAIL("listOfMetaObjectTupleCopy", "No object created", Continue);
     QEXPECT_FAIL("tableOfMetaObjectTupleCopy", "No object created", Continue);

@@ -314,10 +314,10 @@ struct TreeTraversal
     TreeRow *newRow() const { return new TreeRow; }
     void deleteRow(TreeRow *row) { delete row; }
 
-    const TreeRow *parentRow(const TreeRow *row) const { return row->m_parent; }
-    void setParentRow(TreeRow *row, TreeRow *parent) { row->m_parent = parent; }
-    const std::optional<Tree> &childRows(const TreeRow *row) const { return row->m_children; }
-    std::optional<Tree> &childRows(TreeRow *row) { return row->m_children; }
+    const TreeRow *parentRow(const TreeRow &row) const { return row.m_parent; }
+    void setParentRow(TreeRow &row, TreeRow *parent) { row.m_parent = parent; }
+    const std::optional<Tree> &childRows(const TreeRow &row) const { return row.m_children; }
+    std::optional<Tree> &childRows(TreeRow &row) { return row.m_children; }
 };
 //! [tree_of_pointers_3]
 
