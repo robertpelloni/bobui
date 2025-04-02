@@ -242,7 +242,7 @@ protected:
         using iterator_category = std::input_iterator_tag;
         using difference_type = int;
 
-        value_type operator*() { return impl.makeEmptyRow(parent); }
+        value_type operator*() { return impl->makeEmptyRow(*parent); }
         EmptyRowGenerator &operator++() { ++n; return *this; }
         friend bool operator==(const EmptyRowGenerator &lhs, const EmptyRowGenerator &rhs) noexcept
         { return lhs.n == rhs.n; }
@@ -250,8 +250,8 @@ protected:
         { return !(lhs == rhs); }
 
         difference_type n = 0;
-        Structure &impl;
-        const QModelIndex parent;
+        Structure *impl = nullptr;
+        const QModelIndex* parent = nullptr;
     };
 
     // If we have a move-only row_type and can add/remove rows, then the range
@@ -799,20 +799,18 @@ public:
             if (!children)
                 return false;
 
+            EmptyRowGenerator generator{0, &that(), &parent};
+
             beginInsertRows(parent, row, row + count - 1);
 
             const auto pos = QGenericItemModelDetails::pos(children, row);
             if constexpr (range_features::has_insert_range) {
-                EmptyRowGenerator first{0, that(), parent};
-                EmptyRowGenerator last{count, that(), parent};
-                children->insert(pos, first, last);
-            } else if constexpr (rows_are_raw_pointers) {
-                auto start = children->insert(pos, count, nullptr);
-                auto end = std::next(start, count);
-                for (auto it = start; it != end; ++it)
-                    *it = that().makeEmptyRow(parent);
+                children->insert(pos, generator, EmptyRowGenerator{count});
+            } else if constexpr (rows_are_owning_or_raw_pointers) {
+                auto start = children->insert(pos, count, row_type{});
+                std::copy(generator, EmptyRowGenerator{count}, start);
             } else {
-                children->insert(pos, count, that().makeEmptyRow(parent));
+                children->insert(pos, count, *generator);
             }
             if constexpr (!rows_are_raw_pointers) {
                 // fix the parent in all children of the modified row, as the
