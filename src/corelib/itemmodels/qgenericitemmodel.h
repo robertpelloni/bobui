@@ -444,15 +444,9 @@ public:
             }
         };
 
-        if (index.isValid()) {
-            const_row_reference row = rowData(index);
-            if constexpr (dynamicColumns())
-                readData(*QGenericItemModelDetails::cpos(row, index.column()));
-            else if constexpr (one_dimensional_range)
-                readData(row);
-            else if (QGenericItemModelDetails::isValid(row))
-                for_element_at(row, index.column(), readData);
-        }
+        if (index.isValid())
+            readAt(index, readData);
+
         return result;
     }
 
@@ -501,23 +495,17 @@ public:
                             }
                         }
                         if (data.isValid())
-                            result[role] = data;
+                            result[role] = std::move(data);
                     }
                 }
             }
         };
 
         if (index.isValid()) {
-            const_row_reference row = rowData(index);
-            if constexpr (dynamicColumns())
-                readItemData(*QGenericItemModelDetails::cpos(row, index.column()));
-            else if constexpr (one_dimensional_range)
-                readItemData(row);
-            else if (QGenericItemModelDetails::isValid(row))
-                for_element_at(row, index.column(), readItemData);
+            readAt(index, readItemData);
 
             if (!tried) // no multi-role item found
-                return m_itemModel->QAbstractItemModel::itemData(index);
+                result = m_itemModel->QAbstractItemModel::itemData(index);
         }
         return result;
     }
@@ -577,21 +565,7 @@ public:
                 return false;
             };
 
-            row_reference row = rowData(index);
-            if constexpr (dynamicColumns()) {
-                success = writeData(*QGenericItemModelDetails::pos(row, index.column()));
-            } else if constexpr (one_dimensional_range) {
-                success = writeData(row);
-            } else if (QGenericItemModelDetails::isValid(row)) {
-                for_element_at(row, index.column(), [&writeData, &success](auto &&target){
-                    using target_type = decltype(target);
-                    // we can only assign to an lvalue reference
-                    if constexpr (std::is_lvalue_reference_v<target_type>
-                              && !std::is_const_v<std::remove_reference_t<target_type>>) {
-                        success = writeData(std::forward<target_type>(target));
-                    }
-                });
-            }
+            success = writeAt(index, writeData);
         }
         return success;
     }
@@ -689,24 +663,11 @@ public:
                 return false;
             };
 
-            row_reference row = rowData(index);
-            if constexpr (dynamicColumns()) {
-                success = writeItemData(*QGenericItemModelDetails::pos(row, index.column()));
-            } else if constexpr (one_dimensional_range) {
-                success = writeItemData(row);
-            } else if (QGenericItemModelDetails::isValid(row)) {
-                for_element_at(row, index.column(), [&writeItemData, &success](auto &&target){
-                    using target_type = decltype(target);
-                    // we can only assign to an lvalue reference
-                    if constexpr (std::is_lvalue_reference_v<target_type>
-                              && !std::is_const_v<std::remove_reference_t<target_type>>) {
-                        success = writeItemData(std::forward<target_type>(target));
-                    }
-                });
-            }
+            success = writeAt(index, writeItemData);
 
             if (!tried) {
                 // setItemData will emit the dataChanged signal
+                Q_ASSERT(!success);
                 emitDataChanged.dismiss();
                 success = m_itemModel->QAbstractItemModel::setItemData(index, data);
             }
@@ -741,20 +702,7 @@ public:
                 return false;
             };
 
-            row_reference row = rowData(index);
-            if constexpr (dynamicColumns()) {
-                success = clearData(*QGenericItemModelDetails::pos(row, index.column()));
-            } else if constexpr (one_dimensional_range) {
-                success = clearData(row);
-            } else if (QGenericItemModelDetails::isValid(row)) {
-                for_element_at(row, index.column(), [&clearData, &success](auto &&target){
-                    using target_type = decltype(target);
-                    if constexpr (std::is_lvalue_reference_v<target_type>
-                               && !std::is_const_v<std::remove_reference_t<target_type>>) {
-                        success = clearData(target);
-                    }
-                });
-            }
+            success = writeAt(index, clearData);
         }
         return success;
     }
@@ -977,6 +925,45 @@ protected:
             using ref = decltype(std::forward<Range>(std::declval<range_type>()));
             if constexpr (std::is_rvalue_reference_v<ref>)
                 that().destroyOwnedModel(*m_data.model());
+        }
+    }
+
+    template <typename F>
+    bool writeAt(const QModelIndex &index, F&& writer)
+    {
+        bool result = false;
+        row_reference row = rowData(index);
+
+        if constexpr (one_dimensional_range) {
+            result = writer(row);
+        } else if (QGenericItemModelDetails::isValid(row)) {
+            if constexpr (dynamicColumns()) {
+                result = writer(*QGenericItemModelDetails::pos(row, index.column()));
+            } else {
+                for_element_at(row, index.column(), [&writer, &result](auto &&target) {
+                    using target_type = decltype(target);
+                    // we can only assign to an lvalue reference
+                    if constexpr (std::is_lvalue_reference_v<target_type>
+                              && !std::is_const_v<std::remove_reference_t<target_type>>) {
+                        result = writer(std::forward<target_type>(target));
+                    }
+                });
+            }
+        }
+
+        return result;
+    }
+
+    template <typename F>
+    void readAt(const QModelIndex &index, F&& reader) const {
+        const_row_reference row = rowData(index);
+        if constexpr (one_dimensional_range) {
+            return reader(row);
+        } else if (QGenericItemModelDetails::isValid(row)) {
+            if constexpr (dynamicColumns())
+                reader(*QGenericItemModelDetails::cpos(row, index.column()));
+            else
+                for_element_at(row, index.column(), std::forward<F>(reader));
         }
     }
 
