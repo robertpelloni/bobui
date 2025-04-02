@@ -28,7 +28,7 @@ public:
                                                                MultiColumn<T>>, bool>;
 
         template <typename V = T,
-                  std::enable_if_t<std::is_constructible_v<bool, V>, bool> = true>
+                  std::enable_if_t<QGenericItemModelDetails::is_validatable<V>::value, bool> = true>
         constexpr explicit operator bool() const noexcept { return bool(data); }
 
         // unconstrained on size_t I, gcc internal error #3280
@@ -166,9 +166,9 @@ class QGenericItemModelImpl : public QGenericItemModelImplBase
 {
     Q_DISABLE_COPY_MOVE(QGenericItemModelImpl)
 public:
-    using range_type = QGenericItemModelDetails::remove_ptr_and_ref_t<Range>;
-    using row_reference = decltype(*std::begin(std::declval<range_type&>()));
-    using const_row_reference = decltype(*std::cbegin(std::declval<range_type&>()));
+    using range_type = QGenericItemModelDetails::wrapped_t<Range>;
+    using row_reference = decltype(*QGenericItemModelDetails::begin(std::declval<range_type&>()));
+    using const_row_reference = decltype(*QGenericItemModelDetails::cbegin(std::declval<range_type&>()));
     using row_type = std::remove_reference_t<row_reference>;
 
 protected:
@@ -177,24 +177,29 @@ protected:
     const Structure& that() const { return static_cast<const Structure &>(*this); }
 
     template <typename C>
-    static constexpr auto size(const C &c)
+    static constexpr int size(const C &c)
     {
-        if constexpr (QGenericItemModelDetails::test_size<C>())
+        if (!QGenericItemModelDetails::isValid(c))
+            return 0;
+
+        if constexpr (QGenericItemModelDetails::test_size<C>()) {
             return std::size(c);
-        else
+        } else {
 #if defined(__cpp_lib_ranges)
-            return std::ranges::distance(std::begin(c), std::end(c));
+            return int(std::ranges::distance(QGenericItemModelDetails::begin(c),
+                                             QGenericItemModelDetails::end(c)));
 #else
-            return std::distance(std::begin(c), std::end(c));
+            return int(std::distance(QGenericItemModelDetails::begin(c),
+                                     QGenericItemModelDetails::end(c)));
 #endif
+        }
     }
 
     friend class tst_QGenericItemModel;
     using range_features = QGenericItemModelDetails::range_traits<range_type>;
-    using row_features = QGenericItemModelDetails::range_traits<row_type>;
-
-    using row_traits = QGenericItemModelDetails::row_traits<q20::remove_cvref_t<
-                                                            std::remove_pointer_t<row_type>>>;
+    using wrapped_row_type = QGenericItemModelDetails::wrapped_t<row_type>;
+    using row_features = QGenericItemModelDetails::range_traits<wrapped_row_type>;
+    using row_traits = QGenericItemModelDetails::row_traits<std::remove_cv_t<wrapped_row_type>>;
 
     static constexpr bool isMutable()
     {
@@ -204,7 +209,9 @@ protected:
     }
 
     static constexpr int static_row_count = QGenericItemModelDetails::static_size_v<range_type>;
-    static constexpr bool rows_are_pointers = std::is_pointer_v<row_type>;
+    static constexpr bool rows_are_raw_pointers = std::is_pointer_v<row_type>;
+    static constexpr bool rows_are_owning_or_raw_pointers =
+            QGenericItemModelDetails::is_owning_or_raw_pointer<row_type>();
     static constexpr int static_column_count = QGenericItemModelDetails::static_size_v<row_type>;
     static constexpr bool one_dimensional_range = static_column_count == 0;
 
@@ -213,8 +220,8 @@ protected:
 
     // A row might be a value (or range of values), or a pointer.
     // row_ptr is always a pointer, and const_row_ptr is a pointer to const.
-    using row_ptr = std::conditional_t<rows_are_pointers, row_type, row_type *>;
-    using const_row_ptr = const std::remove_pointer_t<row_type> *;
+    using row_ptr = wrapped_row_type *;
+    using const_row_ptr = const wrapped_row_type *;
 
     template <typename T>
     static constexpr bool has_metaobject =
@@ -444,7 +451,7 @@ public:
         if (index.isValid()) {
             const_row_reference row = rowData(index);
             if constexpr (dynamicColumns())
-                readData(*std::next(std::cbegin(row), index.column()));
+                readData(*QGenericItemModelDetails::cpos(row, index.column()));
             else if constexpr (one_dimensional_range)
                 readData(row);
             else if (QGenericItemModelDetails::isValid(row))
@@ -507,7 +514,7 @@ public:
         if (index.isValid()) {
             const_row_reference row = rowData(index);
             if constexpr (dynamicColumns())
-                readItemData(*std::next(std::cbegin(row), index.column()));
+                readItemData(*QGenericItemModelDetails::cpos(row, index.column()));
             else if constexpr (one_dimensional_range)
                 readItemData(row);
             else if (QGenericItemModelDetails::isValid(row))
@@ -576,7 +583,7 @@ public:
 
             row_reference row = rowData(index);
             if constexpr (dynamicColumns()) {
-                success = writeData(*std::next(std::begin(row), index.column()));
+                success = writeData(*QGenericItemModelDetails::pos(row, index.column()));
             } else if constexpr (one_dimensional_range) {
                 success = writeData(row);
             } else if (QGenericItemModelDetails::isValid(row)) {
@@ -688,7 +695,7 @@ public:
 
             row_reference row = rowData(index);
             if constexpr (dynamicColumns()) {
-                success = writeItemData(*std::next(std::begin(row), index.column()));
+                success = writeItemData(*QGenericItemModelDetails::pos(row, index.column()));
             } else if constexpr (one_dimensional_range) {
                 success = writeItemData(row);
             } else if (QGenericItemModelDetails::isValid(row)) {
@@ -740,7 +747,7 @@ public:
 
             row_reference row = rowData(index);
             if constexpr (dynamicColumns()) {
-                success = clearData(*std::next(std::begin(row), index.column()));
+                success = clearData(*QGenericItemModelDetails::pos(row, index.column()));
             } else if constexpr (one_dimensional_range) {
                 success = clearData(row);
             } else if (QGenericItemModelDetails::isValid(row)) {
@@ -766,8 +773,10 @@ public:
                 return false;
 
             beginInsertColumns(parent, column, column + count - 1);
-            for (auto &child : *children)
-                child.insert(std::next(std::begin(child), column), count, {});
+            for (auto &child : *children) {
+                auto it = QGenericItemModelDetails::pos(child, column);
+                QGenericItemModelDetails::refTo(child).insert(it, count, {});
+            }
             endInsertColumns();
             return true;
         }
@@ -786,8 +795,8 @@ public:
 
             beginRemoveColumns(parent, column, column + count - 1);
             for (auto &child : *children) {
-                const auto start = std::next(std::begin(child), column);
-                child.erase(start, std::next(start, count));
+                const auto start = QGenericItemModelDetails::pos(child, column);
+                QGenericItemModelDetails::refTo(child).erase(start, std::next(start, count));
             }
             endRemoveColumns();
             return true;
@@ -818,10 +827,9 @@ public:
                 }
 
                 for (auto &child : *children) {
-                    const auto begin = std::begin(child);
-                    const auto first = std::next(begin, sourceColumn);
-                    const auto middle = std::next(begin, sourceColumn + count);
-                    const auto last = std::next(begin, destColumn);
+                    const auto first = QGenericItemModelDetails::pos(child, sourceColumn);
+                    const auto middle = std::next(first, count);
+                    const auto last = QGenericItemModelDetails::pos(child, destColumn);
 
                     if (sourceColumn < destColumn) // moving right
                         std::rotate(first, middle, last);
@@ -849,12 +857,12 @@ public:
 
             beginInsertRows(parent, row, row + count - 1);
 
-            const auto pos = std::next(std::begin(*children), row);
+            const auto pos = QGenericItemModelDetails::pos(children, row);
             if constexpr (range_features::has_insert_range) {
                 EmptyRowGenerator first{0, that(), parent};
                 EmptyRowGenerator last{count, that(), parent};
                 children->insert(pos, first, last);
-            } else if constexpr (rows_are_pointers) {
+            } else if constexpr (rows_are_raw_pointers) {
                 auto start = children->insert(pos, count, nullptr);
                 auto end = std::next(start, count);
                 for (auto it = start; it != end; ++it)
@@ -862,7 +870,7 @@ public:
             } else {
                 children->insert(pos, count, that().makeEmptyRow(parent));
             }
-            if constexpr (!rows_are_pointers) {
+            if constexpr (!rows_are_raw_pointers) {
                 // fix the parent in all children of the modified row, as the
                 // references back to the parent might have become invalid.
                 that().resetParentInChildren(children);
@@ -899,15 +907,15 @@ public:
                 }
             }
             { // erase invalidates iterators
-                const auto begin = std::next(std::begin(*children), row);
+                const auto begin = QGenericItemModelDetails::pos(children, row);
                 const auto end = std::next(begin, count);
-                if constexpr (rows_are_pointers)
+                if constexpr (rows_are_raw_pointers)
                     that().deleteRemovedRows(begin, end);
                 children->erase(begin, end);
             }
             // fix the parent in all children of the modified row, as the
             // references back to the parent might have become invalid.
-            if constexpr (!rows_are_pointers)
+            if constexpr (!rows_are_raw_pointers)
                 that().resetParentInChildren(children);
             if constexpr (dynamicColumns()) {
                 if (callEndRemoveColumns) {
@@ -945,16 +953,16 @@ public:
             if (!beginMoveRows(sourceParent, sourceRow, sourceRow + count - 1, destParent, destRow))
                 return false;
 
-            const auto first = std::next(std::begin(*source), sourceRow);
+            const auto first = QGenericItemModelDetails::pos(source, sourceRow);
             const auto middle = std::next(first, count);
-            const auto last = std::next(std::begin(*source), destRow);
+            const auto last = QGenericItemModelDetails::pos(source, destRow);
 
             if (sourceRow < destRow) // moving down
                 std::rotate(first, middle, last);
             else // moving up
                 std::rotate(last, first, middle);
 
-            if constexpr (!rows_are_pointers)
+            if constexpr (!rows_are_raw_pointers)
                 that().resetParentInChildren(source);
 
             endMoveRows();
@@ -967,7 +975,7 @@ public:
 protected:
     ~QGenericItemModelImpl()
     {
-        if constexpr (rows_are_pointers && !std::is_pointer_v<Range>) {
+        if constexpr (rows_are_raw_pointers && !std::is_pointer_v<Range>) {
             // If data with rows as pointers was moved in, then we own it and
             // have to delete those rows.
             using ref = decltype(std::forward<Range>(std::declval<range_type>()));
@@ -1212,7 +1220,7 @@ protected:
 
         const_row_ptr grandParent = static_cast<const_row_ptr>(parent.constInternalPointer());
         const auto &parentSiblings = childrenOf(grandParent);
-        const auto it = std::next(std::cbegin(parentSiblings), parent.row());
+        const auto it = QGenericItemModelDetails::cpos(parentSiblings, parent.row());
         return this->createIndex(row, column, QGenericItemModelDetails::pointerTo(*it));
     }
 
@@ -1228,19 +1236,20 @@ protected:
 
         // get the siblings of the parent via the grand parent
         const_row_ptr grandParent;
-        if constexpr (Base::rows_are_pointers)
+        if constexpr (Base::rows_are_raw_pointers)
             grandParent = m_protocol.parentRow(parentRow);
         else
             grandParent = m_protocol.parentRow(*parentRow);
         const range_type &parentSiblings = childrenOf(grandParent);
         // find the index of parentRow
-        const auto begin = std::cbegin(parentSiblings);
-        const auto end = std::cend(parentSiblings);
+        const auto begin = QGenericItemModelDetails::cbegin(parentSiblings);
+        const auto end = QGenericItemModelDetails::cend(parentSiblings);
         const auto it = std::find_if(begin, end, [parentRow](auto &&s){
             return QGenericItemModelDetails::pointerTo(s) == parentRow;
         });
         if (it != end)
-            return this->createIndex(std::distance(begin, it), 0, grandParent);
+            return this->createIndex(std::distance(begin, it), 0,
+                                     QGenericItemModelDetails::pointerTo(grandParent));
         return {};
     }
 
@@ -1266,7 +1275,7 @@ protected:
         // We must not insert rows if we cannot adjust the parents of the
         // children of the following rows. We don't have to do that if the
         // range operates on pointers.
-        return (Base::rows_are_pointers || tree_traits::has_setParentRow)
+        return (Base::rows_are_raw_pointers || tree_traits::has_setParentRow)
              && Base::dynamicRows() && range_features::has_insert;
     }
 
@@ -1275,7 +1284,7 @@ protected:
         // We must not remove rows if we cannot adjust the parents of the
         // children of the following rows. We don't have to do that if the
         // range operates on pointers.
-        return (Base::rows_are_pointers || tree_traits::has_setParentRow)
+        return (Base::rows_are_raw_pointers || tree_traits::has_setParentRow)
              && Base::dynamicRows() && range_features::has_erase;
     }
 
@@ -1295,7 +1304,7 @@ protected:
         // If rows are pointers, then reference to the parent row don't
         // change, so we can move them around freely. Otherwise we need to
         // be able to explicitly update the parent pointer.
-        if constexpr (!Base::rows_are_pointers && !tree_traits::has_setParentRow) {
+        if constexpr (!Base::rows_are_raw_pointers && !tree_traits::has_setParentRow) {
             return false;
         } else if constexpr (!(range_features::has_insert && range_features::has_erase)) {
             return false;
@@ -1309,9 +1318,9 @@ protected:
 
         // If we can insert data from another range into, then
         // use that to move the old data over.
-        const auto destStart = std::next(std::begin(*destination), destRow);
+        const auto destStart = QGenericItemModelDetails::pos(destination, destRow);
         if constexpr (range_features::has_insert_range) {
-            const auto sourceStart = std::next(std::begin(*source), sourceRow);
+            const auto sourceStart = QGenericItemModelDetails::pos(*source, sourceRow);
             const auto sourceEnd = std::next(sourceStart, count);
 
             destination->insert(destStart, std::move_iterator(sourceStart),
@@ -1339,9 +1348,9 @@ protected:
 
         // move the data over and update the parent pointer
         {
-            const auto writeStart = std::next(std::begin(*destination), destRow);
+            const auto writeStart = QGenericItemModelDetails::pos(destination, destRow);
             const auto writeEnd = std::next(writeStart, count);
-            const auto sourceStart = std::next(std::begin(*source), sourceRow);
+            const auto sourceStart = QGenericItemModelDetails::pos(source, sourceRow);
             const auto sourceEnd = std::next(sourceStart, count);
 
             for (auto write = writeStart, read = sourceStart; write != writeEnd; ++write, ++read) {
@@ -1359,7 +1368,7 @@ protected:
         // ranges, as the references to the entries might have become invalid.
         // We don't have to do that if the rows are pointers, as in that case
         // the references to the entries are stable.
-        if constexpr (!Base::rows_are_pointers) {
+        if constexpr (!Base::rows_are_raw_pointers) {
             resetParentInChildren(destination);
             resetParentInChildren(source);
         }
@@ -1384,8 +1393,8 @@ protected:
     template <typename R>
     void destroyOwnedModel(R &&range)
     {
-        const auto begin = std::begin(range);
-        const auto end = std::end(range);
+        const auto begin = QGenericItemModelDetails::begin(range);
+        const auto end = QGenericItemModelDetails::end(range);
         deleteRemovedRows(begin, end);
     }
 
@@ -1399,8 +1408,8 @@ protected:
     void resetParentInChildren(range_type *children)
     {
         if constexpr (tree_traits::has_setParentRow) {
-            const auto begin = std::begin(*children);
-            const auto end = std::end(*children);
+            const auto begin = QGenericItemModelDetails::begin(*children);
+            const auto end = QGenericItemModelDetails::end(*children);
             for (auto it = begin; it != end; ++it) {
                 if (auto &maybeChildren = m_protocol.childRows(*it)) {
                     QModelIndexList fromIndexes;
@@ -1431,7 +1440,7 @@ protected:
         const_row_ptr parentRow = static_cast<const_row_ptr>(index.constInternalPointer());
         const range_type &siblings = childrenOf(parentRow);
         Q_ASSERT(index.row() < int(Base::size(siblings)));
-        return *(std::next(std::cbegin(siblings), index.row()));
+        return *QGenericItemModelDetails::cpos(siblings, index.row());
     }
 
     decltype(auto) rowDataImpl(const QModelIndex &index)
@@ -1439,13 +1448,13 @@ protected:
         row_ptr parentRow = static_cast<row_ptr>(index.internalPointer());
         range_type &siblings = childrenOf(parentRow);
         Q_ASSERT(index.row() < int(Base::size(siblings)));
-        return *(std::next(std::begin(siblings), index.row()));
+        return *QGenericItemModelDetails::pos(siblings, index.row());
     }
 
     auto childRangeImpl(const QModelIndex &index) const
     {
         const auto &row = this->rowData(index);
-        if constexpr (Base::rows_are_pointers) {
+        if constexpr (Base::rows_are_raw_pointers) {
             if (!row)
                 return static_cast<const range_type *>(nullptr);
         }
@@ -1456,7 +1465,7 @@ protected:
     auto childRangeImpl(const QModelIndex &index)
     {
         auto &row = this->rowData(index);
-        if constexpr (Base::rows_are_pointers) {
+        if constexpr (Base::rows_are_raw_pointers) {
             if (!row)
                 return static_cast<range_type *>(nullptr);
         }
@@ -1471,7 +1480,7 @@ protected:
     {
         if (!row)
             return *this->m_data.model();
-        if constexpr (Base::rows_are_pointers)
+        if constexpr (Base::rows_are_raw_pointers)
             return *m_protocol.childRows(row);
         else
             return *m_protocol.childRows(*row);
@@ -1482,7 +1491,7 @@ private:
     {
         if (!row)
             return *this->m_data.model();
-        if constexpr (Base::rows_are_pointers)
+        if constexpr (Base::rows_are_raw_pointers)
             return *m_protocol.childRows(row);
         else
             return *m_protocol.childRows(*row);
@@ -1515,7 +1524,7 @@ protected:
     QModelIndex indexImpl(int row, int column, const QModelIndex &) const
     {
         if constexpr (Base::dynamicColumns()) {
-            if (column < int(Base::size(*std::next(std::cbegin(*this->m_data.model()), row))))
+            if (column < int(Base::size(*QGenericItemModelDetails::cpos(*this->m_data.model(), row))))
                 return this->createIndex(row, column);
             // if we got here, then column < columnCount(), but this row is to short
             qCritical("QGenericItemModel: Column-range at row %d is not large enough!", row);
@@ -1546,7 +1555,7 @@ protected:
         if constexpr (Base::dynamicColumns()) {
             return int(Base::size(*this->m_data.model()) == 0
                        ? 0
-                       : Base::size(*std::cbegin(*this->m_data.model())));
+                       : Base::size(*QGenericItemModelDetails::cbegin(*this->m_data.model())));
         } else if constexpr (Base::one_dimensional_range) {
             return row_traits::fixed_size();
         } else {
@@ -1602,8 +1611,8 @@ protected:
     template <typename R>
     void destroyOwnedModel(R &&range)
     {
-        const auto begin = std::begin(range);
-        const auto end = std::end(range);
+        const auto begin = QGenericItemModelDetails::begin(range);
+        const auto end = QGenericItemModelDetails::end(range);
         for (auto it = begin; it !=  end; ++it)
             delete *it;
     }
@@ -1617,13 +1626,13 @@ protected:
     decltype(auto) rowDataImpl(const QModelIndex &index) const
     {
         Q_ASSERT(index.row() < int(Base::size(*this->m_data.model())));
-        return *(std::next(std::cbegin(*this->m_data.model()), index.row()));
+        return *QGenericItemModelDetails::cpos(*this->m_data.model(), index.row());
     }
 
     decltype(auto) rowDataImpl(const QModelIndex &index)
     {
         Q_ASSERT(index.row() < int(Base::size(*this->m_data.model())));
-        return *(std::next(std::begin(*this->m_data.model()), index.row()));
+        return *QGenericItemModelDetails::pos(*this->m_data.model(), index.row());
     }
 
     auto childRangeImpl(const QModelIndex &) const

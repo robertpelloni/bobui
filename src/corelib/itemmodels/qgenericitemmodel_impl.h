@@ -30,14 +30,93 @@ QT_BEGIN_NAMESPACE
 
 namespace QGenericItemModelDetails
 {
-    template <typename T, size_t N> static decltype(auto) refTo(T (&t)[N]) { return t; }
-    template <typename T> static T&& refTo(T&& t) { return std::forward<T>(t); }
-    template <typename T> static T& refTo(std::reference_wrapper<T> t) { return t.get(); }
-    // template <typename T> static auto refTo(T& t) -> decltype(*t) { return *t; }
+    template <typename T, template <typename...> typename... Templates>
+    struct is_any_of_impl : std::false_type {};
 
-    template <typename T> static auto pointerTo(T *t) { return t; }
-    template <typename T> static auto pointerTo(T &t) { return std::addressof(refTo(t)); }
-    template <typename T> static auto pointerTo(const T &&t) = delete;
+    template <template <typename...> typename Template,
+              typename... Params,
+              template <typename...> typename... Templates>
+    struct is_any_of_impl<Template<Params...>, Template, Templates...> : std::true_type {};
+
+    template <typename T,
+              template <typename...> typename Template,
+              template <typename...> typename... Templates>
+    struct is_any_of_impl<T, Template, Templates...> : is_any_of_impl<T, Templates...> {};
+
+    template <typename T, template <typename...> typename... Templates>
+    using is_any_of = is_any_of_impl<std::remove_cv_t<T>, Templates...>;
+
+    template <typename T>
+    using is_validatable = std::is_constructible<bool, T>;
+
+    template <typename T, typename = void>
+    struct is_smart_ptr : std::false_type {};
+
+    template <typename T>
+    struct is_smart_ptr<T,
+        std::enable_if_t<std::conjunction_v<
+                std::is_pointer<decltype(std::declval<T&>().get())>,
+                std::is_same<decltype(*std::declval<T&>().get()), decltype(*std::declval<T&>())>,
+                is_validatable<T>
+            >>>
+        : std::true_type
+    {};
+
+    // TODO: shouldn't we check is_smart_ptr && !is_copy_constructible && !is_copy_assignable
+    //       to support users-specific ptrs?
+    template <typename T>
+    using is_any_unique_ptr = is_any_of<T, std::unique_ptr, QScopedPointer>;
+
+    template <typename T>
+    using is_any_shared_ptr = is_any_of<T, std::shared_ptr, QSharedPointer,
+                                           QExplicitlySharedDataPointer, QSharedDataPointer>;
+
+    template <typename T>
+    using is_owning_or_raw_pointer = std::disjunction<is_any_shared_ptr<T>, is_any_unique_ptr<T>, std::is_pointer<T>>;
+
+
+    template <typename T>
+    static auto pointerTo(T&& t) {
+        using Type = q20::remove_cvref_t<T>;
+        if constexpr (is_any_of<Type, std::optional>())
+            return t ? std::addressof(*std::forward<T>(t)) : nullptr;
+        else if constexpr (std::is_pointer<Type>())
+            return t;
+        else if constexpr (is_smart_ptr<Type>())
+            return t.get();
+        else if constexpr (is_any_of<Type, std::reference_wrapper>())
+            return std::addressof(t.get());
+        else
+            return std::addressof(std::forward<T>(t));
+    }
+
+    template <typename T>
+    using wrapped_t = std::remove_pointer_t<decltype(pointerTo(std::declval<T&>()))>;
+
+    template <typename T>
+    using is_wrapped = std::negation<std::is_same<wrapped_t<T>, std::remove_reference_t<T>>>;
+
+    template <typename T>
+    static constexpr bool isValid(const T &t) noexcept
+    {
+        if constexpr (is_validatable<T>())
+            return bool(t);
+        else
+            return true;
+    }
+
+    template <typename T>
+    static decltype(auto) refTo(T&& t) {
+        Q_ASSERT(isValid(t));
+        // it's allowed to move only if the object holds unique ownership of the wrapped data
+        using Type = q20::remove_cvref_t<T>;
+        if constexpr (is_any_of<T, std::optional>())
+            return *std::forward<T>(t); // let std::optional resolve dereferencing
+        if constexpr (!is_wrapped<Type>() || is_any_unique_ptr<Type>())
+            return q23::forward_like<T>(*pointerTo(t));
+        else
+            return *pointerTo(t);
+    }
 
     template <typename It>
     auto key(It&& it) -> decltype(it.key()) { return it.key(); }
@@ -49,14 +128,25 @@ namespace QGenericItemModelDetails
     template <typename It>
     auto value(It&& it) -> decltype((it->second)) { return it->second; }
 
-    template <typename T>
-    static constexpr bool isValid(const T &t) noexcept
-    {
-        if constexpr (std::is_constructible_v<bool, T>)
-            return bool(t);
-        else
-            return true;
-    }
+    // use our own version of begin/end so that we can overload for pointers
+    template <typename C>
+    static auto begin(C &&c) -> decltype(std::begin(refTo(std::forward<C>(c))))
+    { return std::begin(refTo(std::forward<C>(c))); }
+    template <typename C>
+    static auto end(C &&c) -> decltype(std::end(refTo(std::forward<C>(c))))
+    { return std::end(refTo(std::forward<C>(c))); }
+    template <typename C>
+    static auto cbegin(C &&c) -> decltype(std::cbegin(refTo(std::forward<C>(c))))
+    { return std::cbegin(refTo(std::forward<C>(c))); }
+    template <typename C>
+    static auto cend(C &&c) -> decltype(std::cend(refTo(std::forward<C>(c))))
+    { return std::cend(refTo(std::forward<C>(c))); }
+    template <typename C>
+    static auto pos(C &&c, int i)
+    { return std::next(QGenericItemModelDetails::begin(std::forward<C>(c)), i); }
+    template <typename C>
+    static auto cpos(C &&c, int i)
+    { return std::next(QGenericItemModelDetails::cbegin(std::forward<C>(c)), i); }
 
     // Test if a type is a range, and whether we can modify it using the
     // standard C++ container member functions insert, erase, and resize.
@@ -147,12 +237,13 @@ namespace QGenericItemModelDetails
         static constexpr bool has_resize = false;
     };
     template <typename C>
-    struct range_traits<C, std::void_t<decltype(std::cbegin(std::declval<C&>())),
-                                       decltype(std::cend(std::declval<C&>())),
+    struct range_traits<C, std::void_t<decltype(cbegin(std::declval<C&>())),
+                                       decltype(cend(std::declval<C&>())),
                                        std::enable_if_t<!is_multi_role_v<C>>
                                       >> : std::true_type
     {
-        using value_type = std::remove_reference_t<decltype(*std::begin(std::declval<C&>()))>;
+        using iterator = decltype(begin(std::declval<C&>()));
+        using value_type = std::remove_reference_t<decltype(*std::declval<iterator&>())>;
         static constexpr bool is_mutable = !std::is_const_v<C> && !std::is_const_v<value_type>;
         static constexpr bool has_insert = test_insert<C>();
         static constexpr bool has_insert_range = test_insert_range<C>();
@@ -179,10 +270,6 @@ namespace QGenericItemModelDetails
     // const T * and views are read-only
     template <typename T> struct range_traits<const T *> : iterable_value<Mutable::No> {};
     template <> struct range_traits<QLatin1StringView> : iterable_value<Mutable::No> {};
-
-    template <typename T>
-    using remove_ptr_and_ref_t =
-        std::remove_pointer_t<std::remove_reference_t<decltype(refTo(std::declval<T&>()))>>;
 
     template <typename C>
     [[maybe_unused]] static constexpr bool is_range_v = range_traits<C>();
@@ -239,7 +326,7 @@ namespace QGenericItemModelDetails
 
     template <typename T>
     [[maybe_unused]] static constexpr int static_size_v =
-                            row_traits<q20::remove_cvref_t<std::remove_pointer_t<T>>>::static_size;
+                            row_traits<std::remove_cv_t<wrapped_t<T>>>::static_size;
 
     // tests for tree protocol implementation in the row type
     template <typename R, typename = void>
@@ -375,18 +462,18 @@ namespace QGenericItemModelDetails
     };
 
     template <typename C, typename TreeProtocol = void,
-              typename range_type = remove_ptr_and_ref_t<C>>
+              typename range_type = wrapped_t<C>>
     using tree_protocol_t = typename tree_traits<
                 range_type,
                 std::remove_reference_t<decltype(*std::begin(std::declval<range_type&>()))>,
                 TreeProtocol>::tree_protocol;
 
-    template <typename C, typename range_type = remove_ptr_and_ref_t<C>>
+    template <typename C, typename range_type = wrapped_t<C>>
     using if_is_table_range = std::enable_if_t<
                             is_range_v<range_type> && std::is_void_v<tree_protocol_t<range_type>>,
                             bool>;
 
-    template <typename C, typename Protocol = void, typename range_type = remove_ptr_and_ref_t<C>>
+    template <typename C, typename Protocol = void, typename range_type = wrapped_t<C>>
     using if_is_tree_range = std::enable_if_t<
                             is_range_v<range_type> && !std::is_void_v<tree_protocol_t<range_type, Protocol>>,
                             bool>;
@@ -427,7 +514,7 @@ protected:
     template <typename T, typename F>
     static auto for_element_at(T &&tuple, size_t idx, F &&function)
     {
-        using type = std::remove_pointer_t<std::remove_reference_t<T>>;
+        using type = QGenericItemModelDetails::wrapped_t<T>;
         constexpr size_t size = std::tuple_size_v<type>;
         Q_ASSERT(idx < size);
         return call_at(std::forward<T>(tuple), idx, std::make_index_sequence<size>{},
@@ -444,7 +531,7 @@ protected:
     template <typename T>
     static constexpr QMetaType meta_type_at(size_t idx)
     {
-        using type = std::remove_pointer_t<std::remove_reference_t<T>>;
+        using type = QGenericItemModelDetails::wrapped_t<T>;
         constexpr auto size = std::tuple_size_v<type>;
         Q_ASSERT(idx < size);
         return makeMetaTypes<type>(std::make_index_sequence<size>{}).at(idx);
