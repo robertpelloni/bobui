@@ -500,15 +500,10 @@ protected:
     template <typename Tuple, typename F, size_t ...Is>
     static void call_at(Tuple &&tuple, size_t idx, std::index_sequence<Is...>, F &&function)
     {
-        ((Is == idx ? static_cast<void>(function(get<Is>(std::forward<Tuple>(tuple))))
-                    : static_cast<void>(0)), ...);
-    }
-
-    template <typename Tuple, typename F, size_t ...Is>
-    static void call_at(Tuple *tuple, size_t idx, std::index_sequence<Is...> seq, F &&function)
-    {
-        if (tuple)
-            call_at(*tuple, idx, seq, std::forward<F>(function));
+        if (QGenericItemModelDetails::isValid(tuple))
+            ((Is == idx ? static_cast<void>(function(get<Is>(
+                            QGenericItemModelDetails::refTo(std::forward<Tuple>(tuple)))))
+                        : static_cast<void>(0)), ...);
     }
 
     template <typename T, typename F>
