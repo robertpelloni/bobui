@@ -688,6 +688,11 @@ void QAccessible::installActivationObserver(QAccessible::ActivationObserver *obs
     if (qAccessibleActivationObservers()->contains(observer))
         return;
     qAccessibleActivationObservers()->append(observer);
+
+    // Make sure the newly added observer gets a callback on the next
+    // QPlatformAccessibility::setActive() callback
+    if (QPlatformAccessibility *pfAccessibility = platformAccessibility())
+        pfAccessibility->clearActiveNotificationState();
 }
 
 /*!
@@ -699,6 +704,17 @@ void QAccessible::installActivationObserver(QAccessible::ActivationObserver *obs
 void QAccessible::removeActivationObserver(ActivationObserver *observer)
 {
     qAccessibleActivationObservers()->removeAll(observer);
+}
+
+/*!
+    \internal
+
+    Sends accessibility activation notifications to all registered observers.
+*/
+void qAccessibleNotifyActivationObservers(bool active)
+{
+    for (int i = 0; i < qAccessibleActivationObservers()->size(); ++i)
+        qAccessibleActivationObservers()->at(i)->accessibilityActiveChanged(active);
 }
 
 /*!
@@ -870,10 +886,9 @@ bool QAccessible::isActive()
 */
 void QAccessible::setActive(bool active)
 {
-    for (int i = 0; i < qAccessibleActivationObservers()->size() ;++i)
-        qAccessibleActivationObservers()->at(i)->accessibilityActiveChanged(active);
+    if (QPlatformAccessibility *pfAccessibility = platformAccessibility())
+        pfAccessibility->setActive(active);
 }
-
 
 /*!
   Sets the root object of the accessible objects of this application
