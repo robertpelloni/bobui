@@ -19,11 +19,12 @@
 #include <MoltenVK/mvk_vulkan.h>
 #endif
 
-#include <QHash>
+#include <QtCore/private/qflatmap_p.h>
 
 Q_FORWARD_DECLARE_OBJC_CLASS(NSWindow);
 Q_FORWARD_DECLARE_OBJC_CLASS(NSView);
 Q_FORWARD_DECLARE_OBJC_CLASS(NSCursor);
+Q_FORWARD_DECLARE_OBJC_CLASS(NSVisualEffectView);
 
 #if !defined(__OBJC__)
 using NSInteger = long;
@@ -226,6 +227,11 @@ public: // for QNSView
     static void removePopupMonitor();
 
     CALayer *contentLayer() const override;
+
+    void manageVisualEffectArea(quintptr identifier, const QRect &rect,
+        NSVisualEffectMaterial material, NSVisualEffectBlendingMode blendMode,
+        NSVisualEffectState activationState) override;
+    QFlatMap<quintptr, NSVisualEffectView*> m_effectViews;
 
     NSView *m_view = nil;
     QCocoaNSWindow *m_nsWindow = nil;

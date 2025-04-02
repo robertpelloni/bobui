@@ -2224,6 +2224,47 @@ CALayer *QCocoaWindow::contentLayer() const
     return layer;
 }
 
+void QCocoaWindow::manageVisualEffectArea(quintptr identifier, const QRect &rect,
+    NSVisualEffectMaterial material, NSVisualEffectBlendingMode blendMode,
+    NSVisualEffectState activationState)
+{
+    if (!qt_objc_cast<QContainerLayer*>(m_view.layer)) {
+        qCWarning(lcQpaWindow) << "Can not manage visual effect areas"
+            << "in views without a container layer";
+        return;
+    }
+
+    qCDebug(lcQpaWindow) << "Updating visual effect area" << identifier
+        << "to" << rect << "with material" << material << "blend mode"
+        << blendMode << "and activation state" << activationState;
+
+    NSVisualEffectView *effectView = nullptr;
+    if (m_effectViews.contains(identifier)) {
+        effectView = m_effectViews.value(identifier);
+        if (rect.isEmpty()) {
+            [effectView removeFromSuperview];
+            m_effectViews.remove(identifier);
+            return;
+        }
+    } else if (!rect.isEmpty()) {
+        effectView = [NSVisualEffectView new];
+        // Ensure that the visual effect layer is stacked well
+        // below our content layer (which defaults to a z of 0).
+        effectView.wantsLayer = YES;
+        effectView.layer.zPosition = -FLT_MAX;
+        [m_view addSubview:effectView];
+        m_effectViews.insert(identifier, effectView);
+    }
+
+    if (!effectView)
+        return;
+
+    effectView.frame = rect.toCGRect();
+    effectView.material = material;
+    effectView.blendingMode = blendMode;
+    effectView.state = activationState;
+}
+
 #ifndef QT_NO_DEBUG_STREAM
 QDebug operator<<(QDebug debug, const QCocoaWindow *window)
 {
