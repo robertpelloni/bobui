@@ -28,6 +28,10 @@
 struct wl_surface;
 #endif
 
+#if defined(Q_OS_MACOS)
+Q_FORWARD_DECLARE_OBJC_CLASS(CALayer);
+#endif
+
 QT_BEGIN_NAMESPACE
 
 class QMargins;
@@ -55,9 +59,10 @@ struct Q_GUI_EXPORT QWasmWindow
 #if defined(Q_OS_MACOS) || defined(Q_QDOC)
 struct Q_GUI_EXPORT QCocoaWindow
 {
-    QT_DECLARE_NATIVE_INTERFACE(QCocoaWindow, 1, QWindow)
+    QT_DECLARE_NATIVE_INTERFACE(QCocoaWindow, 2, QWindow)
     virtual void setContentBorderEnabled(bool enable) = 0;
     virtual QPoint bottomLeftClippedByNSWindowOffset() const = 0;
+    virtual CALayer *contentLayer() const = 0;
 };
 #endif
 

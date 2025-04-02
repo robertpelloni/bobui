@@ -3,6 +3,36 @@
 
 // This file is included from qnsview.mm, and only used to organize the code
 
+@implementation QContainerLayer {
+    CALayer *m_contentLayer;
+}
+- (instancetype)initWithContentLayer:(CALayer *)contentLayer
+{
+    if ((self = [super init])) {
+        m_contentLayer = contentLayer;
+        [self addSublayer:contentLayer];
+        contentLayer.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
+    }
+    return self;
+}
+
+- (CALayer*)contentLayer
+{
+    return m_contentLayer;
+}
+
+- (void)setNeedsDisplay
+{
+    [self setNeedsDisplayInRect:CGRectInfinite];
+}
+
+- (void)setNeedsDisplayInRect:(CGRect)rect
+{
+    [super setNeedsDisplayInRect:rect];
+    [self.contentLayer setNeedsDisplayInRect:rect];
+}
+@end
+
 @implementation QNSView (Drawing)
 
 - (void)initDrawing
@@ -107,6 +137,17 @@
         layer.delegate = self;
     }
 
+    layer.name = @"Qt content layer";
+
+    static const bool containerLayerOptOut = qEnvironmentVariableIsSet("QT_MAC_NO_CONTAINER_LAYER");
+    if (m_platformWindow->window()->surfaceType() != QSurface::OpenGLSurface && !containerLayerOptOut) {
+        qCDebug(lcQpaDrawing) << "Wrapping content layer" << layer << "in container layer";
+        auto *containerLayer = [[QContainerLayer alloc] initWithContentLayer:layer];
+        containerLayer.name = @"Qt container layer";
+        containerLayer.delegate = self;
+        layer = containerLayer;
+    }
+
     [super setLayer:layer];
 
     [self propagateBackingProperties];
@@ -117,7 +158,6 @@
         // where it doesn't.
         layer.backgroundColor = NSColor.magentaColor.CGColor;
     }
-
 }
 
 // ----------------------- Layer updates -----------------------
@@ -172,11 +212,12 @@
     // to NO. In this case the window will have a backingScaleFactor of 2,
     // but the QWindow will have a devicePixelRatio of 1.
     auto devicePixelRatio = m_platformWindow->devicePixelRatio();
-    qCDebug(lcQpaDrawing) << "Updating" << self.layer << "content scale to" << devicePixelRatio;
-    self.layer.contentsScale = devicePixelRatio;
+    auto *contentLayer = m_platformWindow->contentLayer();
+    qCDebug(lcQpaDrawing) << "Updating" << contentLayer << "content scale to" << devicePixelRatio;
+    contentLayer.contentsScale = devicePixelRatio;
 
-    if ([self.layer isKindOfClass:CAMetalLayer.class]) {
-        CAMetalLayer *metalLayer = static_cast<CAMetalLayer *>(self.layer);
+    if ([contentLayer isKindOfClass:CAMetalLayer.class]) {
+        CAMetalLayer *metalLayer = static_cast<CAMetalLayer *>(contentLayer);
         metalLayer.colorspace = self.colorSpace.CGColorSpace;
         qCDebug(lcQpaDrawing) << "Set" << metalLayer << "color space to" << metalLayer.colorspace;
     }
@@ -205,8 +246,11 @@
 */
 - (void)displayLayer:(CALayer *)layer
 {
-    Q_ASSERT_X(self.layer && layer == self.layer, "QNSView",
-        "The displayLayer code path should only be hit for our own layer");
+    if (auto *containerLayer = qt_objc_cast<QContainerLayer*>(layer)) {
+        qCDebug(lcQpaDrawing) << "Skipping display of" << containerLayer
+            << "as display is handled by content layer" << containerLayer.contentLayer;
+        return;
+    }
 
     if (!m_platformWindow)
         return;
@@ -226,7 +270,7 @@
         m_platformWindow->handleExposeEvent(bounds);
     };
 
-    if (auto *qtMetalLayer = qt_objc_cast<QMetalLayer*>(self.layer)) {
+    if (auto *qtMetalLayer = qt_objc_cast<QMetalLayer*>(layer)) {
         const bool presentedWithTransaction = qtMetalLayer.presentsWithTransaction;
         qtMetalLayer.presentsWithTransaction = YES;
 

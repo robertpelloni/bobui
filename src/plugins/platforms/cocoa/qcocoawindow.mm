@@ -1732,7 +1732,7 @@ void QCocoaWindow::deliverUpdateRequest()
 {
     qCDebug(lcQpaDrawing) << "Delivering update request to" << window();
 
-    if (auto *qtMetalLayer = qt_objc_cast<QMetalLayer*>(m_view.layer)) {
+    if (auto *qtMetalLayer = qt_objc_cast<QMetalLayer*>(contentLayer())) {
         // We attempt a read lock here, so that the animation/render thread is
         // prioritized lower than the main thread's displayLayer processing.
         // Without this the two threads might fight over the next drawable,
@@ -2214,6 +2214,14 @@ QMargins QCocoaWindow::frameMargins() const
 void QCocoaWindow::setFrameStrutEventsEnabled(bool enabled)
 {
     m_frameStrutEventsEnabled = enabled;
+}
+
+CALayer *QCocoaWindow::contentLayer() const
+{
+    auto *layer = m_view.layer;
+    if (auto *containerLayer = qt_objc_cast<QContainerLayer*>(layer))
+        layer = containerLayer.contentLayer;
+    return layer;
 }
 
 #ifndef QT_NO_DEBUG_STREAM

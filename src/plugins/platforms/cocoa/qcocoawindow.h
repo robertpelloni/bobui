@@ -225,6 +225,8 @@ public: // for QNSView
     static void setupPopupMonitor();
     static void removePopupMonitor();
 
+    CALayer *contentLayer() const override;
+
     NSView *m_view = nil;
     QCocoaNSWindow *m_nsWindow = nil;
 

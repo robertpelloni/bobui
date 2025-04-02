@@ -14,6 +14,7 @@
 
 #include <QtCore/private/qcore_mac_p.h>
 #include <QtGui/private/qmetallayer_p.h>
+#include <QtGui/qpa/qplatformwindow_p.h>
 
 #ifdef Q_OS_MACOS
 #include <AppKit/AppKit.h>
@@ -6321,13 +6322,15 @@ QRhiRenderTarget *QMetalSwapChain::currentFrameRenderTarget()
 static inline CAMetalLayer *layerForWindow(QWindow *window)
 {
     Q_ASSERT(window);
+    CALayer *layer = nullptr;
 #ifdef Q_OS_MACOS
-    NSView *view = reinterpret_cast<NSView *>(window->winId());
+    if (auto *cocoaWindow = window->nativeInterface<QNativeInterface::Private::QCocoaWindow>())
+        layer = cocoaWindow->contentLayer();
 #else
-    UIView *view = reinterpret_cast<UIView *>(window->winId());
+    layer = reinterpret_cast<UIView *>(window->winId()).layer;
 #endif
-    Q_ASSERT(view);
-    return static_cast<CAMetalLayer *>(view.layer);
+    Q_ASSERT(layer);
+    return static_cast<CAMetalLayer *>(layer);
 }
 
 // If someone calls this, it is hopefully from the main thread, and they will
