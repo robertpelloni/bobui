@@ -178,6 +178,7 @@ protected:
     static constexpr int static_row_count = QGenericItemModelDetails::static_size_v<range_type>;
     static constexpr bool rows_are_pointers = std::is_pointer_v<row_type>;
     static constexpr int static_column_count = QGenericItemModelDetails::static_size_v<row_type>;
+    static constexpr bool one_dimensional_range = static_column_count == 0;
 
     static constexpr bool dynamicRows() { return isMutable() && static_row_count < 0; }
     static constexpr bool dynamicColumns() { return static_column_count < 0; }
@@ -412,7 +413,7 @@ public:
             const_row_reference row = rowData(index);
             if constexpr (dynamicColumns())
                 readData(*std::next(std::cbegin(row), index.column()));
-            else if constexpr (static_column_count == 0)
+            else if constexpr (one_dimensional_range)
                 readData(row);
             else if (QGenericItemModelDetails::isValid(row))
                 for_element_at(row, index.column(), readData);
@@ -475,7 +476,7 @@ public:
             const_row_reference row = rowData(index);
             if constexpr (dynamicColumns())
                 readItemData(*std::next(std::cbegin(row), index.column()));
-            else if constexpr (static_column_count == 0)
+            else if constexpr (one_dimensional_range)
                 readItemData(row);
             else if (QGenericItemModelDetails::isValid(row))
                 for_element_at(row, index.column(), readItemData);
@@ -544,7 +545,7 @@ public:
             row_reference row = rowData(index);
             if constexpr (dynamicColumns()) {
                 success = writeData(*std::next(std::begin(row), index.column()));
-            } else if constexpr (static_column_count == 0) {
+            } else if constexpr (one_dimensional_range) {
                 success = writeData(row);
             } else if (QGenericItemModelDetails::isValid(row)) {
                 for_element_at(row, index.column(), [&writeData, &success](auto &&target){
@@ -656,7 +657,7 @@ public:
             row_reference row = rowData(index);
             if constexpr (dynamicColumns()) {
                 success = writeItemData(*std::next(std::begin(row), index.column()));
-            } else if constexpr (static_column_count == 0) {
+            } else if constexpr (one_dimensional_range) {
                 success = writeItemData(row);
             } else if (QGenericItemModelDetails::isValid(row)) {
                 for_element_at(row, index.column(), [&writeItemData, &success](auto &&target){
@@ -708,7 +709,7 @@ public:
             row_reference row = rowData(index);
             if constexpr (dynamicColumns()) {
                 success = clearData(*std::next(std::begin(row), index.column()));
-            } else if constexpr (static_column_count == 0) {
+            } else if constexpr (one_dimensional_range) {
                 success = clearData(row);
             } else if (QGenericItemModelDetails::isValid(row)) {
                 for_element_at(row, index.column(), [&clearData, &success](auto &&target){
@@ -1342,7 +1343,7 @@ protected:
             return int(Base::size(*this->m_data.model()) == 0
                        ? 0
                        : Base::size(*std::cbegin(*this->m_data.model())));
-        } else if constexpr (Base::static_column_count == 0) {
+        } else if constexpr (Base::one_dimensional_range) {
             return row_traits::fixed_size();
         } else {
             return Base::static_column_count;

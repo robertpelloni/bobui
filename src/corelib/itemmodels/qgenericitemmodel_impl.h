@@ -193,7 +193,9 @@ namespace QGenericItemModelDetails
     template <typename T, typename = void>
     struct row_traits {
         static constexpr bool is_range = is_range_v<q20::remove_cvref_t<T>>;
-        // a static size of -1 indicates dynamically sized range
+        // A static size of -1 indicates dynamically sized range
+        // A static size of 0 indicates that the specified type doesn't
+        // represent static or dynamic range.
         static constexpr int static_size = is_range ? -1 : 0;
         static constexpr int fixed_size() { return 1; }
     };
