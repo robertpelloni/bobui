@@ -812,11 +812,10 @@ public:
             } else {
                 children->insert(pos, count, *generator);
             }
-            if constexpr (!rows_are_raw_pointers) {
-                // fix the parent in all children of the modified row, as the
-                // references back to the parent might have become invalid.
-                that().resetParentInChildren(children);
-            }
+
+            // fix the parent in all children of the modified row, as the
+            // references back to the parent might have become invalid.
+            that().resetParentInChildren(children);
 
             endInsertRows();
             return true;
@@ -857,8 +856,8 @@ public:
             }
             // fix the parent in all children of the modified row, as the
             // references back to the parent might have become invalid.
-            if constexpr (!rows_are_raw_pointers)
-                that().resetParentInChildren(children);
+            that().resetParentInChildren(children);
+
             if constexpr (dynamicColumns()) {
                 if (callEndRemoveColumns) {
                     Q_ASSERT(that().columnCount(parent) == 0);
@@ -904,8 +903,7 @@ public:
             else // moving up
                 std::rotate(last, first, middle);
 
-            if constexpr (!rows_are_raw_pointers)
-                that().resetParentInChildren(source);
+            that().resetParentInChildren(source);
 
             endMoveRows();
             return true;
@@ -1181,7 +1179,9 @@ class QGenericTreeItemModelImpl
                                                               Protocol>;
     static constexpr bool is_mutable_impl = tree_traits::has_mutable_childRows;
 
-
+    static constexpr bool rows_are_any_refs_or_pointers = Base::rows_are_raw_pointers ||
+                                 QGenericItemModelDetails::is_smart_ptr<row_type>() ||
+                                 QGenericItemModelDetails::is_any_of<row_type, std::reference_wrapper>();
     static_assert(!Base::dynamicColumns(), "A tree must have a static number of columns!");
 
 public:
@@ -1256,7 +1256,7 @@ protected:
         // We must not insert rows if we cannot adjust the parents of the
         // children of the following rows. We don't have to do that if the
         // range operates on pointers.
-        return (Base::rows_are_raw_pointers || tree_traits::has_setParentRow)
+        return (rows_are_any_refs_or_pointers || tree_traits::has_setParentRow)
              && Base::dynamicRows() && range_features::has_insert;
     }
 
@@ -1265,7 +1265,7 @@ protected:
         // We must not remove rows if we cannot adjust the parents of the
         // children of the following rows. We don't have to do that if the
         // range operates on pointers.
-        return (Base::rows_are_raw_pointers || tree_traits::has_setParentRow)
+        return (rows_are_any_refs_or_pointers || tree_traits::has_setParentRow)
              && Base::dynamicRows() && range_features::has_erase;
     }
 
@@ -1285,7 +1285,7 @@ protected:
         // If rows are pointers, then reference to the parent row don't
         // change, so we can move them around freely. Otherwise we need to
         // be able to explicitly update the parent pointer.
-        if constexpr (!Base::rows_are_raw_pointers && !tree_traits::has_setParentRow) {
+        if constexpr (!rows_are_any_refs_or_pointers && !tree_traits::has_setParentRow) {
             return false;
         } else if constexpr (!(range_features::has_insert && range_features::has_erase)) {
             return false;
@@ -1349,10 +1349,8 @@ protected:
         // ranges, as the references to the entries might have become invalid.
         // We don't have to do that if the rows are pointers, as in that case
         // the references to the entries are stable.
-        if constexpr (!Base::rows_are_raw_pointers) {
-            resetParentInChildren(destination);
-            resetParentInChildren(source);
-        }
+        resetParentInChildren(destination);
+        resetParentInChildren(source);
 
         this->endMoveRows();
         return true;
@@ -1388,7 +1386,7 @@ protected:
 
     void resetParentInChildren(range_type *children)
     {
-        if constexpr (tree_traits::has_setParentRow) {
+        if constexpr (tree_traits::has_setParentRow && !rows_are_any_refs_or_pointers) {
             const auto begin = QGenericItemModelDetails::begin(*children);
             const auto end = QGenericItemModelDetails::end(*children);
             for (auto it = begin; it != end; ++it) {
