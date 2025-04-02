@@ -201,7 +201,7 @@ namespace QGenericItemModelDetails
     // Specialization for tuples, using std::tuple_size
     template <typename T>
     struct row_traits<T, std::void_t<std::tuple_element_t<0, T>>> {
-        static constexpr std::size_t size64= std::tuple_size_v<T>;
+        static constexpr std::size_t size64 = std::tuple_size_v<T>;
         static_assert(q20::in_range<int>(size64));
         static constexpr int static_size = int(size64);
         static constexpr int fixed_size() { return 0; }
@@ -224,7 +224,7 @@ namespace QGenericItemModelDetails
     struct row_traits<T, typename make_void<decltype(T::staticMetaObject)>::type>
     {
         static constexpr int static_size = 0;
-        static int fixed_size(){
+        static int fixed_size() {
             // Interpret a gadget in a list as a multi-column row item. To
             // disambiguate, stick it into a SingleColumn wrapper.
             static const int columnCount = []{
