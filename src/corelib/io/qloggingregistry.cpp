@@ -256,7 +256,7 @@ static bool qtLoggingDebug()
             debugMsg("QT_LOGGING_DEBUG environment variable is set.");
         return debug;
     }();
-    return debugEnv;
+    return Q_UNLIKELY(debugEnv);
 }
 
 static QList<QLoggingRule> loadRulesFromFile(const QString &filePath)
