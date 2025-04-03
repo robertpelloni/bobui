@@ -528,13 +528,13 @@ public:
     // the "end" parameters are like STL iterators: they point to one past the last valid element
     bool setScheme(const QString &value, qsizetype len, bool doSetError);
     void setAuthority(const QString &auth, qsizetype from, qsizetype end, QUrl::ParsingMode mode);
-    void setUserInfo(QStringView value);
-    void setUserName(QStringView value);
-    void setPassword(QStringView value);
+    template <typename String> void setUserInfo(String value);
+    template <typename String> void setUserName(String value);
+    template <typename String> void setPassword(String value);
     bool setHost(const QString &value, qsizetype from, qsizetype end, QUrl::ParsingMode mode);
-    void setPath(QStringView value);
-    void setQuery(QStringView value);
-    void setFragment(QStringView value);
+    template <typename String> void setPath(String value);
+    template <typename String> void setQuery(String value);
+    template <typename String> void setFragment(String value);
 
     inline bool hasScheme() const { return sectionIsPresent & Scheme; }
     inline bool hasAuthority() const { return sectionIsPresent & Authority; }
@@ -814,8 +814,15 @@ static inline void parseDecodedComponent(QString &data, QUrlPrivate::Section sec
         data.replace(u'[', "%5B"_L1).replace(u']', "%5D"_L1);
 }
 
-static void
-recodeFromUser(QString &output, QStringView input, const ushort *actions)
+static void recodeFromUser(QString &output, const QString &input, const ushort *actions)
+{
+    output.resize(0);
+    if (qt_urlRecode(output, input, {}, actions))
+        return;
+    output = input;
+}
+
+static void recodeFromUser(QString &output, QStringView input, const ushort *actions)
 {
     output.resize(0);
     if (qt_urlRecode(output, input, {}, actions))
@@ -1086,7 +1093,7 @@ inline void QUrlPrivate::setAuthority(const QString &auth, qsizetype from, qsize
     port = -1;
 }
 
-inline void QUrlPrivate::setUserInfo(QStringView value)
+template <typename String> void QUrlPrivate::setUserInfo(String value)
 {
     qsizetype delimIndex = value.indexOf(u':');
     if (delimIndex < 0) {
@@ -1100,31 +1107,31 @@ inline void QUrlPrivate::setUserInfo(QStringView value)
     }
 }
 
-inline void QUrlPrivate::setUserName(QStringView value)
+template <typename String> inline void QUrlPrivate::setUserName(String value)
 {
     sectionIsPresent |= UserName;
     recodeFromUser(userName, value, userNameInIsolation);
 }
 
-inline void QUrlPrivate::setPassword(QStringView value)
+template <typename String> inline void QUrlPrivate::setPassword(String value)
 {
     sectionIsPresent |= Password;
     recodeFromUser(password, value, passwordInIsolation);
 }
 
-inline void QUrlPrivate::setPath(QStringView value)
+template <typename String> inline void QUrlPrivate::setPath(String value)
 {
     // sectionIsPresent |= Path; // not used, save some cycles
     recodeFromUser(path, value, pathInIsolation);
 }
 
-inline void QUrlPrivate::setFragment(QStringView value)
+template <typename String> inline void QUrlPrivate::setFragment(String value)
 {
     sectionIsPresent |= Fragment;
     recodeFromUser(fragment, value, fragmentInIsolation);
 }
 
-inline void QUrlPrivate::setQuery(QStringView value)
+template <typename String> inline void QUrlPrivate::setQuery(String value)
 {
     sectionIsPresent |= Query;
     recodeFromUser(query, value, queryInIsolation);
