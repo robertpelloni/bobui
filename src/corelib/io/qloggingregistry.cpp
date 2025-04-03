@@ -6,12 +6,12 @@
 #include <QtCore/qfile.h>
 #include <QtCore/qlibraryinfo.h>
 #include <QtCore/private/qlocking_p.h>
+#include <QtCore/qscopedvaluerollback.h>
 #include <QtCore/qstandardpaths.h>
 #include <QtCore/qstringtokenizer.h>
-#include <QtCore/qtextstream.h>
 #include <QtCore/qdir.h>
 #include <QtCore/qcoreapplication.h>
-#include <QtCore/qscopedvaluerollback.h>
+#include <qplatformdefs.h>
 
 #if QT_CONFIG(settings)
 #include <QtCore/qsettings.h>
@@ -163,12 +163,39 @@ void QLoggingSettingsParser::setContent(QStringView content, char16_t separator)
     \internal
     Parses configuration from \a stream.
 */
-void QLoggingSettingsParser::setContent(QTextStream &stream)
+void QLoggingSettingsParser::setContent(FILE *stream)
 {
     _rules.clear();
-    QString line;
-    while (stream.readLineInto(&line))
-        parseNextLine(qToStringViewIgnoringNull(line));
+
+    constexpr size_t ChunkSize = 240;
+    QByteArray buffer(ChunkSize, Qt::Uninitialized);
+    auto readline = [&](FILE *stream) {
+        // Read one line into the buffer
+
+        // fgets() always writes the terminating null into the buffer, so we'll
+        // allow it to write to the QByteArray's null (thus the off by 1).
+        char *s = fgets(buffer.begin(), buffer.size() + 1, stream);
+        if (!s)
+            return QByteArrayView{};
+
+        qsizetype len = strlen(s);
+        while (len == buffer.size()) {
+            // need to grow the buffer
+            buffer.resizeForOverwrite(buffer.size() + ChunkSize);
+            s = fgets(buffer.end() - ChunkSize, ChunkSize + 1, stream);
+            if (!s)
+                break;
+            len += strlen(s);
+        }
+        QByteArrayView result(buffer.constBegin(), len);
+        if (result.endsWith('\n'))
+            result.chop(1);
+        return result;
+    };
+
+    QByteArrayView line;
+    while (!(line = readline(stream)).isNull())
+        parseNextLine(QString::fromUtf8(line));
 }
 
 /*!
@@ -262,19 +289,38 @@ static bool qtLoggingDebug()
 
 static QList<QLoggingRule> loadRulesFromFile(const QString &filePath)
 {
+    Q_ASSERT(!filePath.isEmpty());
     if (qtLoggingDebug()) {
         debugMsg("Checking \"%s\" for rules",
                  QDir::toNativeSeparators(filePath).toUtf8().constData());
     }
 
-    QFile file(filePath);
-    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        QTextStream stream(&file);
+    // We bypass QFile here because QFile is a QObject.
+    if (Q_UNLIKELY(filePath.at(0) == u':')) {
+        if (qtLoggingDebug()) {
+            warnMsg("Attempted to load config rules from Qt resource path \"%ls\"",
+                    qUtf16Printable(filePath));
+        }
+        return {};
+    }
+
+#ifdef Q_OS_WIN
+    // text mode: let the runtime do CRLF translation
+    FILE *f = _wfopen(reinterpret_cast<const wchar_t *>(filePath.constBegin()), L"rtN");
+#else
+    FILE *f = QT_FOPEN(QFile::encodeName(filePath).constBegin(), "re");
+#endif
+    if (f) {
         QLoggingSettingsParser parser;
-        parser.setContent(stream);
+        parser.setContent(f);
+        fclose(f);
         if (qtLoggingDebug())
-            debugMsg("Loaded %td rules", static_cast<ptrdiff_t>(parser.rules().size()));
+            debugMsg("Loaded %td rules from \"%ls\"", static_cast<ptrdiff_t>(parser.rules().size()),
+                     qUtf16Printable(filePath));
         return parser.rules();
+    } else if (int err = errno; err != ENOENT) {
+        warnMsg("Failed to load file \"%ls\": %ls", qUtf16Printable(filePath),
+                qUtf16Printable(qt_error_string(err)));
     }
     return QList<QLoggingRule>();
 }

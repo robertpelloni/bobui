@@ -82,7 +82,7 @@ public:
     void setImplicitRulesSection(bool inRulesSection) { m_inRulesSection = inRulesSection; }
 
     void setContent(QStringView content, char16_t separator = u'\n');
-    void setContent(QTextStream &stream);
+    void setContent(FILE *stream);
 
     QList<QLoggingRule> rules() const { return _rules; }
 
