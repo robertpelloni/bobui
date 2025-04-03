@@ -78,15 +78,13 @@ private:
     void initialize() override;
     void cleanup() override;
 
-public: // public for EMSCRIPTEN_BINDINGS
-    static void onHtmlEventReceived(emscripten::val event);
-
 private:
     static QWasmAccessibility *s_instance;
     QObject *m_rootObject = nullptr;
     bool m_accessibilityEnabled = false;
     std::map<QWindow *, std::tuple<emscripten::val, std::shared_ptr<qstdweb::EventCallback>>> m_enableButtons;
     QHash<QAccessibleInterface *, emscripten::val> m_elements;
+    int m_eventHandlerIndex;
 };
 
 #endif // QT_CONFIG(accessibility)

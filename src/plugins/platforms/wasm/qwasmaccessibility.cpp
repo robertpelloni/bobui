@@ -5,6 +5,7 @@
 #include "qwasmscreen.h"
 #include "qwasmwindow.h"
 #include "qwasmintegration.h"
+#include <QtCore/private/qwasmsuspendresumecontrol_p.h>
 #include <QtGui/qwindow.h>
 
 #if QT_CONFIG(accessibility)
@@ -29,10 +30,22 @@ QWasmAccessibility::QWasmAccessibility()
 
     if (qEnvironmentVariableIntValue("QT_WASM_ENABLE_ACCESSIBILITY") == 1)
         enableAccessibility();
+
+    // Register accessiiblity element event handler
+    QWasmSuspendResumeControl *suspendResume = QWasmSuspendResumeControl::get();
+    Q_ASSERT(suspendResume);
+    m_eventHandlerIndex = suspendResume->registerEventHandler([this](const emscripten::val event){
+        this->handleEventFromHtmlElement(event);
+    });
 }
 
 QWasmAccessibility::~QWasmAccessibility()
 {
+    // Remove accessiiblity element event handler
+    QWasmSuspendResumeControl *suspendResume = QWasmSuspendResumeControl::get();
+    Q_ASSERT(suspendResume);
+    suspendResume->removeEventHandler(m_eventHandlerIndex);
+
     s_instance = nullptr;
 }
 
@@ -170,8 +183,10 @@ emscripten::val QWasmAccessibility::createHtmlElement(QAccessibleInterface *ifac
 
         case QAccessible::Button: {
             element = document.call<emscripten::val>("createElement", std::string("button"));
+
             element.call<void>("addEventListener", emscripten::val("click"),
-                               emscripten::val::module_property("qtEventReceived"), true);
+                QWasmSuspendResumeControl::get()->jsEventHandlerAt(m_eventHandlerIndex), true);
+
         } break;
         case QAccessible::CheckBox: {
             element = document.call<emscripten::val>("createElement", std::string("input"));
@@ -180,7 +195,7 @@ emscripten::val QWasmAccessibility::createHtmlElement(QAccessibleInterface *ifac
                 element.call<void>("setAttribute", std::string("checked"), std::string("true"));
             }
             element.call<void>("addEventListener", emscripten::val("change"),
-                               emscripten::val::module_property("qtEventReceived"), true);
+                QWasmSuspendResumeControl::get()->jsEventHandlerAt(m_eventHandlerIndex), true);
 
         } break;
 
@@ -192,7 +207,7 @@ emscripten::val QWasmAccessibility::createHtmlElement(QAccessibleInterface *ifac
             }
             element.set(std::string("name"), std::string("buttonGroup"));
             element.call<void>("addEventListener", emscripten::val("change"),
-                               emscripten::val::module_property("qtEventReceived"), true);
+                QWasmSuspendResumeControl::get()->jsEventHandlerAt(m_eventHandlerIndex), true);
         } break;
 
         case QAccessible::SpinBox: {
@@ -201,7 +216,7 @@ emscripten::val QWasmAccessibility::createHtmlElement(QAccessibleInterface *ifac
             std::string valueString = iface->valueInterface()->currentValue().toString().toStdString();
             element.call<void>("setAttribute", std::string("value"), valueString);
             element.call<void>("addEventListener", emscripten::val("change"),
-                               emscripten::val::module_property("qtEventReceived"), true);
+                QWasmSuspendResumeControl::get()->jsEventHandlerAt(m_eventHandlerIndex), true);
         } break;
 
         case QAccessible::Slider: {
@@ -210,7 +225,7 @@ emscripten::val QWasmAccessibility::createHtmlElement(QAccessibleInterface *ifac
             std::string valueString = iface->valueInterface()->currentValue().toString().toStdString();
             element.call<void>("setAttribute", std::string("value"), valueString);
             element.call<void>("addEventListener", emscripten::val("change"),
-                               emscripten::val::module_property("qtEventReceived"), true);
+                QWasmSuspendResumeControl::get()->jsEventHandlerAt(m_eventHandlerIndex), true);
         } break;
 
         case QAccessible::PageTabList:{
@@ -236,7 +251,7 @@ emscripten::val QWasmAccessibility::createHtmlElement(QAccessibleInterface *ifac
             QString text = iface->text(QAccessible::Name);
             element.call<void>("setAttribute", std::string("title"), text.toStdString());
             element.call<void>("addEventListener", emscripten::val("click"),
-                               emscripten::val::module_property("qtEventReceived"), true);
+                QWasmSuspendResumeControl::get()->jsEventHandlerAt(m_eventHandlerIndex), true);
         } break;
 
         case QAccessible::ScrollBar: {
@@ -245,7 +260,7 @@ emscripten::val QWasmAccessibility::createHtmlElement(QAccessibleInterface *ifac
             std::string valueString = iface->valueInterface()->currentValue().toString().toStdString();
             element.call<void>("setAttribute", std::string("aria-valuenow"), valueString);
             element.call<void>("addEventListener", emscripten::val("change"),
-                               emscripten::val::module_property("qtEventReceived"), true);
+                QWasmSuspendResumeControl::get()->jsEventHandlerAt(m_eventHandlerIndex), true);
         } break;
 
         case QAccessible::StaticText: {
@@ -263,7 +278,7 @@ emscripten::val QWasmAccessibility::createHtmlElement(QAccessibleInterface *ifac
             element.call<void>("setAttribute", std::string("role"), std::string("toolbar"));
             element.call<void>("setAttribute", std::string("title"), text.toStdString());
             element.call<void>("addEventListener", emscripten::val("click"),
-                               emscripten::val::module_property("qtEventReceived"), true);
+                QWasmSuspendResumeControl::get()->jsEventHandlerAt(m_eventHandlerIndex), true);
         }break;
         case QAccessible::MenuItem:
         case QAccessible::ButtonMenu: {
@@ -273,7 +288,7 @@ emscripten::val QWasmAccessibility::createHtmlElement(QAccessibleInterface *ifac
             element.call<void>("setAttribute", std::string("role"), std::string("menuitem"));
             element.call<void>("setAttribute", std::string("title"), text.toStdString());
             element.call<void>("addEventListener", emscripten::val("click"),
-                               emscripten::val::module_property("qtEventReceived"), true);
+                QWasmSuspendResumeControl::get()->jsEventHandlerAt(m_eventHandlerIndex), true);
         }break;
         case QAccessible::MenuBar:
         case QAccessible::PopupMenu: {
@@ -293,7 +308,7 @@ emscripten::val QWasmAccessibility::createHtmlElement(QAccessibleInterface *ifac
             element = document.call<emscripten::val>("createElement", std::string("input"));
             element.call<void>("setAttribute", std::string("type"),std::string("text"));
             element.call<void>("addEventListener", emscripten::val("input"),
-                               emscripten::val::module_property("qtEventReceived"), true);
+                QWasmSuspendResumeControl::get()->jsEventHandlerAt(m_eventHandlerIndex), true);
         } break;
         default:
             qCDebug(lcQpaAccessibility) << "TODO: createHtmlElement() handle" << iface->role();
@@ -823,15 +838,6 @@ void QWasmAccessibility::initialize()
 void QWasmAccessibility::cleanup()
 {
 
-}
-
-void QWasmAccessibility::onHtmlEventReceived(emscripten::val event)
-{
-    static_cast<QWasmAccessibility *>(QWasmIntegration::get()->accessibility())->handleEventFromHtmlElement(event);
-}
-
-EMSCRIPTEN_BINDINGS(qtButtonEvent) {
-    function("qtEventReceived", &QWasmAccessibility::onHtmlEventReceived);
 }
 
 #endif // QT_CONFIG(accessibility)
