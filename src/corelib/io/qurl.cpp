@@ -528,13 +528,13 @@ public:
     // the "end" parameters are like STL iterators: they point to one past the last valid element
     bool setScheme(const QString &value, qsizetype len, bool doSetError);
     void setAuthority(const QString &auth, qsizetype from, qsizetype end, QUrl::ParsingMode mode);
-    void setUserInfo(const QString &userInfo, qsizetype from, qsizetype end);
-    void setUserName(const QString &value, qsizetype from, qsizetype end);
-    void setPassword(const QString &value, qsizetype from, qsizetype end);
+    void setUserInfo(QStringView value);
+    void setUserName(QStringView value);
+    void setPassword(QStringView value);
     bool setHost(const QString &value, qsizetype from, qsizetype end, QUrl::ParsingMode mode);
-    void setPath(const QString &value, qsizetype from, qsizetype end);
-    void setQuery(const QString &value, qsizetype from, qsizetype end);
-    void setFragment(const QString &value, qsizetype from, qsizetype end);
+    void setPath(QStringView value);
+    void setQuery(QStringView value);
+    void setFragment(QStringView value);
 
     inline bool hasScheme() const { return sectionIsPresent & Scheme; }
     inline bool hasAuthority() const { return sectionIsPresent & Authority; }
@@ -814,16 +814,13 @@ static inline void parseDecodedComponent(QString &data, QUrlPrivate::Section sec
         data.replace(u'[', "%5B"_L1).replace(u']', "%5D"_L1);
 }
 
-static inline QString
-recodeFromUser(const QString &input, const ushort *actions, qsizetype from, qsizetype to)
+static void
+recodeFromUser(QString &output, QStringView input, const ushort *actions)
 {
-    QString output;
-    const QChar *begin = input.constData() + from;
-    const QChar *end = input.constData() + to;
-    if (qt_urlRecode(output, QStringView{begin, end}, {}, actions))
-        return output;
-
-    return input.mid(from, to - from);
+    output.resize(0);
+    if (qt_urlRecode(output, input, {}, actions))
+        return;
+    output.append(input);
 }
 
 // appendXXXX functions: copy from the internal form to the external, user form.
@@ -1030,7 +1027,7 @@ inline void QUrlPrivate::setAuthority(const QString &auth, qsizetype from, qsize
     while (from != end) {
         qsizetype userInfoIndex = auth.indexOf(u'@', from);
         if (size_t(userInfoIndex) < size_t(end)) {
-            setUserInfo(auth, from, userInfoIndex);
+            setUserInfo(QStringView(auth).sliced(from, userInfoIndex - from));
             if (mode == QUrl::StrictMode && !validateComponent(UserInfo, auth, from, userInfoIndex))
                 break;
             from = userInfoIndex + 1;
@@ -1089,47 +1086,48 @@ inline void QUrlPrivate::setAuthority(const QString &auth, qsizetype from, qsize
     port = -1;
 }
 
-inline void QUrlPrivate::setUserInfo(const QString &userInfo, qsizetype from, qsizetype end)
+inline void QUrlPrivate::setUserInfo(QStringView value)
 {
-    qsizetype delimIndex = userInfo.indexOf(u':', from);
-    setUserName(userInfo, from, qMin<size_t>(delimIndex, end));
-
-    if (size_t(delimIndex) >= size_t(end)) {
+    qsizetype delimIndex = value.indexOf(u':');
+    if (delimIndex < 0) {
+        // no password
+        setUserName(value);
         password.clear();
         sectionIsPresent &= ~Password;
     } else {
-        setPassword(userInfo, delimIndex + 1, end);
+        setUserName(value.first(delimIndex));
+        setPassword(value.sliced(delimIndex + 1));
     }
 }
 
-inline void QUrlPrivate::setUserName(const QString &value, qsizetype from, qsizetype end)
+inline void QUrlPrivate::setUserName(QStringView value)
 {
     sectionIsPresent |= UserName;
-    userName = recodeFromUser(value, userNameInIsolation, from, end);
+    recodeFromUser(userName, value, userNameInIsolation);
 }
 
-inline void QUrlPrivate::setPassword(const QString &value, qsizetype from, qsizetype end)
+inline void QUrlPrivate::setPassword(QStringView value)
 {
     sectionIsPresent |= Password;
-    password = recodeFromUser(value, passwordInIsolation, from, end);
+    recodeFromUser(password, value, passwordInIsolation);
 }
 
-inline void QUrlPrivate::setPath(const QString &value, qsizetype from, qsizetype end)
+inline void QUrlPrivate::setPath(QStringView value)
 {
     // sectionIsPresent |= Path; // not used, save some cycles
-    path = recodeFromUser(value, pathInIsolation, from, end);
+    recodeFromUser(path, value, pathInIsolation);
 }
 
-inline void QUrlPrivate::setFragment(const QString &value, qsizetype from, qsizetype end)
+inline void QUrlPrivate::setFragment(QStringView value)
 {
     sectionIsPresent |= Fragment;
-    fragment = recodeFromUser(value, fragmentInIsolation, from, end);
+    recodeFromUser(fragment, value, fragmentInIsolation);
 }
 
-inline void QUrlPrivate::setQuery(const QString &value, qsizetype from, qsizetype iend)
+inline void QUrlPrivate::setQuery(QStringView value)
 {
     sectionIsPresent |= Query;
-    query = recodeFromUser(value, queryInIsolation, from, iend);
+    recodeFromUser(query, value, queryInIsolation);
 }
 
 // Host handling
@@ -1438,7 +1436,7 @@ inline void QUrlPrivate::parse(const QString &url, QUrl::ParsingMode parsingMode
 
         // even if we failed to set the authority properly, let's try to recover
         pathStart = authorityEnd;
-        setPath(url, pathStart, hierEnd);
+        setPath(QStringView(url).sliced(pathStart, hierEnd - pathStart));
     } else {
         userName.clear();
         password.clear();
@@ -1447,16 +1445,16 @@ inline void QUrlPrivate::parse(const QString &url, QUrl::ParsingMode parsingMode
         pathStart = hierStart;
 
         if (hierStart < hierEnd)
-            setPath(url, hierStart, hierEnd);
+            setPath(QStringView(url).sliced(hierStart, hierEnd - hierStart));
         else
             path.clear();
     }
 
     if (size_t(question) < size_t(hash))
-        setQuery(url, question + 1, qMin<size_t>(hash, len));
+        setQuery(QStringView(url).sliced(question + 1, qMin<size_t>(hash, len) - question - 1));
 
     if (hash != -1)
-        setFragment(url, hash + 1, len);
+        setFragment(QStringView(url).sliced(hash + 1, len - hash - 1));
 
     if (error || parsingMode == QUrl::TolerantMode)
         return;
@@ -2043,7 +2041,7 @@ void QUrl::setUserInfo(const QString &userInfo, ParsingMode mode)
         return;
     }
 
-    d->setUserInfo(trimmed, 0, trimmed.size());
+    d->setUserInfo(trimmed);
     if (userInfo.isNull()) {
         // QUrlPrivate::setUserInfo cleared almost everything
         // but it leaves the UserName bit set
@@ -2115,7 +2113,7 @@ void QUrl::setUserName(const QString &userName, ParsingMode mode)
         mode = TolerantMode;
     }
 
-    d->setUserName(data, 0, data.size());
+    d->setUserName(data);
     if (userName.isNull())
         d->sectionIsPresent &= ~QUrlPrivate::UserName;
     else if (mode == StrictMode && !d->validateComponent(QUrlPrivate::UserName, userName))
@@ -2178,7 +2176,7 @@ void QUrl::setPassword(const QString &password, ParsingMode mode)
         mode = TolerantMode;
     }
 
-    d->setPassword(data, 0, data.size());
+    d->setPassword(data);
     if (password.isNull())
         d->sectionIsPresent &= ~QUrlPrivate::Password;
     else if (mode == StrictMode && !d->validateComponent(QUrlPrivate::Password, password))
@@ -2365,7 +2363,7 @@ void QUrl::setPath(const QString &path, ParsingMode mode)
         mode = TolerantMode;
     }
 
-    d->setPath(data, 0, data.size());
+    d->setPath(data);
 
     // optimized out, since there is no path delimiter
 //    if (path.isNull())
@@ -2501,7 +2499,7 @@ void QUrl::setQuery(const QString &query, ParsingMode mode)
         mode = TolerantMode;
     }
 
-    d->setQuery(data, 0, data.size());
+    d->setQuery(data);
     if (query.isNull())
         d->sectionIsPresent &= ~QUrlPrivate::Query;
     else if (mode == StrictMode && !d->validateComponent(QUrlPrivate::Query, query))
@@ -2599,7 +2597,7 @@ void QUrl::setFragment(const QString &fragment, ParsingMode mode)
         mode = TolerantMode;
     }
 
-    d->setFragment(data, 0, data.size());
+    d->setFragment(data);
     if (fragment.isNull())
         d->sectionIsPresent &= ~QUrlPrivate::Fragment;
     else if (mode == StrictMode && !d->validateComponent(QUrlPrivate::Fragment, fragment))
