@@ -660,4 +660,22 @@ qt_urlRecode(QString &appendTo, QStringView in,
                   reinterpret_cast<const char16_t *>(in.end()), encoding, actionTable, false);
 }
 
+qsizetype qt_encodeFromUser(QString &appendTo, const QString &in, const ushort *tableModifications)
+{
+    uchar actionTable[sizeof defaultActionTable];
+    memcpy(actionTable, defaultActionTable, sizeof actionTable);
+
+    // Different defaults to the regular encoded-to-encoded recoding
+    actionTable['[' - ' '] = EncodeCharacter;
+    actionTable[']' - ' '] = EncodeCharacter;
+
+    if (tableModifications) {
+        for (const ushort *p = tableModifications; *p; ++p)
+            actionTable[uchar(*p) - ' '] = *p >> 8;
+    }
+
+    return recode(appendTo, reinterpret_cast<const char16_t *>(in.begin()),
+                  reinterpret_cast<const char16_t *>(in.end()), {}, actionTable, true);
+}
+
 QT_END_NAMESPACE
