@@ -494,19 +494,27 @@ template <typename Result,
           typename std::enable_if_t<std::is_floating_point_v<FP>, bool> = true>
 constexpr inline Result qCheckedFPConversionToInteger(FP value)
 {
-    // GCC always has constexpr cmath
-#if !defined(__cpp_lib_constexpr_cmath) && !defined(Q_CC_GNU_ONLY)
-# ifdef QT_SUPPORTS_IS_CONSTANT_EVALUATED
+#ifdef QT_SUPPORTS_IS_CONSTANT_EVALUATED
     if (!q20::is_constant_evaluated())
-# else
-    if (false)
-# endif
+        Q_ASSERT(!std::isnan(value));
 #endif
-    {
-        const FP truncatedValue = std::trunc(value);
-        Q_ASSERT(truncatedValue >= FP((std::numeric_limits<Result>::min)()));
-        Q_ASSERT(truncatedValue <= FP((std::numeric_limits<Result>::max)()));
-    }
+
+    constexpr Result minimal = (std::numeric_limits<Result>::min)();
+    constexpr Result maximal = (std::numeric_limits<Result>::max)();
+
+    // We want to check that `value > minimal-1`. `minimal` is
+    // precisely representable as FP (it's -2^N), but `minimal-1`
+    // may not be. Just rearrange the terms:
+    Q_ASSERT(value - FP(minimal) > FP(-1));
+
+    // Symmetrically, `maximal` may not have a precise
+    // representation, but `maximal+1` has, so calculate that:
+    constexpr FP maximalPlusOne = FP(2) * (maximal / 2 + 1);
+    // And check that we're below that:
+    Q_ASSERT(value < maximalPlusOne);
+
+    // If both checks passed, the result of truncation is representable
+    // as `Result`:
     return Result(value);
 }
 
