@@ -1163,6 +1163,7 @@ auto QStringConverter::encodingForName(const char *name) noexcept -> std::option
 #endif
 
 #include "qtimer.h" // inlined API
+                    // removed inline API (MSVC)
 
 void QTimer::singleShot(std::chrono::milliseconds interval, Qt::TimerType timerType,
                         const QObject *receiver, const char *member)
