@@ -81,7 +81,7 @@ class Q_AUTOTEST_EXPORT QLoggingSettingsParser
 public:
     void setImplicitRulesSection(bool inRulesSection) { m_inRulesSection = inRulesSection; }
 
-    void setContent(QStringView content);
+    void setContent(QStringView content, char16_t separator = u'\n');
     void setContent(QTextStream &stream);
 
     QList<QLoggingRule> rules() const { return _rules; }

@@ -152,10 +152,10 @@ void QLoggingRule::parse(QStringView pattern)
     \internal
     Parses configuration from \a content.
 */
-void QLoggingSettingsParser::setContent(QStringView content)
+void QLoggingSettingsParser::setContent(QStringView content, char16_t separator)
 {
     _rules.clear();
-    for (auto line : qTokenize(content, u'\n'))
+    for (auto line : qTokenize(content, separator))
         parseNextLine(line);
 }
 
@@ -298,12 +298,11 @@ void QLoggingRegistry::initializeRules()
     if (qtLoggingDebug())
         debugMsg("Checking %s environment variable", "QT_LOGGING_RULES");
 
-    const QByteArray rulesSrc = qgetenv("QT_LOGGING_RULES").replace(';', '\n');
+    const QString rulesSrc = qEnvironmentVariable("QT_LOGGING_RULES");
     if (!rulesSrc.isEmpty()) {
-        QTextStream stream(rulesSrc);
         QLoggingSettingsParser parser;
         parser.setImplicitRulesSection(true);
-        parser.setContent(stream);
+        parser.setContent(rulesSrc, u';');
 
         if (qtLoggingDebug())
             debugMsg("Loaded %td rules", static_cast<ptrdiff_t>(parser.rules().size()));
