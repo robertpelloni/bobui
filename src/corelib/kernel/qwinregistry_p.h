@@ -20,6 +20,7 @@
 #include <QtCore/qstringview.h>
 #include <QtCore/qt_windows.h>
 #include <QtCore/qvariant.h>
+#include <QtCore/qobject.h>
 #include <QtCore/qmetaobject.h>
 #include <QtCore/private/quniquehandle_types_p.h>
 
