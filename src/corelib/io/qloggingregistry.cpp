@@ -310,18 +310,17 @@ void QLoggingRegistry::initializeRules()
         er += parser.rules();
     }
 
-    const QString configFileName = QStringLiteral("qtlogging.ini");
+    const QString configFileName = u"QtProject/qtlogging.ini"_s;
+    QStringView baseConfigFileName = QStringView(configFileName).sliced(strlen("QtProject"));
+    Q_ASSERT(baseConfigFileName.startsWith(u'/'));
 
     // get rules from Qt data configuration path
-    const QString qtConfigPath
-            = QDir(QLibraryInfo::path(QLibraryInfo::DataPath)).absoluteFilePath(configFileName);
-    qr = loadRulesFromFile(qtConfigPath);
+    qr = loadRulesFromFile(QLibraryInfo::path(QLibraryInfo::DataPath) + baseConfigFileName);
 
     // get rules from user's/system configuration
     // locateAll() returns the user's file (most overriding) first
     const QStringList configPaths =
-            QStandardPaths::locateAll(QStandardPaths::GenericConfigLocation,
-                                      QString::fromLatin1("QtProject/") + configFileName);
+            QStandardPaths::locateAll(QStandardPaths::GenericConfigLocation, configFileName);
     for (qsizetype i = configPaths.size(); i > 0; --i)
         cr += loadRulesFromFile(configPaths[i - 1]);
 
