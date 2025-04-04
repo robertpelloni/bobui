@@ -530,7 +530,7 @@ public:
                 if constexpr (has_metaobject<value_type>) {
                     if (QMetaType::fromType<value_type>() == data.metaType()) {
                         if constexpr (std::is_copy_assignable_v<value_type>) {
-                            target = std::move(data).value<value_type>();
+                            target = data.value<value_type>();
                             return true;
                         } else {
                             qCritical("Cannot assign %s", QMetaType::fromType<value_type>().name());
