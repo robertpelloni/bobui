@@ -1049,7 +1049,6 @@ qt_internal_extend_target(Gui CONDITION TARGET Qt::DBus AND UNIX AND (QT_FEATURE
 qt_internal_extend_target(Gui CONDITION UNIX AND QT_FEATURE_settings AND QT_FEATURE_dbus AND (QT_FEATURE_xcb OR QT_FEATURE_wayland)
     SOURCES
         platform/unix/qkdetheme_p.h platform/unix/qkdetheme.cpp
-        platform/unix/qdbuslistener_p.h platform/unix/qdbuslistener.cpp
 )
 
 qt_internal_extend_target(Gui CONDITION UNIX AND (QT_FEATURE_xcb OR NOT MACOS) AND (QT_FEATURE_xcb OR NOT UIKIT)
@@ -1066,6 +1065,7 @@ qt_internal_extend_target(Gui CONDITION TARGET Qt::DBus AND UNIX AND (QT_FEATURE
         platform/unix/dbusmenu/qdbusmenuregistrarproxy.cpp platform/unix/dbusmenu/qdbusmenuregistrarproxy_p.h
         platform/unix/dbusmenu/qdbusmenutypes.cpp platform/unix/dbusmenu/qdbusmenutypes_p.h
         platform/unix/dbusmenu/qdbusplatformmenu.cpp platform/unix/dbusmenu/qdbusplatformmenu_p.h
+        platform/unix/qdbuslistener_p.h platform/unix/qdbuslistener.cpp
 )
 
 qt_internal_extend_target(Gui CONDITION QT_FEATURE_systemtrayicon AND TARGET Qt::DBus AND UNIX AND (QT_FEATURE_xcb OR NOT MACOS) AND (QT_FEATURE_xcb OR NOT UIKIT)
