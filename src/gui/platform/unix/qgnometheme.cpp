@@ -4,7 +4,7 @@
 #include "qgnometheme_p.h"
 #include <qpa/qplatformdialoghelper.h>
 #include <qpa/qplatformfontdatabase.h>
-#ifndef QT_NO_DBUS
+#if QT_CONFIG(dbus)
 #include "qdbuslistener_p.h"
 #include <private/qdbustrayicon_p.h>
 #include <private/qdbustrayicon_p.h>
@@ -18,9 +18,9 @@
 
 QT_BEGIN_NAMESPACE
 
-#ifndef QT_NO_DBUS
+#if QT_CONFIG(dbus)
 Q_STATIC_LOGGING_CATEGORY(lcQpaThemeGnome, "qt.qpa.theme.gnome")
-#endif // QT_NO_DBUS
+#endif
 
 /*!
     \class QGnomeTheme
@@ -33,7 +33,7 @@ const char *QGnomeTheme::name = "gnome";
 
 QGnomeThemePrivate::QGnomeThemePrivate()
 {
-#ifndef QT_NO_DBUS
+#if QT_CONFIG(dbus)
     static constexpr QLatin1String appearanceNamespace("org.freedesktop.appearance");
     static constexpr QLatin1String colorSchemeKey("color-scheme");
     static constexpr QLatin1String contrastKey("contrast");
@@ -79,7 +79,7 @@ QGnomeThemePrivate::QGnomeThemePrivate()
     } else {
         qCWarning(lcQpaThemeGnome) << "dbus connection failed. Last error: " << dbus.lastError();
     }
-#endif // QT_NO_DBUS
+#endif // QT_CONFIG(dbus)
 }
 QGnomeThemePrivate::~QGnomeThemePrivate()
 {
@@ -102,7 +102,7 @@ void QGnomeThemePrivate::configureFonts(const QString &gtkFontName) const
     qCDebug(lcQpaFonts) << "default fonts: system" << systemFont << "fixed" << fixedFont;
 }
 
-#ifndef QT_NO_DBUS
+#if QT_CONFIG(dbus)
 bool QGnomeThemePrivate::initDbus()
 {
     dbus.reset(new QDBusListener());
@@ -155,7 +155,7 @@ void QGnomeThemePrivate::updateHighContrast(Qt::ContrastPreference contrast)
     QWindowSystemInterface::handleThemeChange();
 }
 
-#endif // QT_NO_DBUS
+#endif // QT_CONFIG(dbus)
 
 QGnomeTheme::QGnomeTheme()
     : QGenericUnixTheme(new QGnomeThemePrivate())
@@ -236,7 +236,7 @@ QString QGnomeTheme::gtkFontName() const
                                   .arg(defaultSystemFontSize);
 }
 
-#ifndef QT_NO_DBUS
+#if QT_CONFIG(dbus)
 QPlatformMenuBar *QGnomeTheme::createPlatformMenuBar() const
 {
     if (isDBusGlobalMenuAvailable())
@@ -256,7 +256,7 @@ Qt::ContrastPreference QGnomeTheme::contrastPreference() const
 
 #endif
 
-#if !defined(QT_NO_DBUS) && !defined(QT_NO_SYSTEMTRAYICON)
+#if QT_CONFIG(dbus) && QT_CONFIG(systemtrayicon)
 QPlatformSystemTrayIcon *QGnomeTheme::createPlatformSystemTrayIcon() const
 {
     if (shouldUseDBusTray())

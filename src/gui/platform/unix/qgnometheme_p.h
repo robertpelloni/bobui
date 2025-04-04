@@ -22,7 +22,7 @@
 
 QT_BEGIN_NAMESPACE
 class QGnomeThemePrivate;
-#ifndef QT_NO_DBUS
+#if QT_CONFIG(dbus)
 class QDBusListener;
 #endif
 
@@ -38,12 +38,12 @@ public:
     QString standardButtonText(int button) const override;
 
     virtual QString gtkFontName() const;
-#ifndef QT_NO_DBUS
+#if QT_CONFIG(dbus)
     QPlatformMenuBar *createPlatformMenuBar() const override;
     Qt::ColorScheme colorScheme() const override;
     Qt::ContrastPreference contrastPreference() const override;
 #endif
-#if !defined(QT_NO_DBUS) && !defined(QT_NO_SYSTEMTRAYICON)
+#if QT_CONFIG(dbus) && QT_CONFIG(systemtrayicon)
     QPlatformSystemTrayIcon *createPlatformSystemTrayIcon() const override;
 #endif
 
@@ -61,7 +61,7 @@ public:
     mutable QFont *systemFont = nullptr;
     mutable QFont *fixedFont = nullptr;
 
-#ifndef QT_NO_DBUS
+#if QT_CONFIG(dbus)
     Qt::ColorScheme m_colorScheme = Qt::ColorScheme::Unknown;
     Qt::ContrastPreference m_contrast = Qt::ContrastPreference::NoPreference;
 private:
@@ -69,7 +69,7 @@ private:
     bool initDbus();
     void updateColorScheme(const QString &themeName);
     void updateHighContrast(Qt::ContrastPreference contrast);
-#endif // QT_NO_DBUS
+#endif // QT_CONFIG(dbus)
 };
 
 
