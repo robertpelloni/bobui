@@ -27,7 +27,9 @@
 
 QT_BEGIN_NAMESPACE
 
+#if !defined(QT_NO_EMOJISEGMENTER)
 Q_STATIC_LOGGING_CATEGORY(lcEmojiSegmenter, "qt.text.emojisegmenter")
+#endif
 
 static const float smallCapsFraction = 0.7f;
 
