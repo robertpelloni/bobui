@@ -43,10 +43,10 @@ public:
     void requestColorScheme(Qt::ColorScheme scheme) override;
 
     const QFont *font(Font type) const override;
-#ifndef QT_NO_DBUS
+#if QT_CONFIG(dbus)
     QPlatformMenuBar *createPlatformMenuBar() const override;
 #endif
-#if !defined(QT_NO_DBUS) && !defined(QT_NO_SYSTEMTRAYICON)
+#if QT_CONFIG(dbus) && QT_CONFIG(systemtrayicon)
     QPlatformSystemTrayIcon *createPlatformSystemTrayIcon() const override;
 #endif
 

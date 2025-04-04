@@ -109,18 +109,18 @@ public:
 
 private:
     mutable QHash<QString, QSettings *> kdeSettings;
-#ifndef QT_NO_DBUS
+#if QT_CONFIG(dbus)
     std::unique_ptr<QDBusListener> dbus;
     bool initDbus();
     void settingChangedHandler(QDBusListener::Provider provider,
                                QDBusListener::Setting setting,
                                const QVariant &value);
     Qt::ColorScheme colorSchemeFromPalette() const;
-#endif // QT_NO_DBUS
+#endif // QT_CONFIG(dbus)
     void clearResources();
 };
 
-#ifndef QT_NO_DBUS
+#if QT_CONFIG(dbus)
 void QKdeThemePrivate::settingChangedHandler(QDBusListener::Provider provider,
                                              QDBusListener::Setting setting,
                                              const QVariant &value)
@@ -166,15 +166,15 @@ bool QKdeThemePrivate::initDbus()
 
     return QObject::connect(dbus.get(), &QDBusListener::settingChanged, dbus.get(), wrapper);
 }
-#endif // QT_NO_DBUS
+#endif // QT_CONFIG(dbus)
 
 QKdeThemePrivate::QKdeThemePrivate(const QStringList &kdeDirs, int kdeVersion)
     : kdeDirs(kdeDirs), kdeVersion(kdeVersion)
 {
     std::fill(fonts, fonts + QPlatformTheme::NFonts, static_cast<QFont *>(nullptr));
-#ifndef QT_NO_DBUS
+#if QT_CONFIG(dbus)
     initDbus();
-#endif // QT_NO_DBUS
+#endif // QT_CONFIG(dbus)
 }
 
 static constexpr QLatin1StringView settingsPrefix(QKdeThemePrivate::KdeSettingType type)
@@ -812,7 +812,7 @@ QPlatformTheme *QKdeTheme::createKdeTheme()
     return new QKdeTheme(kdeDirs, kdeVersion);
 }
 
-#ifndef QT_NO_DBUS
+#if QT_CONFIG(dbus)
 QPlatformMenuBar *QKdeTheme::createPlatformMenuBar() const
 {
     if (isDBusGlobalMenuAvailable())
@@ -821,7 +821,7 @@ QPlatformMenuBar *QKdeTheme::createPlatformMenuBar() const
 }
 #endif
 
-#if !defined(QT_NO_DBUS) && !defined(QT_NO_SYSTEMTRAYICON)
+#if QT_CONFIG(dbus) && QT_CONFIG(systemtrayicon)
 QPlatformSystemTrayIcon *QKdeTheme::createPlatformSystemTrayIcon() const
 {
     if (shouldUseDBusTray())
