@@ -1312,17 +1312,19 @@ bool QMetaObject::checkConnectArgs(const QMetaMethod &signal,
             QMetaMethodPrivate::get(&method));
 }
 
-static void qRemoveWhitespace(const char *s, char *d)
+static void qRemoveWhitespace(QByteArrayView str, char *d)
 {
     char last = 0;
-    while (*s && is_space(*s))
+    const char *s = str.begin();
+    const char *end = str.end();
+    while (s != end && is_space(*s))
         s++;
-    while (*s) {
-        while (*s && !is_space(*s))
+    while (s != end) {
+        while (s != end && !is_space(*s))
             last = *d++ = *s++;
-        while (*s && is_space(*s))
+        while (s != end && is_space(*s))
             s++;
-        if (*s && ((is_ident_char(*s) && is_ident_char(last))
+        if (s != end && ((is_ident_char(*s) && is_ident_char(last))
                    || ((*s == ':') && (last == '<')))) {
             last = *d++ = ' ';
         }
@@ -1388,7 +1390,7 @@ QByteArray QMetaObject::normalizedSignature(const char *method)
     int len = int(strlen(method));
     QVarLengthArray<char> stackbuf(len + 1);
     char *d = stackbuf.data();
-    qRemoveWhitespace(method, d);
+    qRemoveWhitespace(QByteArrayView{method, len}, d);
 
     result.reserve(len);
 
