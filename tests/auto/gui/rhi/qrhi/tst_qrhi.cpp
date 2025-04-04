@@ -371,10 +371,10 @@ void tst_QRhi::create()
                 cleanupOk += 1;
         };
         rhi->addCleanupCallback(cleanupFunc);
-        rhi->runCleanup();
-        QCOMPARE(cleanupOk, 1);
-        cleanupOk = 0;
         rhi->addCleanupCallback(cleanupFunc);
+        rhi->addCleanupCallback(reinterpret_cast<const void *>(quintptr(1234)), cleanupFunc);
+        rhi->addCleanupCallback(reinterpret_cast<const void *>(quintptr(12345)), cleanupFunc);
+        rhi->removeCleanupCallback(reinterpret_cast<const void *>(quintptr(1234)));
 
         QRhiResourceUpdateBatch *resUpd = rhi->nextResourceUpdateBatch();
         QVERIFY(resUpd);
@@ -512,7 +512,7 @@ void tst_QRhi::create()
         QVERIFY(!rhi->isDeviceLost());
 
         rhi.reset();
-        QCOMPARE(cleanupOk, 1);
+        QCOMPARE(cleanupOk, 3);
     }
 }
 

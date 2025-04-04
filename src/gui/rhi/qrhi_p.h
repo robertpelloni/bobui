@@ -242,6 +242,8 @@ public:
 
     int effectiveSampleCount(int sampleCount) const;
 
+    void runCleanup();
+
     QRhi *q;
 
     static const int MAX_SHADER_CACHE_ENTRIES = 128;

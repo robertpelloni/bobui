@@ -8808,7 +8808,7 @@ QRhi::~QRhi()
     if (!d)
         return;
 
-    runCleanup();
+    d->runCleanup();
 
     qDeleteAll(d->pendingDeleteResources);
     d->pendingDeleteResources.clear();
@@ -9337,8 +9337,7 @@ QThread *QRhi::thread() const
 }
 
 /*!
-    Registers a \a callback that is invoked either when the QRhi is destroyed,
-    or when runCleanup() is called.
+    Registers a \a callback that is invoked when the QRhi is destroyed.
 
     The callback will run with the graphics resource still available, so this
     provides an opportunity for the application to cleanly release QRhiResource
@@ -9346,7 +9345,7 @@ QThread *QRhi::thread() const
     the lifetime of resources stored in \c cache type of objects, where the
     cache holds QRhiResources or objects containing QRhiResources.
 
-    \sa runCleanup(), ~QRhi()
+    \sa ~QRhi()
  */
 void QRhi::addCleanupCallback(const CleanupCallback &callback)
 {
@@ -9356,10 +9355,9 @@ void QRhi::addCleanupCallback(const CleanupCallback &callback)
 /*!
     \overload
 
-    Registers \a callback to be invoked either when the QRhi is destroyed or
-    when runCleanup() is called. This overload takes an opaque pointer, \a key,
-    that is used to ensure that a given callback is registered (and so called)
-    only once.
+    Registers \a callback to be invoked when the QRhi is destroyed. This
+    overload takes an opaque pointer, \a key, that is used to ensure that a
+    given callback is registered (and so called) only once.
 
     \sa removeCleanupCallback()
  */
@@ -9380,25 +9378,17 @@ void QRhi::removeCleanupCallback(const void *key)
     d->removeCleanupCallback(key);
 }
 
-/*!
-    Invokes all registered cleanup functions. The list of cleanup callbacks it
-    then cleared. Normally destroying the QRhi does this automatically, but
-    sometimes it can be useful to trigger cleanup in order to release all
-    cached, non-essential resources.
-
-    \sa addCleanupCallback()
- */
-void QRhi::runCleanup()
+void QRhiImplementation::runCleanup()
 {
-    for (const CleanupCallback &f : std::as_const(d->cleanupCallbacks))
-        f(this);
+    for (const QRhi::CleanupCallback &f : std::as_const(cleanupCallbacks))
+        f(q);
 
-    d->cleanupCallbacks.clear();
+    cleanupCallbacks.clear();
 
-    for (auto it = d->keyedCleanupCallbacks.cbegin(), end = d->keyedCleanupCallbacks.cend(); it != end; ++it)
-        it.value()(this);
+    for (auto it = keyedCleanupCallbacks.cbegin(), end = keyedCleanupCallbacks.cend(); it != end; ++it)
+        it.value()(q);
 
-    d->keyedCleanupCallbacks.clear();
+    keyedCleanupCallbacks.clear();
 }
 
 /*!
