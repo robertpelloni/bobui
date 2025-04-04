@@ -21,7 +21,7 @@
 #endif
 #if QT_CONFIG(settings)
 #include <QSettings>
-#ifndef QT_NO_DBUS
+#if QT_CONFIG(dbus)
 #include "qkdetheme_p.h"
 #endif
 #endif
@@ -32,7 +32,7 @@
 #include <qpa/qplatformdialoghelper.h>
 #include <qpa/qplatformtheme_p.h>
 
-#ifndef QT_NO_DBUS
+#if QT_CONFIG(dbus)
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QJsonObject>
@@ -47,7 +47,7 @@
 #include <private/qguiapplication_p.h>
 #include <qpa/qplatformintegration.h>
 #include <QtCore/QStandardPaths>
-#ifndef QT_NO_DBUS
+#if QT_CONFIG(dbus)
 #include <QtDBus/QDBusConnectionInterface>
 #include <private/qdbustrayicon_p.h>
 #endif
@@ -96,7 +96,7 @@ const QFont *QGenericUnixTheme::font(Font type) const
     }
 }
 
-#ifndef QT_NO_DBUS
+#if QT_CONFIG(dbus)
 QPlatformMenuBar *QGenericUnixTheme::createPlatformMenuBar() const
 {
     if (isDBusGlobalMenuAvailable())
@@ -105,7 +105,7 @@ QPlatformMenuBar *QGenericUnixTheme::createPlatformMenuBar() const
 }
 #endif
 
-#if !defined(QT_NO_DBUS) && !defined(QT_NO_SYSTEMTRAYICON)
+#if QT_CONFIG(dbus) && QT_CONFIG(systemtrayicon)
 QPlatformSystemTrayIcon *QGenericUnixTheme::createPlatformSystemTrayIcon() const
 {
     if (shouldUseDBusTray())
@@ -161,7 +161,7 @@ QStringList QGenericUnixTheme::themeNames()
                              << "LXDE";
         const QList<QByteArray> desktopNames = desktopEnvironment.split(':');
         for (const QByteArray &desktopName : desktopNames) {
-#if !defined QT_NO_DBUS && QT_CONFIG(settings) && (QT_CONFIG(xcb) || QT_CONFIG(wayland))
+#if QT_CONFIG(dbus) && QT_CONFIG(settings) && (QT_CONFIG(xcb) || QT_CONFIG(wayland))
             if (desktopEnvironment == "KDE") {
                 result.push_back(QLatin1StringView(QKdeTheme::name));
             } else
@@ -191,7 +191,7 @@ QPlatformTheme *QGenericUnixTheme::createUnixTheme(const QString &name)
 {
     if (name == QLatin1StringView(QGenericUnixTheme::name))
         return new QGenericUnixTheme;
-#if !defined QT_NO_DBUS && QT_CONFIG(settings) && (QT_CONFIG(xcb) || QT_CONFIG(wayland))
+#if QT_CONFIG(dbus) && QT_CONFIG(settings) && (QT_CONFIG(xcb) || QT_CONFIG(wayland))
     if (name == QLatin1StringView(QKdeTheme::name))
         return QKdeTheme::createKdeTheme();
 #endif
@@ -240,7 +240,7 @@ QSize QGenericUnixTheme::mouseCursorSize()
     return QSize(s, s);
 }
 
-#ifndef QT_NO_DBUS
+#if QT_CONFIG(dbus)
 static bool checkDBusGlobalMenuAvailable()
 {
     const QDBusConnection connection = QDBusConnection::sessionBus();
@@ -276,7 +276,7 @@ QIcon QGenericUnixTheme::xdgFileIcon(const QFileInfo &fileInfo)
 #endif
 
 
-#if !defined(QT_NO_DBUS) && !defined(QT_NO_SYSTEMTRAYICON)
+#if QT_CONFIG(dbus) && QT_CONFIG(systemtrayicon)
 bool QGenericUnixTheme::shouldUseDBusTray()
 {
     // There's no other tray implementation to fallback to on non-X11

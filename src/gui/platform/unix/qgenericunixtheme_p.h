@@ -46,10 +46,10 @@ public:
     const QFont *font(Font type) const override;
     QVariant themeHint(ThemeHint hint) const override;
 
-#ifndef QT_NO_DBUS
+#if QT_CONFIG(dbus)
     QPlatformMenuBar *createPlatformMenuBar() const override;
 #endif
-#if !defined(QT_NO_DBUS) && !defined(QT_NO_SYSTEMTRAYICON)
+#if QT_CONFIG(dbus) && QT_CONFIG(systemtrayicon)
     QPlatformSystemTrayIcon *createPlatformSystemTrayIcon() const override;
 #endif
 
@@ -72,7 +72,7 @@ protected:
     static QSize mouseCursorSize();
     static QList<QSize> availableXdgFileIconSizes();
 
-#if !defined(QT_NO_DBUS) && !defined(QT_NO_SYSTEMTRAYICON)
+#if QT_CONFIG(dbus) && QT_CONFIG(systemtrayicon)
     static bool shouldUseDBusTray();
 #endif
 #if QT_CONFIG(mimetype)
