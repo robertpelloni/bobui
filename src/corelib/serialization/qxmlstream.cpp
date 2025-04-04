@@ -3015,13 +3015,40 @@ QStringView QXmlStreamReader::documentEncoding() const
 
   QXmlStreamWriter always encodes XML in UTF-8.
 
-  If an error occurs while writing to the underlying device, hasError()
-  starts returning true and subsequent writes are ignored.
+  \note If an error occurs while writing, \l hasError() will return true.
+  However, data that was already buffered at the time the error occurred,
+  or data written from within the same operation, may still be written
+  to the underlying device. This applies to both \l EncodingError and
+  user-raised \l CustomError. Applications should treat the error state
+  as terminal and avoid further use of the writer after an error.
 
   The \l{QXmlStream Bookmarks Example} illustrates how to use a
   stream writer to write an XML bookmark file (XBEL) that
   was previously read in by a QXmlStreamReader.
 
+*/
+
+/*!
+    \enum QXmlStreamWriter::Error
+
+    This enum specifies the different error cases that can occur
+    when writing XML with QXmlStreamWriter.
+
+    \value NoError No error has occurred.
+
+    \value IOError An I/O error occurred while writing to the
+           device.
+
+    \value EncodingError An encoding error occurred while converting
+           characters to the output format.
+
+    \value InvalidCharacter A character not permitted in XML 1.0
+           was encountered while writing.
+
+    \value CustomError A custom error has been raised with
+           \l raiseError().
+
+    \since 6.10
 */
 
 #if QT_CONFIG(xmlstreamwriter)
@@ -3042,6 +3069,8 @@ public:
             delete device;
     }
 
+    void raiseError(QXmlStreamWriter::Error error);
+    void raiseError(QXmlStreamWriter::Error error, const QString &message);
     void write(QAnyStringView s);
     void writeEscaped(QAnyStringView, bool escapeWhitespace = false);
     bool finishStartElement(bool contents = true);
@@ -3054,14 +3083,14 @@ public:
     uint inEmptyElement :1;
     uint lastWasStartElement :1;
     uint wroteSomething :1;
-    uint hasIoError :1;
-    uint hasEncodingError :1;
     uint autoFormatting :1;
     uint didWriteStartDocument :1;
     uint didWriteAnyToken :1;
     std::string autoFormattingIndent = std::string(4, ' ');
     NamespaceDeclaration emptyNamespace;
     qsizetype lastNamespaceDeclaration = 1;
+    QXmlStreamWriter::Error error = QXmlStreamWriter::Error::NoError;
+    QString errorString;
 
     NamespaceDeclaration &addExtraNamespace(QAnyStringView namespaceUri, QAnyStringView prefix);
     NamespaceDeclaration &findNamespace(QAnyStringView namespaceUri, bool writeDeclaration = false, bool noDefault = false);
@@ -3080,16 +3109,42 @@ private:
 QXmlStreamWriterPrivate::QXmlStreamWriterPrivate(QXmlStreamWriter *q)
     : q_ptr(q), deleteDevice(false), inStartElement(false),
       inEmptyElement(false), lastWasStartElement(false),
-      wroteSomething(false), hasIoError(false),
-      hasEncodingError(false), autoFormatting(false),
+      wroteSomething(false), autoFormatting(false),
       didWriteStartDocument(false), didWriteAnyToken(false)
 {
+}
+
+void QXmlStreamWriterPrivate::raiseError(QXmlStreamWriter::Error errorCode)
+{
+    error = errorCode;
+    switch (error) {
+    case QXmlStreamWriter::Error::IOError:
+        errorString = QXmlStream::tr("An I/O error occurred while writing");
+        break;
+    case QXmlStreamWriter::Error::EncodingError:
+        errorString = QXmlStream::tr("An encoding error occurred while writing");
+        break;
+    case QXmlStreamWriter::Error::InvalidCharacter:
+        errorString = QXmlStream::tr("Encountered an invalid XML 1.0 character while writing");
+        break;
+    case QXmlStreamWriter::Error::CustomError:
+        errorString = QXmlStream::tr("An error occurred while writing");
+        break;
+    case QXmlStreamWriter::Error::NoError:
+        break;
+    }
+}
+
+void QXmlStreamWriterPrivate::raiseError(QXmlStreamWriter::Error errorCode, const QString &message)
+{
+    error = errorCode;
+    errorString = message;
 }
 
 void QXmlStreamWriterPrivate::write(QAnyStringView s)
 {
     if (device) {
-        if (hasIoError)
+        if (error == QXmlStreamWriter::Error::IOError)
             return;
 
         s.visit([&] (auto s) { doWriteToDevice(s); });
@@ -3102,27 +3157,36 @@ void QXmlStreamWriterPrivate::write(QAnyStringView s)
 
 void QXmlStreamWriterPrivate::writeEscaped(QAnyStringView s, bool escapeWhitespace)
 {
+    struct NextResult {
+        char32_t value;
+        bool encodingError;
+    };
     struct NextLatin1 {
-        char32_t operator()(const char *&it, const char *) const
-        { return uchar(*it++); }
+        NextResult operator()(const char *&it, const char *) const
+        { return {uchar(*it++), false}; }
     };
     struct NextUtf8 {
-        char32_t operator()(const char *&it, const char *end) const
+        NextResult operator()(const char *&it, const char *end) const
         {
             uchar uc = *it++;
             char32_t utf32 = 0;
             char32_t *output = &utf32;
             qsizetype n = QUtf8Functions::fromUtf8<QUtf8BaseTraits>(uc, output, it, end);
-            return n < 0 ? 0 : utf32;
+            return n < 0 ? NextResult{0, true} : NextResult{utf32, false};
         }
     };
     struct NextUtf16 {
-        char32_t operator()(const QChar *&it, const QChar *end) const
+        NextResult operator()(const QChar *&it, const QChar *end) const
         {
             QStringIterator decoder(it, end);
-            char32_t result = decoder.next(u'\0');
+            // We can have '\0' in the text, and it should be reported as
+            // InvalidCharacter, not as EncodingError
+            constexpr char32_t invalidValue = 0xFFFFFFFF;
+            Q_ASSERT(invalidValue > QChar::LastValidCodePoint);
+            char32_t result = decoder.next(invalidValue);
             it = decoder.position();
-            return result;
+            return result == invalidValue ? NextResult{U'\0', true}
+                                          : NextResult{result, false};
         }
     };
 
@@ -3143,7 +3207,7 @@ void QXmlStreamWriterPrivate::writeEscaped(QAnyStringView s, bool escapeWhitespa
 
             while (it != end) {
                 auto next_it = it;
-                char32_t uc = decoder(next_it, end);
+                auto [uc, encodingError] = decoder(next_it, end);
                 if (uc == u'<') {
                     replacement = "&lt;"_L1;
                     break;
@@ -3167,7 +3231,7 @@ void QXmlStreamWriterPrivate::writeEscaped(QAnyStringView s, bool escapeWhitespa
                         break;
                     }
                 } else if (uc == u'\v' || uc == u'\f') {
-                    hasEncodingError = true;
+                    raiseError(QXmlStreamWriter::Error::InvalidCharacter);
                     break;
                 } else if (uc == u'\r') {
                     if (escapeWhitespace) {
@@ -3175,7 +3239,10 @@ void QXmlStreamWriterPrivate::writeEscaped(QAnyStringView s, bool escapeWhitespa
                         break;
                     }
                 } else if (uc <= u'\x1F' || uc == u'\uFFFE' || uc == u'\uFFFF') {
-                    hasEncodingError = true;
+                    if (encodingError)
+                        raiseError(QXmlStreamWriter::Error::EncodingError);
+                    else
+                        raiseError(QXmlStreamWriter::Error::InvalidCharacter);
                     break;
                 }
                 it = next_it;
@@ -3307,14 +3374,14 @@ void QXmlStreamWriterPrivate::doWriteToDevice(QStringView s)
         s = s.sliced(chunkSize);
     }
     if (state.remainingChars > 0)
-        hasEncodingError = true;
+        raiseError(QXmlStreamWriter::Error::EncodingError);
 }
 
 void QXmlStreamWriterPrivate::doWriteToDevice(QUtf8StringView s)
 {
     QByteArrayView bytes = s;
     if (device->write(bytes.data(), bytes.size()) != bytes.size())
-        hasIoError = true;
+        raiseError(QXmlStreamWriter::Error::IOError);
 }
 
 void QXmlStreamWriterPrivate::doWriteToDevice(QLatin1StringView s)
@@ -3481,18 +3548,66 @@ int QXmlStreamWriter::autoFormattingIndent() const
 }
 
 /*!
-    Returns \c true if writing failed.
+    Returns \c true if an error occurred while trying to write data.
 
-    This can happen if the stream failed to write to the underlying
-    device or if the data to be written contained invalid characters.
+    If the error is \l Error::IOError, subsequent writes to the underlying
+    QIODevice will fail. In other cases malformed data might be written to
+    the document.
 
     The error status is never reset. Writes happening after the error
     occurred may be ignored, even if the error condition is cleared.
+
+    \sa error(), errorString(), raiseError(const QString &message),
  */
 bool QXmlStreamWriter::hasError() const
 {
+    return error() != QXmlStreamWriter::Error::NoError;
+}
+
+/*!
+    Returns the current error state of the writer.
+
+    If no error has occurred, this function returns
+    QXmlStreamWriter::Error::NoError.
+
+    \since 6.10
+    \sa errorString(), raiseError(const QString &message), hasError()
+ */
+QXmlStreamWriter::Error QXmlStreamWriter::error() const
+{
     Q_D(const QXmlStreamWriter);
-    return d->hasIoError || d->hasEncodingError;
+    return d->error;
+}
+
+/*!
+    If an error has occurred, returns its associated error message.
+
+    The error message is either set internally by QXmlStreamWriter or provided
+    by the user via raiseError(). If no error has occured, this function returns
+    a null string.
+
+    \since 6.10
+    \sa error(), raiseError(const QString &message), hasError()
+ */
+QString QXmlStreamWriter::errorString() const
+{
+    Q_D(const QXmlStreamWriter);
+    return d->errorString;
+}
+
+/*!
+    Raises a custom error with the given \a message.
+
+    This function is for manual indication that an error has occurred during
+    writing, such as an application level validation failure.
+
+    \since 6.10
+    \sa errorString(), error(), hasError()
+ */
+void QXmlStreamWriter::raiseError(const QString &message)
+{
+    Q_D(QXmlStreamWriter);
+    d->raiseError(QXmlStreamWriter::Error::CustomError, message);
 }
 
 /*!

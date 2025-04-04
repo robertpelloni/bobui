@@ -459,6 +459,17 @@ public:
     void writeCurrentToken(const QXmlStreamReader &reader);
 #endif
 
+    enum class Error {
+        NoError,
+        IOError,
+        EncodingError,
+        InvalidCharacter,
+        CustomError,
+    };
+
+    void raiseError(const QString &message);
+    QString errorString() const;
+    Error error() const;
     bool hasError() const;
 
 private:
