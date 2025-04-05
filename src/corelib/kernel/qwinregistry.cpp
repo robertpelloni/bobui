@@ -15,7 +15,7 @@
 
 // User mode version of ZwQueryKey, as per:
 // https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-zwquerykey
-extern "C" NTSTATUS NTSYSCALLAPI NtQueryKey(HANDLE KeyHandle, int KeyInformationClass,
+extern "C" NTSTATUS NTSYSCALLAPI NTAPI NtQueryKey(HANDLE KeyHandle, int KeyInformationClass,
     PVOID KeyInformation, ULONG Length, PULONG ResultLength);
 
 QT_BEGIN_NAMESPACE
