@@ -304,6 +304,8 @@ emscripten::val QWasmAccessibility::createHtmlElement(QAccessibleInterface *ifac
         if (iface->role() != QAccessible::PageTabList)
             element.call<void>("setAttribute", std::string("id"), id.toStdString());
 
+        element.call<void>("addEventListener", emscripten::val("focus"),
+                          emscripten::val::module_property("qtEventReceived"), true);
         return element;
 
     }();
@@ -401,6 +403,12 @@ void QWasmAccessibility::setHtmlElementDescription(QAccessibleInterface *iface) 
     element.call<void>("setAttribute", std::string("aria-description"), desc.toStdString());
 }
 
+void QWasmAccessibility::setHtmlElementFocus(QAccessibleInterface *iface)
+{
+    auto element = ensureHtmlElement(iface);
+    element.call<void>("focus");
+}
+
 void QWasmAccessibility::handleStaticTextUpdate(QAccessibleEvent *event)
 {
     switch (event->type()) {
@@ -441,13 +449,17 @@ void QWasmAccessibility::handleEventFromHtmlElement(const emscripten::val event)
 {
 
     QAccessibleInterface *iface = m_elements.key(event["target"]);
+
     if (iface == nullptr) {
         return;
     } else {
         QString eventType = QString::fromStdString(event["type"].as<std::string>());
         const auto& actionNames = QAccessibleBridgeUtils::effectiveActionNames(iface);
-        if (actionNames.contains(QAccessibleActionInterface::pressAction())) {
 
+        if (eventType == "focus") {
+            if (actionNames.contains(QAccessibleActionInterface::setFocusAction()))
+                iface->actionInterface()->doAction(QAccessibleActionInterface::setFocusAction());
+        } else if (actionNames.contains(QAccessibleActionInterface::pressAction())) {
             iface->actionInterface()->doAction(QAccessibleActionInterface::pressAction());
 
         } else if (actionNames.contains(QAccessibleActionInterface::toggleAction())) {
@@ -528,10 +540,14 @@ void QWasmAccessibility::handleMenuUpdate(QAccessibleEvent *event)
     case QAccessible::Focus:
     case QAccessible::NameChanged:
     case QAccessible::MenuStart  ://"TODO: To implement later
-    case QAccessible::PopupMenuStart://"TODO: To implement later
     case QAccessible::StateChanged:{
       emscripten::val element = ensureHtmlElement(iface);
       element.call<void>("setAttribute", std::string("title"), text.toStdString());
+    } break;
+    case QAccessible::PopupMenuStart: {
+        ensureHtmlElement(iface);
+        if (iface->childCount() > 0)
+            m_elements[iface->child(0)].call<void>("focus");
     } break;
     case QAccessible::DescriptionChanged: {
         setHtmlElementDescription(event->accessibleInterface());
@@ -720,6 +736,10 @@ void QWasmAccessibility::notifyAccessibilityUpdate(QAccessibleEvent *event)
     // Handle some common event types. See
     // https://doc.qt.io/qt-5/qaccessible.html#Event-enum
     switch (event->type()) {
+    case QAccessible::Focus:
+        setHtmlElementFocus(iface);
+        break;
+
     case QAccessible::ObjectShow:
         setHtmlElementVisibility(iface, true);
 
