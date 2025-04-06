@@ -381,6 +381,15 @@ if(QT_FEATURE_stdlib_libcpp)
     target_compile_definitions(PlatformCommonInternal INTERFACE _LIBCPP_REMOVE_TRANSITIVE_INCLUDES)
 endif()
 
+if(QT_USE_CCACHE AND CLANG AND BUILD_WITH_PCH)
+    # The ccache man page says we must compile with -fno-pch-timestamp when using clang and pch.
+    foreach(language IN ITEMS C CXX OBJC OBJCXX)
+        target_compile_options(PlatformCommonInternal INTERFACE
+            "$<$<COMPILE_LANGUAGE:${language}>:SHELL:-Xclang -fno-pch-timestamp>"
+        )
+    endforeach()
+endif()
+
 # Hardening options
 
 qt_internal_apply_intel_cet_harderning(PlatformCommonInternal)
