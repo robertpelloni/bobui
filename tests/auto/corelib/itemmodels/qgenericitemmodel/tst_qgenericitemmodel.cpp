@@ -692,6 +692,12 @@ void tst_QGenericItemModel::createTestData()
 
     ADD_COPY(listOfObjects, 2, ChangeAction::ChangeRows | ChangeAction::SetData);
 
+    ADD_COPY(listOfMetaObjectTuple, 1,
+             ChangeAction::ChangeRows | ChangeAction::SetData | ChangeAction::SetItemData);
+    ADD_REF(tableOfMetaObjectTuple,
+            std::tuple_size_v<MetaObjectTuple>,
+            ChangeAction::ChangeRows | ChangeAction::SetData | ChangeAction::SetItemData);
+
     ADD_ALL(tableOfNumbers, 5, ChangeAction::All);
 
     ADD_POINTER(tableOfPointers, 2, ChangeAction::All | ChangeAction::SetItemData);
@@ -1237,9 +1243,8 @@ void tst_QGenericItemModel::insertRows()
     const QVariant lastValue = lastItem.data();
 
     QEXPECT_FAIL("tableOfPointersPointer", "No item created", Continue);
-    QEXPECT_FAIL("tableOfPointersRef", "No item created", Continue);
     QEXPECT_FAIL("listOfMetaObjectTupleCopy", "No object created", Continue);
-    QEXPECT_FAIL("tableOfMetaObjectTupleCopy", "No object created", Continue);
+    QEXPECT_FAIL("tableOfMetaObjectTupleRef", "No object created", Continue);
 
     QVERIFY(firstValue.isValid() && lastValue.isValid());
     QCOMPARE(model->setData(firstItem, lastValue), canSetData && lastValue.isValid());
