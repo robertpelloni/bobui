@@ -24,6 +24,36 @@ listView.setModel(&model);
 //! [array]
 }
 
+void construct_by()
+{
+    std::vector<int> numbers = {1, 2, 3, 4, 5};
+
+{
+//! [value]
+    QGenericItemModel model(numbers);
+//! [value]
+}
+
+{
+//! [pointer]
+    QGenericItemModel model(&numbers);
+//! [pointer]
+}
+
+{
+//! [reference_wrapper]
+    QGenericItemModel model(std::ref(numbers));
+//! [reference_wrapper]
+}
+
+{
+//! [smart_pointer]
+    auto shared_numbers = std::make_shared<std::vector<int>>(numbers);
+    QGenericItemModel model(shared_numbers);
+//! [smart_pointer]
+}
+}
+
 void const_array()
 {
 //! [const_array]
@@ -38,6 +68,14 @@ void const_values()
 std::array<const int, 5> numbers = {1, 2, 3, 4, 5};
 //! [const_values]
 QGenericItemModel model(numbers);
+}
+
+void const_ref()
+{
+    std::vector<int> numbers = {1, 2, 3, 4, 5};
+//! [const_ref]
+    QGenericItemModel model(std::cref(numbers));
+//! [const_ref]
 }
 
 void list_of_int()

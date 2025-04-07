@@ -31,29 +31,67 @@ QT_BEGIN_NAMESPACE
     operations will perform better if \c{std::size} is available, and if the
     iterator satisfies \c{std::random_access_iterator}.
 
-    The range can be provided by pointer or by value, and has to be provided
-    when constructing the model. If the range is provided by pointer, then
-    QAbstractItemModel APIs that modify the model, such as setData() or
-    insertRows(), modify the range. The caller must make sure that the
-    range's lifetime exceeds the lifetime of the model. Methods that modify
-    the structure of the range, such as insertRows() or removeColumns(), use
-    standard C++ container APIs \c{resize()}, \c{insert()}, \c{erase()}, in
-    addition to dereferencing a mutating iterator to set or clear the data.
+    \section1 Constructing the model
 
-    There is no API to retrieve the range again, so constructing the model
-    from a range by value is mostly only useful for displaying data.
+    The range must be provided when constructing the model; there is no API to
+    set the range later, and there is no API to retrieve the range from the
+    model. The range can be provided by value, reference wrapper, or pointer.
+    How the model was constructed defines whether changes through the model API
+    will modify the original data.
+
+    When constructed by value, the model makes a copy of the range, and
+    QAbstractItemModel APIs that modify the model, such as setData() or
+    insertRows(), have no impact on the original range.
+
+    \snippet qgenericitemmodel/main.cpp value
+
+    As there is no API to retrieve the range again, constructing the model from
+    a range by value is mostly only useful for displaying read-only data.
     Changes to the data can be monitored using the signals emitted by the
     model, such as \l{QAbstractItemModel}{dataChanged()}.
 
+    However, if the range holds pointers to data, then the copy of the range
+    that the model operates on will typically point to the same data, so calls
+    to setData() will modify the original data, while calls to insertRows()
+    will not.
+
+    To make modifications of the model affect the original range, provide the
+    range either by reference wrapper or by pointer.
+
+    \snippet qgenericitemmodel/main.cpp pointer
+    \snippet qgenericitemmodel/main.cpp reference_wrapper
+
+    In this case, QAbstractItemModel APIs that modify the model also modify the
+    range. Methods that modify the structure of the range, such as insertRows()
+    or removeColumns(), use standard C++ container APIs \c{resize()},
+    \c{insert()}, \c{erase()}, in addition to dereferencing a mutating iterator
+    to set or clear the data.
+
+    \note Once the model has been constructed, the range the model operates on
+    must no longer be modified directly. Views on the model wouldn't be
+    informed about the changes, and structural changes are likely to corrupt
+    instances of QPersistentModelIndex that the model maintains.
+
+    The caller must make sure that the range's lifetime exceeds the lifetime of
+    the model.
+
+    Use smart pointers to make sure that the range is only deleted when all
+    clients are done with it.
+
+    \snippet qgenericitemmodel/main.cpp smart_pointer
+
+    QGenericItemModel supports both shared and unique pointers.
+
     \section2 Read-only or mutable
 
-    For ranges that are const objects, for which access always yields
-    constant values, or where the required container APIs are not available,
+    For ranges that are const objects, for which access always yields constant
+    values, or where the required container APIs are not available,
     QGenericItemModel implements write-access APIs to do nothing and return
-    \c{false}. In the example above, the model cannot add or remove rows, as
-    the number of entries in a C++ array is fixed. But the values can be
-    changed using setData(), and the user can trigger editing of the values in
-    the list view. By making the array const, the values also become read-only.
+    \c{false}. In the example using \c{std::array}, the model cannot add or
+    remove rows, as the number of entries in a C++ array is fixed. But the
+    values can be changed using setData(), and the user can trigger editing of
+    the values in the list view. By making the array const, the values also
+    become read-only.
 
     \snippet qgenericitemmodel/main.cpp const_array
 
@@ -61,31 +99,38 @@ QT_BEGIN_NAMESPACE
 
     \snippet qgenericitemmodel/main.cpp const_values
 
+    In the above examples using \c{std::vector}, the model can add or remove
+    rows, and the data can be changed. Passing the range as a constant
+    reference will make the model read-only.
+
+    \snippet qgenericitemmodel/main.cpp const_ref
+
     \note If the values in the range are const, then it's also not possible
     to remove or insert columns and rows through the QAbstractItemModel API.
     For more granular control, implement \l{the C++ tuple protocol}.
 
-    \section1 List, Table, or Tree
+    \section1 Rows and columns
 
     The elements in the range are interpreted as rows of the model. Depending
-    on the type of these rows, QGenericItemModel exposes the range as a list,
-    a table, or a tree.
+    on the type of these row elements, QGenericItemModel exposes the range as a
+    list, a table, or a tree.
 
-    If the row type is not an iterable range, and does not implement the
-    C++ tuple protocol, then the range gets represented as a list.
+    If the row elements are simple values, then the range gets represented as a
+    list.
 
     \snippet qgenericitemmodel/main.cpp list_of_int
 
-    If the row type is an iterable range, then the range gets represented as a
-    table.
+    If the type of the row elements is an iterable range, such as a vector,
+    list, or array, then the range gets represented as a table.
 
     \snippet qgenericitemmodel/main.cpp grid_of_numbers
 
-    With such a row type, the number of columns can be changed via
-    insertColumns() and removeColumns(). However, all rows are expected to have
+    If the row type provides the standard C++ container APIs \c{resize()},
+    \c{insert()}, \c{erase()}, then columns can be added and removed via
+    insertColumns() and removeColumns(). All rows are required to have
     the same number of columns.
 
-    \section2 Fixed-size rows
+    \section2 Structs and gadgets as rows
 
     If the row type implements \l{the C++ tuple protocol}, then the range gets
     represented as a table with a fixed number of columns.
@@ -110,7 +155,48 @@ QT_BEGIN_NAMESPACE
     implementing the tuple protocol for compile-time generation of the access
     code.
 
-    \section2 Trees of data
+    \section2 Multi-role items
+
+    The type of the items that the implementations of data(), setData(),
+    clearItemData() etc. operate on can be the same across the entire model -
+    like in the \c{gridOfNumbers} example above. But the range can also have
+    different item types for different columns, like in the \c{numberNames}
+    case.
+
+    By default, the value gets used for the Qt::DisplayRole and Qt::EditRole
+    roles. Most views expect the value to be
+    \l{QVariant::canConvert}{convertible to and from a QString} (but a custom
+    delegate might provide more flexibility).
+
+    If the item is an associative container that uses \c{int},
+    \l{Qt::ItemDataRole}, or QString as the key type, and QVariant as the
+    mapped type, then QGenericItemModel interprets that container as the storage
+    of the data for multiple roles. The data() and setData() functions return
+    and modify the mapped value in the container, and setItemData() modifies all
+    provided values, itemData() returns all stored values, and clearItemData()
+    clears the entire container.
+
+    \snippet qgenericitemmodel/main.cpp color_map
+
+    The most efficient data type to use as the key is Qt::ItemDataRole or
+    \c{int}. When using \c{int}, itemData() returns the container as is, and
+    doesn't have to create a copy of the data.
+
+    Gadgets and QObject types are also represented at multi-role items if they
+    are the item type in a table. The names of the properties have to match the
+    names of the roles.
+
+    \snippet qgenericitemmodel/main.cpp color_gadget_0
+
+    When used in a list, these types are ambiguous: they can be represented as
+    multi-column rows, with each property represented as a separate column. Or
+    they can be single items with each property being a role. To disambiguate,
+    use the QGenericItemModel::SingleColumn and QGenericItemModel::MultiColumn
+    wrappers.
+
+    \snippet qgenericitemmodel/main.cpp color_gadget_1
+
+    \section1 Trees of data
 
     QGenericItemModel can represent a data structure as a tree model. Such a
     tree data structure needs to be homomorphic: on all levels of the tree, the
@@ -241,55 +327,15 @@ QT_BEGIN_NAMESPACE
     row type. QGenericItemModel will never allocate new rows in lists and tables
     using operator new, and will never free any rows.
 
-    So, using pointers at rows comes with some memory allocation and management
+    Using pointers at rows comes with some memory allocation and management
     overhead. However, when using rows through pointers the references to the
-    row items remain stable, even when they are moved around in the range,
-    or when the range reallocates. This can significantly reduce the cost
-    of making modifications to the model's structure when using insertRows(),
+    row items remain stable, even when they are moved around in the range, or
+    when the range reallocates. This can significantly reduce the cost of
+    making modifications to the model's structure when using insertRows(),
     removeRows(), or moveRows().
 
-    So, each choice has different performance and memory overhead trade-offs.
-    The best option depends on the exact use case and data structure used.
-
-    \section2 Multi-role items
-
-    The type of the items that the implementations of data(), setData(),
-    clearItemData() etc. operate on can be the same across the entire model -
-    like in the \c{gridOfNumbers} example above. But the range can also have
-    different item types for different columns, like in the \c{numberNames}
-    case.
-
-    By default, the value gets used for the Qt::DisplayRole and Qt::EditRole
-    roles. Most views expect the value to be
-    \l{QVariant::canConvert}{convertible to and from a QString} (but a custom
-    delegate might provide more flexibility).
-
-    If the item is an associative container that uses \c{int},
-    \l{Qt::ItemDataRole}, or QString as the key type, and QVariant as the
-    mapped type, then QGenericItemModel interprets that container as the storage
-    of the data for multiple roles. The data() and setData() functions return
-    and modify the mapped value in the container, and setItemData() modifies all
-    provided values, itemData() returns all stored values, and clearItemData()
-    clears the entire container.
-
-    \snippet qgenericitemmodel/main.cpp color_map
-
-    The most efficient data type to use as the key is Qt::ItemDataRole or
-    \c{int}. When using \c{int}, itemData() returns the container as is, and
-    doesn't have to create a copy of the data.
-
-    Gadgets and QObject types are also represented at multi-role items if they
-    are the item type in a table. The names of the properties have to match the
-    names of the roles.
-
-    \snippet qgenericitemmodel/main.cpp color_gadget_0
-
-    When used in a list, these types are ambiguous: they can be represented as
-    multi-column rows, with each property represented as a separate column. Or
-    they can be single items with each property being a role. To disambiguate,
-    use the QGenericItemModel::SingleColumn wrapper.
-
-    \snippet qgenericitemmodel/main.cpp color_gadget_1
+    Each choice has different performance and memory overhead trade-offs. The
+    best option depends on the exact use case and data structure used.
 
     \section2 The C++ tuple protocol
 
