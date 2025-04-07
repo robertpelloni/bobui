@@ -1777,7 +1777,11 @@ QLayoutItem *QDockAreaLayoutInfo::takeAt(int *x, int index)
             }
         } else if (item.widgetItem) {
             if ((*x)++ == index) {
-                item.placeHolderItem = new QPlaceHolderItem(item.widgetItem->widget());
+                QWidget *widget = item.widgetItem->widget();
+                if (widget->isWidgetType())
+                    item.placeHolderItem = new QPlaceHolderItem(widget);
+                else
+                    qCDebug(lcQpaDockWidgets) << widget << "is in destruction. No gap created.";
                 QLayoutItem *ret = item.widgetItem;
                 item.widgetItem = nullptr;
                 if (item.size != -1)
