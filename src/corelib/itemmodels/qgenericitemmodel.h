@@ -181,7 +181,7 @@ protected:
             return 0;
 
         if constexpr (QGenericItemModelDetails::test_size<C>()) {
-            return std::size(c);
+            return int(std::size(c));
         } else {
 #if defined(__cpp_lib_ranges)
             return int(std::ranges::distance(QGenericItemModelDetails::begin(c),
