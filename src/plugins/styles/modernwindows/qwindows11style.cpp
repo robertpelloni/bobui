@@ -2026,27 +2026,13 @@ QRect QWindows11Style::subControlRect(ComplexControl control, const QStyleOption
     {
         ret = QCommonStyle::subControlRect(control, option, subControl, widget);
 
-        switch (subControl) {
-        case QStyle::SC_ScrollBarAddLine:
+        if (subControl == SC_ScrollBarAddLine || subControl == SC_ScrollBarSubLine) {
             if (const QStyleOptionSlider *scrollbar = qstyleoption_cast<const QStyleOptionSlider *>(option)) {
-                if (scrollbar->orientation == Qt::Vertical) {
+                if (scrollbar->orientation == Qt::Vertical)
                     ret = ret.adjusted(2,2,-2,-3);
-                } else {
+                else
                     ret = ret.adjusted(3,2,-2,-2);
-                }
             }
-            break;
-        case QStyle::SC_ScrollBarSubLine:
-            if (const QStyleOptionSlider *scrollbar = qstyleoption_cast<const QStyleOptionSlider *>(option)) {
-                if (scrollbar->orientation == Qt::Vertical) {
-                    ret = ret.adjusted(2,2,-2,-3);
-                } else {
-                    ret = ret.adjusted(3,2,-2,-2);
-                }
-            }
-            break;
-        default:
-            break;
         }
         break;
     }
