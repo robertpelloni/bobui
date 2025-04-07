@@ -1472,12 +1472,12 @@ void tst_QTextStream::readLineFromStdin()
     stdinProcess.setReadChannel(QProcess::StandardError);
 
     stdinProcess.write("abc\n");
-    QVERIFY(stdinProcess.waitForReadyRead(5000));
-    QCOMPARE(stdinProcess.readAll().data(), QByteArray("abc").data());
+    QVERIFY(stdinProcess.waitForReadyRead());
+    QCOMPARE(stdinProcess.readAll(), "abc");
 
     stdinProcess.write("def\n");
-    QVERIFY(stdinProcess.waitForReadyRead(5000));
-    QCOMPARE(stdinProcess.readAll(), QByteArray("def"));
+    QVERIFY(stdinProcess.waitForReadyRead());
+    QCOMPARE(stdinProcess.readAll(), "def");
 
     stdinProcess.closeWriteChannel();
 
@@ -1786,7 +1786,7 @@ void tst_QTextStream::writeSeekWriteNoBOM()
     QVERIFY(stream << "blah blah blah" << Qt::endl);
     stream.flush();
 
-    QCOMPARE(out.buffer().constData(), "Size=0000000000\nVersion=14\nblah blah blah\n");
+    QCOMPARE(out.data(), "Size=0000000000\nVersion=14\nblah blah blah\n");
 
     // Now overwrite the size header item
     number = 42;
@@ -1797,7 +1797,7 @@ void tst_QTextStream::writeSeekWriteNoBOM()
     stream.flush();
 
     // Check buffer is still OK
-    QCOMPARE(out.buffer().constData(), "Size=0000000042\nVersion=14\nblah blah blah\n");
+    QCOMPARE(out.data(), "Size=0000000042\nVersion=14\nblah blah blah\n");
 
 
     //Then UTF-16
@@ -1811,13 +1811,13 @@ void tst_QTextStream::writeSeekWriteNoBOM()
     stream16.flush();
 
     // save that output
-    QByteArray first = out16.buffer();
+    const QByteArray first = out16.data();
 
     stream16.seek(0);
     QVERIFY(stream16 << "one");
     stream16.flush();
 
-    QCOMPARE(out16.buffer(), first);
+    QCOMPARE(out16.data(), first);
 }
 
 // ------------------------------------------------------------------------------
@@ -1878,8 +1878,7 @@ void tst_QTextStream::QChar_operators_FromDevice()
     QVERIFY(writeStream << qchar_output);
     writeStream.flush();
 
-    QCOMPARE(writeBuf.buffer().size(), write_output.size());
-    QCOMPARE(writeBuf.buffer().constData(), write_output.constData());
+    QCOMPARE(writeBuf.data(), write_output);
 }
 
 // ------------------------------------------------------------------------------
@@ -1907,8 +1906,7 @@ void tst_QTextStream::char16_t_operators_FromDevice()
     QVERIFY(writeStream << char16_t_output);
     writeStream.flush();
 
-    QCOMPARE(writeBuf.buffer().size(), write_output.size());
-    QCOMPARE(writeBuf.buffer().constData(), write_output.constData());
+    QCOMPARE(writeBuf.data(), write_output);
 }
 
 // ------------------------------------------------------------------------------
@@ -1935,8 +1933,7 @@ void tst_QTextStream::char_operators_FromDevice()
     QVERIFY(writeStream << char_output);
     writeStream.flush();
 
-    QCOMPARE(writeBuf.buffer().size(), write_output.size());
-    QCOMPARE(writeBuf.buffer().constData(), write_output.constData());
+    QCOMPARE(writeBuf.data(), write_output);
 }
 
 // ------------------------------------------------------------------------------
@@ -2187,7 +2184,7 @@ void tst_QTextStream::integral_write_operator_ToDevice() const
     stream.setLocale(QLocale::c());
     QVERIFY(stream << Whole(number));
     stream.flush();
-    QCOMPARE(buffer.data().constData(), data.constData());
+    QCOMPARE(buffer.data(), data);
 
     QLocale locale("en-US");
     buffer.reset(); buffer.buffer().clear();
@@ -2201,7 +2198,7 @@ void tst_QTextStream::integral_write_operator_ToDevice() const
     stream.setLocale(locale);
     QVERIFY(stream << Whole(number));
     stream.flush();
-    QCOMPARE(buffer.data().constData(), data.constData());
+    QCOMPARE(buffer.data(), data);
 
     locale = QLocale("de-DE");
     buffer.reset(); buffer.buffer().clear();
@@ -2384,7 +2381,7 @@ void tst_QTextStream::real_write_operator_ToDevice() const
     Real f = Real(number);
     QVERIFY(stream << f);
     stream.flush();
-    QCOMPARE(buffer.data().constData(), data.constData());
+    QCOMPARE(buffer.data(), data);
 
     buffer.reset();
     stream.setLocale(QLocale("en-US"));
@@ -2433,7 +2430,9 @@ void tst_QTextStream::string_write_operator_ToDevice()
 
         QVERIFY(stream << bytedata.constData());
         stream.flush();
-        QCOMPARE(buf.buffer().constData(), result.constData());
+        // Size information is discarded, so "empty" doesn't get its (size 1)
+        // null byte transmitted, so only compare to constData(), ignoring size.
+        QCOMPARE(buf.data().constData(), result.constData());
     }
     {
         // QByteArray
@@ -2445,7 +2444,7 @@ void tst_QTextStream::string_write_operator_ToDevice()
 
         QVERIFY(stream << bytedata);
         stream.flush();
-        QCOMPARE(buf.buffer().constData(), result.constData());
+        QCOMPARE(buf.data(), result);
     }
     {
         // QString
@@ -2457,7 +2456,7 @@ void tst_QTextStream::string_write_operator_ToDevice()
 
         QVERIFY(stream << stringdata);
         stream.flush();
-        QCOMPARE(buf.buffer().constData(), result.constData());
+        QCOMPARE(buf.data(), result);
     }
 }
 
@@ -2472,7 +2471,7 @@ void tst_QTextStream::latin1String_write_operator_ToDevice()
     QVERIFY(stream << QLatin1String("No explicit length"));
     QVERIFY(stream << QLatin1String("Explicit length - ignore this part", 15));
     stream.flush();
-    QCOMPARE(buf.buffer().constData(), "No explicit lengthExplicit length");
+    QCOMPARE(buf.data(), "No explicit lengthExplicit length");
 }
 
 void tst_QTextStream::stringref_write_operator_ToDevice()
@@ -2488,7 +2487,7 @@ void tst_QTextStream::stringref_write_operator_ToDevice()
     QVERIFY(stream << expected.left(18));
     QVERIFY(stream << expected.mid(18));
     stream.flush();
-    QCOMPARE(buf.buffer().constData(), "No explicit lengthExplicit length");
+    QCOMPARE(buf.data(), "No explicit lengthExplicit length");
 }
 
 void tst_QTextStream::stringview_write_operator_ToDevice()
@@ -2499,7 +2498,7 @@ void tst_QTextStream::stringview_write_operator_ToDevice()
     const QStringView expected = u"expectedStringView";
     QVERIFY(stream << expected);
     stream.flush();
-    QCOMPARE(buf.buffer().constData(), "expectedStringView");
+    QCOMPARE(buf.data(), "expectedStringView");
 }
 
 // ------------------------------------------------------------------------------
@@ -2551,7 +2550,7 @@ void tst_QTextStream::useCase1()
     }
 
     file.seek(0);
-    QCOMPARE(file.readAll(), QByteArray("4.15 abc ole"));
+    QCOMPARE(file.readAll(), "4.15 abc ole");
     file.seek(0);
 
     {
@@ -2567,7 +2566,7 @@ void tst_QTextStream::useCase1()
         stream >> s;
 
         QCOMPARE(d, 4.15);
-        QCOMPARE(a, QByteArray("abc"));
+        QCOMPARE(a, "abc");
         QCOMPARE(s, QString("ole"));
     }
 }
@@ -2588,7 +2587,7 @@ void tst_QTextStream::useCase2()
     file.close();
     QVERIFY(file.open(QFile::ReadWrite));
 
-    QCOMPARE(file.readAll(), QByteArray("4.15 abc ole"));
+    QCOMPARE(file.readAll(), "4.15 abc ole");
 
     file.close();
     QVERIFY(file.open(QFile::ReadWrite));
@@ -2605,8 +2604,8 @@ void tst_QTextStream::useCase2()
     QVERIFY(stream2 >> s);
 
     QCOMPARE(d, 4.15);
-    QCOMPARE(a, QByteArray("abc"));
-    QCOMPARE(s, QString("ole"));
+    QCOMPARE(a, "abc");
+    QCOMPARE(s, "ole");
 }
 
 // ------------------------------------------------------------------------------
@@ -2823,19 +2822,19 @@ void tst_QTextStream::status_write_error()
     QVERIFY(fs << "hello");
     fs.flush();
     QCOMPARE(fs.status(), QTextStream::Ok);
-    QCOMPARE(fb.data(), QByteArray("hello"));
+    QCOMPARE(fb.data(), "hello");
     /* then test that writing can cause an error */
     fb.setLocked(true);
     QVERIFY(fs << "error");
     fs.flush();
     QCOMPARE(fs.status(), QTextStream::WriteFailed);
-    QCOMPARE(fb.data(), QByteArray("hello"));
+    QCOMPARE(fb.data(), "hello");
     /* finally test that writing after an error doesn't change the stream any more */
     fb.setLocked(false);
     fs << "can't do that";
     fs.flush();
     QCOMPARE(fs.status(), QTextStream::WriteFailed);
-    QCOMPARE(fb.data(), QByteArray("hello"));
+    QCOMPARE(fb.data(), "hello");
 }
 
 void tst_QTextStream::alignAccountingStyle()
