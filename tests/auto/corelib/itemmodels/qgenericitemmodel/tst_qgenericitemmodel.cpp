@@ -1188,6 +1188,36 @@ void tst_QGenericItemModel::insertRows()
     QFETCH(const ChangeActions, changeActions);
     const bool canSetData = changeActions.testFlag(ChangeAction::SetData);
 
+    // associative containers are empty, so we need to explicitly set data for
+    // newly created rows
+    static const QList<QByteArrayView> associativeContainers = {
+        "listOfNamedRoles",
+        "tableOfEnumRoles",
+        "tableOfIntRoles",
+        "stdTableOfIntRoles",
+        "stdTableOfIntRolesWithSharedRows",
+    };
+    const auto it = std::find_if(associativeContainers.begin(), associativeContainers.end(),
+                [current = QByteArrayView(QTest::currentDataTag())](const QByteArrayView &tag) {
+        if (tag == current)
+            return true;
+        for (auto suffix : { "Pointer", "Copy", "Ref", "UPtr", "SPtr" }) {
+            if (tag + suffix == current)
+                return true;
+        }
+        return false;
+    });
+
+    if (it != associativeContainers.end()) {
+        connect(model.get(), &QAbstractItemModel::rowsInserted,
+                this, [model = model.get()](const QModelIndex &parent, int start, int end) {
+            for (int row = start; row <= end; ++row) {
+                model->setData(model->index(row, 0, parent), row);
+                model->setData(model->index(row, model->columnCount(parent) - 1, parent), row);
+            }
+        });
+    }
+
     const QList<QPersistentModelIndex> pmiList = allIndexes(model.get());
 
     QCOMPARE(model->rowCount(), expectedRowCount);
@@ -1195,21 +1225,6 @@ void tst_QGenericItemModel::insertRows()
     QCOMPARE(model->rowCount() == expectedRowCount + 1,
              changeActions.testFlag(ChangeAction::InsertRows));
 
-    auto ignoreFailureFromAssociativeContainers = [] {
-        for (auto suffix : { "Pointer", "Copy", "Ref", "UPtr", "SPtr" }) {
-            auto addCase = [suffix](const std::string& testName,
-                                    const std::string& containerName) {
-              QEXPECT_FAIL((testName + suffix).c_str(),
-                           (containerName + " is empty by design").c_str(),
-                           Continue);
-            };
-            addCase("listOfNamedRoles", "QVariantMap");
-            addCase("tableOfEnumRoles", "QVariantMap");
-            addCase("tableOfIntRoles", "QVariantMap");
-            addCase("stdTableOfIntRoles", "std::map");
-            addCase("stdTableOfIntRolesWithSharedRows", "std::map");
-        }
-    };
     // get and put data into the new row
     const QModelIndex firstItem = model->index(0, 0);
     const QModelIndex lastItem = model->index(0, expectedColumnCount - 1);
@@ -1225,13 +1240,8 @@ void tst_QGenericItemModel::insertRows()
     QEXPECT_FAIL("tableOfMetaObjectTupleCopy", "No object created", Continue);
     QEXPECT_FAIL("movedListOfObjects", "No object created", Continue);
 
-    // associative containers are default constructed with no valid data
-    ignoreFailureFromAssociativeContainers();
-
     QVERIFY(firstValue.isValid() && lastValue.isValid());
-    ignoreFailureFromAssociativeContainers();
     QCOMPARE(model->setData(firstItem, lastValue), canSetData && lastValue.isValid());
-    ignoreFailureFromAssociativeContainers();
     QCOMPARE(model->setData(lastItem, firstValue), canSetData && firstValue.isValid());
 
     // append more rows
