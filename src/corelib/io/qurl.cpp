@@ -1105,7 +1105,7 @@ template <typename String> void QUrlPrivate::setUserInfo(String value, QUrl::Par
     qsizetype delimIndex = value.indexOf(u':');
     if (delimIndex < 0) {
         // no password
-        setUserName(value, mode);
+        setUserName(std::move(value), mode);
         password.clear();
         sectionIsPresent &= ~Password;
     } else {
@@ -2060,7 +2060,7 @@ void QUrl::setUserInfo(const QString &userInfo, ParsingMode mode)
         return;
     }
 
-    d->setUserInfo(trimmed, mode);
+    d->setUserInfo(std::move(trimmed), mode);
     if (userInfo.isNull()) {
         // QUrlPrivate::setUserInfo cleared almost everything
         // but it leaves the UserName bit set
