@@ -513,7 +513,7 @@ QString QTextStreamPrivate::read(qsizetype maxlen)
         lastTokenSize = qMin(maxlen, string->size() - stringOffset);
         ret = string->mid(stringOffset, lastTokenSize);
     } else {
-        while (readBuffer.size() - readBufferOffset < maxlen && fillReadBuffer()) ;
+        while (readBuffer.size() - readBufferOffset < maxlen && fillReadBuffer()) {}
         lastTokenSize = qMin(maxlen, readBuffer.size() - readBufferOffset);
         ret = readBuffer.mid(readBufferOffset, lastTokenSize);
     }
