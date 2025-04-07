@@ -299,6 +299,8 @@ bool QXcbIntegration::hasCapability(QPlatformIntegration::Capability cap) const
     case ForeignWindows:
     case SyncState:
         return true;
+    case OffscreenSurface:
+        return m_connection->glIntegration() && m_connection->glIntegration()->canCreatePlatformOffscreenSurface();
 
     case SwitchableWidgetComposition:
     {

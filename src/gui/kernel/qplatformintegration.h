@@ -102,7 +102,8 @@ public:
         PaintEvents,
         RhiBasedRendering,
         ScreenWindowGrabbing, // whether QScreen::grabWindow() is supported
-        BackingStoreStaticContents
+        BackingStoreStaticContents,
+        OffscreenSurface
     };
 
     virtual ~QPlatformIntegration() { }
