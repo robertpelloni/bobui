@@ -364,6 +364,7 @@ static jboolean startQtAndroidPlugin(JNIEnv *env, jobject /*object*/, jstring pa
         return false;
 
     m_androidPlatformIntegration = nullptr;
+    // File engine handler instantiation registers the handler
     m_androidAssetsFileEngineHandler = new AndroidAssetsFileEngineHandler();
     m_androidContentFileEngineHandler = new AndroidContentFileEngineHandler();
     m_androidApkFileEngineHandler = new QAndroidApkFileEngineHandler();
