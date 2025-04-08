@@ -454,3 +454,8 @@ if(QT_INSTALL_CI_FILES)
     qt_copy_or_install(PROGRAMS "util/json_schema/check_qt_module_json_schemas.py"
         DESTINATION "${__qt_libexec_install_dir}")
 endif()
+
+# Install json schemas for the users as well
+qt_copy_or_install(FILES
+    "util/json_schema/modules.json"
+    DESTINATION "${INSTALL_QT_SHAREDIR}/json_schema/")

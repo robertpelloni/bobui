@@ -1433,6 +1433,7 @@ function(qt_internal_list_to_json_array out_var list_var)
 endfunction()
 
 # Generate a module description file based on the template in ModuleDescription.json.in
+# Keep this in sync with `utils/json_schema/modules.json`
 function(qt_describe_module target)
     set(path_suffix "${INSTALL_DESCRIPTIONSDIR}")
     qt_path_join(build_dir ${QT_BUILD_DIR} ${path_suffix})
