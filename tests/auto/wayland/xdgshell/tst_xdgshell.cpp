@@ -35,6 +35,7 @@ private slots:
     void suspended();
     void initiallySuspended();
     void modality();
+    void modalityWithoutTransientParent();
 };
 
 void tst_xdgshell::init()
@@ -799,6 +800,36 @@ void tst_xdgshell::modality()
     child.setTransientParent(&parent);
     child.show();
     QCOMPOSITOR_TRY_VERIFY(xdgToplevel(1));
+    QCOMPOSITOR_VERIFY(!xdgDialog());
+
+    child.hide();
+    child.setModality(Qt::WindowModal);
+    child.show();
+    QCOMPOSITOR_TRY_VERIFY(xdgDialog());
+    QCOMPOSITOR_VERIFY(xdgDialog()->modal);
+
+    child.hide();
+    QCOMPOSITOR_TRY_VERIFY(!xdgDialog());
+
+    child.setModality(Qt::ApplicationModal);
+    child.show();
+    QCOMPOSITOR_TRY_VERIFY(xdgDialog());
+    QCOMPOSITOR_VERIFY(xdgDialog()->modal);
+
+    child.hide();
+    QCOMPOSITOR_TRY_VERIFY(!xdgDialog());
+
+    child.show();
+    child.setModality(Qt::NonModal);
+    QCOMPOSITOR_TRY_VERIFY(!xdgDialog());
+}
+
+void tst_xdgshell::modalityWithoutTransientParent()
+{
+    QRasterWindow child;
+    child.resize(400, 320);
+    child.show();
+    QCOMPOSITOR_TRY_VERIFY(xdgToplevel());
     QCOMPOSITOR_VERIFY(!xdgDialog());
 
     child.hide();
