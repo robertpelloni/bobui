@@ -72,8 +72,8 @@ namespace QGenericItemModelDetails
                                            QExplicitlySharedDataPointer, QSharedDataPointer>;
 
     template <typename T>
-    using is_owning_or_raw_pointer = std::disjunction<is_any_shared_ptr<T>, is_any_unique_ptr<T>, std::is_pointer<T>>;
-
+    using is_owning_or_raw_pointer = std::disjunction<is_any_shared_ptr<T>, is_any_unique_ptr<T>,
+                                                      std::is_pointer<T>>;
 
     template <typename T>
     static auto pointerTo(T&& t) {
@@ -354,10 +354,9 @@ namespace QGenericItemModelDetails
         using row_type = typename range_traits<wrapped_t<Range>>::value_type;
 
         template <typename R = row_type,
-                  std::enable_if_t<std::is_destructible_v<wrapped_t<R>>, bool> = true,
-                  std::enable_if_t<is_owning_or_raw_pointer<R>::value, bool> = true>
-        auto newRow() -> decltype(R(new wrapped_t<R>))
-        {
+                  std::enable_if_t<std::conjunction_v<std::is_destructible<wrapped_t<R>>,
+                                                      is_owning_or_raw_pointer<R>>, bool> = true>
+        auto newRow() -> decltype(R(new wrapped_t<R>)) {
             if constexpr (is_any_of<R, std::shared_ptr>())
                 return std::make_shared<wrapped_t<R>>();
             else
@@ -365,13 +364,12 @@ namespace QGenericItemModelDetails
         }
 
         template <typename R = row_type,
-                  std::enable_if_t<std::negation_v<is_wrapped<R>>, bool> = true,
-                  std::enable_if_t<std::negation_v<is_validatable<R>>, bool> = true>
+                  std::enable_if_t<!is_owning_or_raw_pointer<R>::value, bool> = true>
         auto newRow() -> decltype(R{}) { return R{}; }
 
-        template <typename R,
-                  std::enable_if_t<std::is_pointer_v<R>, bool> = true>
-        auto deleteRow(R row) -> decltype(delete(row)) { delete row; }
+        template <typename R = row_type,
+                  std::enable_if_t<std::is_pointer_v<std::remove_reference_t<R>>, bool> = true>
+        auto deleteRow(R&& row) -> decltype(delete row) { delete row; }
     };
 
     template <typename Range, typename R = typename range_traits<wrapped_t<Range>>::value_type>
@@ -485,7 +483,6 @@ namespace QGenericItemModelDetails
         static constexpr bool has_setParentRow = protocol_setParentRow<protocol, row>();
         static constexpr bool has_mutable_childRows = protocol_mutable_childRows<protocol, row>();
 
-        static constexpr bool initializes_rows = has_newRow && !is_any_of<protocol, ListProtocol>();
         static constexpr bool is_default = is_any_of<protocol, ListProtocol, TableProtocol, DefaultTreeProtocol>();
     };
 

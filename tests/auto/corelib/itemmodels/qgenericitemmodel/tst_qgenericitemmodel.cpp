@@ -474,7 +474,7 @@ private:
         Object row2;
         Object row3;
         std::list<Object *> listOfObjects = {
-            &row1, &row2, &row3
+            new Object, new Object, new Object
         };
 
         MetaObjectTuple mot1;
@@ -896,10 +896,12 @@ void tst_QGenericItemModel::ownership()
         std::vector<Object *> objects {
             object
         };
-        { // model does not take ownership
+        { // model takes ownership of its own copy of the vector (!)
             QGenericItemModel modelOnCopy(objects);
         }
-        QVERIFY(guard);
+        QVERIFY(!guard);
+        objects[0] = new Object;
+        guard = objects[0];
         { // model does not take ownership
             QGenericItemModel modelOnPointer(&objects);
         }
@@ -911,6 +913,7 @@ void tst_QGenericItemModel::ownership()
 
         { // model does take ownership
             QGenericItemModel movedIntoModel(std::move(objects));
+            QCOMPARE(movedIntoModel.columnCount(), 2);
         }
         QVERIFY(!guard);
     }

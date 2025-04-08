@@ -874,8 +874,7 @@ public:
             { // erase invalidates iterators
                 const auto begin = QGenericItemModelDetails::pos(children, row);
                 const auto end = std::next(begin, count);
-                if constexpr (rows_are_raw_pointers)
-                    that().deleteRemovedRows(begin, end);
+                that().deleteRemovedRows(begin, end);
                 children->erase(begin, end);
             }
             // fix the parent in all children of the modified row, as the
@@ -939,16 +938,18 @@ public:
 protected:
     ~QGenericItemModelImpl()
     {
-        if constexpr (rows_are_raw_pointers && !std::is_pointer_v<Range>
-                   && !QGenericItemModelDetails::is_any_of<Range, std::reference_wrapper,
-                                                                  std::shared_ptr,
-                                                                  QSharedPointer,
-                                                                  std::unique_ptr>()) {
-            // If data with rows as pointers was moved in, then we own it and
-            // have to delete those rows.
-            using ref = decltype(std::forward<Range>(std::declval<range_type>()));
-            if constexpr (std::is_rvalue_reference_v<ref>)
-                that().destroyOwnedModel(*m_data.model());
+        // We delete row objects if we are not operating on a reference or pointer
+        // to a range, as in that case, the owner of the referenced/pointed to
+        // range also owns the row entries.
+        // ### Problem: if we get a copy of a range (no matter if shared or not),
+        // then adding rows will create row objects in the model's copy, and the
+        // client can never delete those. But copied rows will be the same pointer,
+        // which we must not delete (as we didn't create them).
+        if constexpr (protocol_traits::has_deleteRow && !std::is_pointer_v<Range>
+                   && !QGenericItemModelDetails::is_any_of<Range, std::reference_wrapper>()) {
+            const auto begin = QGenericItemModelDetails::begin(*m_data.model());
+            const auto end = QGenericItemModelDetails::end(*m_data.model());
+            that().deleteRemovedRows(begin, end);
         }
     }
 
@@ -958,10 +959,8 @@ protected:
             // If we operate on dynamic columns and cannot resize a newly
             // constructed row, then we cannot insert.
             return false;
-        } else if constexpr (!one_dimensional_range && !rows_are_raw_pointers
-                          && !protocol_traits::initializes_rows) {
-            // We also cannot insert if the row we have to create is not
-            // default-initialized by the protocol
+        } else if constexpr (!protocol_traits::has_newRow) {
+            // We also cannot insert if we cannot create a new row element
             return false;
         } else if constexpr (!range_features::has_insert_range
                           && !std::is_copy_constructible_v<row_type>) {
@@ -1414,19 +1413,13 @@ protected:
         return empty_row;
     }
 
-    template <typename R>
-    void destroyOwnedModel(R &&range)
-    {
-        const auto begin = QGenericItemModelDetails::begin(range);
-        const auto end = QGenericItemModelDetails::end(range);
-        deleteRemovedRows(begin, end);
-    }
-
     template <typename It, typename Sentinel>
     void deleteRemovedRows(It &&begin, Sentinel &&end)
     {
-        for (auto it = begin; it != end; ++it)
-            this->protocol().deleteRow(*it);
+        if constexpr (tree_traits::has_deleteRow) {
+            for (auto it = begin; it != end; ++it)
+                this->protocol().deleteRow(*it);
+        }
     }
 
     void resetParentInChildren(range_type *children)
@@ -1627,19 +1620,13 @@ protected:
         return empty_row;
     }
 
-    template <typename R>
-    void destroyOwnedModel(R &&range)
-    {
-        const auto begin = QGenericItemModelDetails::begin(range);
-        const auto end = QGenericItemModelDetails::end(range);
-        for (auto it = begin; it !=  end; ++it)
-            delete *it;
-    }
-
     template <typename It, typename Sentinel>
-    void deleteRemovedRows(It &&, Sentinel &&)
+    void deleteRemovedRows(It &&begin, Sentinel &&end)
     {
-        // nothing to do for tables and lists as we never create rows either
+        if constexpr (Base::protocol_traits::has_deleteRow) {
+            for (auto it = begin; it != end; ++it)
+                this->protocol().deleteRow(*it);
+        }
     }
 
     decltype(auto) rowDataImpl(const QModelIndex &index) const
