@@ -51,10 +51,12 @@ QUrlModel::~QUrlModel()
 
 constexpr char uriListMimeType[] = "text/uri-list";
 
+#if QT_CONFIG(draganddrop)
 static bool hasSupportedFormat(const QMimeData *data)
 {
     return data->hasFormat(QLatin1StringView(uriListMimeType));
 }
+#endif // QT_CONFIG(draganddrop)
 
 /*!
     \reimp

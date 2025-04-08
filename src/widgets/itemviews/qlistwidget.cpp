@@ -429,12 +429,13 @@ Qt::DropActions QListModel::supportedDropActions() const
 {
     return view()->supportedDropActions();
 }
-#endif // QT_CONFIG(draganddrop)
 
 Qt::DropActions QListModel::supportedDragActions() const
 {
     return view()->supportedDragActions();
 }
+
+#endif // QT_CONFIG(draganddrop)
 
 /*!
     \class QListWidgetItem
@@ -1804,6 +1805,7 @@ QMimeData *QListWidget::mimeData(const QList<QListWidgetItem *> &items) const
 }
 
 #if QT_CONFIG(draganddrop)
+
 /*!
     Handles \a data supplied by an external drag and drop operation that ended
     with the given \a action in the given \a index. Returns \c true if \a data and
@@ -1841,7 +1843,6 @@ Qt::DropActions QListWidget::supportedDropActions() const
     Q_D(const QListWidget);
     return d->listModel()->QAbstractListModel::supportedDropActions() | Qt::MoveAction;
 }
-#endif // QT_CONFIG(draganddrop)
 
 /*!
     Returns the drag actions supported by this view.
@@ -1867,6 +1868,8 @@ void QListWidget::setSupportedDragActions(Qt::DropActions actions)
     Q_D(QListWidget);
     d->supportedDragActions = actions;
 }
+
+#endif // QT_CONFIG(draganddrop)
 
 /*!
     Returns a list of pointers to the items contained in the \a data object. If
