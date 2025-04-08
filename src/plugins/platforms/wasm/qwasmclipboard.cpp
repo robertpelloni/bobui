@@ -298,8 +298,6 @@ void QWasmClipboard::writeToClipboard()
 
 void QWasmClipboard::sendClipboardData(emscripten::val event)
 {
-    qDebug() << "sendClipboardData";
-
     dom::DataTransfer *transfer = new dom::DataTransfer(event["clipboardData"]);
     const auto mimeCallback = std::function([transfer](QMimeData *data) {
 
