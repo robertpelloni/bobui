@@ -1673,15 +1673,6 @@ void QFusionStyle::drawControl(ControlElement element, const QStyleOption *optio
             const QColor outline = d->outline(option->palette);
             if (selected) {
                 fillGradient.setColorAt(0, tabFrameColor.lighter(104));
-                //                QColor highlight = option->palette.highlight().color();
-                //                if (option->state & State_HasFocus && option->state & State_KeyboardFocusChange) {
-                //                    fillGradient.setColorAt(0, highlight.lighter(130));
-                //                    outlineGradient.setColorAt(0, highlight.darker(130));
-                //                    fillGradient.setColorAt(0.14, highlight);
-                //                    outlineGradient.setColorAt(0.14, highlight.darker(130));
-                //                    fillGradient.setColorAt(0.1401, tabFrameColor);
-                //                    outlineGradient.setColorAt(0.1401, highlight.darker(130));
-                //                }
                 fillGradient.setColorAt(1, tabFrameColor);
                 outlineGradient.setColorAt(1, outline);
                 painter->setPen(QPen(outlineGradient, 1));
