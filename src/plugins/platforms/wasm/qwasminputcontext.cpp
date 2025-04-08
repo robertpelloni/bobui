@@ -231,13 +231,6 @@ static void pasteCallback(emscripten::val event)
     // propagate to input event (insertFromPaste)
 }
 
-EMSCRIPTEN_BINDINGS(wasminputcontext_module) {
-
-    function("qtCopyCallback", &copyCallback);
-    function("qtCutCallback", &cutCallback);
-    function("qtPasteCallback", &pasteCallback);
-}
-
 QWasmInputContext::QWasmInputContext()
 {
     qCDebug(qLcQpaWasmInputContext) << Q_FUNC_INFO;
@@ -266,15 +259,9 @@ QWasmInputContext::QWasmInputContext()
     m_compositionUpdateCallback = QWasmEventHandler(m_inputElement, "compositionupdate", QWasmInputContext::compositionUpdateCallback);
 
     // Clipboard for InputContext
-    m_inputElement.call<void>("addEventListener", std::string("cut"),
-                              emscripten::val::module_property("qtCutCallback"),
-                              emscripten::val(false));
-    m_inputElement.call<void>("addEventListener", std::string("copy"),
-                              emscripten::val::module_property("qtCopyCallback"),
-                              emscripten::val(false));
-    m_inputElement.call<void>("addEventListener", std::string("paste"),
-                              emscripten::val::module_property("qtPasteCallback"),
-                              emscripten::val(false));
+    m_clipboardCut = QWasmEventHandler(m_inputElement, "cut", cutCallback);
+    m_clipboardCopy = QWasmEventHandler(m_inputElement, "copy", copyCallback);
+    m_clipboardPaste = QWasmEventHandler(m_inputElement, "paste", pasteCallback);
 }
 
 QWasmInputContext::~QWasmInputContext()

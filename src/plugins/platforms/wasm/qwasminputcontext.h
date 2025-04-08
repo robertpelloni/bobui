@@ -55,6 +55,10 @@ private:
     void updateInputElement();
 
 private:
+    QWasmEventHandler m_clipboardCut;
+    QWasmEventHandler m_clipboardCopy;
+    QWasmEventHandler m_clipboardPaste;
+
     QString m_preeditString;
     int m_replaceSize = 0;
 
