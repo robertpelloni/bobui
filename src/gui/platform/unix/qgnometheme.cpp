@@ -20,7 +20,43 @@ QT_BEGIN_NAMESPACE
 
 #if QT_CONFIG(dbus)
 Q_STATIC_LOGGING_CATEGORY(lcQpaThemeGnome, "qt.qpa.theme.gnome")
-#endif
+
+namespace {
+// https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.Settings.html
+enum class XDG_ColorScheme : uint { NoPreference, PreferDark, PreferLight };
+
+constexpr Qt::ColorScheme convertColorScheme(XDG_ColorScheme colorScheme)
+{
+    switch (colorScheme) {
+    case XDG_ColorScheme::NoPreference:
+        return Qt::ColorScheme::Unknown;
+    case XDG_ColorScheme::PreferDark:
+        return Qt::ColorScheme::Dark;
+    case XDG_ColorScheme::PreferLight:
+        return Qt::ColorScheme::Light;
+    default:
+        Q_UNREACHABLE_RETURN(Qt::ColorScheme::Unknown);
+        break;
+    }
+}
+
+constexpr XDG_ColorScheme convertColorScheme(Qt::ColorScheme colorScheme)
+{
+    switch (colorScheme) {
+    case Qt::ColorScheme::Unknown:
+        return XDG_ColorScheme::NoPreference;
+    case Qt::ColorScheme::Light:
+        return XDG_ColorScheme::PreferLight;
+    case Qt::ColorScheme::Dark:
+        return XDG_ColorScheme::PreferDark;
+    default:
+        Q_UNREACHABLE_RETURN(XDG_ColorScheme::NoPreference);
+        break;
+    }
+}
+} // namespace
+
+#endif // QT_CONFIG(dbus)
 
 /*!
     \class QGnomeTheme
@@ -49,19 +85,8 @@ QGnomeThemePrivate::QGnomeThemePrivate()
         message << appearanceNamespace << colorSchemeKey;
         QDBusReply<QVariant> reply = dbus.call(message);
         if (Q_LIKELY(reply.isValid())) {
-            uint xdgColorSchemeValue = reply.value().toUInt();
-            switch (xdgColorSchemeValue) {
-            case 1:
-                m_colorScheme = Qt::ColorScheme::Dark;
-                QWindowSystemInterface::handleThemeChange();
-                break;
-            case 2:
-                m_colorScheme = Qt::ColorScheme::Light;
-                QWindowSystemInterface::handleThemeChange();
-                break;
-            default:
-                break;
-            }
+            m_colorScheme = convertColorScheme(XDG_ColorScheme{ reply.value().toUInt() });
+            QWindowSystemInterface::handleThemeChange();
         }
 
         message.setArguments({});
@@ -117,8 +142,11 @@ bool QGnomeThemePrivate::initDbus()
         }
 
         switch (setting) {
+        case QDBusListener::Setting::ColorScheme:
+            updateColorScheme(convertColorScheme(XDG_ColorScheme{ value.toUInt() }));
+            break;
         case QDBusListener::Setting::Theme:
-            updateColorScheme(value.toString());
+            m_themeName = value.toString();
             break;
         case QDBusListener::Setting::Contrast:
             updateHighContrast(static_cast<Qt::ContrastPreference>(value.toUInt()));
@@ -131,19 +159,29 @@ bool QGnomeThemePrivate::initDbus()
     return QObject::connect(dbus.get(), &QDBusListener::settingChanged, dbus.get(), wrapper);
 }
 
-void QGnomeThemePrivate::updateColorScheme(const QString &themeName)
+Qt::ColorScheme QGnomeThemePrivate::colorScheme() const
 {
-    const auto oldColorScheme = m_colorScheme;
-    if (themeName.contains(QLatin1StringView("light"), Qt::CaseInsensitive)) {
-        m_colorScheme = Qt::ColorScheme::Light;
-    } else if (themeName.contains(QLatin1StringView("dark"), Qt::CaseInsensitive)) {
-        m_colorScheme = Qt::ColorScheme::Dark;
-    } else {
-        m_colorScheme = Qt::ColorScheme::Unknown;
-    }
+    if (m_colorScheme != Qt::ColorScheme::Unknown)
+        return m_colorScheme;
 
-    if (oldColorScheme != m_colorScheme)
-        QWindowSystemInterface::handleThemeChange();
+    // If the color scheme is set to Unknown by mistake or is not set at all,
+    // then maybe the theme name contains a hint about the color scheme.
+    // Let's hope the theme name does not include any accent color name
+    // which contains "dark" or "light" in it (e.g. lightblue). At the moment they don't.
+    if (m_themeName.contains(QLatin1StringView("light"), Qt::CaseInsensitive))
+        return Qt::ColorScheme::Light;
+    else if (m_themeName.contains(QLatin1StringView("dark"), Qt::CaseInsensitive))
+        return Qt::ColorScheme::Dark;
+    else
+        return Qt::ColorScheme::Unknown;
+}
+
+void QGnomeThemePrivate::updateColorScheme(Qt::ColorScheme colorScheme)
+{
+    if (m_colorScheme == colorScheme)
+        return;
+    m_colorScheme = colorScheme;
+    QWindowSystemInterface::handleThemeChange();
 }
 
 void QGnomeThemePrivate::updateHighContrast(Qt::ContrastPreference contrast)
@@ -245,7 +283,7 @@ QPlatformMenuBar *QGnomeTheme::createPlatformMenuBar() const
 
 Qt::ColorScheme QGnomeTheme::colorScheme() const
 {
-    return d_func()->m_colorScheme;
+    return d_func()->colorScheme();
 }
 
 Qt::ContrastPreference QGnomeTheme::contrastPreference() const

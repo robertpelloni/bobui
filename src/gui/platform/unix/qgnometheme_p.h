@@ -68,8 +68,14 @@ public:
 private:
     std::unique_ptr<QDBusListener> dbus;
     std::unique_ptr<QDBusPendingCallWatcher> pendingCallWatcher;
+    QString m_themeName;
+
+public:
+    Qt::ColorScheme colorScheme() const;
+
+private:
     bool initDbus();
-    void updateColorScheme(const QString &themeName);
+    void updateColorScheme(Qt::ColorScheme colorScheme);
     void updateHighContrast(Qt::ContrastPreference contrast);
 #endif // QT_CONFIG(dbus)
 };
