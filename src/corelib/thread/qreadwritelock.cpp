@@ -164,6 +164,14 @@ void QReadWriteLock::destroyRecursive(QReadWriteLockPrivate *d)
     \sa unlock(), lockForRead()
 */
 
+static Q_ALWAYS_INLINE bool fastTryLock(QAtomicPointer<QReadWriteLockPrivate> &d_ptr,
+                                        QReadWriteLockPrivate *dummyValue,
+                                        QReadWriteLockPrivate *&d)
+{
+    // Succeed fast if not contended
+    return d == nullptr && d_ptr.testAndSetAcquire(nullptr, dummyValue, d);
+}
+
 /*!
     \overload
     \since 6.6
@@ -183,9 +191,8 @@ void QReadWriteLock::destroyRecursive(QReadWriteLockPrivate *d)
 */
 bool QReadWriteLock::tryLockForRead(QDeadlineTimer timeout)
 {
-    // Fast case: non contended:
     QReadWriteLockPrivate *d = d_ptr.loadRelaxed();
-    if (d == nullptr && d_ptr.testAndSetAcquire(nullptr, dummyLockedForRead, d))
+    if (fastTryLock(d_ptr, dummyLockedForRead, d))
         return true;
     return contendedTryLockForRead(d_ptr, timeout, d);
 }
@@ -195,9 +202,9 @@ Q_NEVER_INLINE static bool contendedTryLockForRead(QAtomicPointer<QReadWriteLock
 {
     while (true) {
         if (d == nullptr) {
-            if (!d_ptr.testAndSetAcquire(nullptr, dummyLockedForRead, d))
-                continue;
-            return true;
+            if (fastTryLock(d_ptr, dummyLockedForRead, d))
+                return true;
+            continue;
         }
 
         if ((quintptr(d) & StateMask) == StateLockedForRead) {
@@ -301,9 +308,8 @@ Q_NEVER_INLINE static bool contendedTryLockForRead(QAtomicPointer<QReadWriteLock
 */
 bool QReadWriteLock::tryLockForWrite(QDeadlineTimer timeout)
 {
-    // Fast case: non contended:
     QReadWriteLockPrivate *d = d_ptr.loadRelaxed();
-    if (d == nullptr && d_ptr.testAndSetAcquire(nullptr, dummyLockedForWrite, d))
+    if (fastTryLock(d_ptr, dummyLockedForWrite, d))
         return true;
     return contendedTryLockForWrite(d_ptr, timeout, d);
 }
@@ -313,9 +319,9 @@ Q_NEVER_INLINE static bool contendedTryLockForWrite(QAtomicPointer<QReadWriteLoc
 {
     while (true) {
         if (d == nullptr) {
-            if (!d_ptr.testAndSetAcquire(d, dummyLockedForWrite, d))
-                continue;
-            return true;
+            if (fastTryLock(d_ptr, dummyLockedForWrite, d))
+                return true;
+            continue;
         }
 
         if (isUncontendedLocked(d)) {
