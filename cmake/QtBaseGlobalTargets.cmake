@@ -451,4 +451,6 @@ if(QT_INSTALL_CI_FILES)
         DESTINATION "${__qt_libexec_install_dir}")
     qt_copy_or_install(PROGRAMS "util/testrunner/sanitizer-testrunner.py"
         DESTINATION "${__qt_libexec_install_dir}")
+    qt_copy_or_install(PROGRAMS "util/json_schema/check_qt_module_json_schemas.py"
+        DESTINATION "${__qt_libexec_install_dir}")
 endif()
