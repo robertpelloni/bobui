@@ -199,7 +199,7 @@ public:
     static void handleScreenRefreshRateChange(QScreen *screen, qreal newRefreshRate);
 
     template<typename Delivery = QWindowSystemInterface::DefaultDelivery>
-    static void handleThemeChange(QWindow *window = nullptr);
+    static void handleThemeChange();
 
     static void handleFileOpenEvent(const QString& fileName);
     static void handleFileOpenEvent(const QUrl &url);

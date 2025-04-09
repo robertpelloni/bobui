@@ -2807,7 +2807,7 @@ void QGuiApplicationPrivate::processSafeAreaMarginsChangedEvent(QWindowSystemInt
     QGuiApplication::sendSpontaneousEvent(wse->window, &event);
 }
 
-void QGuiApplicationPrivate::processThemeChanged(QWindowSystemInterfacePrivate::ThemeChangeEvent *tce)
+void QGuiApplicationPrivate::processThemeChanged(QWindowSystemInterfacePrivate::ThemeChangeEvent *)
 {
     if (self)
         self->handleThemeChanged();
@@ -2815,10 +2815,7 @@ void QGuiApplicationPrivate::processThemeChanged(QWindowSystemInterfacePrivate::
     QIconPrivate::clearIconCache();
 
     QEvent themeChangeEvent(QEvent::ThemeChange);
-    if (tce->window)
-        QGuiApplication::sendSpontaneousEvent(tce->window, &themeChangeEvent);
-    else
-        QGuiApplication::sendSpontaneousEvent(qGuiApp, &themeChangeEvent);
+    QGuiApplication::sendSpontaneousEvent(qGuiApp, &themeChangeEvent);
 }
 
 void QGuiApplicationPrivate::handleThemeChanged()

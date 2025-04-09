@@ -828,9 +828,9 @@ void QWindowSystemInterface::handleScreenRefreshRateChange(QScreen *screen, qrea
     handleWindowSystemEvent<QWindowSystemInterfacePrivate::ScreenRefreshRateEvent>(screen, newRefreshRate);
 }
 
-QT_DEFINE_QPA_EVENT_HANDLER(void, handleThemeChange, QWindow *window)
+QT_DEFINE_QPA_EVENT_HANDLER(void, handleThemeChange)
 {
-    handleWindowSystemEvent<QWindowSystemInterfacePrivate::ThemeChangeEvent, Delivery>(window);
+    handleWindowSystemEvent<QWindowSystemInterfacePrivate::ThemeChangeEvent, Delivery>();
 }
 
 #if QT_CONFIG(draganddrop)

@@ -329,9 +329,8 @@ public:
 
     class ThemeChangeEvent : public WindowSystemEvent {
     public:
-        explicit ThemeChangeEvent(QWindow * w)
-            : WindowSystemEvent(ThemeChange), window(w) { }
-        QPointer<QWindow> window;
+        explicit ThemeChangeEvent()
+            : WindowSystemEvent(ThemeChange) { }
     };
 
     class ExposeEvent : public WindowSystemEvent {
