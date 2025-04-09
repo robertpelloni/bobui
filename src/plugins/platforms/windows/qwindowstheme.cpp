@@ -41,6 +41,7 @@
 #include <private/qhighdpiscaling_p.h>
 #include <private/qwinregistry_p.h>
 #include <QtCore/private/qfunctions_win_p.h>
+#include <QtGui/private/qwindowsthemecache_p.h>
 
 #include <algorithm>
 
@@ -480,6 +481,39 @@ static inline QPalette *menuBarPalette(const QPalette &menuPalette, bool light)
 const char *QWindowsTheme::name = "windows";
 QWindowsTheme *QWindowsTheme::m_instance = nullptr;
 
+extern "C" LRESULT QT_WIN_CALLBACK qThemeChangeObserverWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    switch (message) {
+    case WM_SETTINGCHANGE:
+        // Only refresh the theme if the user changes the personalize settings
+        if (!((wParam == 0) && (lParam != 0) // lParam sometimes may be NULL.
+            && (wcscmp(reinterpret_cast<LPCWSTR>(lParam), L"ImmersiveColorSet") == 0)))
+            break;
+        Q_FALLTHROUGH();
+    case WM_THEMECHANGED:
+    case WM_SYSCOLORCHANGE:
+    case WM_DWMCOLORIZATIONCOLORCHANGED:
+        qCDebug(lcQpaTheme) << "Handling theme change due to"
+            << qUtf8Printable(decodeMSG(MSG{hwnd, message, wParam, lParam, 0, {0, 0}}).trimmed());
+        QWindowsTheme::handleThemeChange();
+
+        MSG msg; // Clear the message queue, we've already reacted to the change
+        while (PeekMessage(&msg, hwnd, 0, 0, PM_REMOVE));
+
+        // FIXME: Despite clearing the message queue above, Windows will send
+        // us redundant theme change events for our single window. We want the
+        // theme change delivery to be synchronous, so we can't easily debounce
+        // them by peeking into the QWSI event queue, but perhaps there are other
+        // ways.
+
+        break;
+    default:
+        break;
+    }
+
+    return DefWindowProc(hwnd, message, wParam, lParam);
+}
+
 QWindowsTheme::QWindowsTheme()
 {
     m_instance = this;
@@ -489,6 +523,16 @@ QWindowsTheme::QWindowsTheme()
     std::fill(m_palettes, m_palettes + NPalettes, nullptr);
     refresh();
     refreshIconPixmapSizes();
+
+    auto className = QWindowsContext::instance()->registerWindowClass(
+        QWindowsContext::classNamePrefix() + QLatin1String("ThemeChangeObserverWindow"),
+        qThemeChangeObserverWndProc);
+    // HWND_MESSAGE windows do not get the required theme events,
+    // so we use a real top-level window that we never show.
+    m_themeChangeObserver = CreateWindowEx(0, reinterpret_cast<LPCWSTR>(className.utf16()),
+        nullptr, WS_TILED, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+        nullptr, nullptr, GetModuleHandle(nullptr), nullptr);
+    Q_ASSERT(m_themeChangeObserver);
 }
 
 QWindowsTheme::~QWindowsTheme()
@@ -496,6 +540,13 @@ QWindowsTheme::~QWindowsTheme()
     clearPalettes();
     clearFonts();
     m_instance = nullptr;
+}
+
+void QWindowsTheme::destroyThemeChangeWindow()
+{
+    qCDebug(lcQpaTheme) << "Destroying theme change window";
+    DestroyWindow(m_themeChangeObserver);
+    m_themeChangeObserver = nullptr;
 }
 
 static inline QStringList iconThemeSearchPaths()
@@ -594,7 +645,7 @@ Qt::ColorScheme QWindowsTheme::effectiveColorScheme()
 void QWindowsTheme::requestColorScheme(Qt::ColorScheme scheme)
 {
     s_colorSchemeOverride = scheme;
-    handleSettingsChanged();
+    handleThemeChange();
 }
 
 Qt::ContrastPreference QWindowsTheme::contrastPreference() const
@@ -603,23 +654,27 @@ Qt::ContrastPreference QWindowsTheme::contrastPreference() const
                                : Qt::ContrastPreference::NoPreference;
 }
 
-void QWindowsTheme::handleSettingsChanged()
+void QWindowsTheme::handleThemeChange()
 {
+    QWindowsThemeCache::clearAllThemeCaches();
+
     const auto oldColorScheme = s_colorScheme;
     s_colorScheme = Qt::ColorScheme::Unknown; // make effectiveColorScheme() query registry
-    const auto newColorScheme = effectiveColorScheme();
-    const bool colorSchemeChanged = newColorScheme != oldColorScheme;
-    s_colorScheme = newColorScheme;
-    if (!colorSchemeChanged)
-        return;
-    auto integration = QWindowsIntegration::instance();
-    integration->updateApplicationBadge();
-    if (integration->darkModeHandling().testFlag(QWindowsApplication::DarkModeStyle)) {
-        QWindowsTheme::instance()->refresh();
-        QWindowSystemInterface::handleThemeChange<QWindowSystemInterface::SynchronousDelivery>();
+    s_colorScheme = effectiveColorScheme();
+    if (s_colorScheme != oldColorScheme) {
+        // Only propagate color scheme changes if the scheme actually changed
+        auto integration = QWindowsIntegration::instance();
+        integration->updateApplicationBadge();
+
+        for (QWindowsWindow *w : std::as_const(QWindowsContext::instance()->windows()))
+            w->setDarkBorder(s_colorScheme == Qt::ColorScheme::Dark);
     }
-    for (QWindowsWindow *w : std::as_const(QWindowsContext::instance()->windows()))
-        w->setDarkBorder(s_colorScheme == Qt::ColorScheme::Dark);
+
+    // But always reset palette and fonts, and signal the theme
+    // change, as other parts of the theme could have changed,
+    // such as the accent color.
+    QWindowsTheme::instance()->refresh();
+    QWindowSystemInterface::handleThemeChange<QWindowSystemInterface::SynchronousDelivery>();
 }
 
 void QWindowsTheme::clearPalettes()
@@ -783,12 +838,6 @@ QPlatformSystemTrayIcon *QWindowsTheme::createPlatformSystemTrayIcon() const
     return new QWindowsSystemTrayIcon;
 }
 #endif
-
-void QWindowsTheme::windowsThemeChanged(QWindow * window)
-{
-    refresh();
-    QWindowSystemInterface::handleThemeChange(window);
-}
 
 static int fileIconSizes[FileIconSizeCount];
 

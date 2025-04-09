@@ -29,6 +29,7 @@ Q_DECLARE_LOGGING_CATEGORY(lcQpaAccessibility)
 Q_DECLARE_LOGGING_CATEGORY(lcQpaUiAutomation)
 Q_DECLARE_LOGGING_CATEGORY(lcQpaTrayIcon)
 Q_DECLARE_LOGGING_CATEGORY(lcQpaScreen)
+Q_DECLARE_LOGGING_CATEGORY(lcQpaTheme)
 
 class QWindow;
 class QPlatformScreen;
