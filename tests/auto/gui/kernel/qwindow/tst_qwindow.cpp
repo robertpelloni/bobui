@@ -48,6 +48,7 @@ private slots:
     void framePositioning();
     void framePositioning_data();
     void framePositioningStableAfterDestroy();
+    void geometryAfterWmUpdateAndDestroyCreate();
     void positioningDuringMinimized();
     void childWindowPositioning_data();
     void childWindowPositioning();
@@ -690,6 +691,33 @@ void tst_QWindow::framePositioningStableAfterDestroy()
     QVERIFY(QTest::qWaitForWindowExposed(&window));
     QTRY_COMPARE(window.position(), stablePosition);
     QTRY_COMPARE(window.framePosition(), stableFramePosition);
+}
+
+void tst_QWindow::geometryAfterWmUpdateAndDestroyCreate()
+{
+    QWindow window;
+    window.setFlag(Qt::FramelessWindowHint);
+    window.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+
+    if (window.windowState() != Qt::WindowNoState)
+        QSKIP("Default window state is not Qt::WindowNoState");
+
+    const QRect geometryAfterShow = window.geometry();
+
+    // Check that the geometry is retained for create/destroy/create,
+    // if the user has moved and resized the window via the window-manager
+    // (i.e. no explicit setGeometry calls from user code).
+    QRect modifiedGeometry = geometryAfterShow.translated(42, 42);
+    modifiedGeometry.setSize(modifiedGeometry.size() + QSize(42, 42));
+    QWindowSystemInterface::handleGeometryChange<QWindowSystemInterface::SynchronousDelivery>(
+        &window, modifiedGeometry);
+
+    window.destroy();
+    window.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+
+    QTRY_COMPARE(window.geometry(), modifiedGeometry);
 }
 
 void tst_QWindow::positioningDuringMinimized()
