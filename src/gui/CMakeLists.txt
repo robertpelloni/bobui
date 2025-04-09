@@ -47,7 +47,7 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}
 endif()
 
 # Silence AUTOMOC warning 'No relevant classes found. No output generated.'
-if (NOT UNIX)
+if (NOT QT_FEATURE_wayland)
     set_source_files_properties(kernel/qplatformwindow_p.h
                                 PROPERTIES SKIP_AUTOMOC TRUE)
 endif()
