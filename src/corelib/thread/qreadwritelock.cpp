@@ -201,6 +201,7 @@ Q_NEVER_INLINE static bool contendedTryLockForRead(QAtomicPointer<QReadWriteLock
                                                    QDeadlineTimer timeout, QReadWriteLockPrivate *d)
 {
     while (true) {
+        qYieldCpu();
         if (d == nullptr) {
             if (fastTryLock(d_ptr, dummyLockedForRead, d))
                 return true;
@@ -318,6 +319,7 @@ Q_NEVER_INLINE static bool contendedTryLockForWrite(QAtomicPointer<QReadWriteLoc
                                                     QDeadlineTimer timeout, QReadWriteLockPrivate *d)
 {
     while (true) {
+        qYieldCpu();
         if (d == nullptr) {
             if (fastTryLock(d_ptr, dummyLockedForWrite, d))
                 return true;
