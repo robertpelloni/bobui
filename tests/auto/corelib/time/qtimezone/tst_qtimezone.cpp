@@ -505,10 +505,8 @@ void tst_QTimeZone::dataStreamTest()
     QCOMPARE(tz2.comment(), u"Qt Testing"_s);
     QCOMPARE(tz2.territory(), QLocale::Norway);
     QCOMPARE(tz2.abbreviation(QDateTime::currentDateTime()), u"QST"_s);
-    QCOMPARE(tz2.displayName(QTimeZone::StandardTime, QTimeZone::LongName, QLocale()),
-             u"Qt Standard Time"_s);
-    QCOMPARE(tz2.displayName(QTimeZone::DaylightTime, QTimeZone::LongName, QLocale()),
-             u"Qt Standard Time"_s);
+    QCOMPARE(tz2.displayName(QTimeZone::StandardTime, QTimeZone::LongName), u"Qt Standard Time"_s);
+    QCOMPARE(tz2.displayName(QTimeZone::DaylightTime, QTimeZone::LongName), u"Qt Standard Time"_s);
     QCOMPARE(tz2.offsetFromUtc(QDateTime::currentDateTime()), 23456);
 
     // And then with a standard IANA timezone (QTBUG-60595):
@@ -1391,8 +1389,7 @@ void tst_QTimeZone::utcTest()
     QCOMPARE(tz.comment(), u"Qt Testing"_s);
     QCOMPARE(tz.territory(), QLocale::Norway);
     QCOMPARE(tz.abbreviation(now), u"QST"_s);
-    QCOMPARE(tz.displayName(QTimeZone::StandardTime, QTimeZone::LongName, QLocale()),
-             u"Qt Standard Time"_s);
+    QCOMPARE(tz.displayName(QTimeZone::StandardTime, QTimeZone::LongName), u"Qt Standard Time"_s);
     QCOMPARE(tz.offsetFromUtc(now), 23456);
     QCOMPARE(tz.standardTimeOffset(now), 23456);
     QCOMPARE(tz.daylightTimeOffset(now), 0);
