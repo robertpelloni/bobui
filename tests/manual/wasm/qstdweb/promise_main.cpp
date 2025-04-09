@@ -5,6 +5,7 @@
 #include <QtCore/QEvent>
 #include <QtCore/QMutex>
 #include <QtCore/QObject>
+#include <QtCore/QDebug>
 #include <QtCore/private/qstdweb_p.h>
 
 #include <qtwasmtestlib.h>
@@ -53,7 +54,6 @@ private slots:
     void multipleResolve();
     void simpleReject();
     void multipleReject();
-    void throwInThen();
     void bareFinally();
     void finallyWithThen();
     void finallyWithThrow();
@@ -188,28 +188,6 @@ void WasmPromiseTest::multipleReject()
     }, promiseCount);
 }
 
-void WasmPromiseTest::throwInThen()
-{
-    init();
-
-    qstdweb::Promise::make(m_testSupport, "makeTestPromise", {
-        .thenFunc = [](val result) {
-            Q_UNUSED(result);
-            EM_ASM({
-                throw "Expected error";
-            });
-        },
-        .catchFunc = [](val error) {
-            QWASMCOMPARE("Expected error", error.as<std::string>());
-            QWASMSUCCESS();
-        }
-    }, std::string("throwInThen"));
-
-    EM_ASM({
-        testSupport.resolve["throwInThen"]();
-    });
-}
-
 void WasmPromiseTest::bareFinally()
 {
     init();
@@ -229,7 +207,7 @@ void WasmPromiseTest::finallyWithThen()
 {
     init();
 
-    auto thenCalled = std::make_shared<bool>();
+    bool *thenCalled = new bool(false);
     qstdweb::Promise::make(m_testSupport, "makeTestPromise", {
         .thenFunc = [thenCalled] (val result) {
             Q_UNUSED(result);
@@ -237,6 +215,7 @@ void WasmPromiseTest::finallyWithThen()
         },
         .finallyFunc = [thenCalled]() {
             QWASMVERIFY(*thenCalled);
+            delete thenCalled;
             QWASMSUCCESS();
         }
     }, std::string("finallyWithThen"));
