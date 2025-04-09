@@ -3626,7 +3626,7 @@ void QRhiVulkan::updateShaderResourceBindings(QRhiShaderResourceBindings *srb)
             VkDescriptorBufferInfo bufInfo;
             bufInfo.buffer = bufD->m_type == QRhiBuffer::Dynamic ? bufD->buffers[currentFrameSlot] : bufD->buffers[0];
             bufInfo.offset = b->u.ubuf.offset;
-            bufInfo.range = b->u.ubuf.maybeSize ? b->u.ubuf.maybeSize : bufD->m_size;
+            bufInfo.range = b->u.ubuf.maybeSize ? b->u.ubuf.maybeSize : VK_WHOLE_SIZE;
             // be nice and assert when we know the vulkan device would die a horrible death due to non-aligned reads
             Q_ASSERT(aligned(bufInfo.offset, ubufAlign) == bufInfo.offset);
             bufferInfoIndex = bufferInfos.size();
@@ -3721,8 +3721,8 @@ void QRhiVulkan::updateShaderResourceBindings(QRhiShaderResourceBindings *srb)
             bd.sbuf.generation = bufD->generation;
             VkDescriptorBufferInfo bufInfo;
             bufInfo.buffer = bufD->m_type == QRhiBuffer::Dynamic ? bufD->buffers[currentFrameSlot] : bufD->buffers[0];
-            bufInfo.offset = b->u.ubuf.offset;
-            bufInfo.range = b->u.ubuf.maybeSize ? b->u.ubuf.maybeSize : bufD->m_size;
+            bufInfo.offset = b->u.sbuf.offset;
+            bufInfo.range = b->u.sbuf.maybeSize ? b->u.sbuf.maybeSize : VK_WHOLE_SIZE;
             bufferInfoIndex = bufferInfos.size();
             bufferInfos.append(bufInfo);
         }
