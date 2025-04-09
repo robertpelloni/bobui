@@ -493,11 +493,13 @@ void tst_QTimeZone::dataStreamTest()
     {
         QDataStream ds(&tmp, QIODevice::WriteOnly);
         ds << tz1;
+        QCOMPARE(ds.status(), QDataStream::Ok);
     }
     QTimeZone tz2("UTC-12:00"); // Shall be over-written.
     {
         QDataStream ds(&tmp, QIODevice::ReadOnly);
         ds >> tz2;
+        QCOMPARE(ds.status(), QDataStream::Ok);
     }
     QCOMPARE(tz2.id(), "QST"_ba);
     QCOMPARE(tz2.comment(), u"Qt Testing"_s);
@@ -515,10 +517,12 @@ void tst_QTimeZone::dataStreamTest()
     {
         QDataStream ds(&tmp, QIODevice::WriteOnly);
         ds << tz1;
+        QCOMPARE(ds.status(), QDataStream::Ok);
     }
     {
         QDataStream ds(&tmp, QIODevice::ReadOnly);
         ds >> tz2;
+        QCOMPARE(ds.status(), QDataStream::Ok);
     }
     QCOMPARE(tz2.isValid(), true);
     QCOMPARE(tz2.id(), tz1.id());
@@ -533,11 +537,13 @@ void tst_QTimeZone::dataStreamTest()
     {
         QDataStream ds(&tmp, QIODevice::WriteOnly);
         ds << tz1;
+        QCOMPARE(ds.status(), QDataStream::Ok);
     }
     tz2 = QTimeZone("UTC");
     {
         QDataStream ds(&tmp, QIODevice::ReadOnly);
         ds >> tz2;
+        QCOMPARE(ds.status(), QDataStream::Ok);
     }
     QCOMPARE(tz2.id(), tz1.id());
 #endif
