@@ -24,6 +24,7 @@ QT_BEGIN_NAMESPACE
 class QGnomeThemePrivate;
 #if QT_CONFIG(dbus)
 class QDBusListener;
+class QDBusPendingCallWatcher;
 #endif
 
 class Q_GUI_EXPORT QGnomeTheme : public QGenericUnixTheme
@@ -66,6 +67,7 @@ public:
     Qt::ContrastPreference m_contrast = Qt::ContrastPreference::NoPreference;
 private:
     std::unique_ptr<QDBusListener> dbus;
+    std::unique_ptr<QDBusPendingCallWatcher> pendingCallWatcher;
     bool initDbus();
     void updateColorScheme(const QString &themeName);
     void updateHighContrast(Qt::ContrastPreference contrast);

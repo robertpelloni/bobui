@@ -66,15 +66,14 @@ QGnomeThemePrivate::QGnomeThemePrivate()
 
         message.setArguments({});
         message << appearanceNamespace << contrastKey;
-        QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(dbus.asyncCall(message));
-        QObject::connect(watcher, &QDBusPendingCallWatcher::finished, watcher, [this](QDBusPendingCallWatcher *watcher) {
+        pendingCallWatcher = std::make_unique<QDBusPendingCallWatcher>(dbus.asyncCall(message));
+        QObject::connect(pendingCallWatcher.get(), &QDBusPendingCallWatcher::finished, pendingCallWatcher.get(), [this](QDBusPendingCallWatcher *watcher) {
             if (!watcher->isError()) {
                 QDBusPendingReply<QVariant> reply = *watcher;
                 if (Q_LIKELY(reply.isValid()))
                     updateHighContrast(static_cast<Qt::ContrastPreference>(reply.value().toUInt()));
             }
             initDbus();
-            watcher->deleteLater();
         });
     } else {
         qCWarning(lcQpaThemeGnome) << "dbus connection failed. Last error: " << dbus.lastError();
