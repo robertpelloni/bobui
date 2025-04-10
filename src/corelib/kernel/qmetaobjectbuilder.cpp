@@ -97,7 +97,13 @@ public:
 
     QList<QByteArray> parameterTypes() const
     {
-        return QMetaObjectPrivate::parameterTypeNamesFromSignature(signature);
+        QVarLengthArray<QByteArrayView, 10> typeNames;
+        QMetaObjectPrivate::parameterTypeNamesFromSignature(signature, typeNames);
+        QList<QByteArray> list;
+        list.reserve(typeNames.size());
+        for (auto n : typeNames)
+            list.emplace_back(n.toByteArray());
+        return list;
     }
 
     int parameterCount() const

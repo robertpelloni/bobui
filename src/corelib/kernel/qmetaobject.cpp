@@ -813,43 +813,21 @@ int QMetaObject::indexOfMethod(const char *method) const
     return i;
 }
 
-// Parses a string of comma-separated types into QArgumentTypes.
-// No normalization of the type names is performed.
-static void argumentTypesFromString(const char *str, const char *end,
-                                    QArgumentTypeArray &types)
-{
-    Q_ASSERT(str <= end);
-    while (str != end) {
-        if (!types.isEmpty())
-            ++str; // Skip comma
-        const char *begin = str;
-        int level = 0;
-        while (str != end && (level > 0 || *str != ',')) {
-            if (*str == '<')
-                ++level;
-            else if (*str == '>')
-                --level;
-            ++str;
-        }
-        types.emplace_back(QByteArrayView{begin, str - begin});
-    }
-}
+/*!
+    \internal
+    Given a method \a signature (e.g. foo(int,double)), this function populates
+    the \a types array and returns the method name.
 
-// Given a method \a signature (e.g. "foo(int,double)"), this function
-// populates the argument \a types array and returns the method name.
+    No normalization of the type names is performed.
+*/
 QByteArrayView QMetaObjectPrivate::decodeMethodSignature(
         const char *signature, QArgumentTypeArray &types)
 {
-    Q_ASSERT(signature != nullptr);
-    const char *lparens = strchr(signature, '(');
-    if (!lparens)
-        return QByteArrayView();
-    const char *rparens = strrchr(lparens + 1, ')');
-    if (!rparens || *(rparens+1))
-        return QByteArrayView();
-    int nameLength = lparens - signature;
-    argumentTypesFromString(lparens + 1, rparens, types);
-    return QByteArrayView(signature, nameLength);
+    QVarLengthArray<QByteArrayView, 10> typeNames;
+    QByteArrayView name = parameterTypeNamesFromSignature(signature, typeNames);
+    for (auto type : typeNames)
+        types.emplace_back(type);
+    return name;
 }
 
 /*!
@@ -4579,14 +4557,20 @@ int QMetaObjectPrivate::originalClone(const QMetaObject *mobj, int local_method_
 /*!
     \internal
 
-    Returns the parameter type names extracted from the given \a signature.
+    Given a method \a signature (e.g. foo(int,double)), this function populates
+    the \a types array with the parameter type names, and returns the method name.
+
+    No normalization of the type names is performed.
+
 */
-QList<QByteArray> QMetaObjectPrivate::parameterTypeNamesFromSignature(QByteArrayView sig)
+QByteArrayView
+QMetaObjectPrivate::parameterTypeNamesFromSignature(QByteArrayView sig,
+                                                    QVarLengthArray<QByteArrayView, 10> &typeNames)
 {
-    QList<QByteArray> list;
     const char *signature = static_cast<const char *>(memchr(sig.begin(), '(', sig.size()));
     if (!signature)
         return {};
+    auto name = QByteArrayView{sig.begin(), signature};
     ++signature; // skip '('
     if (!sig.endsWith(')'))
         return {};
@@ -4603,9 +4587,9 @@ QList<QByteArray> QMetaObjectPrivate::parameterTypeNamesFromSignature(QByteArray
                 --level;
             ++signature;
         }
-        list += QByteArray(begin, signature - begin);
+        typeNames.append(QByteArrayView{begin, signature - begin});
     }
-    return list;
+    return name;
 }
 
 QT_END_NAMESPACE

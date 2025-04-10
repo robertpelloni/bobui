@@ -167,7 +167,9 @@ struct QMetaObjectPrivate
     static bool checkConnectArgs(const QMetaMethodPrivate *signal,
                                  const QMetaMethodPrivate *method);
 
-    static QList<QByteArray> parameterTypeNamesFromSignature(QByteArrayView sig);
+    static QByteArrayView
+    parameterTypeNamesFromSignature(QByteArrayView signature,
+                                    QVarLengthArray<QByteArrayView, 10> &typeNames);
 
 #ifndef QT_NO_QOBJECT
     // defined in qobject.cpp
