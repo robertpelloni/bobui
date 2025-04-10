@@ -832,7 +832,7 @@ public:
     QRhi::FrameOpResult startPrimaryCommandBuffer(VkCommandBuffer *cb);
     QRhi::FrameOpResult endAndSubmitPrimaryCommandBuffer(VkCommandBuffer cb, VkFence cmdFence,
                                                          VkSemaphore *waitSem, VkSemaphore *signalSem);
-    void waitCommandCompletion(int frameSlot);
+    QRhi::FrameOpResult waitCommandCompletion(int frameSlot);
     VkDeviceSize subresUploadByteSize(const QRhiTextureSubresourceUploadDescription &subresDesc) const;
     using BufferImageCopyList = QVarLengthArray<VkBufferImageCopy, 16>;
     void prepareUploadSubres(QVkTexture *texD, int layer, int level,

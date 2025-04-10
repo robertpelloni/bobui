@@ -2481,7 +2481,7 @@ void QRhiVulkan::releaseSwapChainResources(QRhiSwapChain *swapChain)
     for (int i = 0; i < QVK_FRAMES_IN_FLIGHT; ++i) {
         QVkSwapChain::FrameResources &frame(swapChainD->frameRes[i]);
         if (frame.cmdFence) {
-            if (frame.cmdFenceWaitable)
+            if (!deviceLost && frame.cmdFenceWaitable)
                 df->vkWaitForFences(dev, 1, &frame.cmdFence, VK_TRUE, UINT64_MAX);
             df->vkDestroyFence(dev, frame.cmdFence, nullptr);
             frame.cmdFence = VK_NULL_HANDLE;
@@ -2581,7 +2581,9 @@ QRhi::FrameOpResult QRhiVulkan::beginFrame(QRhiSwapChain *swapChain, QRhi::Begin
     // will make B wait for A's frame 0 commands, so if a resource is written
     // in B's frame or when B checks for pending resource releases, that won't
     // mess up A's in-flight commands (as they are not in flight anymore).
-    waitCommandCompletion(frameResIndex);
+    QRhi::FrameOpResult waitResult = waitCommandCompletion(frameResIndex);
+    if (waitResult != QRhi::FrameOpSuccess)
+        return waitResult;
 
     if (!frame.imageAcquired) {
         // move on to next swapchain image
@@ -2895,17 +2897,30 @@ QRhi::FrameOpResult QRhiVulkan::endAndSubmitPrimaryCommandBuffer(VkCommandBuffer
     return QRhi::FrameOpSuccess;
 }
 
-void QRhiVulkan::waitCommandCompletion(int frameSlot)
+QRhi::FrameOpResult QRhiVulkan::waitCommandCompletion(int frameSlot)
 {
     for (QVkSwapChain *sc : std::as_const(swapchains)) {
         const int frameResIndex = sc->bufferCount > 1 ? frameSlot : 0;
         QVkSwapChain::FrameResources &frame(sc->frameRes[frameResIndex]);
         if (frame.cmdFenceWaitable) {
-            df->vkWaitForFences(dev, 1, &frame.cmdFence, VK_TRUE, UINT64_MAX);
+            VkResult err = df->vkWaitForFences(dev, 1, &frame.cmdFence, VK_TRUE, UINT64_MAX);
+
+            if (err != VK_SUCCESS) {
+                if (err == VK_ERROR_DEVICE_LOST) {
+                    qWarning("Device loss detected in vkWaitForFences()");
+                    deviceLost = true;
+                    return QRhi::FrameOpDeviceLost;
+                }
+                qWarning("Failed to wait for fence: %d", err);
+                return QRhi::FrameOpError;
+            }
+
             df->vkResetFences(dev, 1, &frame.cmdFence);
             frame.cmdFenceWaitable = false;
         }
     }
+
+    return QRhi::FrameOpSuccess;
 }
 
 QRhi::FrameOpResult QRhiVulkan::beginOffscreenFrame(QRhiCommandBuffer **cb, QRhi::BeginFrameFlags)
@@ -2921,7 +2936,9 @@ QRhi::FrameOpResult QRhiVulkan::beginOffscreenFrame(QRhiCommandBuffer **cb, QRhi
 
     currentFrameSlot = (currentFrameSlot + 1) % QVK_FRAMES_IN_FLIGHT;
 
-    waitCommandCompletion(currentFrameSlot);
+    QRhi::FrameOpResult waitResult = waitCommandCompletion(currentFrameSlot);
+    if (waitResult != QRhi::FrameOpSuccess)
+        return waitResult;
 
     ensureCommandPoolForNewFrame();
 
