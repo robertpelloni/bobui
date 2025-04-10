@@ -6,7 +6,9 @@
 #include "qwasmcompositor.h"
 #include "qwasmopenglcontext.h"
 #include "qwasmtheme.h"
+#if QT_CONFIG(clipboard)
 #include "qwasmclipboard.h"
+#endif
 #include "qwasmaccessibility.h"
 #include "qwasmservices.h"
 #include "qwasmoffscreensurface.h"
@@ -92,7 +94,9 @@ QWasmIntegration::QWasmIntegration()
     : m_suspendResume(std::make_shared<QWasmSuspendResumeControl>()) // create early in order to register event handlers at startup
     , m_fontDb(nullptr)
     , m_desktopServices(nullptr)
+#if QT_CONFIG(clipboard)
     , m_clipboard(new QWasmClipboard)
+#endif
 #if QT_CONFIG(accessibility)
     , m_accessibility(new QWasmAccessibility)
 #endif
@@ -309,10 +313,12 @@ QPlatformServices *QWasmIntegration::services() const
     return m_desktopServices;
 }
 
+#if QT_CONFIG(clipboard)
 QPlatformClipboard* QWasmIntegration::clipboard() const
 {
     return m_clipboard;
 }
+#endif
 
 #ifndef QT_NO_ACCESSIBILITY
 QPlatformAccessibility *QWasmIntegration::accessibility() const

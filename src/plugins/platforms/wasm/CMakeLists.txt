@@ -13,7 +13,6 @@ qt_internal_add_plugin(QWasmIntegrationPlugin
         main.cpp
         qwasmaccessibility.cpp qwasmaccessibility.h
         qwasmbase64iconstore.cpp qwasmbase64iconstore.h
-        qwasmclipboard.cpp qwasmclipboard.h
         qwasmcompositor.cpp qwasmcompositor.h
         qwasmcssstyle.cpp qwasmcssstyle.h
         qwasmcursor.cpp qwasmcursor.h
@@ -61,6 +60,11 @@ qt_internal_add_resource(QWasmIntegrationPlugin "wasmfonts"
         "${QtBase_SOURCE_DIR}/src/3rdparty/wasm"
     FILES
         ${wasmfonts_resource_files}
+)
+
+qt_internal_extend_target(QWasmIntegrationPlugin CONDITION QT_FEATURE_clipboard
+    SOURCES
+        qwasmclipboard.cpp qwasmclipboard.h
 )
 
 qt_internal_extend_target(QWasmIntegrationPlugin CONDITION QT_FEATURE_opengl

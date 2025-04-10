@@ -59,7 +59,9 @@ public:
     QStringList themeNames() const override;
     QPlatformTheme *createPlatformTheme(const QString &name) const override;
     QPlatformServices *services() const override;
+#if QT_CONFIG(clipboard)
     QPlatformClipboard *clipboard() const override;
+#endif
 #ifndef QT_NO_ACCESSIBILITY
     QPlatformAccessibility *accessibility() const override;
 #endif

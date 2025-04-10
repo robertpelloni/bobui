@@ -12,7 +12,9 @@
 
 #include "qwasmbase64iconstore.h"
 #include "qwasmdom.h"
+#if QT_CONFIG(clipboard)
 #include "qwasmclipboard.h"
+#endif
 #include "qwasmintegration.h"
 #include "qwasmkeytranslator.h"
 #include "qwasmwindow.h"
@@ -21,7 +23,6 @@
 #include "qwasmevent.h"
 #include "qwasmeventdispatcher.h"
 #include "qwasmaccessibility.h"
-#include "qwasmclipboard.h"
 #include "qwasmdrag.h"
 
 #include <iostream>
@@ -86,12 +87,14 @@ QWasmWindow::QWasmWindow(QWindow *w, QWasmDeadKeySupport *deadKeySupport,
 
     m_canvas["classList"].call<void>("add", emscripten::val("qt-window-canvas"));
 
+#if QT_CONFIG(clipboard)
     // Set contentEditable so that the window gets clipboard events,
     // then hide the resulting focus frame.
     m_window.set("contentEditable", std::string("true"));
     m_window["style"].set("outline", std::string("none"));
 
     QWasmClipboard::installEventHandlers(m_window);
+#endif
 
     // Set inputMode to none to stop the mobile keyboard from opening
     // when the user clicks on the window.
@@ -574,19 +577,26 @@ bool QWasmWindow::processKey(const KeyEvent &event)
     constexpr bool ProceedToNativeEvent = false;
     Q_ASSERT(event.type == EventType::KeyDown || event.type == EventType::KeyUp);
 
+#if QT_CONFIG(clipboard)
     const auto clipboardResult =
             QWasmIntegration::get()->getWasmClipboard()->processKeyboard(event);
 
     using ProcessKeyboardResult = QWasmClipboard::ProcessKeyboardResult;
     if (clipboardResult == ProcessKeyboardResult::NativeClipboardEventNeeded)
         return ProceedToNativeEvent;
+#endif
 
     const auto result = QWindowSystemInterface::handleKeyEvent(
             0, event.type == EventType::KeyDown ? QEvent::KeyPress : QEvent::KeyRelease, event.key,
             event.modifiers, event.text, event.autoRepeat);
+
+#if QT_CONFIG(clipboard)
     return clipboardResult == ProcessKeyboardResult::NativeClipboardEventAndCopiedDataNeeded
             ? ProceedToNativeEvent
             : result;
+#else
+    return result;
+#endif
 }
 
 void QWasmWindow::handleKeyForInputContextEvent(EventType eventType, const emscripten::val &event)
@@ -651,9 +661,11 @@ bool QWasmWindow::processKeyForInputContext(const KeyEvent &event)
             0, event.type == EventType::KeyDown ? QEvent::KeyPress : QEvent::KeyRelease, event.key,
             event.modifiers, event.text);
 
+#if QT_CONFIG(clipboard)
     // Copy/Cut callback required to copy qtClipboard to system clipboard
     if (keySeq == QKeySequence::Copy || keySeq == QKeySequence::Cut)
         return false;
+#endif
 
     return result;
 }

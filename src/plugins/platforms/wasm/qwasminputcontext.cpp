@@ -10,7 +10,9 @@
 #include <qwindow.h>
 #include <qpa/qplatforminputcontext.h>
 #include <qpa/qwindowsysteminterface.h>
+#if QT_CONFIG(clipboard)
 #include <QClipboard>
+#endif
 #include <QtGui/qtextobject.h>
 
 QT_BEGIN_NAMESPACE
@@ -90,6 +92,7 @@ void QWasmInputContext::inputCallback(emscripten::val event)
         } else if (!inputTypeString.compare("insertText")) {
             wasmInput->insertText(inputStr);
             event.call<void>("stopImmediatePropagation");
+#if QT_CONFIG(clipboard)
         } else if (!inputTypeString.compare("insertFromPaste")) {
             wasmInput->insertText(QGuiApplication::clipboard()->text());
             event.call<void>("stopImmediatePropagation");
@@ -97,6 +100,7 @@ void QWasmInputContext::inputCallback(emscripten::val event)
         // But now, keyCallback in QWasmWindow
         // will take them as exceptions.
         //} else if (!inputTypeString.compare("deleteByCut")) {
+#endif
         } else {
             qCWarning(qLcQpaWasmInputContext) << Q_FUNC_INFO << "inputType \"" << inputType.as<std::string>() << "\" is not supported in Qt yet";
         }
@@ -189,6 +193,7 @@ void QWasmInputContext::compositionUpdateCallback(emscripten::val event)
     wasmInput->setPreeditString(compositionStr, 0);
 }
 
+#if QT_CONFIG(clipboard)
 static void copyCallback(emscripten::val event)
 {
     qCDebug(qLcQpaWasmInputContext) << Q_FUNC_INFO;
@@ -230,6 +235,7 @@ static void pasteCallback(emscripten::val event)
 
     // propagate to input event (insertFromPaste)
 }
+#endif // QT_CONFIG(clipboard)
 
 QWasmInputContext::QWasmInputContext()
 {
@@ -258,10 +264,12 @@ QWasmInputContext::QWasmInputContext()
     m_compositionStartCallback = QWasmEventHandler(m_inputElement, "compositionstart", QWasmInputContext::compositionStartCallback);
     m_compositionUpdateCallback = QWasmEventHandler(m_inputElement, "compositionupdate", QWasmInputContext::compositionUpdateCallback);
 
+#if QT_CONFIG(clipboard)
     // Clipboard for InputContext
     m_clipboardCut = QWasmEventHandler(m_inputElement, "cut", cutCallback);
     m_clipboardCopy = QWasmEventHandler(m_inputElement, "copy", copyCallback);
     m_clipboardPaste = QWasmEventHandler(m_inputElement, "paste", pasteCallback);
+#endif
 }
 
 QWasmInputContext::~QWasmInputContext()
