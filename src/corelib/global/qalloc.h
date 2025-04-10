@@ -1,4 +1,4 @@
-// Copyright (C) 2025 The Qt Company Ltd.
+// Copyright (C) 2025 Aurélien Brooke <aurelien@bahiasoft.fr>
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #ifndef QALLOC_H
@@ -99,12 +99,17 @@ inline void *fittedMalloc(size_t headerSize, qsizetype *capacity,
 inline void *fittedRealloc(void *ptr, size_t headerSize, size_t *capacity,
                            size_t elementSize, size_t unusedCapacity) noexcept
 {
-    size_t allocSize = fittedAllocSize(headerSize, capacity,
+    size_t newCapacity = *capacity;
+    size_t allocSize = fittedAllocSize(headerSize, &newCapacity,
                                        elementSize, unusedCapacity, alignof(std::max_align_t));
-    if (Q_LIKELY(allocSize != 0))
-        return realloc(ptr, allocSize);
-    else
+    if (Q_LIKELY(allocSize != 0)) {
+        void *newPtr = realloc(ptr, allocSize);
+        if (newPtr)
+            *capacity = newCapacity;
+        return newPtr;
+    } else {
         return nullptr;
+    }
 }
 inline void *fittedRealloc(void *ptr, size_t headerSize, qsizetype *capacity,
                            size_t elementSize, size_t unusedCapacity = 0) noexcept
