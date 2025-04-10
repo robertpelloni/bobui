@@ -4055,10 +4055,9 @@ static void formatTabletEvent(QDebug d, const QTabletEvent *e)
 
 QDebug operator<<(QDebug dbg, const QEventPoint *tp)
 {
-    if (!tp) {
-        dbg << "QEventPoint(0x0)";
-        return dbg;
-    }
+    if (!tp)
+        return dbg << "QEventPoint(0x0)";
+
     return operator<<(dbg, *tp);
 }
 
@@ -4098,10 +4097,9 @@ QDebug operator<<(QDebug dbg, const QEvent *e)
 {
     QDebugStateSaver saver(dbg);
     dbg.nospace();
-    if (!e) {
-        dbg << "QEvent(this = 0x0)";
-        return dbg;
-    }
+    if (!e)
+        return dbg << "QEvent(0x0)";
+
     // More useful event output could be added here
     const QEvent::Type type = e->type();
     bool isMouse = false;

@@ -1972,10 +1972,9 @@ const char *qAccessibleEventString(QAccessible::Event event)
 Q_GUI_EXPORT QDebug operator<<(QDebug d, const QAccessibleInterface *iface)
 {
     QDebugStateSaver saver(d);
-    if (!iface) {
-        d << "QAccessibleInterface(null)";
-        return d;
-    }
+    if (!iface)
+        return d << "QAccessibleInterface(0x0)";
+
     d.nospace();
     d << "QAccessibleInterface(" << Qt::hex << (const void *) iface << Qt::dec;
     if (iface->isValid()) {

@@ -1310,7 +1310,7 @@ QDebug operator<<(QDebug debug, const QOpenGLContext *ctx)
             debug << ", invalid";
         }
     } else {
-        debug << '0';
+        debug << "0x0";
     }
     debug << ')';
     return debug;
@@ -1324,7 +1324,7 @@ QDebug operator<<(QDebug debug, const QOpenGLContextGroup *cg)
     if (cg)
         debug << cg->shares();
     else
-        debug << '0';
+        debug << "0x0";
     debug << ')';
     return debug;
 }

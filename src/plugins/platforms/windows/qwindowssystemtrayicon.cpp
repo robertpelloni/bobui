@@ -464,7 +464,7 @@ QDebug operator<<(QDebug d, const QWindowsSystemTrayIcon *t)
     if (t)
         t->formatDebug(d);
     else
-        d << '0';
+        d << "0x0";
     d << ')';
     return d;
 }

@@ -11161,10 +11161,8 @@ QDebug operator<<(QDebug debug, const QGraphicsItem *item)
     QDebugStateSaver saver(debug);
     debug.nospace();
 
-    if (!item) {
-        debug << "QGraphicsItem(0)";
-        return debug;
-    }
+    if (!item)
+        return debug << "QGraphicsItem(0x0)";
 
     if (const QGraphicsObject *o = item->toGraphicsObject())
         debug << o->metaObject()->className();
@@ -11179,7 +11177,7 @@ QDebug operator<<(QDebug debug, const QGraphicsItem *item)
                 debug << ", name=" << w->objectName();
             debug << ')';
         } else {
-            debug << "QWidget(0)";
+            debug << "QWidget(0x0)";
         }
     }
     formatGraphicsItemHelper(debug, item);
@@ -11192,10 +11190,8 @@ QDebug operator<<(QDebug debug, const QGraphicsObject *item)
     QDebugStateSaver saver(debug);
     debug.nospace();
 
-    if (!item) {
-        debug << "QGraphicsObject(0)";
-        return debug;
-    }
+    if (!item)
+        return debug << "QGraphicsObject(0x0)";
 
     debug << item->metaObject()->className() << '(' << static_cast<const void *>(item);
     if (!item->objectName().isEmpty())
