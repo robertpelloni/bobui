@@ -10,6 +10,7 @@
 #endif
 
 #include <QtCore/qassert.h>
+#include <QtCore/qminmax.h>
 #include <QtCore/qtconfigmacros.h>
 #include <QtCore/qtcoreexports.h>
 #include <QtCore/qtypes.h>
