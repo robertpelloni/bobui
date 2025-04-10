@@ -16,7 +16,9 @@
 #include "qwasmwindow.h"
 #include "qwasmbackingstore.h"
 #include "qwasmfontdatabase.h"
+#if QT_CONFIG(draganddrop)
 #include "qwasmdrag.h"
+#endif
 
 #include <qpa/qplatformwindow.h>
 #include <QtGui/qscreen.h>
@@ -31,7 +33,9 @@
 
 // this is where EGL headers are pulled in, make sure it is last
 #include "qwasmscreen.h"
+#if QT_CONFIG(draganddrop)
 #include <private/qsimpledrag_p.h>
+#endif
 
 QT_BEGIN_NAMESPACE
 
@@ -148,7 +152,9 @@ QWasmIntegration::QWasmIntegration()
         visualViewport.call<void>("addEventListener", val("resize"),
                                   val::module_property("qtResizeAllScreens"));
     }
+#if QT_CONFIG(draganddrop)
     m_drag = std::make_unique<QWasmDrag>();
+#endif
 }
 
 QWasmIntegration::~QWasmIntegration()

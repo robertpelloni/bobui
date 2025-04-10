@@ -23,7 +23,9 @@
 #include "qwasmevent.h"
 #include "qwasmeventdispatcher.h"
 #include "qwasmaccessibility.h"
+#if QT_CONFIG(draganddrop)
 #include "qwasmdrag.h"
+#endif
 
 #include <iostream>
 #include <sstream>
@@ -143,6 +145,7 @@ void QWasmWindow::registerEventHandlers()
         [this](emscripten::val event) { this->handlePointerEnterLeaveEvent(PointerEvent(EventType::PointerLeave, event)); }
     );
 
+#if QT_CONFIG(draganddrop)
     m_window.call<void>("setAttribute", emscripten::val("draggable"), emscripten::val("true"));
     m_dragStartCallback = QWasmEventHandler(m_window, "dragstart",
         [this](emscripten::val event) {
@@ -174,6 +177,7 @@ void QWasmWindow::registerEventHandlers()
             QWasmDrag::instance()->onNativeDragLeave(&dragEvent);
         }
     );
+#endif // QT_CONFIG(draganddrop)
 
     m_wheelEventCallback = QWasmEventHandler(m_window, "wheel",
         [this](emscripten::val event) { this->handleWheelEvent(event); });
