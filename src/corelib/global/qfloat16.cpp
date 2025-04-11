@@ -13,7 +13,7 @@
 QT_BEGIN_NAMESPACE
 
 #if QT_VERSION < QT_VERSION_CHECK(7, 0, 0)
-Q_DECL_EXPORT int qRegisterNormalizedMetaType_qfloat16(const QByteArray &)
+Q_CORE_EXPORT int qRegisterNormalizedMetaType_qfloat16(const QByteArray &)
 {
     return QMetaType::Float16;
 }
