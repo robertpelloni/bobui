@@ -26,6 +26,7 @@ instructions:
             - condition: property
               property: features
               contains_value: AndroidTestRun
+      - !include "{{qt/qtbase}}/run_schema_check.yaml"
     disable_if:
       condition: or
       conditions:

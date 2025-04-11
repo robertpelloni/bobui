@@ -1,0 +1,44 @@
+type: Group
+instructions:
+  # Set the python executable according to the environment
+  - # Default value
+    type: EnvironmentVariable
+    variableName: SCHEMA_PYTHON_EXECUTABLE
+    variableValue: "python3"
+  - # Special case for Windows
+    type: EnvironmentVariable
+    variableName: SCHEMA_PYTHON_EXECUTABLE
+    # Reusing SBOM_PYTHON_APPS_PATH here because the requirements.txt is gated by it
+    variableValue: "{{.Env.SBOM_PYTHON_APPS_PATH}}\\..\\python.exe"
+    enable_if:
+      condition: property
+      property: host.os
+      equals_value: Windows
+  - # Special case for Rhel8 and other cases with too old python
+    type: EnvironmentVariable
+    variableName: SCHEMA_PYTHON_EXECUTABLE
+    variableValue: "python3.11"
+    enable_if:
+      condition: property
+      property: host.osVersion
+      in_values: [RHEL_8_8, RHEL_8_10, openSUSE_15_5, openSUSE_15_6]
+  - # Run schema check for host installation files
+    type: ExecuteCommand
+    command: "{{.Env.SCHEMA_PYTHON_EXECUTABLE}} {{.Env.LIBEXEC_INSTALL_DIR}}check_qt_module_json_schemas.py --install-prefix {{.Env.HOST_INSTALL_DIR}}"
+    userMessageOnFailure: &error-message |
+      Qt module json file schema validation failed.
+      To run locally, use `(pipx|uv|hatch) run qtbase/util/json_schema/check_qt_module_json_schemas.py` with appropriate --install-prefix
+  - # Run schema check for target installation files
+    type: ExecuteCommand
+    command: "{{.Env.SCHEMA_PYTHON_EXECUTABLE}} {{.Env.LIBEXEC_INSTALL_DIR}}check_qt_module_json_schemas.py --install-prefix {{.Env.TARGET_INSTALL_DIR}}"
+    userMessageOnFailure: *error-message
+disable_if:
+  condition: and
+  conditions:
+    # Dependency check-jsonschema -> regress, but regress is not built for Windows ARM
+    - condition: property
+      property: host.os
+      equals_value: Windows
+    - condition: property
+      property: target.arch
+      equals_value: AARCH64
