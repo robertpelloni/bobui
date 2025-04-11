@@ -429,6 +429,7 @@ macro(qt_internal_setup_build_and_global_variables)
     qt_internal_set_qt_source_tree_var()
     qt_internal_set_export_compile_commands()
     qt_internal_set_configure_from_ide()
+    qt_internal_set_ci_options()
 
     # Depends on qt_internal_set_configure_from_ide
     qt_internal_set_sync_headers_at_configure_time()

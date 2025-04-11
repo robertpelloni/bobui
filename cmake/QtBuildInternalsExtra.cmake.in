@@ -73,6 +73,10 @@ if(@FEATURE_developer_build@)
     set(FEATURE_developer_build ON CACHE BOOL "Developer build." FORCE)
 endif()
 
+# Propagate CI files installation
+set(QT_INSTALL_CI_FILES @QT_INSTALL_CI_FILES@ CACHE BOOL
+    "Install CI files for internal use only" FORCE)
+
 # Propagate non-prefix builds.
 set(QT_WILL_INSTALL @QT_WILL_INSTALL@ CACHE BOOL
     "Boolean indicating if doing a Qt prefix build (vs non-prefix build)." FORCE)

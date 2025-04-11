@@ -155,6 +155,19 @@ macro(qt_internal_set_configure_from_ide)
     endif()
 endmacro()
 
+function(qt_internal_set_ci_options)
+    # Do not install CI only files except for
+    # - developer-builds
+    # - in coin CI
+    if(QT_FEATURE_developer_build OR DEFINED ENV{COIN_UNIQUE_JOB_ID})
+        set(__QT_INSTALL_CI_FILES_default ON)
+    else()
+        set(__QT_INSTALL_CI_FILES_default OFF)
+    endif()
+    set(QT_INSTALL_CI_FILES ${__QT_INSTALL_CI_FILES_default} CACHE BOOL
+        "Install CI files for internal use only")
+endfunction()
+
 macro(qt_internal_set_sync_headers_at_configure_time)
     set(_qt_sync_headers_at_configure_time_default ${QT_INTERNAL_CONFIGURE_FROM_IDE})
 
