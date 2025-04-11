@@ -43,7 +43,7 @@ QT_BEGIN_NAMESPACE
 
 // copied from moc's generator.cpp
 namespace QtPrivate {
-Q_CORE_EXPORT bool isBuiltinType(const QByteArray &type)
+Q_CORE_EXPORT bool isBuiltinType(QByteArrayView type)
 {
     int id = QMetaType::fromName(type).id();
     if (!id && !type.isEmpty() && type != "void")
@@ -95,14 +95,14 @@ public:
         attributes = ((attributes & ~AccessMask) | (int)value);
     }
 
-    QList<QByteArray> parameterTypes() const
+    QList<QByteArrayView> parameterTypes() const
     {
         QVarLengthArray<QByteArrayView, 10> typeNames;
         QMetaObjectPrivate::parameterTypeNamesFromSignature(signature, typeNames);
-        QList<QByteArray> list;
+        QList<QByteArrayView> list;
         list.reserve(typeNames.size());
         for (auto n : typeNames)
-            list.emplace_back(n.toByteArray());
+            list.emplace_back(n);
         return list;
     }
 
@@ -1284,6 +1284,15 @@ static int buildMetaObject(QMetaObjectBuilderPrivate *d, char *buf,
         parameterMetaTypesIndex += 1 + argc;
     }
 
+    auto getTypeInfo = [&](const auto &typeName) {
+        if (QtPrivate::isBuiltinType(typeName))
+            return QMetaType::fromName(typeName).id();
+        if constexpr (std::is_same_v<decltype(typeName), const QByteArrayView &>)
+            return int(IsUnresolvedType | strings.enter(typeName.toByteArray()));
+        else
+            return int(IsUnresolvedType | strings.enter(typeName));
+    };
+
     // Output the method parameters in the class.
     Q_ASSERT(!buf || dataIndex == pmeta->methodData + int(d->methods.size()) * QMetaObjectPrivate::IntsPerMethod);
     for (int x = 0; x < 2; ++x) {
@@ -1295,25 +1304,24 @@ static int buildMetaObject(QMetaObjectBuilderPrivate *d, char *buf,
                 ++dataIndex;
             }
 
-            const QList<QByteArray> paramTypeNames = method.parameterTypes();
-            int paramCount = paramTypeNames.size();
-            for (int i = -1; i < paramCount; ++i) {
-                const QByteArray &typeName = (i < 0) ? method.returnType : paramTypeNames.at(i);
-                [[maybe_unused]] int typeInfo;
-                if (QtPrivate::isBuiltinType(typeName))
-                    typeInfo = QMetaType::fromName(typeName).id();
-                else
-                    typeInfo = IsUnresolvedType | strings.enter(typeName);
+            [[maybe_unused]] int typeInfo = getTypeInfo(method.returnType);
+            if constexpr (mode == Construct)
+                data[dataIndex] = typeInfo;
+            ++dataIndex;
+
+            const QList<QByteArrayView> paramTypeNames = method.parameterTypes();
+            for (auto typeName : paramTypeNames) {
+                [[maybe_unused]] int typeInfo = getTypeInfo(typeName);
                 if constexpr (mode == Construct)
                     data[dataIndex] = typeInfo;
                 ++dataIndex;
             }
 
             QList<QByteArray> paramNames = method.parameterNames;
-            while (paramNames.size() < paramCount)
-                paramNames.append(QByteArray());
-            for (int i = 0; i < paramCount; ++i) {
-                [[maybe_unused]] int stringIndex = strings.enter(paramNames.at(i));
+            if (const auto paramCount = paramTypeNames.size(); paramNames.size() < paramCount)
+                paramNames.resize(paramCount);
+            for (const auto &name : std::as_const(paramNames)) {
+                [[maybe_unused]] int stringIndex = strings.enter(name);
                 if constexpr (mode == Construct)
                     data[dataIndex] = stringIndex;
                 ++dataIndex;
@@ -1448,14 +1456,14 @@ static int buildMetaObject(QMetaObjectBuilderPrivate *d, char *buf,
             QMetaType mt(QMetaType::fromName(method.returnType).id());
             *types = reinterpret_cast<QtPrivate::QMetaTypeInterface *&>(mt);
             types++;
-            for (const auto &parameterType: method.parameterTypes()) {
+            for (auto parameterType: method.parameterTypes()) {
                 QMetaType mt = QMetaType::fromName(parameterType);
                 *types = mt.iface();
                 types++;
             }
         }
         for (const auto &constructor : d->constructors) {
-            for (const auto &parameterType : constructor.parameterTypes()) {
+            for (auto parameterType : constructor.parameterTypes()) {
                 QMetaType mt = QMetaType::fromName(parameterType);
                 *types = mt.iface();
                 types++;
@@ -1614,13 +1622,13 @@ void QMetaMethodBuilder::setReturnType(const QByteArray &value)
 
     \sa returnType(), parameterNames()
 */
-QList<QByteArray> QMetaMethodBuilder::parameterTypes() const
+QList<QByteArrayView> QMetaMethodBuilder::parameterTypes() const
 {
     QMetaMethodBuilderPrivate *d = d_func();
     if (d)
         return d->parameterTypes();
     else
-        return QList<QByteArray>();
+        return {};
 }
 
 /*!

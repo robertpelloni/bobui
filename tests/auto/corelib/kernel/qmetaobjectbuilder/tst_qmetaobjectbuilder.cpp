@@ -226,7 +226,7 @@ void tst_QMetaObjectBuilder::method()
     QCOMPARE(method1.signature(), QByteArray("foo(QString,int)"));
     QCOMPARE(method1.methodType(), QMetaMethod::Method);
     QCOMPARE(method1.returnType(), QByteArray("void"));
-    QCOMPARE(method1.parameterTypes(), QList<QByteArray>() << "QString" << "int");
+    QCOMPARE(method1.parameterTypes(), QList<QByteArrayView>() << "QString" << "int");
     QVERIFY(method1.parameterNames().isEmpty());
     QVERIFY(method1.tag().isEmpty());
     QCOMPARE(method1.access(), QMetaMethod::Public);
@@ -241,7 +241,7 @@ void tst_QMetaObjectBuilder::method()
     QCOMPARE(method2.signature(), QByteArray("bar(QString)"));
     QCOMPARE(method2.methodType(), QMetaMethod::Method);
     QCOMPARE(method2.returnType(), QByteArray("int"));
-    QCOMPARE(method2.parameterTypes(), QList<QByteArray>() << "QString");
+    QCOMPARE(method2.parameterTypes(), QList<QByteArrayView>() << "QString");
     QVERIFY(method2.parameterNames().isEmpty());
     QVERIFY(method2.tag().isEmpty());
     QCOMPARE(method2.access(), QMetaMethod::Public);
@@ -268,7 +268,7 @@ void tst_QMetaObjectBuilder::method()
     QCOMPARE(method1.signature(), QByteArray("foo(QString,int)"));
     QCOMPARE(method1.methodType(), QMetaMethod::Method);
     QCOMPARE(method1.returnType(), QByteArray("int"));
-    QCOMPARE(method1.parameterTypes(), QList<QByteArray>() << "QString" << "int");
+    QCOMPARE(method1.parameterTypes(), QList<QByteArrayView>() << "QString" << "int");
     QCOMPARE(method1.parameterNames(), QList<QByteArray>() << "a" << "b");
     QCOMPARE(method1.tag(), QByteArray("tag"));
     QCOMPARE(method1.access(), QMetaMethod::Private);
@@ -279,7 +279,7 @@ void tst_QMetaObjectBuilder::method()
     QCOMPARE(method2.signature(), QByteArray("bar(QString)"));
     QCOMPARE(method2.methodType(), QMetaMethod::Method);
     QCOMPARE(method2.returnType(), QByteArray("int"));
-    QCOMPARE(method2.parameterTypes(), QList<QByteArray>() << "QString");
+    QCOMPARE(method2.parameterTypes(), QList<QByteArrayView>() << "QString");
     QVERIFY(method2.parameterNames().isEmpty());
     QVERIFY(method2.tag().isEmpty());
     QCOMPARE(method2.access(), QMetaMethod::Public);
@@ -300,7 +300,7 @@ void tst_QMetaObjectBuilder::method()
     QCOMPARE(method1.signature(), QByteArray("foo(QString,int)"));
     QCOMPARE(method1.methodType(), QMetaMethod::Method);
     QCOMPARE(method1.returnType(), QByteArray("int"));
-    QCOMPARE(method1.parameterTypes(), QList<QByteArray>() << "QString" << "int");
+    QCOMPARE(method1.parameterTypes(), QList<QByteArrayView>() << "QString" << "int");
     QCOMPARE(method1.parameterNames(), QList<QByteArray>() << "a" << "b");
     QCOMPARE(method1.tag(), QByteArray("tag"));
     QCOMPARE(method1.access(), QMetaMethod::Private);
@@ -311,7 +311,7 @@ void tst_QMetaObjectBuilder::method()
     QCOMPARE(method2.signature(), QByteArray("bar(QString)"));
     QCOMPARE(method2.methodType(), QMetaMethod::Method);
     QCOMPARE(method2.returnType(), QByteArray("QString"));
-    QCOMPARE(method2.parameterTypes(), QList<QByteArray>() << "QString");
+    QCOMPARE(method2.parameterTypes(), QList<QByteArrayView>() << "QString");
     QCOMPARE(method2.parameterNames(), QList<QByteArray>() << "c");
     QCOMPARE(method2.tag(), QByteArray("Q_FOO"));
     QCOMPARE(method2.access(), QMetaMethod::Protected);
@@ -327,7 +327,7 @@ void tst_QMetaObjectBuilder::method()
     QCOMPARE(method2.signature(), QByteArray("bar(QString)"));
     QCOMPARE(method2.methodType(), QMetaMethod::Method);
     QCOMPARE(method2.returnType(), QByteArray("QString"));
-    QCOMPARE(method2.parameterTypes(), QList<QByteArray>() << "QString");
+    QCOMPARE(method2.parameterTypes(), QList<QByteArrayView>() << "QString");
     QCOMPARE(method2.parameterNames(), QList<QByteArray>() << "c");
     QCOMPARE(method2.tag(), QByteArray("Q_FOO"));
     QCOMPARE(method2.access(), QMetaMethod::Protected);
@@ -355,7 +355,7 @@ void tst_QMetaObjectBuilder::slot()
     QCOMPARE(method1.signature(), QByteArray("foo(QString,int)"));
     QCOMPARE(method1.methodType(), QMetaMethod::Slot);
     QCOMPARE(method1.returnType(), QByteArray("void"));
-    QCOMPARE(method1.parameterTypes(), QList<QByteArray>() << "QString" << "int");
+    QCOMPARE(method1.parameterTypes(), QList<QByteArrayView>() << "QString" << "int");
     QVERIFY(method1.parameterNames().isEmpty());
     QVERIFY(method1.tag().isEmpty());
     QCOMPARE(method1.access(), QMetaMethod::Public);
@@ -369,7 +369,7 @@ void tst_QMetaObjectBuilder::slot()
     QCOMPARE(method2.signature(), QByteArray("bar(QString)"));
     QCOMPARE(method2.methodType(), QMetaMethod::Slot);
     QCOMPARE(method2.returnType(), QByteArray("void"));
-    QCOMPARE(method2.parameterTypes(), QList<QByteArray>() << "QString");
+    QCOMPARE(method2.parameterTypes(), QList<QByteArrayView>() << "QString");
     QVERIFY(method2.parameterNames().isEmpty());
     QVERIFY(method2.tag().isEmpty());
     QCOMPARE(method2.access(), QMetaMethod::Public);
@@ -395,7 +395,7 @@ void tst_QMetaObjectBuilder::signal()
     QCOMPARE(method1.signature(), QByteArray("foo(QString,int)"));
     QCOMPARE(method1.methodType(), QMetaMethod::Signal);
     QCOMPARE(method1.returnType(), QByteArray("void"));
-    QCOMPARE(method1.parameterTypes(), QList<QByteArray>() << "QString" << "int");
+    QCOMPARE(method1.parameterTypes(), QList<QByteArrayView>() << "QString" << "int");
     QVERIFY(method1.parameterNames().isEmpty());
     QVERIFY(method1.tag().isEmpty());
     QCOMPARE(method1.access(), QMetaMethod::Public);
@@ -409,7 +409,7 @@ void tst_QMetaObjectBuilder::signal()
     QCOMPARE(method2.signature(), QByteArray("bar(QString)"));
     QCOMPARE(method2.methodType(), QMetaMethod::Signal);
     QCOMPARE(method2.returnType(), QByteArray("void"));
-    QCOMPARE(method2.parameterTypes(), QList<QByteArray>() << "QString");
+    QCOMPARE(method2.parameterTypes(), QList<QByteArrayView>() << "QString");
     QVERIFY(method2.parameterNames().isEmpty());
     QVERIFY(method2.tag().isEmpty());
     QCOMPARE(method2.access(), QMetaMethod::Public);
@@ -435,7 +435,7 @@ void tst_QMetaObjectBuilder::constructor()
     QCOMPARE(ctor1.signature(), QByteArray("foo(QString,int)"));
     QCOMPARE(ctor1.methodType(), QMetaMethod::Constructor);
     QVERIFY(ctor1.returnType().isEmpty());
-    QCOMPARE(ctor1.parameterTypes(), QList<QByteArray>() << "QString" << "int");
+    QCOMPARE(ctor1.parameterTypes(), QList<QByteArrayView>() << "QString" << "int");
     QVERIFY(ctor1.parameterNames().isEmpty());
     QVERIFY(ctor1.tag().isEmpty());
     QCOMPARE(ctor1.access(), QMetaMethod::Public);
@@ -448,7 +448,7 @@ void tst_QMetaObjectBuilder::constructor()
     QCOMPARE(ctor2.signature(), QByteArray("bar(QString)"));
     QCOMPARE(ctor2.methodType(), QMetaMethod::Constructor);
     QVERIFY(ctor2.returnType().isEmpty());
-    QCOMPARE(ctor2.parameterTypes(), QList<QByteArray>() << "QString");
+    QCOMPARE(ctor2.parameterTypes(), QList<QByteArrayView>() << "QString");
     QVERIFY(ctor2.parameterNames().isEmpty());
     QVERIFY(ctor2.tag().isEmpty());
     QCOMPARE(ctor2.access(), QMetaMethod::Public);
@@ -474,7 +474,7 @@ void tst_QMetaObjectBuilder::constructor()
     QCOMPARE(ctor1.signature(), QByteArray("foo(QString,int)"));
     QCOMPARE(ctor1.methodType(), QMetaMethod::Constructor);
     QCOMPARE(ctor1.returnType(), QByteArray("int"));
-    QCOMPARE(ctor1.parameterTypes(), QList<QByteArray>() << "QString" << "int");
+    QCOMPARE(ctor1.parameterTypes(), QList<QByteArrayView>() << "QString" << "int");
     QCOMPARE(ctor1.parameterNames(), QList<QByteArray>() << "a" << "b");
     QCOMPARE(ctor1.tag(), QByteArray("tag"));
     QCOMPARE(ctor1.access(), QMetaMethod::Private);
@@ -483,7 +483,7 @@ void tst_QMetaObjectBuilder::constructor()
     QCOMPARE(ctor2.signature(), QByteArray("bar(QString)"));
     QCOMPARE(ctor2.methodType(), QMetaMethod::Constructor);
     QVERIFY(ctor2.returnType().isEmpty());
-    QCOMPARE(ctor2.parameterTypes(), QList<QByteArray>() << "QString");
+    QCOMPARE(ctor2.parameterTypes(), QList<QByteArrayView>() << "QString");
     QVERIFY(ctor2.parameterNames().isEmpty());
     QVERIFY(ctor2.tag().isEmpty());
     QCOMPARE(ctor2.access(), QMetaMethod::Public);
@@ -502,7 +502,7 @@ void tst_QMetaObjectBuilder::constructor()
     QCOMPARE(ctor1.signature(), QByteArray("foo(QString,int)"));
     QCOMPARE(ctor1.methodType(), QMetaMethod::Constructor);
     QCOMPARE(ctor1.returnType(), QByteArray("int"));
-    QCOMPARE(ctor1.parameterTypes(), QList<QByteArray>() << "QString" << "int");
+    QCOMPARE(ctor1.parameterTypes(), QList<QByteArrayView>() << "QString" << "int");
     QCOMPARE(ctor1.parameterNames(), QList<QByteArray>() << "a" << "b");
     QCOMPARE(ctor1.tag(), QByteArray("tag"));
     QCOMPARE(ctor1.access(), QMetaMethod::Private);
@@ -511,7 +511,7 @@ void tst_QMetaObjectBuilder::constructor()
     QCOMPARE(ctor2.signature(), QByteArray("bar(QString)"));
     QCOMPARE(ctor2.methodType(), QMetaMethod::Constructor);
     QCOMPARE(ctor2.returnType(), QByteArray("QString"));
-    QCOMPARE(ctor2.parameterTypes(), QList<QByteArray>() << "QString");
+    QCOMPARE(ctor2.parameterTypes(), QList<QByteArrayView>() << "QString");
     QCOMPARE(ctor2.parameterNames(), QList<QByteArray>() << "c");
     QCOMPARE(ctor2.tag(), QByteArray("Q_FOO"));
     QCOMPARE(ctor2.access(), QMetaMethod::Protected);
@@ -526,7 +526,7 @@ void tst_QMetaObjectBuilder::constructor()
     QCOMPARE(ctor2.signature(), QByteArray("bar(QString)"));
     QCOMPARE(ctor2.methodType(), QMetaMethod::Constructor);
     QCOMPARE(ctor2.returnType(), QByteArray("QString"));
-    QCOMPARE(ctor2.parameterTypes(), QList<QByteArray>() << "QString");
+    QCOMPARE(ctor2.parameterTypes(), QList<QByteArrayView>() << "QString");
     QCOMPARE(ctor2.parameterNames(), QList<QByteArray>() << "c");
     QCOMPARE(ctor2.tag(), QByteArray("Q_FOO"));
     QCOMPARE(ctor2.access(), QMetaMethod::Protected);

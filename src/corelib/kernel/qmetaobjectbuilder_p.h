@@ -155,7 +155,7 @@ public:
     QByteArray returnType() const;
     void setReturnType(const QByteArray& value);
 
-    QList<QByteArray> parameterTypes() const;
+    QList<QByteArrayView> parameterTypes() const;
     QList<QByteArray> parameterNames() const;
     void setParameterNames(const QList<QByteArray>& value);
 

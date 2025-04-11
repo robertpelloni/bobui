@@ -1214,7 +1214,7 @@ namespace QtPrivate
         return true;
     }
 
-    Q_CORE_EXPORT bool isBuiltinType(const QByteArray &type);
+    Q_CORE_EXPORT bool isBuiltinType(QByteArrayView type);
 } // namespace QtPrivate
 
 template <typename T, int =
