@@ -351,6 +351,8 @@ public:
         return canWait;
     }
 
+    void clearEvents();
+
     QStack<QEventLoop *> eventLoops;
     QPostEventList postEventList;
     QAtomicPointer<QThread> thread;

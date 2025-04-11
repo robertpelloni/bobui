@@ -1323,10 +1323,6 @@ void tst_QTimer::crossThreadSingleShotDestruction()
         QVERIFY(!timer);
     }
 
-# if defined(Q_OS_DARWIN) || defined(Q_OS_WIN) || defined(Q_OS_QNX) || defined(DISABLE_GLIB)|| defined(QT_NO_GLIB) || defined(QT_GUI_LIB)
-    QEXPECT_FAIL("1s", "Events posted to a thread after event loop exit are leaking.",
-                 Continue);
-# endif
     QVERIFY(deadTimerDestroyed);
 }
 #endif

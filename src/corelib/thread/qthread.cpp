@@ -65,16 +65,21 @@ QThreadData::~QThreadData()
     thread.storeRelease(nullptr);
     delete t;
 
-    for (qsizetype i = 0; i < postEventList.size(); ++i) {
-        const QPostEvent &pe = postEventList.at(i);
+    clearEvents();
+
+    // fprintf(stderr, "QThreadData %p destroyed\n", this);
+}
+
+void QThreadData::clearEvents()
+{
+    for (const auto &pe : std::as_const(postEventList)) {
         if (pe.event) {
             pe.receiver->d_func()->postedEvents.fetchAndSubRelaxed(1);
             pe.event->m_posted = false;
             delete pe.event;
         }
     }
-
-    // fprintf(stderr, "QThreadData %p destroyed\n", this);
+    postEventList.clear();
 }
 
 QAbstractEventDispatcher *QThreadData::createEventDispatcher()
@@ -168,6 +173,7 @@ QThreadPrivate::~QThreadPrivate()
     // unless there is already a potential use-after-free bug, as the
     // thread is in the process of being destroyed
     delete m_statusOrPendingObjects.list();
+    data->clearEvents();
     data->deref();
 }
 
