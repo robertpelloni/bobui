@@ -8,6 +8,8 @@
 #include <QtCore/private/qwasmsuspendresumecontrol_p.h>
 #include <QtGui/qwindow.h>
 
+#include <sstream>
+
 #if QT_CONFIG(accessibility)
 
 #include <QtGui/private/qaccessiblebridgeutils_p.h>
@@ -231,15 +233,11 @@ emscripten::val QWasmAccessibility::createHtmlElement(QAccessibleInterface *ifac
         case QAccessible::PageTabList:{
             element = document.call<emscripten::val>("createElement", std::string("div"));
             element.call<void>("setAttribute", std::string("role"), std::string("tablist"));
-            QString idName = iface->text(QAccessible::Name).replace(" ", "_");
-            idName += "_tabList";
-            element.call<void>("setAttribute", std::string("id"), idName.toStdString());
 
             for (int i = 0; i < iface->childCount();  ++i) {
                 if (iface->child(i)->role() == QAccessible::PageTab){
                     emscripten::val elementTab = emscripten::val::undefined();
                     elementTab = ensureHtmlElement(iface->child(i));
-                    elementTab.call<void>("setAttribute", std::string("aria-owns"), idName.toStdString());
                     setHtmlElementGeometry(iface->child(i));
                 }
             }
@@ -315,12 +313,6 @@ emscripten::val QWasmAccessibility::createHtmlElement(QAccessibleInterface *ifac
             element = document.call<emscripten::val>("createElement", std::string("div"));
         }
 
-        QString id = QAccessibleBridgeUtils::accessibleId(iface);
-        if (iface->role() != QAccessible::PageTabList)
-            element.call<void>("setAttribute", std::string("id"), id.toStdString());
-
-        element.call<void>("addEventListener", emscripten::val("focus"),
-                          emscripten::val::module_property("qtEventReceived"), true);
         return element;
 
     }();
@@ -610,6 +602,7 @@ void QWasmAccessibility::populateAccessibilityTree(QAccessibleInterface *iface)
         setHtmlElementGeometry(iface);
         setHtmlElementTextName(iface);
         setHtmlElementDescription(iface);
+        handleIdentifierUpdate(iface);
     }
     for (int i = 0; i < iface->childCount(); ++i)
         populateAccessibilityTree(iface->child(i));
@@ -740,6 +733,30 @@ void QWasmAccessibility::handlePageTabListUpdate(QAccessibleEvent *event)
     }
 }
 
+void QWasmAccessibility::handleIdentifierUpdate(QAccessibleInterface *iface)
+{
+    emscripten::val element = ensureHtmlElement(iface);
+    QString id = iface->text(QAccessible::Identifier).replace(" ", "_");
+    if (id.isEmpty() && iface->role() == QAccessible::PageTabList) {
+        std::ostringstream oss;
+        oss << "tabList_0x" << (void *)iface;
+        id = QString::fromUtf8(oss.str());
+    }
+
+    if (!id.isEmpty()) {
+        element.call<void>("setAttribute", std::string("id"), id.toStdString());
+
+        if (iface->role() == QAccessible::PageTabList) {
+            for (int i = 0; i < iface->childCount(); ++i) {
+                auto child = ensureHtmlElement(iface->child(i));
+                child.call<void>("setAttribute", std::string("aria-owns"), id.toStdString());
+            }
+        }
+    } else {
+        element.call<void>("removeAttribute", std::string("id"));
+    }
+}
+
 void QWasmAccessibility::notifyAccessibilityUpdate(QAccessibleEvent *event)
 {
     if (!m_accessibilityEnabled)
@@ -758,6 +775,9 @@ void QWasmAccessibility::notifyAccessibilityUpdate(QAccessibleEvent *event)
         setHtmlElementFocus(iface);
         break;
 
+    case QAccessible::IdentifierChanged:
+        handleIdentifierUpdate(iface);
+        return;
     case QAccessible::ObjectShow:
         setHtmlElementVisibility(iface, true);
 

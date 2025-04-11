@@ -69,6 +69,7 @@ private:
     void handleSliderUpdate(QAccessibleEvent *event);
     void handleScrollBarUpdate(QAccessibleEvent *event);
     void handlePageTabListUpdate(QAccessibleEvent *event);
+    void handleIdentifierUpdate(QAccessibleInterface *iface);
 
     void handleEventFromHtmlElement(const emscripten::val event);
 
