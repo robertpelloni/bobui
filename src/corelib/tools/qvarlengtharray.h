@@ -869,11 +869,12 @@ Q_OUTOFLINE_TEMPLATE void QVLABase<T>::reallocate_impl(qsizetype prealloc, void 
     Q_ASSERT(data());
     T *oldPtr = data();
     qsizetype osize = size();
+    const qsizetype oalloc = capacity();
 
     const qsizetype copySize = qMin(asize, osize);
     Q_ASSERT(copySize >= 0);
 
-    if (aalloc != capacity()) {
+    if (aalloc != oalloc) {
         QVLABaseBase::malloced_ptr guard;
         void *newPtr;
         qsizetype newA;
@@ -903,7 +904,7 @@ Q_OUTOFLINE_TEMPLATE void QVLABase<T>::reallocate_impl(qsizetype prealloc, void 
     }
 
     if (oldPtr != reinterpret_cast<T *>(array) && oldPtr != data())
-        QtPrivate::sizedFree(oldPtr, osize, sizeof(T));
+        QtPrivate::sizedFree(oldPtr, oalloc, sizeof(T));
 }
 
 template <class T>
