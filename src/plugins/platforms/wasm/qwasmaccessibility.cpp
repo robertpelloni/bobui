@@ -338,22 +338,19 @@ emscripten::val QWasmAccessibility::createHtmlElement(QAccessibleInterface *ifac
             addEventListener(element, "change");
         } break;
 
-        case QAccessible::SpinBox: {
-            const std::string valueString =
-                    iface->valueInterface()->currentValue().toString().toStdString();
-            element = document.call<emscripten::val>("createElement", std::string("input"));
-            setAttribute(element, "type", "number");
-            setAttribute(element, "value", valueString);
-            addEventListener(element, "change");
-        } break;
-
+        case QAccessible::SpinBox:
         case QAccessible::Slider: {
-            const std::string valueString =
-                    iface->valueInterface()->currentValue().toString().toStdString();
+            const auto minValue = iface->valueInterface()->minimumValue().toString().toStdString();
+            const auto maxValue = iface->valueInterface()->maximumValue().toString().toStdString();
+            const auto stepValue =
+                    iface->valueInterface()->minimumStepSize().toString().toStdString();
+            const auto value = iface->valueInterface()->currentValue().toString().toStdString();
             element = document.call<emscripten::val>("createElement", std::string("input"));
-            setAttribute(element, "type", "range");
-            setAttribute(element, "value", valueString);
-            addEventListener(element, "change");
+            setAttribute(element,"type", "number");
+            setAttribute(element, "min", minValue);
+            setAttribute(element, "max", maxValue);
+            setAttribute(element, "step", stepValue);
+            setProperty(element, "value", value);
         } break;
 
         case QAccessible::PageTabList:{
@@ -614,15 +611,7 @@ void QWasmAccessibility::handleEventFromHtmlElement(const emscripten::val event)
             iface->actionInterface()->doAction(QAccessibleActionInterface::pressAction());
 
         } else if (actionNames.contains(QAccessibleActionInterface::toggleAction())) {
-
             iface->actionInterface()->doAction(QAccessibleActionInterface::toggleAction());
-
-        } else if (actionNames.contains(QAccessibleActionInterface::increaseAction()) ||
-                   actionNames.contains(QAccessibleActionInterface::decreaseAction())) {
-
-            QString val = QString::fromStdString(event["target"]["value"].as<std::string>());
-
-            iface->valueInterface()->setCurrentValue(val.toInt());
 
         } else if (eventType == "input") {
 
@@ -765,6 +754,9 @@ void QWasmAccessibility::handleRadioButtonUpdate(QAccessibleEvent *event)
 void QWasmAccessibility::handleSpinBoxUpdate(QAccessibleEvent *event)
 {
     switch (event->type()) {
+    case QAccessible::ObjectCreated:
+    case QAccessible::StateChanged: {
+    } break;
     case QAccessible::Focus:
     case QAccessible::NameChanged: {
         setHtmlElementTextName(event->accessibleInterface());
@@ -773,7 +765,7 @@ void QWasmAccessibility::handleSpinBoxUpdate(QAccessibleEvent *event)
         QAccessibleInterface *accessible = event->accessibleInterface();
         const emscripten::val element = getHtmlElement(accessible);
         std::string valueString = accessible->valueInterface()->currentValue().toString().toStdString();
-        setAttribute(element, "value", valueString);
+        setProperty(element, "value", valueString);
     } break;
     default:
         qDebug() << "TODO: implement handleSpinBoxUpdate for event" << event->type();
@@ -784,6 +776,9 @@ void QWasmAccessibility::handleSpinBoxUpdate(QAccessibleEvent *event)
 void QWasmAccessibility::handleSliderUpdate(QAccessibleEvent *event)
 {
     switch (event->type()) {
+    case QAccessible::ObjectCreated:
+    case QAccessible::StateChanged: {
+    } break;
     case QAccessible::Focus:
     case QAccessible::NameChanged: {
         setHtmlElementTextName(event->accessibleInterface());
@@ -792,7 +787,7 @@ void QWasmAccessibility::handleSliderUpdate(QAccessibleEvent *event)
         QAccessibleInterface *accessible = event->accessibleInterface();
         const emscripten::val element = getHtmlElement(accessible);
         std::string valueString = accessible->valueInterface()->currentValue().toString().toStdString();
-        setAttribute(element, "value", valueString);
+        setProperty(element, "value", valueString);
     } break;
     default:
         qDebug() << "TODO: implement handleSliderUpdate for event" << event->type();
