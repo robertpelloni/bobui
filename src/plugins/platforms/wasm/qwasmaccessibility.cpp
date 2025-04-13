@@ -400,8 +400,11 @@ void QWasmAccessibility::setHtmlElementGeometry(emscripten::val element, QRect g
 void QWasmAccessibility::setHtmlElementTextName(QAccessibleInterface *iface)
 {
     emscripten::val element = ensureHtmlElement(iface);
-    QString text = iface->text(QAccessible::Name);
-    element.set("innerHTML", text.toStdString()); // FIXME: use something else than innerHTML
+    const QString name = iface->text(QAccessible::Name);
+    if (name.isEmpty())
+        element.call<void>("removeAttribute", std::string("aria-label"));
+    else
+        element.call<void>("setAttribute", std::string("aria-label"), name.toStdString());
 }
 
 void QWasmAccessibility::setHtmlElementTextNameLE(QAccessibleInterface *iface) {
