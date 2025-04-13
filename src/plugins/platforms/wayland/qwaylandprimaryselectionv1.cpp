@@ -10,6 +10,8 @@
 
 #include <qpa/qplatformclipboard.h>
 
+#include <signal.h>
+
 QT_BEGIN_NAMESPACE
 
 namespace QtWaylandClient {
