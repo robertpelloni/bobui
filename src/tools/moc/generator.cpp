@@ -903,7 +903,7 @@ QMultiMap<QByteArray, int> Generator::automaticPropertyMetaTypesHelper()
     QMultiMap<QByteArray, int> automaticPropertyMetaTypes;
     for (int i = 0; i < int(cdef->propertyList.size()); ++i) {
         const PropertyDef &p = cdef->propertyList.at(i);
-        const QByteArray propertyType = p.type;
+        const QByteArray &propertyType = p.type;
         if (registerableMetaType(propertyType) && !isBuiltinType(propertyType))
             automaticPropertyMetaTypes.insert(cxxTypeTag(p.typeTag) + propertyType, i);
     }
@@ -917,7 +917,7 @@ Generator::methodsWithAutomaticTypesHelper(const QList<FunctionDef> &methodList)
     for (int i = 0; i < methodList.size(); ++i) {
         const FunctionDef &f = methodList.at(i);
         for (int j = 0; j < f.arguments.size(); ++j) {
-            const QByteArray argType = f.arguments.at(j).normalizedType;
+            const QByteArray &argType = f.arguments.at(j).normalizedType;
             if (registerableMetaType(argType) && !isBuiltinType(argType))
                 methodsWithAutomaticTypes[i].insert(argType, j);
         }
