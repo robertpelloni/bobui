@@ -669,6 +669,9 @@ qsizetype qt_encodeFromUser(QString &appendTo, const QString &in, const ushort *
     actionTable['[' - ' '] = EncodeCharacter;
     actionTable[']' - ' '] = EncodeCharacter;
 
+    // Apply !EncodeSpaces, same as qt_urlRecode() above
+    actionTable[0] = DecodeCharacter;
+
     if (tableModifications) {
         for (const ushort *p = tableModifications; *p; ++p)
             actionTable[uchar(*p) - ' '] = *p >> 8;

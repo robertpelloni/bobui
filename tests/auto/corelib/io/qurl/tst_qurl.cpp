@@ -334,6 +334,25 @@ void tst_QUrl::comparison()
     QCOMPARE(url4EncodedDots.toString(), QString("example://a/.//b/..%2F/b/c/"));
     QCOMPARE(url4EncodedDots.adjusted(QUrl::NormalizePathSegments).toString(), QString("example://a//b/..%2F/b/c/"));
 
+    QUrl urlPathSetDecoded = QUrl("ws://localhost:12345/segment/with spaces/<é>", QUrl::TolerantMode);
+    QUrl urlPathSetEncoded = QUrl("ws://localhost:12345/segment/with%20spaces/%3C%c3%a9%3E", QUrl::TolerantMode);
+    QCOMPARE(urlPathSetDecoded, urlPathSetEncoded);
+    QUrl urlSetPathEncodedWithPercent = QUrl("ws://localhost:12345");
+    urlSetPathEncodedWithPercent.setPath("/segment/with%20spaces/%3C%c3%a9%3E", QUrl::TolerantMode);
+    QUrl urlSetPathEncodedWithLiterals = QUrl("ws://localhost:12345");
+    urlSetPathEncodedWithLiterals.setPath("/segment/with spaces/<é>", QUrl::TolerantMode);
+    QUrl urlSetPathDecoded = QUrl("ws://localhost:12345");
+    urlSetPathDecoded.setPath("/segment/with spaces/<é>", QUrl::DecodedMode);
+    QCOMPARE(urlSetPathEncodedWithPercent, urlPathSetEncoded);
+    QCOMPARE(urlSetPathEncodedWithPercent, urlPathSetDecoded);
+    QCOMPARE(urlSetPathEncodedWithLiterals, urlPathSetEncoded);
+    QCOMPARE(urlSetPathEncodedWithLiterals, urlPathSetDecoded);
+    QCOMPARE(urlSetPathEncodedWithLiterals, urlSetPathEncodedWithPercent);
+    QCOMPARE(urlSetPathDecoded, urlPathSetEncoded);
+    QCOMPARE(urlSetPathDecoded, urlPathSetDecoded);
+    QCOMPARE(urlSetPathDecoded, urlSetPathEncodedWithPercent);
+    QCOMPARE(urlSetPathDecoded, urlSetPathEncodedWithLiterals);
+
     // 6.2.2.1 Make sure hexdecimal characters in percent encoding are
     // treated case-insensitively
     QUrl url5;
