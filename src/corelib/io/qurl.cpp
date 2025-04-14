@@ -528,13 +528,13 @@ public:
     // the "end" parameters are like STL iterators: they point to one past the last valid element
     bool setScheme(const QString &value, qsizetype len, bool doSetError);
     void setAuthority(const QString &auth, qsizetype from, qsizetype end, QUrl::ParsingMode mode);
-    template <typename String> void setUserInfo(String value, QUrl::ParsingMode mode);
-    template <typename String> void setUserName(String value, QUrl::ParsingMode mode);
-    template <typename String> void setPassword(String value, QUrl::ParsingMode mode);
+    template <typename String> void setUserInfo(String &&value, QUrl::ParsingMode mode);
+    template <typename String> void setUserName(String &&value, QUrl::ParsingMode mode);
+    template <typename String> void setPassword(String &&value, QUrl::ParsingMode mode);
     bool setHost(const QString &value, qsizetype from, qsizetype end, QUrl::ParsingMode mode);
-    template <typename String> void setPath(String value, QUrl::ParsingMode mode);
-    template <typename String> void setQuery(String value, QUrl::ParsingMode mode);
-    template <typename String> void setFragment(String value, QUrl::ParsingMode mode);
+    template <typename String> void setPath(String &&value, QUrl::ParsingMode mode);
+    template <typename String> void setQuery(String &&value, QUrl::ParsingMode mode);
+    template <typename String> void setFragment(String &&value, QUrl::ParsingMode mode);
 
     inline bool hasScheme() const { return sectionIsPresent & Scheme; }
     inline bool hasAuthority() const { return sectionIsPresent & Authority; }
@@ -1098,7 +1098,7 @@ inline void QUrlPrivate::setAuthority(const QString &auth, qsizetype from, qsize
     port = -1;
 }
 
-template <typename String> void QUrlPrivate::setUserInfo(String value, QUrl::ParsingMode mode)
+template <typename String> void QUrlPrivate::setUserInfo(String &&value, QUrl::ParsingMode mode)
 {
     Q_ASSERT_X(mode != QUrl::DecodedMode, "setUserInfo",
                "This function should only be called when parsing encoded components");
@@ -1114,31 +1114,31 @@ template <typename String> void QUrlPrivate::setUserInfo(String value, QUrl::Par
     }
 }
 
-template <typename String> inline void QUrlPrivate::setUserName(String value, QUrl::ParsingMode mode)
+template <typename String> inline void QUrlPrivate::setUserName(String &&value, QUrl::ParsingMode mode)
 {
     sectionIsPresent |= UserName;
     recodeFromUser(userName, value, userNameInIsolation, mode);
 }
 
-template <typename String> inline void QUrlPrivate::setPassword(String value, QUrl::ParsingMode mode)
+template <typename String> inline void QUrlPrivate::setPassword(String &&value, QUrl::ParsingMode mode)
 {
     sectionIsPresent |= Password;
     recodeFromUser(password, value, passwordInIsolation, mode);
 }
 
-template <typename String> inline void QUrlPrivate::setPath(String value, QUrl::ParsingMode mode)
+template <typename String> inline void QUrlPrivate::setPath(String &&value, QUrl::ParsingMode mode)
 {
     // sectionIsPresent |= Path; // not used, save some cycles
     recodeFromUser(path, value, pathInIsolation, mode);
 }
 
-template <typename String> inline void QUrlPrivate::setFragment(String value, QUrl::ParsingMode mode)
+template <typename String> inline void QUrlPrivate::setFragment(String &&value, QUrl::ParsingMode mode)
 {
     sectionIsPresent |= Fragment;
     recodeFromUser(fragment, value, fragmentInIsolation, mode);
 }
 
-template <typename String> inline void QUrlPrivate::setQuery(String value, QUrl::ParsingMode mode)
+template <typename String> inline void QUrlPrivate::setQuery(String &&value, QUrl::ParsingMode mode)
 {
     sectionIsPresent |= Query;
     recodeFromUser(query, value, queryInIsolation, mode);
