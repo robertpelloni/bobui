@@ -22,7 +22,7 @@ enum EncodingAction {
 //    sub-delims    = "!" / "$" / "&" / "'" / "(" / ")"
 //                  / "*" / "+" / "," / ";" / "="
 static const uchar defaultActionTable[96] = {
-    2, // space
+    0, // space
     1, // '!' (sub-delim)
     2, // '"'
     1, // '#' (gen-delim)
@@ -648,8 +648,8 @@ qt_urlRecode(QString &appendTo, QStringView in,
     memcpy(actionTable, defaultActionTable, sizeof actionTable);
     if (encoding & QUrl::DecodeReserved)
         maskTable(actionTable, reservedMask);
-    if (!(encoding & QUrl::EncodeSpaces))
-        actionTable[0] = DecodeCharacter; // decode
+    if (encoding & QUrl::EncodeSpaces)
+        actionTable[0] = EncodeCharacter;
 
     if (tableModifications) {
         for (const ushort *p = tableModifications; *p; ++p)
@@ -668,9 +668,6 @@ qsizetype qt_encodeFromUser(QString &appendTo, const QString &in, const ushort *
     // Different defaults to the regular encoded-to-encoded recoding
     actionTable['[' - ' '] = EncodeCharacter;
     actionTable[']' - ' '] = EncodeCharacter;
-
-    // Apply !EncodeSpaces, same as qt_urlRecode() above
-    actionTable[0] = DecodeCharacter;
 
     if (tableModifications) {
         for (const ushort *p = tableModifications; *p; ++p)
