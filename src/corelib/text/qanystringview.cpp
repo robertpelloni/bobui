@@ -103,7 +103,7 @@ QT_BEGIN_NAMESPACE
     and UTF-8 multibyte sequences count as two, three or four,
     depending on their length).
 
-    \sa QUtf8StringView, QStringView
+    \sa {Which string class to use?}, QUtf8StringView, QStringView
 */
 
 /*!

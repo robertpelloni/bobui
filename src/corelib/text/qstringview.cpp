@@ -67,7 +67,7 @@ QT_BEGIN_NAMESPACE
     allowed in \c constexpr functions). You can use an indexed loop and/or utf16() in
     \c constexpr contexts instead.
 
-    \sa QString
+    \sa {Which string class to use?}, QString
 */
 
 /*!
