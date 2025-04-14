@@ -6,7 +6,9 @@ android # QTBUG-101194
 android # QTBUG-101194
 [completer_data]
 android # QTBUG-108329
+vxworks # QTBUG-135963
 [completer]
 android # QTBUG-101194
+vxworks # QTBUG-135963
 [clearLineEdit]
 vxworks # QTBUG-135966
