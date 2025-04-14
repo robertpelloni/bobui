@@ -300,6 +300,7 @@ static constexpr int NColorRoles[] = {
     QPalette::PlaceholderText + 1, // Qt_6_0
     QPalette::Accent + 1,     // Qt_6_6
     QPalette::Accent + 1,     // Qt_6_7
+    QPalette::Accent + 1,     // Qt_6_10
 };
 
 // +1, because we start from "No Version"
