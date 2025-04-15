@@ -33,7 +33,7 @@ QWasmAccessibility::QWasmAccessibility()
     if (qEnvironmentVariableIntValue("QT_WASM_ENABLE_ACCESSIBILITY") == 1)
         enableAccessibility();
 
-    // Register accessiiblity element event handler
+    // Register accessibility element event handler
     QWasmSuspendResumeControl *suspendResume = QWasmSuspendResumeControl::get();
     Q_ASSERT(suspendResume);
     m_eventHandlerIndex = suspendResume->registerEventHandler([this](const emscripten::val event){
@@ -43,7 +43,7 @@ QWasmAccessibility::QWasmAccessibility()
 
 QWasmAccessibility::~QWasmAccessibility()
 {
-    // Remove accessiiblity element event handler
+    // Remove accessibility element event handler
     QWasmSuspendResumeControl *suspendResume = QWasmSuspendResumeControl::get();
     Q_ASSERT(suspendResume);
     suspendResume->removeEventHandler(m_eventHandlerIndex);
