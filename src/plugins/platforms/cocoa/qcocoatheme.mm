@@ -245,9 +245,6 @@ void QCocoaTheme::handleSystemThemeChange()
 
     updateColorScheme();
 
-    m_systemPalette = qt_mac_createSystemPalette();
-    m_palettes = qt_mac_createRolePalettes();
-
     if (QCoreTextFontEngine::fontSmoothing() == QCoreTextFontEngine::FontSmoothing::Grayscale) {
         // Re-populate glyph caches based on the new appearance's assumed text fill color
         QFontCache::instance()->clear();
