@@ -51,7 +51,8 @@ QWasmWindowStack::PositionPreference positionPreferenceFromWindowFlags(Qt::Windo
 Q_GUI_EXPORT int qt_defaultDpiX();
 
 QWasmWindow::QWasmWindow(QWindow *w, QWasmDeadKeySupport *deadKeySupport,
-                         QWasmCompositor *compositor, QWasmBackingStore *backingStore, WId nativeHandle)
+                         QWasmCompositor *compositor, QWasmBackingStore *backingStore,
+                         WId nativeHandle)
     : QPlatformWindow(w),
       m_compositor(compositor),
       m_backingStore(backingStore),
@@ -211,12 +212,13 @@ void QWasmWindow::registerEventHandlers()
 QWasmWindow::~QWasmWindow()
 {
 #if QT_CONFIG(accessibility)
-    QWasmAccessibility::removeAccessibilityEnableButton(window());
+    QWasmAccessibility::onRemoveWindow(window());
 #endif
     shutdown();
 
     emscripten::val::module_property("specialHTMLTargets").delete_(canvasSelector());
     m_window.call<void>("removeChild", m_canvas);
+    m_window.call<void>("removeChild", m_a11yContainer);
     m_context2d = emscripten::val::undefined();
     commitParent(nullptr);
     if (m_requestAnimationFrameId > -1)
