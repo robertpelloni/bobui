@@ -505,7 +505,10 @@ void QCocoaTheme::requestColorScheme(Qt::ColorScheme scheme)
 */
 void QCocoaTheme::updateColorScheme()
 {
-    m_colorScheme = qt_mac_applicationIsInDarkMode() ? Qt::ColorScheme::Dark : Qt::ColorScheme::Light;
+    auto appearance = [NSApp.effectiveAppearance bestMatchFromAppearancesWithNames:
+            @[ NSAppearanceNameAqua, NSAppearanceNameDarkAqua ]];
+    m_colorScheme = [appearance isEqualToString:NSAppearanceNameDarkAqua] ?
+        Qt::ColorScheme::Dark : Qt::ColorScheme::Light;
 }
 
 Qt::ContrastPreference QCocoaTheme::contrastPreference() const

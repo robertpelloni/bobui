@@ -185,7 +185,6 @@ private:
 };
 
 #ifdef Q_OS_MACOS
-Q_CORE_EXPORT bool qt_mac_applicationIsInDarkMode();
 Q_CORE_EXPORT bool qt_mac_runningUnderRosetta();
 Q_CORE_EXPORT std::optional<uint32_t> qt_mac_sipConfiguration();
 #ifdef QT_BUILD_INTERNAL

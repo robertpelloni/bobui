@@ -323,13 +323,6 @@ QDebug operator<<(QDebug debug, const QCFString &string)
 #endif // !QT_NO_DEBUG_STREAM
 
 #if defined(Q_OS_MACOS) && !defined(QT_BOOTSTRAPPED)
-bool qt_mac_applicationIsInDarkMode()
-{
-    auto appearance = [NSApp.effectiveAppearance bestMatchFromAppearancesWithNames:
-            @[ NSAppearanceNameAqua, NSAppearanceNameDarkAqua ]];
-    return [appearance isEqualToString:NSAppearanceNameDarkAqua];
-}
-
 bool qt_mac_runningUnderRosetta()
 {
     int translated = 0;
