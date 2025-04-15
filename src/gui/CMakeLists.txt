@@ -395,6 +395,7 @@ qt_internal_extend_target(Gui CONDITION QT_FEATURE_opengl
 qt_internal_extend_target(Gui CONDITION MACOS
     SOURCES
         platform/macos/qcocoanativeinterface.mm
+        platform/macos/qmacstyle_p.h
     LIBRARIES
         ${FWAppKit}
         ${FWCarbon}

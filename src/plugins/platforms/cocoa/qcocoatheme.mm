@@ -214,7 +214,6 @@ QCocoaTheme::QCocoaTheme()
     : m_systemPalette(nullptr)
 {
     m_appearanceObserver = QMacKeyValueObserver(NSApp, @"effectiveAppearance", [this] {
-        NSAppearance.currentAppearance = NSApp.effectiveAppearance;
         handleSystemThemeChange();
     });
 
@@ -291,13 +290,23 @@ QPlatformSystemTrayIcon *QCocoaTheme::createPlatformSystemTrayIcon() const
 
 const QPalette *QCocoaTheme::palette(Palette type) const
 {
+    // Note: NSColor resolves its RGB values based on the current
+    // drawing appearance, so we need to propagate the effective
+    // appearance when (re)creating the palettes.
+
     if (type == SystemPalette) {
-        if (!m_systemPalette)
-            m_systemPalette = qt_mac_createSystemPalette();
+        if (!m_systemPalette) {
+            [NSApp.effectiveAppearance performAsCurrentDrawingAppearance:^{
+                m_systemPalette = qt_mac_createSystemPalette();
+            }];
+        }
         return m_systemPalette;
     } else {
-        if (m_palettes.isEmpty())
-            m_palettes = qt_mac_createRolePalettes();
+        if (m_palettes.isEmpty()) {
+            [NSApp.effectiveAppearance performAsCurrentDrawingAppearance:^{
+                m_palettes = qt_mac_createRolePalettes();
+            }];
+        }
         return m_palettes.value(type, nullptr);
     }
     return nullptr;
