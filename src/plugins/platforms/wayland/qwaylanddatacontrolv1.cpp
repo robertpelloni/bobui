@@ -11,6 +11,7 @@
 #include <qpa/qplatformclipboard.h>
 
 #include <signal.h>
+#include <unistd.h>
 
 QT_BEGIN_NAMESPACE
 
