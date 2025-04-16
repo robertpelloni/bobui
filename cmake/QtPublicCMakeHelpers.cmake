@@ -918,3 +918,26 @@ function(_qt_internal_configure_file mode)
 
     configure_file("${input_file}" "${arg_OUTPUT}" @ONLY)
 endfunction()
+
+# The function checks if `value` is a valid C indentifier.
+#
+# Synopsis
+#
+#  _qt_internal_is_c_identifier(<out_var> <value>)
+#
+# Arguments
+#
+#  `out_var`
+#    Variable name for the evaluation result.
+#
+#  `value`
+#    The string for the evaluation.
+function(_qt_internal_is_c_identifier out_var value)
+    string(MAKE_C_IDENTIFIER "${value}" value_valid)
+
+    if(value AND "${value}" STREQUAL "${value_valid}")
+        set(${out_var} "TRUE" PARENT_SCOPE)
+    else()
+        set(${out_var} "FALSE" PARENT_SCOPE)
+    endif()
+endfunction()

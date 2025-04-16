@@ -2626,6 +2626,14 @@ function(qt6_add_plugin target)
         endif()
     endif()
 
+    _qt_internal_is_c_identifier(is_c_indentifier "${plugin_class_name}")
+    if(NOT is_c_indentifier)
+        message(FATAL_ERROR "The provided or calculated plugin CLASS_NAME '${plugin_class_name}' of"
+            " the '${target}' target is not a valid C++ class name. Please use only valid C++"
+            " identifiers."
+        )
+    endif()
+
     set_target_properties(${target} PROPERTIES QT_PLUGIN_CLASS_NAME "${plugin_class_name}")
 
     # Create a plugin initializer object library for static plugins.

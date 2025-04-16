@@ -482,5 +482,35 @@ if(NOT QNX AND NOT WASM AND NOT (WIN32 AND QT_BUILD_MINIMAL_STATIC_TESTS)
     _qt_internal_test_expect_pass(test_qt_add_ui_11)
 endif()
 
+# Valid plugin names
+set(valid_plugin_class_names
+    TestPluginNameUpper
+    Test_Plugin_Name
+    _Test_plugin_name
+    testpluginnamelower
+    Test0PluginName
+)
+foreach(plugin_class_name IN LISTS valid_plugin_class_names)
+    _qt_internal_test_expect_pass(test_plugin_class_name
+        TESTNAME test_plugin_class_name_${plugin_class_name}
+        BUILD_OPTIONS
+            -DPLUGIN_CLASS_NAME=${plugin_class_name}
+    )
+endforeach()
+
+# Invalid plugin names
+set(invalid_plugin_class_names
+    0TestPluginName
+    Test-Plugin-Name
+    Test.plugin.name
+)
+foreach(plugin_class_name IN LISTS invalid_plugin_class_names)
+    _qt_internal_test_expect_fail(test_plugin_class_name
+        TESTNAME test_plugin_class_name_${plugin_class_name}
+        BUILD_OPTIONS
+            -DPLUGIN_CLASS_NAME=${plugin_class_name}
+    )
+endforeach()
+
 # Add all tests using CMake's RunCMake test module
 add_subdirectory(RunCMake)
