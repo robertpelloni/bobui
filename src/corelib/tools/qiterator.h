@@ -7,6 +7,10 @@
 #include <QtCore/qglobal.h>
 #include <QtCore/qcontainertools_impl.h>
 
+#ifdef __cpp_lib_ranges
+#include <ranges>
+#endif
+
 QT_BEGIN_NAMESPACE
 
 #if !defined(QT_NO_JAVA_STYLE_ITERATORS)
@@ -280,6 +284,8 @@ class QKeyValueRangeStorage
 {
 protected:
     Map m_map;
+    Map &map() { return m_map; }
+    const Map &map() const { return m_map; }
 public:
     explicit QKeyValueRangeStorage(const Map &map) : m_map(map) {}
     explicit QKeyValueRangeStorage(Map &&map) : m_map(std::move(map)) {}
@@ -287,11 +293,16 @@ public:
 
 template <typename Map>
 class QKeyValueRangeStorage<Map &>
+#ifdef __cpp_lib_ranges
+    : public std::ranges::view_base
+#endif
 {
 protected:
-    Map &m_map;
+    Map *m_map;
+    Map &map() { return *m_map; }
+    const Map &map() const { return *m_map; }
 public:
-    explicit QKeyValueRangeStorage(Map &map) : m_map(map) {}
+    explicit QKeyValueRangeStorage(Map &map) : m_map(&map) {}
 };
 
 template <typename Map>
@@ -299,17 +310,11 @@ class QKeyValueRange : public QKeyValueRangeStorage<Map>
 {
 public:
     using QKeyValueRangeStorage<Map>::QKeyValueRangeStorage;
-    auto begin() { return this->m_map.keyValueBegin(); }
-    auto begin() const { return this->m_map.keyValueBegin(); }
-    auto end() { return this->m_map.keyValueEnd(); }
-    auto end() const { return this->m_map.keyValueEnd(); }
+    auto begin() { return this->map().keyValueBegin(); }
+    auto begin() const { return this->map().keyValueBegin(); }
+    auto end() { return this->map().keyValueEnd(); }
+    auto end() const { return this->map().keyValueEnd(); }
 };
-
-template <typename Map>
-QKeyValueRange(Map &) -> QKeyValueRange<Map &>;
-
-template <typename Map, std::enable_if_t<!std::is_reference_v<Map>, bool> = false>
-QKeyValueRange(Map &&) -> QKeyValueRange<std::remove_const_t<Map>>;
 
 } // namespace QtPrivate
 

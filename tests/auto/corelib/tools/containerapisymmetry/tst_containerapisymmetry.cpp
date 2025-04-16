@@ -1233,6 +1233,9 @@ void tst_ContainerApiSymmetry::member_erase_set_impl() const
     QCOMPARE(it, c.cbegin());
 }
 
+template <typename T>
+using KeyValueRangeType = decltype(std::declval<T>().asKeyValueRange());
+
 template <typename Container>
 void tst_ContainerApiSymmetry::keyValueRange_impl() const
 {
@@ -1298,6 +1301,7 @@ void tst_ContainerApiSymmetry::keyValueRange_impl() const
     // auto &&, mutating
     keys.clear(); values.clear();
     for (auto &&[key, value] : c.asKeyValueRange()) {
+        static_assert(!std::is_const_v<std::remove_reference_t<decltype(value)>>);
         keys << key;
         values << value;
         QCOMPARE(key, value - 1);
@@ -1323,6 +1327,7 @@ void tst_ContainerApiSymmetry::keyValueRange_impl() const
     // auto &&, non-mutating (const map)
     keys.clear(); values.clear();
     for (auto &&[key, value] : std::as_const(c).asKeyValueRange()) {
+        static_assert(std::is_const_v<std::remove_reference_t<decltype(value)>>);
         keys << key;
         values << value;
         QCOMPARE(key, value - 2);
@@ -1345,6 +1350,7 @@ void tst_ContainerApiSymmetry::keyValueRange_impl() const
     // auto &&, non-mutating (rvalue map)
     keys.clear(); values.clear();
     for (auto &&[key, value] : returnC().asKeyValueRange()) {
+        static_assert(!std::is_const_v<std::remove_reference_t<decltype(value)>>);
         keys << key;
         values << value;
         QCOMPARE(key, value - 2);
@@ -1352,6 +1358,83 @@ void tst_ContainerApiSymmetry::keyValueRange_impl() const
     }
     QVERIFY(verify(keys, COUNT));
     QVERIFY(verify(values, COUNT, 2));
+
+    // auto &&, non-mutating (const rvalue map)
+    keys.clear(); values.clear();
+    for (auto &&[key, value] : const_cast<const Container &&>(returnC()).asKeyValueRange()) {
+        static_assert(!std::is_const_v<std::remove_reference_t<decltype(value)>>); // non-const
+        keys << key;
+        values << value;
+        QCOMPARE(key, value - 2);
+        QCOMPARE(c.value(key), value);
+    }
+    QVERIFY(verify(keys, COUNT));
+    QVERIFY(verify(values, COUNT, 2));
+
+#if defined(__cpp_lib_ranges) && __cpp_lib_ranges > 202110L // P2415R2
+    static_assert(std::ranges::viewable_range<KeyValueRangeType<Container>>);
+    static_assert(std::ranges::viewable_range<KeyValueRangeType<Container &>>);
+    static_assert(std::ranges::viewable_range<KeyValueRangeType<const Container>>);
+    static_assert(std::ranges::viewable_range<KeyValueRangeType<const Container &>>);
+
+    static_assert(!std::ranges::view<KeyValueRangeType<Container>>);
+    static_assert(std::ranges::view<KeyValueRangeType<Container &>>);
+    static_assert(!std::ranges::view<KeyValueRangeType<const Container>>);
+    static_assert(std::ranges::view<KeyValueRangeType<const Container &>>);
+
+    const auto keyValueTest = [](auto &&pair)
+    {
+        return pair.first == pair.second - 2;
+    };
+
+    {
+        auto range = c.asKeyValueRange();
+        static_assert(std::ranges::view<decltype(range)>);
+        QCOMPARE(std::ranges::distance(range), COUNT);
+
+        const bool ok = std::ranges::all_of(
+            range | std::views::transform(keyValueTest),
+            std::identity{}
+        );
+        QVERIFY(ok);
+    }
+
+    {
+        auto range = std::as_const(c).asKeyValueRange();
+        static_assert(std::ranges::view<decltype(range)>);
+        QCOMPARE(std::ranges::distance(range), COUNT);
+
+        const bool ok = std::ranges::all_of(
+            range | std::views::transform(keyValueTest),
+            std::identity{}
+        );
+        QVERIFY(ok);
+    }
+
+    {
+        auto range = returnC().asKeyValueRange();
+        static_assert(!std::ranges::view<decltype(range)>);
+        QCOMPARE(std::ranges::distance(range), COUNT);
+
+        const bool ok = std::ranges::all_of(
+            range | std::views::transform(keyValueTest),
+            std::identity{}
+        );
+        QVERIFY(ok);
+    }
+
+    {
+        auto range = const_cast<const Container &&>(returnC()).asKeyValueRange();
+        static_assert(!std::ranges::view<decltype(range)>);
+        QCOMPARE(std::ranges::distance(range), COUNT);
+
+        const bool ok = std::ranges::all_of(
+            range | std::views::transform(keyValueTest),
+            std::identity{}
+            );
+        QVERIFY(ok);
+    }
+#endif
 }
 
 template<typename Container>
