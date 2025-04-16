@@ -50,7 +50,7 @@ extern void qt_scrollRectInImage(QImage &, const QRect &, const QPoint &);
 namespace QtWaylandClient {
 
 QWaylandShmBuffer::QWaylandShmBuffer(QWaylandDisplay *display,
-                     const QSize &size, QImage::Format format, qreal scale)
+                                     const QSize &size, QImage::Format format, qreal scale, wl_event_queue *customEventQueue)
     : mDirtyRegion(QRect(QPoint(0, 0), size / scale))
 {
     int stride = size.width() * 4;
@@ -101,6 +101,8 @@ QWaylandShmBuffer::QWaylandShmBuffer(QWaylandDisplay *display,
     mShmPool = wl_shm_create_pool(shm->object(), fd, alloc);
     init(wl_shm_pool_create_buffer(mShmPool,0, size.width(), size.height(),
                                        stride, wl_format));
+    if (customEventQueue)
+        wl_proxy_set_queue(reinterpret_cast<struct wl_proxy *>(buffer()), customEventQueue);
 }
 
 QWaylandShmBuffer::~QWaylandShmBuffer(void)
@@ -144,7 +146,10 @@ QWaylandShmBackingStore::QWaylandShmBackingStore(QWindow *window, QWaylandDispla
     : QPlatformBackingStore(window)
     , mDisplay(display)
 {
+    mEventQueue = wl_display_create_queue(mDisplay->wl_display());
     QObject::connect(mDisplay, &QWaylandDisplay::connected, window, [this]() {
+        auto oldEventQueue = mEventQueue;
+        mEventQueue = wl_display_create_queue(mDisplay->wl_display());
         auto copy = mBuffers;
         // clear available buffers so we create new ones
         // actual deletion is deferred till after resize call so we can copy
@@ -155,6 +160,7 @@ QWaylandShmBackingStore::QWaylandShmBackingStore(QWindow *window, QWaylandDispla
         if (mRequestedSize.isValid() && waylandWindow())
             recreateBackBufferIfNeeded();
         qDeleteAll(copy);
+        wl_event_queue_destroy(oldEventQueue);
     });
 }
 
@@ -167,6 +173,7 @@ QWaylandShmBackingStore::~QWaylandShmBackingStore()
 //        waylandWindow()->attach(0);
 
     qDeleteAll(mBuffers);
+    wl_event_queue_destroy(mEventQueue);
 }
 
 QPaintDevice *QWaylandShmBackingStore::paintDevice()
@@ -257,7 +264,7 @@ void QWaylandShmBackingStore::flush(QWindow *window, const QRegion &region, cons
     // however so no need to reimplement that.
     if (window != this->window()) {
         auto waylandWindow = static_cast<QWaylandWindow *>(window->handle());
-        auto newBuffer = new QWaylandShmBuffer(mDisplay, window->size(), mBackBuffer->image()->format(), mBackBuffer->scale());
+        auto newBuffer = new QWaylandShmBuffer(mDisplay, window->size(), mBackBuffer->image()->format(), mBackBuffer->scale(), mEventQueue);
         newBuffer->setDeleteOnRelease(true);
         QRect sourceRect(window->position(), window->size());
         QPainter painter(newBuffer->image());
@@ -322,7 +329,7 @@ QWaylandShmBuffer *QWaylandShmBackingStore::getBuffer(const QSize &size, bool &b
         QImage::Format format = QImage::Format_ARGB32_Premultiplied;
         if (!waylandWindow()->format().hasAlpha())
             format = QImage::Format_RGB32;
-        QWaylandShmBuffer *b = new QWaylandShmBuffer(mDisplay, size, format, waylandWindow()->scale());
+        QWaylandShmBuffer *b = new QWaylandShmBuffer(mDisplay, size, format, waylandWindow()->scale(), mEventQueue);
         bufferWasRecreated = true;
         mBuffers.push_front(b);
         return b;
@@ -332,6 +339,8 @@ QWaylandShmBuffer *QWaylandShmBackingStore::getBuffer(const QSize &size, bool &b
 
 bool QWaylandShmBackingStore::recreateBackBufferIfNeeded()
 {
+    wl_display_dispatch_queue_pending(mDisplay->wl_display(), mEventQueue);
+
     bool bufferWasRecreated = false;
     QMargins margins = windowDecorationMargins();
     qreal scale = waylandWindow()->scale();
@@ -347,9 +356,15 @@ bool QWaylandShmBackingStore::recreateBackBufferIfNeeded()
     // run single buffered, while with the pixman renderer we have to use two.
     QWaylandShmBuffer *buffer = getBuffer(sizeWithMargins, bufferWasRecreated);
     while (!buffer) {
-        qCDebug(lcWaylandBackingstore, "QWaylandShmBackingStore: stalling waiting for a buffer to be released from the compositor...");
-
-        mDisplay->blockingReadEvents();
+        struct ::wl_display *display = mDisplay->wl_display();
+        if (wl_display_dispatch_queue(display, mEventQueue) < 0) {
+            int ecode = wl_display_get_error(display);
+            if ((ecode == EPIPE || ecode == ECONNRESET))
+                qWarning("The Wayland connection broke during blocking read event. Did the Wayland compositor die?");
+            else
+                qWarning("The Wayland connection experienced a fatal error during blocking read event: %s", strerror(ecode));
+            _exit(-1);
+        }
         buffer = getBuffer(sizeWithMargins, bufferWasRecreated);
     }
 

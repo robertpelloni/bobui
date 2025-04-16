@@ -273,7 +273,6 @@ public:
     void initEventThread();
 
 public Q_SLOTS:
-    void blockingReadEvents();
     void flushRequests();
 
 Q_SIGNALS:
