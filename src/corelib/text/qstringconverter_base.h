@@ -6,6 +6,7 @@
 #define QSTRINGCONVERTER_BASE_H
 
 #if 0
+// IWYU pragma: private, include "qstringconverter.h"
 // QStringConverter(Base) class are handled in qstringconverter
 #pragma qt_sync_stop_processing
 #endif

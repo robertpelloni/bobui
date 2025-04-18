@@ -395,6 +395,11 @@ _qt_internal_setup_deploy_support()
 
 add_dependencies(Core qmodule_pri)
 
+qt_internal_extend_target(Core CONDITION CMAKE_PROJECT_VERSION VERSION_LESS "7.0"
+    SOURCES
+        text/qstringconverter_base_deprecated.h
+)
+
 if (NOT QT_NAMESPACE STREQUAL "")
     set(core_namespace_defs "QT_NAMESPACE=${QT_NAMESPACE}")
     if(QT_INLINE_NAMESPACE)

@@ -6,7 +6,6 @@
 // keep existing syncqt header working after the move of the class
 // into qstringconverter_base
 #pragma qt_class(QStringConverter)
-#pragma qt_class(QStringConverterBase)
 #endif
 
 #ifndef QSTRINGCONVERTER_H
