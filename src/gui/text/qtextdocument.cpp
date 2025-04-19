@@ -2299,7 +2299,7 @@ QVariant QTextDocument::loadResource(int type, const QUrl &name)
         QUrl resourceUrl = name;
 
         if (name.isRelative()) {
-            QUrl currentURL = d->url;
+            const QUrl currentURL{d->url};
             // For the second case QUrl can merge "#someanchor" with "foo.html"
             // correctly to "foo.html#someanchor"
             if (!(currentURL.isRelative()

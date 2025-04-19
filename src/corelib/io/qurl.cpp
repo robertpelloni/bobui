@@ -3233,7 +3233,13 @@ QUrl &QUrl::operator =(const QUrl &url) noexcept
 
 /*!
     Assigns the specified \a url to this object.
+
+    This operator isn't available when the \l {QT_NO_URL_CAST_FROM_STRING} macro
+    is defined.
 */
+#ifdef QT_NO_URL_CAST_FROM_STRING
+#error You cannot define QT_NO_URL_CAST_FROM_STRING in QtCore, for ABI reasons
+#endif
 QUrl &QUrl::operator =(const QString &url)
 {
     detachToClear();

@@ -1568,7 +1568,7 @@ void QTextHtmlParserNode::applyForegroundImage(qint64 searchKey, const QTextDocu
 void QTextHtmlParserNode::applyBackgroundImage(const QString &url, const QTextDocument *resourceProvider)
 {
     if (!url.isEmpty() && resourceProvider) {
-        QVariant val = resourceProvider->resource(QTextDocument::ImageResource, url);
+        QVariant val = resourceProvider->resource(QTextDocument::ImageResource, QUrl{url});
 
         if (QCoreApplication::instance()->thread() != QThread::currentThread()) {
             // must use images in non-GUI threads
@@ -2028,7 +2028,7 @@ void QTextHtmlParser::importStyleSheet(const QString &href)
         if (externalStyleSheets.at(i).url == href)
             return;
 
-    QVariant res = resourceProvider->resource(QTextDocument::StyleSheetResource, href);
+    QVariant res = resourceProvider->resource(QTextDocument::StyleSheetResource, QUrl{href});
     QString css;
     if (res.userType() == QMetaType::QString) {
         css = res.toString();

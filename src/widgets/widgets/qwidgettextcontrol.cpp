@@ -2975,7 +2975,7 @@ void QWidgetTextControlPrivate::activateLinkUnderCursor(QString href)
 
 #ifndef QT_NO_DESKTOPSERVICES
     if (openExternalLinks)
-        QDesktopServices::openUrl(href);
+        QDesktopServices::openUrl(QUrl{href});
     else
 #endif
         emit q_func()->linkActivated(href);

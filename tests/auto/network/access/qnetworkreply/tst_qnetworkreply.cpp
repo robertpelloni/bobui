@@ -5331,10 +5331,13 @@ void tst_QNetworkReply::ioPostToHttpFromSocket_data()
     for (int i = 0; i < proxies.size(); ++i)
         for (int auth = 0; auth < 2; ++auth) {
             QUrl url;
-            if (auth)
-                url = "http://" + QtNetworkSettings::httpServerName() + "/qtest/protected/cgi-bin/md5sum.cgi";
-            else
-                url = "http://" + QtNetworkSettings::httpServerName() + "/qtest/cgi-bin/md5sum.cgi";
+            if (auth) {
+                url = QUrl{"http://"_L1 + QtNetworkSettings::httpServerName()
+                           + "/qtest/protected/cgi-bin/md5sum.cgi"_L1};
+            } else {
+                url = QUrl{"http://"_L1 + QtNetworkSettings::httpServerName()
+                           + "/qtest/cgi-bin/md5sum.cgi"_L1};
+            }
 
             QNetworkProxy proxy = proxies.at(i).proxy;
             QByteArray testsuffix = QByteArray(auth ? "+auth" : "") + proxies.at(i).tag;
