@@ -2135,7 +2135,7 @@ void tst_QTimeZone::stdCompatibility_data()
     qDebug() << "Using tzdb version:" << QByteArrayView(tzdb.version);
 
     for (const std::chrono::time_zone &zone : tzdb.zones)
-        QTest::addRow(zone.name().data()) << &zone;
+        QTest::addRow("%s", zone.name().data()) << &zone;
 #else
     QSKIP("This test requires C++20's <chrono>.");
 #endif

@@ -875,7 +875,7 @@ void tst_QDebug::qDebugStdUnorderedMap() const
 void tst_QDebug::qDebugStdUnorderedSet() const
 {
     QByteArray file, function;
-    int line = 0;
+    [[maybe_unused]] int line = 0;
     MessageHandlerSetter mhs(myMessageHandler);
 
     {
