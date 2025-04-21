@@ -13,6 +13,7 @@
 #include <QtDBus/QDBusMessage>
 #include <QtDBus/QDBusPendingCall>
 #include <QtDBus/QDBusReply>
+#include <QtDBus/QDBusVariant>
 #endif
 #include <qpa/qwindowsysteminterface.h>
 
@@ -20,6 +21,8 @@ QT_BEGIN_NAMESPACE
 
 #if QT_CONFIG(dbus)
 Q_STATIC_LOGGING_CATEGORY(lcQpaThemeGnome, "qt.qpa.theme.gnome")
+
+using namespace Qt::StringLiterals;
 
 namespace {
 // https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.Settings.html
@@ -54,6 +57,107 @@ constexpr XDG_ColorScheme convertColorScheme(Qt::ColorScheme colorScheme)
         break;
     }
 }
+
+class DBusInterface
+{
+    DBusInterface() = delete;
+
+    constexpr static auto Service = "org.freedesktop.portal.Desktop"_L1;
+    constexpr static auto Path = "/org/freedesktop/portal/desktop"_L1;
+
+public:
+    static inline QVariant query(QLatin1StringView interface, QLatin1StringView method,
+                                 QLatin1StringView name_space, QLatin1StringView key);
+    static inline uint queryPortalVersion();
+    static inline QLatin1StringView readOneMethod();
+    static inline std::optional<Qt::ColorScheme> queryColorScheme();
+    static inline std::optional<Qt::ContrastPreference> queryContrast();
+};
+
+QVariant DBusInterface::query(QLatin1StringView interface, QLatin1StringView method,
+                              QLatin1StringView name_space, QLatin1StringView key)
+{
+    QDBusConnection dbus = QDBusConnection::sessionBus();
+    if (dbus.isConnected()) {
+        QDBusMessage message = QDBusMessage::createMethodCall(
+                DBusInterface::Service, DBusInterface::Path, interface, method);
+        message << name_space << key;
+
+        QDBusReply<QVariant> reply = dbus.call(message);
+        if (Q_LIKELY(reply.isValid()))
+            return reply.value();
+    } else {
+        qCWarning(lcQpaThemeGnome) << "dbus connection failed. Last error: " << dbus.lastError();
+    }
+
+    return {};
+}
+
+uint DBusInterface::queryPortalVersion()
+{
+    constexpr auto interface = "org.freedesktop.DBus.Properties"_L1;
+    constexpr auto method = "Get"_L1;
+    constexpr auto name_space = "org.freedesktop.portal.Settings"_L1;
+    constexpr auto key = "version"_L1;
+
+    static uint version = 0; // cached version value
+
+    if (version == 0) {
+        QVariant reply = query(interface, method, name_space, key);
+        if (reply.isValid())
+            version = reply.toUInt(); // caches the value for the next calls
+    }
+
+    return version;
+}
+
+QLatin1StringView DBusInterface::readOneMethod()
+{
+    // Based on the documentation on flatpak:
+    // https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.Settings.html
+    // The method name "Read" has changed to "ReadOne" since version 2.
+    const uint version = queryPortalVersion();
+    if (version == 1)
+        return "Read"_L1;
+    return "ReadOne"_L1;
+}
+
+std::optional<Qt::ColorScheme> DBusInterface::queryColorScheme()
+{
+    constexpr auto interface = "org.freedesktop.portal.Settings"_L1;
+    constexpr auto name_space = "org.freedesktop.appearance"_L1;
+    constexpr auto key = "color-scheme"_L1;
+    const auto method = readOneMethod();
+
+    QVariant reply = query(interface, method, name_space, key);
+    if (reply.isValid())
+        return convertColorScheme(
+                XDG_ColorScheme{ reply.value<QDBusVariant>().variant().toUInt() });
+
+    return {};
+}
+
+std::optional<Qt::ContrastPreference> DBusInterface::queryContrast()
+{
+    constexpr auto interface = "org.freedesktop.portal.Settings"_L1;
+    const auto method = readOneMethod();
+
+    constexpr auto namespace_xdg_portal = "org.freedesktop.appearance"_L1;
+    constexpr auto key_xdg_portal = "contrast"_L1;
+    QVariant reply = query(interface, method, namespace_xdg_portal, key_xdg_portal);
+    if (reply.isValid())
+        return static_cast<Qt::ContrastPreference>(reply.toUInt());
+
+    // Fall back to desktop-specific methods (GSettings for GNOME)
+    constexpr auto namespace_gsettings = "org.gnome.desktop.a11y.interface"_L1;
+    constexpr auto key_gsettings = "high-contrast"_L1;
+    reply = query(interface, method, namespace_gsettings, key_gsettings);
+    if (reply.isValid())
+        return reply.toBool() ? Qt::ContrastPreference::HighContrast
+                              : Qt::ContrastPreference::NoPreference;
+
+    return {};
+}
 } // namespace
 
 #endif // QT_CONFIG(dbus)
@@ -70,41 +174,16 @@ const char *QGnomeTheme::name = "gnome";
 QGnomeThemePrivate::QGnomeThemePrivate()
 {
 #if QT_CONFIG(dbus)
-    static constexpr QLatin1String appearanceNamespace("org.freedesktop.appearance");
-    static constexpr QLatin1String colorSchemeKey("color-scheme");
-    static constexpr QLatin1String contrastKey("contrast");
+    initDbus();
 
-    QDBusConnection dbus = QDBusConnection::sessionBus();
-    if (dbus.isConnected()) {
-        // ReadAll appears to omit the contrast setting on Ubuntu.
-        QDBusMessage message = QDBusMessage::createMethodCall(QLatin1String("org.freedesktop.portal.Desktop"),
-                                                              QLatin1String("/org/freedesktop/portal/desktop"),
-                                                              QLatin1String("org.freedesktop.portal.Settings"),
-                                                              QLatin1String("ReadOne"));
+    if (auto value = DBusInterface::queryColorScheme(); value.has_value())
+        updateColorScheme(value.value());
 
-        message << appearanceNamespace << colorSchemeKey;
-        QDBusReply<QVariant> reply = dbus.call(message);
-        if (Q_LIKELY(reply.isValid())) {
-            m_colorScheme = convertColorScheme(XDG_ColorScheme{ reply.value().toUInt() });
-            QWindowSystemInterface::handleThemeChange();
-        }
-
-        message.setArguments({});
-        message << appearanceNamespace << contrastKey;
-        pendingCallWatcher = std::make_unique<QDBusPendingCallWatcher>(dbus.asyncCall(message));
-        QObject::connect(pendingCallWatcher.get(), &QDBusPendingCallWatcher::finished, pendingCallWatcher.get(), [this](QDBusPendingCallWatcher *watcher) {
-            if (!watcher->isError()) {
-                QDBusPendingReply<QVariant> reply = *watcher;
-                if (Q_LIKELY(reply.isValid()))
-                    updateHighContrast(static_cast<Qt::ContrastPreference>(reply.value().toUInt()));
-            }
-            initDbus();
-        });
-    } else {
-        qCWarning(lcQpaThemeGnome) << "dbus connection failed. Last error: " << dbus.lastError();
-    }
+    if (auto value = DBusInterface::queryContrast(); value.has_value())
+        updateHighContrast(value.value());
 #endif // QT_CONFIG(dbus)
 }
+
 QGnomeThemePrivate::~QGnomeThemePrivate()
 {
     if (systemFont)
@@ -149,7 +228,7 @@ bool QGnomeThemePrivate::initDbus()
             m_themeName = value.toString();
             break;
         case QDBusListener::Setting::Contrast:
-            updateHighContrast(static_cast<Qt::ContrastPreference>(value.toUInt()));
+            updateHighContrast(value.value<Qt::ContrastPreference>());
             break;
         default:
             break;

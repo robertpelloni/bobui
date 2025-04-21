@@ -139,7 +139,9 @@ void QKdeThemePrivate::settingChangedHandler(QDBusListener::Provider provider,
         qCDebug(lcQpaThemeKde) << "KDE application style changed to:" << value.toString();
         break;
     case QDBusListener::Setting::Contrast:
-        qCDebug(lcQpaThemeKde) << "KDE contrast setting changed to: " << static_cast<Qt::ContrastPreference>(value.toUInt());
+        qCDebug(lcQpaThemeKde) << "KDE contrast setting changed to: "
+                               << value.value<Qt::ContrastPreference>();
+        break;
     }
 
     refresh();
