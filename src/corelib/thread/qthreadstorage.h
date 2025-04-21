@@ -98,7 +98,8 @@ template <class T>
 class QThreadStorage
 {
 private:
-    using Trait = QThreadStorageTraits<std::is_trivial_v<T> && !std::is_pointer_v<T>>;
+    using Trait = QThreadStorageTraits<std::is_trivially_default_constructible_v<T> &&
+                                       std::is_trivially_copyable_v<T> && !std::is_pointer_v<T>>;
     QThreadStorageData d;
 
     Q_DISABLE_COPY(QThreadStorage)
