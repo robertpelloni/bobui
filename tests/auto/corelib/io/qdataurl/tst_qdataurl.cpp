@@ -31,7 +31,7 @@ void tst_QDataUrl::decode_data()
     row("malformed-host", "data://test.com", false);
     row("malformed-host2", "data://text/plain;charset=ISO-8859-1", false);
     row("malformed-host3", "data://test.com/,", false);
-    row("emptyData", "data:text/plain", true);
+    row("malformed-no-comma", "data:text/plain", false);
     row("emptyData-default-mimetype", "data:,", true,
         "text/plain;charset=US-ASCII"_L1, "");
     row("emptyData-only-charset", "data:charset=ISO-8859-1,", true,

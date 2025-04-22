@@ -56,9 +56,10 @@ Q_CORE_EXPORT bool qDecodeDataUrl(const QUrl &uri, QString &mimeType, QByteArray
             mimeType = textPlain + QLatin1StringView(data.trimmed());
         else
             mimeType = QStringLiteral("text/plain;charset=US-ASCII");
+        return true;
     }
 
-    return true;
+    return false;
 }
 
 QT_END_NAMESPACE
