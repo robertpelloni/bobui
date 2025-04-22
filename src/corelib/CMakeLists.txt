@@ -587,6 +587,7 @@ qt_internal_extend_target(Core CONDITION WIN32
         kernel/qwineventnotifier.cpp kernel/qwineventnotifier.h kernel/qwineventnotifier_p.h
         kernel/qwinregistry.cpp kernel/qwinregistry_p.h
         plugin/qsystemlibrary.cpp plugin/qsystemlibrary_p.h
+        text/qlocale_win.cpp
         thread/qthread_win.cpp
         platform/windows/qcomobject_p.h
         platform/windows/qcomptr_p.h
@@ -873,11 +874,6 @@ qt_internal_extend_target(Core CONDITION APPLE
 qt_internal_extend_target(Core CONDITION UNIX AND NOT APPLE AND NOT WASM
     SOURCES
         text/qlocale_unix.cpp
-)
-
-qt_internal_extend_target(Core CONDITION WIN32
-    SOURCES
-        text/qlocale_win.cpp
 )
 
 # Switch this to just 'icu' once we can expect Windows 10 version 1903
