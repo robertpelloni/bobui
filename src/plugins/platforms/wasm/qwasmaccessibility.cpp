@@ -313,6 +313,10 @@ emscripten::val QWasmAccessibility::createHtmlElement(QAccessibleInterface *ifac
             element = document.call<emscripten::val>("createElement", std::string("div"));
         }
 
+        element.call<void>("addEventListener", emscripten::val("focus"),
+                           QWasmSuspendResumeControl::get()->jsEventHandlerAt(m_eventHandlerIndex),
+                           true);
+
         return element;
 
     }();
