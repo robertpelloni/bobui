@@ -20,8 +20,6 @@ Q_CORE_EXPORT bool qDecodeDataUrl(const QUrl &uri, QString &mimeType, QByteArray
     if (uri.scheme() != "data"_L1 || !uri.host().isEmpty())
         return false;
 
-    mimeType = QStringLiteral("text/plain;charset=US-ASCII");
-
     // the following would have been the correct thing, but
     // reality often differs from the specification. People have
     // data: URIs with ? and #
@@ -56,6 +54,8 @@ Q_CORE_EXPORT bool qDecodeDataUrl(const QUrl &uri, QString &mimeType, QByteArray
 
         if (!data.isEmpty())
             mimeType = textPlain + QLatin1StringView(data.trimmed());
+        else
+            mimeType = QStringLiteral("text/plain;charset=US-ASCII");
     }
 
     return true;
