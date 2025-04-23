@@ -220,7 +220,6 @@ protected:
         }
     }
 
-    friend class tst_QGenericItemModel;
     using range_features = QGenericItemModelDetails::range_traits<range_type>;
     using wrapped_row_type = QGenericItemModelDetails::wrapped_t<row_type>;
     using row_features = QGenericItemModelDetails::range_traits<wrapped_row_type>;
