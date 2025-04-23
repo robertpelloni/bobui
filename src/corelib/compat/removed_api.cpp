@@ -1290,6 +1290,13 @@ QByteArray QMetaEnum::valueToKeys(int value) const
 
 #include "qmutex.h"
 
+#include "qbytearray.h"
+
+QByteArray QByteArray::percentDecoded(char percent) const
+{
+    return fromPercentEncoding(*this, percent);
+}
+
 #if QT_CONFIG(thread)
 void QBasicMutex::destroyInternal(QMutexPrivate *d)
 {

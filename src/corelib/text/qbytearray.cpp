@@ -4725,17 +4725,13 @@ QByteArray QByteArray::toHex(char separator) const
     return hex;
 }
 
-static void q_fromPercentEncoding(QByteArray *ba, char percent)
+static qsizetype q_fromPercentEncoding(QByteArrayView src, char percent, QSpan<char> buffer)
 {
-    if (ba->isEmpty())
-        return;
-
-    char *data = ba->data();
-    const char *inputPtr = data;
+    char *data = buffer.begin();
+    const char *inputPtr = src.begin();
 
     qsizetype i = 0;
-    qsizetype len = ba->size();
-    qsizetype outlen = 0;
+    const qsizetype len = src.size();
     int a, b;
     char c;
     while (i < len) {
@@ -4758,14 +4754,13 @@ static void q_fromPercentEncoding(QByteArray *ba, char percent)
         }
 
         ++i;
-        ++outlen;
     }
 
-    if (outlen != len)
-        ba->truncate(outlen);
+    return data - buffer.begin();
 }
 
 /*!
+    \fn QByteArray QByteArray::percentDecoded(char percent) const &
     \since 6.4
 
     Decodes URI/URL-style percent-encoding.
@@ -4783,15 +4778,12 @@ static void q_fromPercentEncoding(QByteArray *ba, char percent)
 
     \sa toPercentEncoding(), QUrl::fromPercentEncoding()
 */
-QByteArray QByteArray::percentDecoded(char percent) const
-{
-    if (isEmpty())
-        return *this; // Preserves isNull().
 
-    QByteArray tmp = *this;
-    q_fromPercentEncoding(&tmp, percent);
-    return tmp;
-}
+/*!
+    \fn QByteArray QByteArray::percentDecoded(char percent) &&
+    \since 6.11
+    \overload
+*/
 
 /*!
     \since 4.4
@@ -4809,7 +4801,30 @@ QByteArray QByteArray::percentDecoded(char percent) const
 */
 QByteArray QByteArray::fromPercentEncoding(const QByteArray &input, char percent)
 {
-    return input.percentDecoded(percent);
+    if (input.isEmpty())
+        return input; // Preserves isNull().
+
+    QByteArray out{input.size(), Qt::Uninitialized};
+    qsizetype len = q_fromPercentEncoding(input, percent, out);
+    out.truncate(len);
+    return out;
+}
+
+/*!
+    \overload
+    \since 6.11
+*/
+QByteArray QByteArray::fromPercentEncoding(QByteArray &&input, char percent)
+{
+    if (input.d->needsDetach())
+        return fromPercentEncoding(input, percent); // lvalue overload
+
+    if (input.isEmpty())
+        return std::move(input); // Preserves isNull().
+
+    qsizetype len = q_fromPercentEncoding(input, percent, input);
+    input.truncate(len);
+    return std::move(input);
 }
 
 /*! \fn QByteArray QByteArray::fromStdString(const std::string &str)
