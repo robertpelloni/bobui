@@ -1198,7 +1198,7 @@ auto QFileSystemEngine::cloneFile(int srcfd, int dstfd, const QFileSystemMetaDat
 static QSystemError createDirectoryWithParents(const QByteArray &path, mode_t mode)
 {
 #ifdef Q_OS_WASM
-    if (path == '/')
+    if (path == "/")
         return {};
 #endif
 
