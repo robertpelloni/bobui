@@ -171,7 +171,6 @@ namespace qstdweb {
 
     class Q_CORE_EXPORT Uint8Array {
     public:
-        static Uint8Array heap();
         explicit Uint8Array(const emscripten::val &uint8Array);
         explicit Uint8Array(const ArrayBuffer &buffer);
         explicit Uint8Array(uint32_t size);
@@ -192,7 +191,6 @@ namespace qstdweb {
         emscripten::val val() const;
 
     private:
-        static emscripten::val heap_();
         static emscripten::val constructor_();
         emscripten::val m_uint8Array = emscripten::val::undefined();
     };
