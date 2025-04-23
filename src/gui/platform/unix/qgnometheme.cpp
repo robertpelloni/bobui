@@ -5,162 +5,12 @@
 #include <qpa/qplatformdialoghelper.h>
 #include <qpa/qplatformfontdatabase.h>
 #if QT_CONFIG(dbus)
-#include "qdbuslistener_p.h"
-#include <private/qdbustrayicon_p.h>
-#include <private/qdbustrayicon_p.h>
-#include <private/qdbusplatformmenu_p.h>
-#include <private/qdbusmenubar_p.h>
-#include <QtDBus/QDBusMessage>
-#include <QtDBus/QDBusPendingCall>
-#include <QtDBus/QDBusReply>
-#include <QtDBus/QDBusVariant>
+#  include <private/qdbustrayicon_p.h>
+#  include <private/qdbusmenubar_p.h>
 #endif
 #include <qpa/qwindowsysteminterface.h>
 
 QT_BEGIN_NAMESPACE
-
-#if QT_CONFIG(dbus)
-Q_STATIC_LOGGING_CATEGORY(lcQpaThemeGnome, "qt.qpa.theme.gnome")
-
-using namespace Qt::StringLiterals;
-
-namespace {
-// https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.Settings.html
-enum class XDG_ColorScheme : uint { NoPreference, PreferDark, PreferLight };
-
-constexpr Qt::ColorScheme convertColorScheme(XDG_ColorScheme colorScheme)
-{
-    switch (colorScheme) {
-    case XDG_ColorScheme::NoPreference:
-        return Qt::ColorScheme::Unknown;
-    case XDG_ColorScheme::PreferDark:
-        return Qt::ColorScheme::Dark;
-    case XDG_ColorScheme::PreferLight:
-        return Qt::ColorScheme::Light;
-    default:
-        Q_UNREACHABLE_RETURN(Qt::ColorScheme::Unknown);
-        break;
-    }
-}
-
-constexpr XDG_ColorScheme convertColorScheme(Qt::ColorScheme colorScheme)
-{
-    switch (colorScheme) {
-    case Qt::ColorScheme::Unknown:
-        return XDG_ColorScheme::NoPreference;
-    case Qt::ColorScheme::Light:
-        return XDG_ColorScheme::PreferLight;
-    case Qt::ColorScheme::Dark:
-        return XDG_ColorScheme::PreferDark;
-    default:
-        Q_UNREACHABLE_RETURN(XDG_ColorScheme::NoPreference);
-        break;
-    }
-}
-
-class DBusInterface
-{
-    DBusInterface() = delete;
-
-    constexpr static auto Service = "org.freedesktop.portal.Desktop"_L1;
-    constexpr static auto Path = "/org/freedesktop/portal/desktop"_L1;
-
-public:
-    static inline QVariant query(QLatin1StringView interface, QLatin1StringView method,
-                                 QLatin1StringView name_space, QLatin1StringView key);
-    static inline uint queryPortalVersion();
-    static inline QLatin1StringView readOneMethod();
-    static inline std::optional<Qt::ColorScheme> queryColorScheme();
-    static inline std::optional<Qt::ContrastPreference> queryContrast();
-};
-
-QVariant DBusInterface::query(QLatin1StringView interface, QLatin1StringView method,
-                              QLatin1StringView name_space, QLatin1StringView key)
-{
-    QDBusConnection dbus = QDBusConnection::sessionBus();
-    if (dbus.isConnected()) {
-        QDBusMessage message = QDBusMessage::createMethodCall(
-                DBusInterface::Service, DBusInterface::Path, interface, method);
-        message << name_space << key;
-
-        QDBusReply<QVariant> reply = dbus.call(message);
-        if (Q_LIKELY(reply.isValid()))
-            return reply.value();
-    } else {
-        qCWarning(lcQpaThemeGnome) << "dbus connection failed. Last error: " << dbus.lastError();
-    }
-
-    return {};
-}
-
-uint DBusInterface::queryPortalVersion()
-{
-    constexpr auto interface = "org.freedesktop.DBus.Properties"_L1;
-    constexpr auto method = "Get"_L1;
-    constexpr auto name_space = "org.freedesktop.portal.Settings"_L1;
-    constexpr auto key = "version"_L1;
-
-    static uint version = 0; // cached version value
-
-    if (version == 0) {
-        QVariant reply = query(interface, method, name_space, key);
-        if (reply.isValid())
-            version = reply.toUInt(); // caches the value for the next calls
-    }
-
-    return version;
-}
-
-QLatin1StringView DBusInterface::readOneMethod()
-{
-    // Based on the documentation on flatpak:
-    // https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.Settings.html
-    // The method name "Read" has changed to "ReadOne" since version 2.
-    const uint version = queryPortalVersion();
-    if (version == 1)
-        return "Read"_L1;
-    return "ReadOne"_L1;
-}
-
-std::optional<Qt::ColorScheme> DBusInterface::queryColorScheme()
-{
-    constexpr auto interface = "org.freedesktop.portal.Settings"_L1;
-    constexpr auto name_space = "org.freedesktop.appearance"_L1;
-    constexpr auto key = "color-scheme"_L1;
-    const auto method = readOneMethod();
-
-    QVariant reply = query(interface, method, name_space, key);
-    if (reply.isValid())
-        return convertColorScheme(
-                XDG_ColorScheme{ reply.value<QDBusVariant>().variant().toUInt() });
-
-    return {};
-}
-
-std::optional<Qt::ContrastPreference> DBusInterface::queryContrast()
-{
-    constexpr auto interface = "org.freedesktop.portal.Settings"_L1;
-    const auto method = readOneMethod();
-
-    constexpr auto namespace_xdg_portal = "org.freedesktop.appearance"_L1;
-    constexpr auto key_xdg_portal = "contrast"_L1;
-    QVariant reply = query(interface, method, namespace_xdg_portal, key_xdg_portal);
-    if (reply.isValid())
-        return static_cast<Qt::ContrastPreference>(reply.toUInt());
-
-    // Fall back to desktop-specific methods (GSettings for GNOME)
-    constexpr auto namespace_gsettings = "org.gnome.desktop.a11y.interface"_L1;
-    constexpr auto key_gsettings = "high-contrast"_L1;
-    reply = query(interface, method, namespace_gsettings, key_gsettings);
-    if (reply.isValid())
-        return reply.toBool() ? Qt::ContrastPreference::HighContrast
-                              : Qt::ContrastPreference::NoPreference;
-
-    return {};
-}
-} // namespace
-
-#endif // QT_CONFIG(dbus)
 
 /*!
     \class QGnomeTheme
@@ -174,13 +24,8 @@ const char *QGnomeTheme::name = "gnome";
 QGnomeThemePrivate::QGnomeThemePrivate()
 {
 #if QT_CONFIG(dbus)
-    initDbus();
-
-    if (auto value = DBusInterface::queryColorScheme(); value.has_value())
-        updateColorScheme(value.value());
-
-    if (auto value = DBusInterface::queryContrast(); value.has_value())
-        updateHighContrast(value.value());
+    QObject::connect(&m_gnomePortal, &QGnomePortalInterface::themeNameChanged, &m_gnomePortal,
+                     [this](const QString &themeName) { m_themeName = themeName; });
 #endif // QT_CONFIG(dbus)
 }
 
@@ -205,43 +50,15 @@ void QGnomeThemePrivate::configureFonts(const QString &gtkFontName) const
     qCDebug(lcQpaFonts) << "default fonts: system" << systemFont << "fixed" << fixedFont;
 }
 
-#if QT_CONFIG(dbus)
-bool QGnomeThemePrivate::initDbus()
-{
-    dbus.reset(new QDBusListener());
-    Q_ASSERT(dbus);
-
-    // Wrap slot in a lambda to avoid inheriting QGnomeThemePrivate from QObject
-    auto wrapper = [this](QDBusListener::Provider provider,
-                          QDBusListener::Setting setting,
-                          const QVariant &value) {
-        if (provider != QDBusListener::Provider::Gnome
-            && provider != QDBusListener::Provider::Gtk) {
-            return;
-        }
-
-        switch (setting) {
-        case QDBusListener::Setting::ColorScheme:
-            updateColorScheme(convertColorScheme(XDG_ColorScheme{ value.toUInt() }));
-            break;
-        case QDBusListener::Setting::Theme:
-            m_themeName = value.toString();
-            break;
-        case QDBusListener::Setting::Contrast:
-            updateHighContrast(value.value<Qt::ContrastPreference>());
-            break;
-        default:
-            break;
-        }
-    };
-
-    return QObject::connect(dbus.get(), &QDBusListener::settingChanged, dbus.get(), wrapper);
-}
-
 Qt::ColorScheme QGnomeThemePrivate::colorScheme() const
 {
-    if (m_colorScheme != Qt::ColorScheme::Unknown)
-        return m_colorScheme;
+    if (hasRequestedColorScheme())
+        return m_requestedColorScheme;
+
+#if QT_CONFIG(dbus)
+    if (Qt::ColorScheme colorScheme = m_gnomePortal.colorScheme();
+        colorScheme != Qt::ColorScheme::Unknown)
+        return colorScheme;
 
     // If the color scheme is set to Unknown by mistake or is not set at all,
     // then maybe the theme name contains a hint about the color scheme.
@@ -251,31 +68,31 @@ Qt::ColorScheme QGnomeThemePrivate::colorScheme() const
         return Qt::ColorScheme::Light;
     else if (m_themeName.contains(QLatin1StringView("dark"), Qt::CaseInsensitive))
         return Qt::ColorScheme::Dark;
-    else
-        return Qt::ColorScheme::Unknown;
-}
-
-void QGnomeThemePrivate::updateColorScheme(Qt::ColorScheme colorScheme)
-{
-    if (m_colorScheme == colorScheme)
-        return;
-    m_colorScheme = colorScheme;
-    QWindowSystemInterface::handleThemeChange();
-}
-
-void QGnomeThemePrivate::updateHighContrast(Qt::ContrastPreference contrast)
-{
-    if (m_contrast == contrast)
-        return;
-    m_contrast = contrast;
-    QWindowSystemInterface::handleThemeChange();
-}
-
 #endif // QT_CONFIG(dbus)
+
+    // Fallback to Unknown if no color scheme is set or detected
+    return Qt::ColorScheme::Unknown;
+}
+
+bool QGnomeThemePrivate::hasRequestedColorScheme() const
+{
+    return m_requestedColorScheme != Qt::ColorScheme::Unknown;
+}
 
 QGnomeTheme::QGnomeTheme()
     : QGenericUnixTheme(new QGnomeThemePrivate())
 {
+#if QT_CONFIG(dbus)
+    Q_D(QGnomeTheme);
+
+    QGnomePortalInterface *portal = &d->m_gnomePortal;
+
+    QObject::connect(portal, &QGnomePortalInterface::colorSchemeChanged, portal,
+                     [this](Qt::ColorScheme colorScheme) { updateColorScheme(colorScheme); });
+
+    QObject::connect(portal, &QGnomePortalInterface::contrastChanged, portal,
+                     [this](Qt::ContrastPreference contrast) { updateHighContrast(contrast); });
+#endif // QT_CONFIG(dbus)
 }
 
 QVariant QGnomeTheme::themeHint(QPlatformTheme::ThemeHint hint) const
@@ -352,7 +169,38 @@ QString QGnomeTheme::gtkFontName() const
                                   .arg(defaultSystemFontSize);
 }
 
+void QGnomeTheme::requestColorScheme(Qt::ColorScheme scheme)
+{
+    Q_D(QGnomeTheme);
+    if (d->m_requestedColorScheme == scheme)
+        return;
+    QPlatformTheme::requestColorScheme(scheme);
+    d->m_requestedColorScheme = scheme;
+    QWindowSystemInterface::handleThemeChange();
+}
+
+Qt::ColorScheme QGnomeTheme::colorScheme() const
+{
+    Q_D(const QGnomeTheme);
+    if (auto colorScheme = d->colorScheme(); colorScheme != Qt::ColorScheme::Unknown)
+        return colorScheme;
+    // If the color scheme is not set or detected, fall back to the default
+    return QPlatformTheme::colorScheme();
+}
+
 #if QT_CONFIG(dbus)
+void QGnomeTheme::updateColorScheme(Qt::ColorScheme colorScheme)
+{
+    Q_UNUSED(colorScheme);
+    QWindowSystemInterface::handleThemeChange();
+}
+
+void QGnomeTheme::updateHighContrast(Qt::ContrastPreference contrast)
+{
+    Q_UNUSED(contrast);
+    QWindowSystemInterface::handleThemeChange();
+}
+
 QPlatformMenuBar *QGnomeTheme::createPlatformMenuBar() const
 {
     if (isDBusGlobalMenuAvailable())
@@ -360,26 +208,21 @@ QPlatformMenuBar *QGnomeTheme::createPlatformMenuBar() const
     return nullptr;
 }
 
-Qt::ColorScheme QGnomeTheme::colorScheme() const
-{
-    return d_func()->colorScheme();
-}
-
 Qt::ContrastPreference QGnomeTheme::contrastPreference() const
 {
-    return d_func()->m_contrast;
+    Q_D(const QGnomeTheme);
+    return d->m_gnomePortal.contrastPreference();
 }
 
-#endif
-
-#if QT_CONFIG(dbus) && QT_CONFIG(systemtrayicon)
+#  if QT_CONFIG(systemtrayicon)
 QPlatformSystemTrayIcon *QGnomeTheme::createPlatformSystemTrayIcon() const
 {
     if (shouldUseDBusTray())
         return new QDBusTrayIcon();
     return nullptr;
 }
-#endif
+#  endif // QT_CONFIG(systemtrayicon)
+#endif // QT_CONFIG(dbus)
 
 QString QGnomeTheme::standardButtonText(int button) const
 {

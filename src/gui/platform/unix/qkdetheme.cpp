@@ -130,7 +130,7 @@ void QKdeThemePrivate::settingChangedHandler(QDBusListener::Provider provider,
 
     switch (setting) {
     case QDBusListener::Setting::ColorScheme:
-        qCDebug(lcQpaThemeKde) << "KDE color theme changed to:" << value.toUInt();
+        qCDebug(lcQpaThemeKde) << "KDE color theme changed to:" << value.value<Qt::ColorScheme>();
         break;
     case QDBusListener::Setting::Theme:
         qCDebug(lcQpaThemeKde) << "KDE global theme changed to:" << value.toString();

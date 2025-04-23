@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 #include "qdbuslistener_p.h"
+#include "qdbussettings_p.h"
 #include <private/qguiapplication_p.h>
 #include <qpa/qplatformintegration.h>
 #include <qpa/qplatformservices.h>
@@ -48,38 +49,6 @@ constexpr auto setting() { return "Setting"_L1; }
 constexpr auto dbusSignals() { return "DbusSignals"_L1; }
 constexpr auto root() { return "Q_L1.qpa.DBusSignals"_L1; }
 } // namespace JsonKeys
-
-namespace XdgSettings {
-// XDG Desktop Portal Settings (Preferred)
-// https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.Settings.html
-constexpr auto contrastNamespace = "org.freedesktop.appearance"_L1;
-constexpr auto contrastKey = "contrast"_L1;
-// XDG portal provides the contrast preference value as uint:
-// 0 for no-preference, and, 1 for high-contrast.
-Qt::ContrastPreference convertContrastPreference(const QVariant &value)
-{
-    if (!value.isValid())
-        return Qt::ContrastPreference::NoPreference;
-    return static_cast<Qt::ContrastPreference>(value.toUInt());
-}
-} // namespace XdgSettings
-
-namespace GSettings {
-// GNOME Destop Settings (Alternative)
-// https://gitlab.gnome.org/GNOME/gnome-shell/-/merge_requests/2069
-// https://gitlab.gnome.org/GNOME/gsettings-desktop-schemas/-/commit/0e97f1f571c495184f80d875c68f241261a50e30
-constexpr auto contrastNamespace = "org.gnome.desktop.a11y.interface"_L1;
-constexpr auto contrastKey = "high-contrast"_L1;
-// GSetting provides the contrast value as boolean:
-// true for enabled high-contrast, and, false for disabled high-contrast.
-Qt::ContrastPreference convertContrastPreference(const QVariant &value)
-{
-    if (!value.isValid())
-        return Qt::ContrastPreference::NoPreference;
-    return value.toBool() ? Qt::ContrastPreference::HighContrast
-                          : Qt::ContrastPreference::NoPreference;
-}
-} // namespace GSettings
 } // namespace
 
 void QDBusListener::init(const QString &service, const QString &path,
@@ -237,14 +206,15 @@ void QDBusListener::populateSignalMap()
     m_signalMap.insert(DBusKey("org.gnome.desktop.interface"_L1, "gtk-theme"_L1),
                        ChangeSignal(Provider::Gtk, Setting::Theme));
 
-    m_signalMap.insert(DBusKey("org.freedesktop.appearance"_L1, "color-scheme"_L1),
+    using namespace QDBusSettings;
+    m_signalMap.insert(DBusKey(XdgSettings::AppearanceNamespace, XdgSettings::ColorSchemeKey),
                        ChangeSignal(Provider::Gnome, Setting::ColorScheme));
 
-    m_signalMap.insert(DBusKey(XdgSettings::contrastNamespace, XdgSettings::contrastKey),
+    m_signalMap.insert(DBusKey(XdgSettings::AppearanceNamespace, XdgSettings::ContrastKey),
                        ChangeSignal(Provider::Gnome, Setting::Contrast));
     // Alternative solution if XDG desktop portal setting is not accessible,
     // e.g. when using the XDG portal version 1.
-    m_signalMap.insert(DBusKey(GSettings::contrastNamespace, GSettings::contrastKey),
+    m_signalMap.insert(DBusKey(GnomeSettings::AllyNamespace, GnomeSettings::ContrastKey),
                        ChangeSignal(Provider::Gnome, Setting::Contrast));
 
     const QString &saveJsonFile = qEnvironmentVariable("QT_QPA_DBUS_SIGNALS_SAVE");
@@ -274,13 +244,17 @@ void QDBusListener::onSettingChanged(const QString &location, const QString &key
     QVariant settingValue = value.variant();
 
     switch (setting) {
+    case Setting::ColorScheme:
+        settingValue.setValue(QDBusSettings::XdgSettings::convertColorScheme(settingValue));
+        break;
     case Setting::Contrast:
+        using namespace QDBusSettings;
         // To unify the value, it's necessary to convert the DBus value to Qt::ContrastPreference.
         // Then the users of the value don't need to parse the raw value.
-        if (key == XdgSettings::contrastKey)
+        if (key == XdgSettings::ContrastKey)
             settingValue.setValue(XdgSettings::convertContrastPreference(settingValue));
-        else if (key == GSettings::contrastKey)
-            settingValue.setValue(GSettings::convertContrastPreference(settingValue));
+        else if (key == GnomeSettings::ContrastKey)
+            settingValue.setValue(GnomeSettings::convertContrastPreference(settingValue));
         else
             Q_UNREACHABLE_IMPL();
         break;

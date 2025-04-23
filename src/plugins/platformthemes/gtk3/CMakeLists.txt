@@ -37,8 +37,6 @@ qt_internal_add_plugin(QGtk3ThemePlugin
 )
 
 qt_internal_extend_target(QGtk3ThemePlugin CONDITION QT_FEATURE_dbus
-    SOURCES
-        qgtk3portalinterface.cpp
     LIBRARIES
         Qt::DBus
 )

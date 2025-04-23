@@ -31,8 +31,11 @@ public:
                            QPlatformTheme::IconOptions iconOptions = { }) const override;
 
     static const char *name;
+
 private:
-    Qt::ColorScheme m_requestedColorScheme = Qt::ColorScheme::Unknown;
+#if QT_CONFIG(dbus)
+    void updateColorScheme(Qt::ColorScheme) override;
+#endif // QT_CONFIG(dbus)
     static bool useNativeFileDialog();
     std::unique_ptr<QGtk3Storage> m_storage;
 };

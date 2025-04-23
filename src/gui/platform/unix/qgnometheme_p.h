@@ -19,17 +19,19 @@
 #include <qpa/qplatformtheme.h>
 #include <qpa/qplatformtheme_p.h>
 #include <QtGui/QFont>
+#if QT_CONFIG(dbus)
+#  include "qgnomeportalinterface_p.h"
+#endif // QT_CONFIG(dbus)
 
 QT_BEGIN_NAMESPACE
+
 class QGnomeThemePrivate;
-#if QT_CONFIG(dbus)
-class QDBusListener;
-class QDBusPendingCallWatcher;
-#endif
 
 class Q_GUI_EXPORT QGnomeTheme : public QGenericUnixTheme
 {
+protected:
     Q_DECLARE_PRIVATE(QGnomeTheme)
+
 public:
     QGnomeTheme();
     QVariant themeHint(ThemeHint hint) const override;
@@ -39,47 +41,51 @@ public:
     QString standardButtonText(int button) const override;
 
     virtual QString gtkFontName() const;
+
+    virtual void requestColorScheme(Qt::ColorScheme) override;
+    virtual Qt::ColorScheme colorScheme() const override;
+
 #if QT_CONFIG(dbus)
+protected:
+    virtual void updateColorScheme(Qt::ColorScheme);
+    virtual void updateHighContrast(Qt::ContrastPreference);
+
+public:
     QPlatformMenuBar *createPlatformMenuBar() const override;
-    Qt::ColorScheme colorScheme() const override;
     Qt::ContrastPreference contrastPreference() const override;
-#endif
-#if QT_CONFIG(dbus) && QT_CONFIG(systemtrayicon)
+
+#  if QT_CONFIG(systemtrayicon)
     QPlatformSystemTrayIcon *createPlatformSystemTrayIcon() const override;
-#endif
+#  endif // QT_CONFIG(systemtrayicon)
+#endif // QT_CONFIG(dbus)
 
     static const char *name;
 };
 
-class QGnomeThemePrivate : public QGenericUnixThemePrivate
+class Q_GUI_EXPORT QGnomeThemePrivate : public QGenericUnixThemePrivate
 {
+    friend QGnomeTheme;
+
 public:
     QGnomeThemePrivate();
     ~QGnomeThemePrivate();
 
     void configureFonts(const QString &gtkFontName) const;
 
+    Qt::ColorScheme colorScheme() const;
+    bool hasRequestedColorScheme() const;
+
+private:
     mutable QFont *systemFont = nullptr;
     mutable QFont *fixedFont = nullptr;
 
+    Qt::ColorScheme m_requestedColorScheme = Qt::ColorScheme::Unknown;
+
 #if QT_CONFIG(dbus)
-    Qt::ColorScheme m_colorScheme = Qt::ColorScheme::Unknown;
-    Qt::ContrastPreference m_contrast = Qt::ContrastPreference::NoPreference;
-private:
-    std::unique_ptr<QDBusListener> dbus;
-    std::unique_ptr<QDBusPendingCallWatcher> pendingCallWatcher;
+    QGnomePortalInterface m_gnomePortal;
     QString m_themeName;
-
-public:
-    Qt::ColorScheme colorScheme() const;
-
-private:
-    bool initDbus();
-    void updateColorScheme(Qt::ColorScheme colorScheme);
-    void updateHighContrast(Qt::ContrastPreference contrast);
 #endif // QT_CONFIG(dbus)
 };
-
 
 QT_END_NAMESPACE
 #endif // QGNOMETHEME_P_H
