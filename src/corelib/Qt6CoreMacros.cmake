@@ -2612,7 +2612,16 @@ function(qt6_add_plugin target)
     set(plugin_class_name "")
     if (NOT "${arg_PLUGIN_TYPE}" STREQUAL "qml_plugin")
         if (NOT arg_CLASS_NAME)
-            set(plugin_class_name "${target}")
+            string(MAKE_C_IDENTIFIER "${target}" plugin_class_name)
+            if(NOT "${target}" STREQUAL "${plugin_class_name}"
+                AND target_type STREQUAL "STATIC_LIBRARY" AND NOT QT_SKIP_PLUGIN_CLASS_NAME_WARNING)
+                message(WARNING "The target name '${target}' is not a valid C++ class name and"
+                    " cannot be used as the plugin CLASS_NAME. It's converted to"
+                    " '${plugin_class_name}' implicitly. Please adjust the related code paths"
+                    " accordingly(e.g. Q_IMPORT_PLUGIN(...) calls) or use the CLASS_NAME argument"
+                    " explicitly. Setting QT_SKIP_PLUGIN_CLASS_NAME_WARNING to ON suppresses this"
+                    " warning.")
+            endif()
         else()
             set(plugin_class_name "${arg_CLASS_NAME}")
         endif()
@@ -2628,7 +2637,7 @@ function(qt6_add_plugin target)
 
     _qt_internal_is_c_identifier(is_c_indentifier "${plugin_class_name}")
     if(NOT is_c_indentifier)
-        message(FATAL_ERROR "The provided or calculated plugin CLASS_NAME '${plugin_class_name}' of"
+        message(FATAL_ERROR "The provided plugin CLASS_NAME '${plugin_class_name}' of"
             " the '${target}' target is not a valid C++ class name. Please use only valid C++"
             " identifiers."
         )
