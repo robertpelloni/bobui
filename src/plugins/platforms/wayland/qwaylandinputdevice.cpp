@@ -641,8 +641,10 @@ void QWaylandInputDevice::setCursor(const QCursor *cursor, const QSharedPointer<
     if (mPointer)
         mPointer->updateCursor();
 
+#if QT_CONFIG(tabletevent)
     if (mTabletSeat)
         mTabletSeat->updateCursor();
+#endif
 }
 #endif
 
