@@ -163,15 +163,18 @@ class QtInputConnection extends BaseInputConnection
     public boolean commitText(CharSequence text, int newCursorPosition)
     {
         setClosing(false);
+        boolean result = QtNativeInputConnection.commitText(text.toString(), newCursorPosition);
         restartImmInput();
-        return QtNativeInputConnection.commitText(text.toString(), newCursorPosition);
+        return result;
     }
 
     @Override
     public boolean deleteSurroundingText(int leftLength, int rightLength)
     {
         setClosing(false);
-        return QtNativeInputConnection.deleteSurroundingText(leftLength, rightLength);
+        boolean result = QtNativeInputConnection.deleteSurroundingText(leftLength, rightLength);
+        restartImmInput();
+        return result;
     }
 
     @Override
@@ -304,7 +307,9 @@ class QtInputConnection extends BaseInputConnection
     public boolean setComposingText(CharSequence text, int newCursorPosition)
     {
         setClosing(false);
-        return QtNativeInputConnection.setComposingText(text.toString(), newCursorPosition);
+        boolean result = QtNativeInputConnection.setComposingText(text.toString(), newCursorPosition);
+        restartImmInput();
+        return result;
     }
 
     @TargetApi(33)
@@ -347,6 +352,8 @@ class QtInputConnection extends BaseInputConnection
     public boolean setSelection(int start, int end)
     {
         setClosing(false);
-        return QtNativeInputConnection.setSelection(start, end);
+        boolean result = QtNativeInputConnection.setSelection(start, end);
+        restartImmInput();
+        return result;
     }
 }
