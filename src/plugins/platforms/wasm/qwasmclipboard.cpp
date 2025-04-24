@@ -86,6 +86,20 @@ void QWasmClipboard::paste(val event)
     QWasmIntegration::get()->getWasmClipboard()->sendClipboardData(event);
 }
 
+void QWasmClipboard::beforeInput(emscripten::val event)
+{
+    event.call<void>("preventDefault");
+    event.call<void>("stopPropagation");
+}
+
+void QWasmClipboard::input(emscripten::val event)
+{
+    event.call<void>("preventDefault");
+    event.call<void>("stopPropagation");
+    event["target"].set("innerHTML", std::string());
+    event["target"].set("value", std::string());
+}
+
 QWasmClipboard::QWasmClipboard()
 {
     val clipboard = val::global("navigator")["clipboard"];

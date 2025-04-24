@@ -59,6 +59,7 @@ QWasmWindow::QWasmWindow(QWindow *w, QWasmDeadKeySupport *deadKeySupport,
       m_document(dom::document()),
       m_decoratedWindow(m_document.call<emscripten::val>("createElement", emscripten::val("div"))),
       m_window(m_document.call<emscripten::val>("createElement", emscripten::val("div"))),
+      m_windowInput(m_document.call<emscripten::val>("createElement", emscripten::val("div"))),
       m_a11yContainer(m_document.call<emscripten::val>("createElement", emscripten::val("div"))),
       m_canvas(m_document.call<emscripten::val>("createElement", emscripten::val("canvas")))
 {
@@ -87,18 +88,22 @@ QWasmWindow::QWasmWindow(QWindow *w, QWasmDeadKeySupport *deadKeySupport,
     m_window.set("className", "qt-window");
     m_decoratedWindow.call<void>("appendChild", m_window);
 
+    m_window.call<void>("appendChild", m_windowInput);
     m_canvas["classList"].call<void>("add", emscripten::val("qt-window-canvas"));
 
 #if QT_CONFIG(clipboard)
-    // Set contentEditable so that the window gets clipboard events,
-    // then hide the resulting focus frame.
-    m_window.set("contentEditable", std::string("true"));
-    m_window["style"].set("outline", std::string("none"));
-
     if (QWasmClipboard::shouldInstallWindowEventHandlers()) {
-        m_cutCallback = QWasmEventHandler(m_window, "cut", QWasmClipboard::cut);
-        m_copyCallback = QWasmEventHandler(m_window, "copy", QWasmClipboard::copy);
-        m_pasteCallback = QWasmEventHandler(m_window, "paste", QWasmClipboard::paste);
+        // Set contentEditable so that the window gets clipboard events,
+        // then hide the resulting focus frame.
+        m_windowInput.set("contentEditable", std::string("true"));
+        m_windowInput["style"].set("outline", std::string("none"));
+
+        m_cutCallback = QWasmEventHandler(m_windowInput, "cut", QWasmClipboard::cut);
+        m_copyCallback = QWasmEventHandler(m_windowInput, "copy", QWasmClipboard::copy);
+        m_pasteCallback = QWasmEventHandler(m_windowInput, "paste", QWasmClipboard::paste);
+        m_beforeInputCallback =
+                QWasmEventHandler(m_windowInput, "beforeinput", QWasmClipboard::beforeInput);
+        m_inputCallback = QWasmEventHandler(m_windowInput, "input", QWasmClipboard::input);
     }
 #endif
 
@@ -940,7 +945,7 @@ void QWasmWindow::requestActivateWindow()
 
 void QWasmWindow::focus()
 {
-    m_canvas.call<void>("focus");
+    m_windowInput.call<void>("focus");
 }
 
 bool QWasmWindow::setMouseGrabEnabled(bool grab)

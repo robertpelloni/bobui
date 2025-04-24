@@ -143,6 +143,7 @@ private:
     emscripten::val m_document = emscripten::val::undefined();
     emscripten::val m_decoratedWindow = emscripten::val::undefined();
     emscripten::val m_window = emscripten::val::undefined();
+    emscripten::val m_windowInput = emscripten::val::undefined();
     emscripten::val m_a11yContainer = emscripten::val::undefined();
     emscripten::val m_canvas = emscripten::val::undefined();
     emscripten::val m_context2d = emscripten::val::undefined();
@@ -176,6 +177,8 @@ private:
     QWasmEventHandler m_cutCallback;
     QWasmEventHandler m_copyCallback;
     QWasmEventHandler m_pasteCallback;
+    QWasmEventHandler m_beforeInputCallback;
+    QWasmEventHandler m_inputCallback;
 
     Qt::WindowStates m_state = Qt::WindowNoState;
     Qt::WindowStates m_previousWindowState = Qt::WindowNoState;
