@@ -50,6 +50,28 @@ function(_qt_internal_android_get_gradle_source_sets out_var target)
     set(${out_var} "${source_set}" PARENT_SCOPE)
 endfunction()
 
+# Generates the gradle dependency list for the target.
+function(_qt_internal_android_get_gradle_dependencies out_var target)
+    # Use dependencies from file tree by default
+    set(known_dependencies
+        "implementation fileTree(dir: 'libs', include: ['*.jar', '*.aar'])")
+    foreach(dep_type implementation api)
+        string(JOIN "\n    " dep_prefix
+            "\n    //noinspection GradleDependency"
+            "${dep_type} '"
+        )
+        set(dep_postfix "'")
+        set(dep_property "$<TARGET_PROPERTY:${target},_qt_android_gradle_${dep_type}_dependencies>")
+        string(JOIN "" known_dependencies
+            "${known_dependencies}"
+            "$<$<BOOL:${dep_property}>:"
+                "${dep_prefix}$<JOIN:${dep_property},${dep_postfix}${dep_prefix}>${dep_postfix}"
+            ">"
+        )
+    endforeach()
+    set(${out_var} "${known_dependencies}" PARENT_SCOPE)
+endfunction()
+
 # Sets the default values of the gradle properties for the Android executable target.
 function(_qt_internal_set_android_application_gradle_defaults target)
     _qt_internal_android_java_dir(android_java_dir)
@@ -63,6 +85,7 @@ function(_qt_internal_set_android_application_gradle_defaults target)
         _qt_android_gradle_assets_source_dirs "assets"
         _qt_android_gradle_jniLibs_source_dirs "libs"
         _qt_android_manifest "AndroidManifest.xml"
+        _qt_android_gradle_implementation_dependencies "androidx.core:core:1.13.1"
     )
 endfunction()
 
@@ -86,12 +109,7 @@ function(_qt_internal_android_generate_target_build_gradle target)
     endif()
 
     _qt_internal_android_get_gradle_source_sets(SOURCE_SETS ${target})
-
-    string(JOIN "\n    " GRADLE_DEPENDENCIES
-        "implementation fileTree(dir: 'libs', include: ['*.jar', '*.aar'])"
-        "//noinspection GradleDependency"
-        "implementation 'androidx.core:core:1.13.1'"
-    )
+    _qt_internal_android_get_gradle_dependencies(GRADLE_DEPENDENCIES ${target})
 
     _qt_internal_android_get_gradle_property(min_sdk_version ${target}
         QT_ANDROID_MIN_SDK_VERSION "28")
