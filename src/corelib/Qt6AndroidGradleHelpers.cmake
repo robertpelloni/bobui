@@ -23,6 +23,49 @@ function(_qt_internal_android_generate_bundle_settings_gradle target)
         INPUT "${template_file}")
 endfunction()
 
+# Generates the source sets for the target.
+function(_qt_internal_android_get_gradle_source_sets out_var target)
+    set(known_types java aidl res resources renderscript assets jniLibs)
+    set(source_set "")
+    set(indent "            ")
+    foreach(type IN LISTS known_types)
+        set(source_dirs
+            "$<TARGET_PROPERTY:${target},_qt_android_gradle_${type}_source_dirs>")
+        string(JOIN "" source_set
+            "${source_set}"
+            "$<$<BOOL:${source_dirs}>:"
+                "${indent}${type}.srcDirs = ['$<JOIN:${source_dirs},'$<COMMA> '>']\n"
+            ">"
+        )
+    endforeach()
+
+    set(manifest
+        "$<TARGET_PROPERTY:${target},_qt_android_manifest>")
+    string(JOIN "" source_set
+        "${source_set}"
+        "$<$<BOOL:${manifest}>:"
+            "${indent}manifest.srcFile '${manifest}'\n"
+        ">"
+    )
+    set(${out_var} "${source_set}" PARENT_SCOPE)
+endfunction()
+
+# Sets the default values of the gradle properties for the Android executable target.
+function(_qt_internal_set_android_application_gradle_defaults target)
+    _qt_internal_android_java_dir(android_java_dir)
+
+    set_target_properties(${target} PROPERTIES
+        _qt_android_gradle_java_source_dirs "${android_java_dir}/src;src;java"
+        _qt_android_gradle_aidl_source_dirs "${android_java_dir}/src;src;aidl"
+        _qt_android_gradle_res_source_dirs "${android_java_dir}/res;res"
+        _qt_android_gradle_resources_source_dirs "resources"
+        _qt_android_gradle_renderscript_source_dirs "src"
+        _qt_android_gradle_assets_source_dirs "assets"
+        _qt_android_gradle_jniLibs_source_dirs "libs"
+        _qt_android_manifest "AndroidManifest.xml"
+    )
+endfunction()
+
 # Generates the build.gradle file for the target. Writes the result to the target app deployment
 # directory.
 function(_qt_internal_android_generate_target_build_gradle target)
@@ -42,17 +85,7 @@ function(_qt_internal_android_generate_target_build_gradle target)
             "Please check your Android SDK installation.")
     endif()
 
-    _qt_internal_android_java_dir(android_java_dir)
-    string(JOIN "\n            " SOURCE_SETS
-        "manifest.srcFile 'AndroidManifest.xml'"
-        "java.srcDirs = ['${android_java_dir}/src', 'src', 'java']"
-        "aidl.srcDirs = ['${android_java_dir}/src', 'src', 'aidl']"
-        "res.srcDirs = ['${android_java_dir}/res', 'res']"
-        "resources.srcDirs = ['resources']"
-        "renderscript.srcDirs = ['src']"
-        "assets.srcDirs = ['assets']"
-        "jniLibs.srcDirs = ['libs']"
-    )
+    _qt_internal_android_get_gradle_source_sets(SOURCE_SETS ${target})
 
     string(JOIN "\n    " GRADLE_DEPENDENCIES
         "implementation fileTree(dir: 'libs', include: ['*.jar', '*.aar'])"
