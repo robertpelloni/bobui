@@ -4289,7 +4289,9 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
                             withAttributes:@{ NSFontAttributeName:f, NSForegroundColorAttributeName:c,
                                                 NSObliquenessAttributeName: [NSNumber numberWithDouble: myFont.italic() ? 0.3 : 0.0],
                                                 NSUnderlineStyleAttributeName: [NSNumber numberWithInt: myFont.underline() ? NSUnderlineStyleSingle
-                                                                                                                           : NSUnderlineStyleNone]}];
+                                                                                                                           : NSUnderlineStyleNone],
+                                                NSStrikethroughStyleAttributeName: [NSNumber numberWithInt: myFont.strikeOut() ? NSUnderlineStyleSingle
+                                                                                                                               : NSUnderlineStyleNone]}];
 
                     d->restoreNSGraphicsContext(cgCtx);
                 } else {
