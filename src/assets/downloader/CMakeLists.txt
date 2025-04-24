@@ -26,3 +26,6 @@ qt_internal_add_module(ExamplesAssetDownloaderPrivate
     NO_GENERATE_CPP_EXPORTS
 )
 
+if (NOT QT_FEATURE_process)
+    set_source_files_properties(tasking/qprocesstask.h PROPERTIES SKIP_AUTOMOC TRUE)
+endif()

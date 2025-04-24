@@ -1047,6 +1047,10 @@ qt_internal_extend_target(Core CONDITION QT_FEATURE_processenvironment
         io/qprocess.cpp io/qprocess.h io/qprocess_p.h
 )
 
+if (NOT QT_FEATURE_process)
+    set_source_files_properties(io/qprocess.cpp io/qprocess.h PROPERTIES SKIP_AUTOMOC TRUE)
+endif()
+
 qt_internal_extend_target(Core CONDITION QT_FEATURE_processenvironment AND WIN32
     SOURCES
         io/qprocess_win.cpp

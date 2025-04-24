@@ -2727,4 +2727,6 @@ QString QProcess::nullDevice()
 
 QT_END_NAMESPACE
 
+#if QT_CONFIG(process)
 #include "moc_qprocess.cpp"
+#endif
