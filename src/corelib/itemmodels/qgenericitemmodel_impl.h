@@ -328,6 +328,17 @@ namespace QGenericItemModelDetails
     [[maybe_unused]] static constexpr int static_size_v =
                             row_traits<std::remove_cv_t<wrapped_t<T>>>::static_size;
 
+    // we can't add this as a member to row_traits, as we'd end up with
+    // ambiguous specializations for gadgets implementing tuple protocol.
+    template <typename T, typename = void>
+    struct has_metaobject : std::false_type {};
+    template <typename T>
+    struct has_metaobject<T, std::void_t<decltype(wrapped_t<T>::staticMetaObject)>>
+        : std::true_type {};
+
+    template <typename T>
+    [[maybe_unused]] static constexpr bool has_metaobject_v = has_metaobject<T>::value;
+
     template <typename Range>
     struct ListProtocol
     {
@@ -364,7 +375,7 @@ namespace QGenericItemModelDetails
     };
 
     template <typename Range, typename R = typename range_traits<wrapped_t<Range>>::value_type>
-    using table_protocol_t = std::conditional_t<static_size_v<R> == 0,
+    using table_protocol_t = std::conditional_t<static_size_v<R> == 0 && !has_metaobject_v<R>,
                                                 ListProtocol<Range>, TableProtocol<Range>>;
 
     // Default tree traversal protocol implementation for row types that have

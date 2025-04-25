@@ -1235,10 +1235,8 @@ void tst_QGenericItemModel::insertRows()
 
     QEXPECT_FAIL("tableOfPointersPointer", "No item created", Continue);
     QEXPECT_FAIL("tableOfPointersRef", "No item created", Continue);
-    QEXPECT_FAIL("listOfObjectsCopy", "No object created", Continue);
     QEXPECT_FAIL("listOfMetaObjectTupleCopy", "No object created", Continue);
     QEXPECT_FAIL("tableOfMetaObjectTupleCopy", "No object created", Continue);
-    QEXPECT_FAIL("movedListOfObjects", "No object created", Continue);
 
     QVERIFY(firstValue.isValid() && lastValue.isValid());
     QCOMPARE(model->setData(firstItem, lastValue), canSetData && lastValue.isValid());

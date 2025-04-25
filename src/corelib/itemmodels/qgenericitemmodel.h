@@ -249,9 +249,8 @@ protected:
     using const_row_ptr = const wrapped_row_type *;
 
     template <typename T>
-    static constexpr bool has_metaobject =
-        (QtPrivate::QMetaTypeForType<std::remove_pointer_t<T>>::flags() & QMetaType::IsGadget)
-     || (QtPrivate::QMetaTypeForType<T>::flags() & QMetaType::PointerToQObject);
+    static constexpr bool has_metaobject = QGenericItemModelDetails::has_metaobject_v<
+                                                std::remove_pointer_t<std::remove_reference_t<T>>>;
 
     using ModelData = QGenericItemModelDetails::ModelData<std::conditional_t<
                                                     std::is_pointer_v<Range>,
@@ -384,9 +383,9 @@ public:
 
         Qt::ItemFlags f = Structure::defaultFlags();
 
-        if constexpr (has_metaobject<row_type>) {
+        if constexpr (has_metaobject<wrapped_row_type>) {
             if (index.column() < row_traits::fixed_size()) {
-                const QMetaObject mo = std::remove_pointer_t<row_type>::staticMetaObject;
+                const QMetaObject mo = wrapped_row_type::staticMetaObject;
                 const QMetaProperty prop = mo.property(index.column() + mo.propertyOffset());
                 if (prop.isWritable())
                     f |= Qt::ItemIsEditable;
@@ -424,14 +423,13 @@ public:
             return m_itemModel->QAbstractItemModel::headerData(section, orientation, role);
         }
 
-        if constexpr (has_metaobject<row_type>) {
-            using meta_type = std::remove_pointer_t<row_type>;
+        if constexpr (has_metaobject<wrapped_row_type>) {
             if (row_traits::fixed_size() == 1) {
-                const QMetaType metaType = QMetaType::fromType<meta_type>();
+                const QMetaType metaType = QMetaType::fromType<wrapped_row_type>();
                 result = QString::fromUtf8(metaType.name());
             } else if (section <= row_traits::fixed_size()) {
-                const QMetaProperty prop = meta_type::staticMetaObject.property(
-                                        section + meta_type::staticMetaObject.propertyOffset());
+                const QMetaProperty prop = wrapped_row_type::staticMetaObject.property(
+                                    section + wrapped_row_type::staticMetaObject.propertyOffset());
                 result = QString::fromUtf8(prop.name());
             }
         } else if constexpr (static_column_count >= 1) {
@@ -453,10 +451,10 @@ public:
             using multi_role = QGenericItemModelDetails::is_multi_role<value_type>;
             if constexpr (has_metaobject<value_type>) {
                 if (row_traits::fixed_size() <= 1) {
-                    result = readRole(role, value);
+                    result = readRole(role, QGenericItemModelDetails::pointerTo(value));
                 } else if (column <= row_traits::fixed_size()
                         && (role == Qt::DisplayRole || role == Qt::EditRole)) {
-                    result = readProperty(column, value);
+                    result = readProperty(column, QGenericItemModelDetails::pointerTo(value));
                 }
             } else if constexpr (multi_role::value) {
                 const auto it = [this, &value, role]{
@@ -509,7 +507,7 @@ public:
             } else if constexpr (has_metaobject<value_type>) {
                 if (row_traits::fixed_size() <= 1) {
                     tried = true;
-                    using meta_type = std::remove_pointer_t<value_type>;
+                    using meta_type = QGenericItemModelDetails::wrapped_t<value_type>;
                     const QMetaObject &mo = meta_type::staticMetaObject;
                     for (auto &&[role, roleName] : roleNames().asKeyValueRange()) {
                         QVariant data;
@@ -567,10 +565,10 @@ public:
                             return false;
                         }
                     } else if (row_traits::fixed_size() <= 1) {
-                        return writeRole(role, target, data);
+                        return writeRole(role, QGenericItemModelDetails::pointerTo(target), data);
                     } else if (column <= row_traits::fixed_size()
                             && (role == Qt::DisplayRole || role == Qt::EditRole)) {
-                        return writeProperty(column, target, data);
+                        return writeProperty(column, QGenericItemModelDetails::pointerTo(target), data);
                     }
                 } else if constexpr (multi_role::value) {
                     Qt::ItemDataRole roleToSet = Qt::ItemDataRole(role);
@@ -646,7 +644,7 @@ public:
                 } else if constexpr (has_metaobject<value_type>) {
                     if (row_traits::fixed_size() <= 1) {
                         tried = true;
-                        using meta_type = std::remove_pointer_t<value_type>;
+                        using meta_type = QGenericItemModelDetails::wrapped_t<value_type>;
                         const QMetaObject &mo = meta_type::staticMetaObject;
                         // transactional: if possible, modify a copy and only
                         // update target if all values from data could be stored.
@@ -721,9 +719,9 @@ public:
                 if constexpr (has_metaobject<row_type>) {
                     if (row_traits::fixed_size() <= 1) {
                         // multi-role object/gadget: reset all properties
-                        return resetProperty(-1, target);
+                        return resetProperty(-1, QGenericItemModelDetails::pointerTo(target));
                     } else if (column <= row_traits::fixed_size()) {
-                        return resetProperty(column, target);
+                        return resetProperty(column, QGenericItemModelDetails::pointerTo(target));
                     }
                 } else { // normal structs, values, associative containers
                     target = {};
