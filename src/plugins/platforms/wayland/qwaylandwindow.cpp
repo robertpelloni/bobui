@@ -62,6 +62,7 @@ QWaylandWindow::QWaylandWindow(QWindow *window, QWaylandDisplay *display)
     }
 
     initializeWlSurface();
+    mFlags = window->flags();
 
     setWindowIcon(window->icon());
 
@@ -180,6 +181,9 @@ void QWaylandWindow::initWindow()
         }
     }
 
+    createDecoration();
+    updateInputRegion();
+
     // Enable high-dpi rendering. Scale() returns the screen scale factor and will
     // typically be integer 1 (normal-dpi) or 2 (high-dpi). Call set_buffer_scale()
     // to inform the compositor that high-resolution buffers will be provided.
@@ -188,7 +192,6 @@ void QWaylandWindow::initWindow()
     else if (mSurface->version() >= 3)
         mSurface->set_buffer_scale(std::ceil(scale()));
 
-    setWindowFlags(window()->flags());
     QRect geometry = windowGeometry();
     QRect defaultGeometry = this->defaultGeometry();
     if (geometry.width() <= 0)
@@ -198,10 +201,11 @@ void QWaylandWindow::initWindow()
 
     setGeometry_helper(geometry);
     setMask(window()->mask());
-    if (mShellSurface)
+    if (mShellSurface) {
         mShellSurface->requestWindowStates(window()->windowStates());
+        mShellSurface->setWindowFlags(mFlags);
+    }
     handleContentOrientationChange(window()->contentOrientation());
-    mFlags = window()->flags();
 
     if (mShellSurface && mShellSurface->commitSurfaceRole())
         mSurface->commit();
@@ -1046,14 +1050,31 @@ void QWaylandWindow::setWindowState(Qt::WindowStates states)
 
 void QWaylandWindow::setWindowFlags(Qt::WindowFlags flags)
 {
-    if (mShellSurface)
-        mShellSurface->setWindowFlags(flags);
+    const bool wasPopup = mFlags.testFlag(Qt::Popup);
+    const bool isPopup = flags.testFlag(Qt::Popup);
 
     mFlags = flags;
+    // changing role is not allowed on XdgShell on the same wl_surface
+    if (wasPopup != isPopup) {
+        reset();
+        initializeWlSurface();
+        if (window()->isVisible()) {
+            initWindow();
+        }
+    } else {
+        if (mShellSurface)
+            mShellSurface->setWindowFlags(flags);
+    }
+
     createDecoration();
 
     QReadLocker locker(&mSurfaceLock);
     updateInputRegion();
+}
+
+Qt::WindowFlags QWaylandWindow::windowFlags() const
+{
+    return mFlags;
 }
 
 bool QWaylandWindow::createDecoration()

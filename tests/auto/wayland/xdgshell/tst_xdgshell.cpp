@@ -24,6 +24,7 @@ private slots:
     void popup();
     void tooltipOnPopup();
     void tooltipAndSiblingPopup();
+    void windowTypeChanges();
     void switchPopups();
     void hidePopupParent();
     void popupsWithoutParent();
@@ -473,6 +474,43 @@ void tst_xdgshell::tooltipAndSiblingPopup()
     window.m_tooltip->m_popup->close();
     QCOMPOSITOR_TRY_COMPARE(xdgPopup(1), nullptr);
     QCOMPOSITOR_TRY_COMPARE(xdgPopup(0), nullptr);
+}
+
+void tst_xdgshell::windowTypeChanges()
+{
+    QRasterWindow parentWindow;
+    parentWindow.resize(200, 200);
+    parentWindow.show();
+
+    QCOMPOSITOR_TRY_VERIFY(xdgToplevel());
+    exec([&] { xdgToplevel()->sendCompleteConfigure(); });
+    QCOMPOSITOR_TRY_VERIFY(xdgToplevel()->m_xdgSurface->m_committedConfigureSerial);
+
+    // show a toplevel
+    QRasterWindow window;
+    window.resize(100, 100);
+    window.setTransientParent(&parentWindow);
+    window.show();
+    QCOMPOSITOR_TRY_VERIFY(xdgToplevel(1));
+    exec([&] { xdgToplevel(1)->sendCompleteConfigure(); });
+    QCOMPOSITOR_TRY_VERIFY(xdgToplevel(1)->m_xdgSurface->m_committedConfigureSerial);
+
+    // now change it to a popup
+    window.setFlag(Qt::ToolTip, true);
+    QCOMPOSITOR_TRY_VERIFY(!xdgToplevel(1));
+    QCOMPOSITOR_TRY_VERIFY(xdgPopup());
+    exec([&] { xdgPopup()->sendCompleteConfigure(QRect(100, 100, 100, 100)); });
+    QCOMPOSITOR_TRY_VERIFY(xdgPopup()->m_xdgSurface->m_committedConfigureSerial);
+
+    window.hide();
+    QCOMPOSITOR_TRY_VERIFY(!xdgPopup());
+
+    // change to a toplevel again this time whilst hidden
+    window.setFlag(Qt::ToolTip, false);
+    window.show();
+    QCOMPOSITOR_TRY_VERIFY(xdgToplevel(1));
+    exec([&] { xdgToplevel(1)->sendCompleteConfigure(); });
+    QCOMPOSITOR_TRY_VERIFY(xdgToplevel(1)->m_xdgSurface->m_committedConfigureSerial);
 }
 
 // QTBUG-65680

@@ -311,7 +311,7 @@ QWaylandXdgSurface::QWaylandXdgSurface(QWaylandXdgShell *shell, ::xdg_surface *s
     , m_window(window)
 {
     QWaylandDisplay *display = window->display();
-    Qt::WindowType type = window->window()->type();
+    Qt::WindowType type =  static_cast<Qt::WindowType>(int(window->windowFlags() & Qt::WindowType_Mask));
     auto *transientParent = window->transientParent();
 
     if (type == Qt::ToolTip) {
