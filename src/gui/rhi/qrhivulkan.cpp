@@ -8431,6 +8431,8 @@ bool QVkGraphicsPipeline::create()
         return false;
     }
 
+    rhiD->setObjectName(uint64_t(pipeline), VK_OBJECT_TYPE_PIPELINE, m_objectName);
+
     rhiD->pipelineCreationEnd();
     lastActiveFrameSlot = -1;
     generation += 1;
@@ -8524,6 +8526,8 @@ bool QVkComputePipeline::create()
         qWarning("Failed to create graphics pipeline: %d", err);
         return false;
     }
+
+    rhiD->setObjectName(uint64_t(pipeline), VK_OBJECT_TYPE_PIPELINE, m_objectName);
 
     rhiD->pipelineCreationEnd();
     lastActiveFrameSlot = -1;
