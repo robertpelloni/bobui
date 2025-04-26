@@ -17,6 +17,15 @@ using namespace Qt::Literals;
 */
 Q_CORE_EXPORT bool qDecodeDataUrl(const QUrl &uri, QString &mimeType, QByteArray &payload)
 {
+    /* https://www.rfc-editor.org/rfc/rfc2397.html
+
+        data:[<mediatype>][;base64],<data>
+        dataurl    := "data:" [ mediatype ] [ ";base64" ] "," data
+        mediatype  := [ type "/" subtype ] *( ";" parameter )
+        data       := *urlchar
+        parameter  := attribute "=" value
+    */
+
     if (uri.scheme() != "data"_L1 || !uri.host().isEmpty())
         return false;
 
@@ -48,20 +57,36 @@ Q_CORE_EXPORT bool qDecodeDataUrl(const QUrl &uri, QString &mimeType, QByteArray
             data.chop(base64.size());
         }
 
-        QLatin1StringView textPlain;
+        QLatin1StringView mime;
+        QLatin1StringView charsetParam;
         constexpr auto charset = "charset"_L1;
-        if (data.startsWith(charset, Qt::CaseInsensitive)) {
-            QLatin1StringView copy = data.sliced(charset.size());
-            while (copy.startsWith(u' '))
-                copy.slice(1);
-            if (copy.startsWith(u'='))
-                textPlain = "text/plain;"_L1;
+        bool first = true;
+        for (auto part : qTokenize(data, u';', Qt::SkipEmptyParts)) {
+            part = part.trimmed();
+            if (first) {
+                if (part.contains(u'/'))
+                    mime = part;
+                first = false;
+            }
+            // Minimal changes, e.g. if it's "charset=;" or "charset;" without
+            // an encoding, leave it as-is
+            if (part.startsWith(charset, Qt::CaseInsensitive))
+                charsetParam = part;
+
+            if (!mime.isEmpty() && !charsetParam.isEmpty())
+                break;
         }
 
-        if (!data.isEmpty())
-            mimeType = textPlain + data.trimmed();
+        if (mime.isEmpty()) {
+            mime = "text/plain"_L1;
+            if (charsetParam.isEmpty())
+                charsetParam = "charset=US-ASCII"_L1;
+        }
+        if (!charsetParam.isEmpty())
+            mimeType = mime + u';' + charsetParam;
         else
-            mimeType = QStringLiteral("text/plain;charset=US-ASCII");
+            mimeType = mime;
+
         return true;
     }
 
