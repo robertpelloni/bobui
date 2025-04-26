@@ -36,9 +36,15 @@ Q_CORE_EXPORT bool qDecodeDataUrl(const QUrl &uri, QString &mimeType, QByteArray
         data = data.trimmed();
 
         // find out if the payload is encoded in Base64
-        constexpr auto base64 = ";base64"_L1;
+        constexpr auto base64 = ";base64"_L1; // per the RFC, at the end of `data`
         if (QLatin1StringView{data}.endsWith(base64, Qt::CaseInsensitive)) {
-            payload = QByteArray::fromBase64(payload);
+            auto r = QByteArray::fromBase64Encoding(std::move(payload));
+            if (!r) {
+                // just in case someone uses `payload` without checking the returned bool
+                payload = {};
+                return false; // decoding failed
+            }
+            payload = std::move(r.decoded);
             data.chop(base64.size());
         }
 
