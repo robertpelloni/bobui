@@ -26,18 +26,18 @@ Q_CORE_EXPORT bool qDecodeDataUrl(const QUrl &uri, QString &mimeType, QByteArray
     //QByteArray data = QByteArray::fromPercentEncoding(uri.path(QUrl::FullyEncoded).toLatin1());
     const QByteArray dataArray =
             QByteArray::fromPercentEncoding(uri.url(QUrl::FullyEncoded | QUrl::RemoveScheme).toLatin1());
-    QByteArrayView data = dataArray;
+    auto data = QLatin1StringView{dataArray};
 
     // parse it:
-    const qsizetype pos = data.indexOf(',');
+    const qsizetype pos = data.indexOf(u',');
     if (pos != -1) {
-        payload = data.mid(pos + 1).toByteArray();
+        payload = QByteArray{data.sliced(pos + 1)};
         data.truncate(pos);
         data = data.trimmed();
 
         // find out if the payload is encoded in Base64
         constexpr auto base64 = ";base64"_L1; // per the RFC, at the end of `data`
-        if (QLatin1StringView{data}.endsWith(base64, Qt::CaseInsensitive)) {
+        if (data.endsWith(base64, Qt::CaseInsensitive)) {
             auto r = QByteArray::fromBase64Encoding(std::move(payload));
             if (!r) {
                 // just in case someone uses `payload` without checking the returned bool
@@ -50,16 +50,16 @@ Q_CORE_EXPORT bool qDecodeDataUrl(const QUrl &uri, QString &mimeType, QByteArray
 
         QLatin1StringView textPlain;
         constexpr auto charset = "charset"_L1;
-        if (QLatin1StringView{data}.startsWith(charset, Qt::CaseInsensitive)) {
-            QByteArrayView copy = data.sliced(charset.size());
-            while (copy.startsWith(' '))
+        if (data.startsWith(charset, Qt::CaseInsensitive)) {
+            QLatin1StringView copy = data.sliced(charset.size());
+            while (copy.startsWith(u' '))
                 copy.slice(1);
-            if (copy.startsWith('='))
+            if (copy.startsWith(u'='))
                 textPlain = "text/plain;"_L1;
         }
 
         if (!data.isEmpty())
-            mimeType = textPlain + QLatin1StringView(data.trimmed());
+            mimeType = textPlain + data.trimmed();
         else
             mimeType = QStringLiteral("text/plain;charset=US-ASCII");
         return true;
