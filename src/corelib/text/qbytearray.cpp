@@ -4732,27 +4732,17 @@ static qsizetype q_fromPercentEncoding(QByteArrayView src, char percent, QSpan<c
 
     qsizetype i = 0;
     const qsizetype len = src.size();
-    int a, b;
-    char c;
     while (i < len) {
-        c = inputPtr[i];
+        char c = inputPtr[i];
         if (c == percent && i + 2 < len) {
-            a = inputPtr[++i];
-            b = inputPtr[++i];
-
-            if (a >= '0' && a <= '9') a -= '0';
-            else if (a >= 'a' && a <= 'f') a = a - 'a' + 10;
-            else if (a >= 'A' && a <= 'F') a = a - 'A' + 10;
-
-            if (b >= '0' && b <= '9') b -= '0';
-            else if (b >= 'a' && b <= 'f') b  = b - 'a' + 10;
-            else if (b >= 'A' && b <= 'F') b  = b - 'A' + 10;
-
-            *data++ = (char)((a << 4) | b);
+            if (int a = QtMiscUtils::fromHex(uchar(inputPtr[++i])); a != -1)
+                *data = a << 4;
+            if (int b = QtMiscUtils::fromHex(uchar(inputPtr[++i])); b != -1)
+                *data |= b;
         } else {
-            *data++ = c;
+            *data = c;
         }
-
+        ++data;
         ++i;
     }
 
