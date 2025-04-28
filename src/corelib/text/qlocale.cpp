@@ -5157,11 +5157,11 @@ QString QLocale::formattedDataSize(qint64 bytes, int precision, DataSizeFormats 
 
     For example, using the default separator QLocale::TagSeparator::Dash, if the
     user has configured their system to use English as used in the USA, the list
-    would be "en-Latn-US", "en-US", "en". The order of entries is the order in
-    which to check for translations; earlier items in the list are to be
-    preferred over later ones. If your translation files use underscores, rather
-    than dashes, to separate locale tags, pass QLocale::TagSeparator::Underscore
-    as \a separator.
+    would be "en-Latn-US", "en-US", "en-Latn", "en". The order of entries is the
+    order in which to check for translations; earlier items in the list are to
+    be preferred over later ones. If your translation files (or other resources
+    specific to locale) use underscores, rather than dashes, to separate locale
+    tags, pass QLocale::TagSeparator::Underscore as \a separator.
 
     Returns a list of locale names. This may include multiple languages,
     especially for the system locale when multiple UI translation languages are
@@ -5175,8 +5175,9 @@ QString QLocale::formattedDataSize(qint64 bytes, int precision, DataSizeFormats 
     that would be more appropriate fallbacks.
 
     Starting from Qt 6.9, reasonable truncations are included in the returned
-    list \e after the explicitly specified locales. This change allows for more
-    accurate fallback options without callers needing to do any truncation.
+    list \e after all entries equivalent to the explicitly specified
+    locales. This change allows for more accurate fallback options without
+    callers needing to do any truncation.
 
     Users can explicitly include preferred fallback locales (such as en-US) in
     their system configuration to control the order of preference. You are
