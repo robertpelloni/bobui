@@ -176,7 +176,7 @@ bool QWasmClipboard::hasClipboardApi()
 bool QWasmClipboard::shouldInstallWindowEventHandlers()
 {
     // Chrome uses global handlers
-    return val::global("window")["chrome"].isUndefined() == false;
+    return val::global("window")["chrome"].isUndefined();
 }
 
 void QWasmClipboard::writeToClipboardApi()
