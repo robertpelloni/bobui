@@ -51,6 +51,9 @@ public:
     static void compositionEndCallback(emscripten::val event);
     static void compositionStartCallback(emscripten::val event);
     static void compositionUpdateCallback(emscripten::val event);
+
+    void updateGeometry();
+
 private:
     void updateInputElement();
 
