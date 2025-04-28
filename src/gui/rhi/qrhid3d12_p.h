@@ -655,6 +655,17 @@ struct QD3D12MipmapGenerator
     QD3D12ObjectHandle pipelineHandle;
 };
 
+struct QD3D12MipmapGenerator3D
+{
+    bool create(QRhiD3D12 *rhiD);
+    void destroy();
+    void generate(QD3D12CommandBuffer *cbD, const QD3D12ObjectHandle &textureHandle);
+
+    QRhiD3D12 *rhiD;
+    QD3D12ObjectHandle rootSigHandle;
+    QD3D12ObjectHandle pipelineHandle;
+};
+
 struct QD3D12MemoryAllocator
 {
     bool create(ID3D12Device *device, IDXGIAdapter1 *adapter);
@@ -1265,6 +1276,7 @@ public:
     QD3D12ResourceBarrierGenerator barrierGen;
     QD3D12SamplerManager samplerMgr;
     QD3D12MipmapGenerator mipmapGen;
+    QD3D12MipmapGenerator3D mipmapGen3D;
     QD3D12StagingArea smallStagingAreas[QD3D12_FRAMES_IN_FLIGHT];
     QD3D12ShaderVisibleDescriptorHeap shaderVisibleCbvSrvUavHeap;
     UINT64 timestampTicksPerSecond = 0;

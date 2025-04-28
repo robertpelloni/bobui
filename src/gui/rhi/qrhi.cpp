@@ -999,8 +999,8 @@ Q_LOGGING_CATEGORY(QRHI_LOG_RUB, "qt.rhi.rub")
     \l{OneDimensionalTextures}, and Metal.
 
     \value ThreeDimensionalTextureMipmaps Indicates that generating 3D texture
-    mipmaps are supported. In practice this feature will be unsupported with
-    Direct 3D 12.
+    mipmaps are supported. This is typically supported with all backends starting
+    with Qt 6.10.
 
     \value MultiView Indicates that multiview, see e.g.
     \l{https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VK_KHR_multiview.html}{VK_KHR_multiview}

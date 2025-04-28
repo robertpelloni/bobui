@@ -467,7 +467,7 @@ qt_internal_extend_target(Gui CONDITION WIN32
         rhi/qrhid3dhelpers.cpp rhi/qrhid3dhelpers_p.h
         rhi/vs_test_p.h
         rhi/qrhid3d12.cpp rhi/qrhid3d12_p.h
-        rhi/cs_mipmap_p.h
+        rhi/cs_mipmap_p.h rhi/cs_mipmap_3d_p.h
         ../3rdparty/D3D12MemoryAllocator/D3D12MemAlloc.h
         ../3rdparty/D3D12MemoryAllocator/D3D12MemAlloc.cpp
         rhi/qdxgivsyncservice_p.h rhi/qdxgivsyncservice.cpp
