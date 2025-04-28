@@ -2984,11 +2984,10 @@ bool QD3D12MipmapGenerator::create(QRhiD3D12 *rhiD)
 
     // s0
     D3D12_STATIC_SAMPLER_DESC samplerDesc = {};
-    samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+    samplerDesc.Filter = D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT;
     samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
     samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
     samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-    samplerDesc.MaxLOD = 10000.0f;
     samplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
     D3D12_VERSIONED_ROOT_SIGNATURE_DESC rsDesc = {};
@@ -3161,18 +3160,15 @@ void QD3D12MipmapGenerator::generate(QD3D12CommandBuffer *cbD, const QD3D12Objec
             srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
             if (isCubeOrArray) {
                 srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
-                srvDesc.Texture2DArray.MostDetailedMip = level;
-                srvDesc.Texture2DArray.MipLevels = 1;
+                srvDesc.Texture2DArray.MipLevels = res->desc.MipLevels;
                 srvDesc.Texture2DArray.FirstArraySlice = layer;
                 srvDesc.Texture2DArray.ArraySize = 1;
             } else if (is3D) {
                 srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
-                srvDesc.Texture3D.MostDetailedMip = level;
-                srvDesc.Texture3D.MipLevels = 1;
+                srvDesc.Texture3D.MipLevels = res->desc.MipLevels;
             } else {
                 srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-                srvDesc.Texture2D.MostDetailedMip = level;
-                srvDesc.Texture2D.MipLevels = 1;
+                srvDesc.Texture2D.MipLevels = res->desc.MipLevels;
             }
             rhiD->dev->CreateShaderResourceView(res->resource, &srvDesc, srv.cpuHandle);
             cbD->cmdList->SetComputeRootDescriptorTable(1, srv.gpuHandle);
