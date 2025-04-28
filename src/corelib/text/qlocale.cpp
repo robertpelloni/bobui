@@ -5215,23 +5215,33 @@ QStringList QLocale::uiLanguages(TagSeparator separator) const
             localeIds.append(QLocaleId::fromName(entry));
         if (localeIds.isEmpty())
             localeIds.append(systemLocale()->fallbackLocale().d->m_data->id());
-        // If the system locale (isn't C and) didn't include itself in the list,
-        // or as fallback, presume to know better than it and put its name
-        // first. (Known issue, QTBUG-104930, on some macOS versions when in
-        // locale en_DE.) Our translation system might have a translation for a
-        // locale the platform doesn't believe in.
+        /* Note: Darwin allows entirely independent choice of locale and of
+           preferred languages, so it's possible the locale implied by
+           LanguageId, ScriptId and TerritoryId is absent from the UILanguages
+           list and that this faithfully reflects the user's wishes. None the
+           less, we include it (if it isn't C) in the list below, after the last
+           with the same language and script or (if none has) at the end, in
+           case there is no better option available. (See, QTBUG-104930.)
+        */
         const QString name = QString::fromLatin1(d->m_data->id().name(sep)); // Raw name
         if (!name.isEmpty() && language() != C && !uiLanguages.contains(name)) {
             // That uses contains(name) as a cheap pre-test, but there may be an
             // entry that matches this on purging likely subtags.
             const QLocaleId id = d->m_data->id();
-            const QLocaleId mine = id.withLikelySubtagsRemoved();
-            const auto isMine = [mine](const QString &entry) {
-                return QLocaleId::fromName(entry).withLikelySubtagsRemoved() == mine;
-            };
-            if (std::none_of(uiLanguages.constBegin(), uiLanguages.constEnd(), isMine)) {
-                localeIds.prepend(id);
-                uiLanguages.prepend(QString::fromLatin1(id.name(sep)));
+            const QLocaleId max = id.withLikelySubtagsAdded();
+            const QLocaleId mine = max.withLikelySubtagsRemoved();
+            // Default to putting at the end:
+            qsizetype lastAlike = uiLanguages.size() - 1;
+            bool seen = false;
+            for (qsizetype i = 0; !seen && i < uiLanguages.size(); ++i) {
+                const auto its = QLocaleId::fromName(uiLanguages.at(i)).withLikelySubtagsAdded();
+                seen = its.withLikelySubtagsRemoved() == mine;
+                if (!seen && its.language_id == max.language_id && its.script_id == max.script_id)
+                    lastAlike = i;
+            }
+            if (!seen) {
+                localeIds.insert(lastAlike + 1, id);
+                uiLanguages.insert(lastAlike + 1, QString::fromLatin1(id.name(sep)));
             }
         }
     } else
@@ -5410,7 +5420,7 @@ QStringList QLocale::uiLanguages(TagSeparator separator) const
                 }
             }
             if (found) // Don't duplicate.
-                break; // any further truncations of prefix would also be found.
+                continue; // Some shorter truncations may still be missing.
             // Now we're committed to adding it, get it into known:
             (void) known.hasSeen(prefix);
             if (justAfter) {
