@@ -919,11 +919,12 @@ qt_feature("vxpipedrv" PRIVATE
     AUTODETECT OFF
     CONDITION VXWORKS
 )
-qt_feature("regularexpression" PUBLIC
+qt_feature_deprecated("regularexpression" PUBLIC
+    REMOVE_BY "7.0"
     SECTION "Kernel"
     LABEL "QRegularExpression"
     PURPOSE "Provides an API to Perl-compatible regular expressions."
-    CONDITION QT_FEATURE_system_pcre2 OR QT_FEATURE_pcre2
+    VALUE ON
 )
 qt_feature_definition("regularexpression" "QT_NO_REGULAREXPRESSION" NEGATE VALUE "1")
 qt_feature("backtrace" PRIVATE
@@ -1274,4 +1275,9 @@ qt_configure_add_report_entry(
     TYPE WARNING
     MESSAGE "Basic cpp/winrt support missing. Some features might not be available."
     CONDITION WIN32 AND NOT QT_FEATURE_cpp_winrt
+)
+qt_configure_add_report_entry(
+    TYPE ERROR
+    MESSAGE "Qt requires pcre2 or system-pcre2 feature"
+    CONDITION NOT QT_FEATURE_pcre2 AND NOT QT_FEATURE_system_pcre2
 )
