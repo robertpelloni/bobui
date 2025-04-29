@@ -2830,6 +2830,8 @@ void QWindowPrivate::maybeSynthesizeContextMenuEvent(QMouseEvent *event)
                          << (event->isAccepted() ? "ACCEPTED (legacy behavior)" : "ignored")
                          << event->type() << ":" << &e;
         QCoreApplication::forwardEvent(q_func(), &e, event);
+        if (e.isAccepted())
+            event->accept();
     }
 #endif
 }
