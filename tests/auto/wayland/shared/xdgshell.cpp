@@ -115,8 +115,8 @@ void XdgSurface::xdg_surface_get_popup(Resource *resource, uint32_t id, wl_resou
     QVERIFY(!m_toplevel);
     QVERIFY(!m_popup);
     if (!m_surface->m_role) {
-        m_surface->m_role = new SubSurfaceRole;
-    } else if (!qobject_cast<SubSurfaceRole *>(m_surface->m_role)) {
+        m_surface->m_role = new XdgPopupRole;
+    } else if (!qobject_cast<XdgPopupRole *>(m_surface->m_role)) {
         qWarning() << "surface already has role" << m_surface->m_role->metaObject()->className();
         return;
     }
