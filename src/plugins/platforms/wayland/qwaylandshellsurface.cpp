@@ -85,6 +85,16 @@ void QWaylandShellSurface::requestXdgActivationToken(quint32 serial)
     Q_UNUSED(serial);
     Q_EMIT m_window->xdgActivationTokenCreated({});
 }
+
+/*!
+    Determines whether the client should commit the surface with no buffer
+    after creating the role and performing initial setup
+*/
+bool QWaylandShellSurface::commitSurfaceRole() const
+{
+    return true;
+}
+
 }
 
 QT_END_NAMESPACE

@@ -203,7 +203,8 @@ void QWaylandWindow::initWindow()
     handleContentOrientationChange(window()->contentOrientation());
     mFlags = window()->flags();
 
-    mSurface->commit();
+    if (mShellSurface && mShellSurface->commitSurfaceRole())
+        mSurface->commit();
 }
 
 void QWaylandWindow::setPendingImageDescription()

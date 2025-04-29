@@ -92,6 +92,8 @@ public:
 
     virtual void setIcon(const QIcon &icon) { Q_UNUSED(icon); }
 
+    virtual bool commitSurfaceRole() const;
+
 protected:
     void resizeFromApplyConfigure(const QSize &sizeWithMargins, const QPoint &offset = {0, 0});
     void repositionFromApplyConfigure(const QPoint &position);
