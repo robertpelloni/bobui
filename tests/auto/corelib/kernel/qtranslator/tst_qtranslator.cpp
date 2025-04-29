@@ -75,6 +75,7 @@ private slots:
     void loadLocale_data();
     void loadLocale();
     void threadLoad();
+    void install();
     void testLanguageChange();
     void plural();
     void translate_qm_file_generated_with_msgfmt();
@@ -283,6 +284,30 @@ void tst_QTranslator::threadLoad()
     TranslatorThread thread;
     thread.start();
     QVERIFY(thread.wait(10 * 1000));
+}
+
+void tst_QTranslator::install()
+{
+    {
+        // normal translation
+        QTranslator tor;
+        QVERIFY(tor.load("hellotr_la.qm"));
+        QCOMPARE(qApp->installTranslator(&tor), true);
+        QCOMPARE(qApp->removeTranslator(&tor), true);
+    }
+    {
+        // empty translation
+        QTranslator tor;
+        QVERIFY(tor.load("hellotr_empty.qm"));
+        QCOMPARE(qApp->installTranslator(&tor), true);
+        QCOMPARE(qApp->removeTranslator(&tor), true);
+    }
+    {
+        // nullptr
+        QCOMPARE(qApp->installTranslator(nullptr), false);
+        QCOMPARE(qApp->removeTranslator(nullptr), false);
+    }
+
 }
 
 void tst_QTranslator::testLanguageChange()
