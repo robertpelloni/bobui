@@ -316,7 +316,7 @@ QWidget *QApplication::topLevelAt(const QPoint &pos)
 void qt_init_tooltip_palette();
 
 QStyle *QApplicationPrivate::app_style = nullptr;        // default application style
-#ifndef QT_NO_STYLE_STYLESHEET
+#if QT_CONFIG(style_stylesheet)
 QString QApplicationPrivate::styleSheet;           // default application stylesheet
 #endif
 QPointer<QWidget> QApplicationPrivate::leaveAfterRelease = nullptr;
@@ -385,7 +385,7 @@ void QApplicationPrivate::process_cmdline()
             ++arg;
         if (strcmp(arg, "-qdevel") == 0 || strcmp(arg, "-qdebug") == 0) {
             // obsolete argument
-#ifndef QT_NO_STYLE_STYLESHEET
+#if QT_CONFIG(style_stylesheet)
         } else if (strcmp(arg, "-stylesheet") == 0 && i < argc -1) {
             styleSheet = "file:///"_L1;
             styleSheet.append(QString::fromLocal8Bit(argv[++i]));
@@ -878,7 +878,7 @@ bool QApplication::autoSipEnabled() const
     return QApplicationPrivate::autoSipEnabled;
 }
 
-#ifndef QT_NO_STYLE_STYLESHEET
+#if QT_CONFIG(style_stylesheet)
 
 QString QApplication::styleSheet() const
 {
@@ -938,7 +938,7 @@ QStyle *QApplication::style()
 
         QGuiApplicationPrivate::updatePalette();
 
-#ifndef QT_NO_STYLE_STYLESHEET
+#if QT_CONFIG(style_stylesheet)
         if (!QApplicationPrivate::styleSheet.isEmpty()) {
             qApp->setStyleSheet(QApplicationPrivate::styleSheet);
         } else
@@ -996,7 +996,7 @@ void QApplication::setStyle(QStyle *style)
 
     QStyle *old = QApplicationPrivate::app_style; // save
 
-#ifndef QT_NO_STYLE_STYLESHEET
+#if QT_CONFIG(style_stylesheet)
     if (!QApplicationPrivate::styleSheet.isEmpty() && !qt_styleSheet(style)) {
         // we have a stylesheet already and a new style is being set
         QStyleSheetStyle *newStyleSheetStyle = new QStyleSheetStyle(style);
@@ -1029,7 +1029,7 @@ void QApplication::setStyle(QStyle *style)
             if (w->windowType() != Qt::Desktop && w->testAttribute(Qt::WA_WState_Polished)) {
                 if (w->style() == QApplicationPrivate::app_style)
                     QApplicationPrivate::app_style->polish(w);                // repolish
-#ifndef QT_NO_STYLE_STYLESHEET
+#if QT_CONFIG(style_stylesheet)
                 else
                     w->setStyleSheet(w->styleSheet()); // touch
 #endif
@@ -1046,7 +1046,7 @@ void QApplication::setStyle(QStyle *style)
         }
     }
 
-#ifndef QT_NO_STYLE_STYLESHEET
+#if QT_CONFIG(style_stylesheet)
     if (QStyleSheetStyle *oldStyleSheetStyle = qt_styleSheet(old)) {
         oldStyleSheetStyle->deref();
     } else
