@@ -561,9 +561,9 @@ QSqlError QSqlQueryModel::lastError() const
 
    \sa lastError()
 */
-void QSqlQueryModel::setLastError(const QSqlError &error)
+void QSqlQueryModel::setLastError(const QSqlError &error) const
 {
-    Q_D(QSqlQueryModel);
+    Q_D(const QSqlQueryModel);
     d->error = error;
 }
 
