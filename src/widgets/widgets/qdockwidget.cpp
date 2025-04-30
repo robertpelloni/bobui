@@ -1276,6 +1276,7 @@ void QDockWidgetPrivate::setWindowState(WindowStates states, const QRect &rect)
     QMainWindow.
 
     \image mainwindow-docks.png
+           {Diagram of dock widget within toolbars and a container for widgets}
 
     Dock windows can be moved inside their current area, moved into
     new areas and floated (e.g., undocked) by the end-user.  The
