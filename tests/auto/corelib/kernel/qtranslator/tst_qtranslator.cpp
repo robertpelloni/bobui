@@ -251,7 +251,7 @@ void tst_QTranslator::loadLocale()
     for (const auto &filePath : files)
         QVERIFY(QFile::exists(filePath));
 
-    const QRegularExpression localeExpr("foo-(.*)(\\.qm|$)");
+    const QRegularExpression localeExpr("foo-(.*)(\\.qm|)$");
     QTranslator tor;
     // Load the translation for the wanted locale
     QVERIFY(tor.load(wantedLocale, "foo", "-", path, ".qm"));
