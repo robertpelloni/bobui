@@ -614,9 +614,8 @@ void QWaylandWindow::setVisible(bool visible)
     lastVisible = visible;
 
     if (visible) {
-        initWindow();
-
         setGeometry(windowGeometry());
+        initWindow();
         updateExposure();
         // Don't flush the events here, or else the newly visible window may start drawing, but since
         // there was no frame before it will be stuck at the waitForFrameSync() in
