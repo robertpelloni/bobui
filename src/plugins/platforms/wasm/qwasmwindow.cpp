@@ -110,6 +110,7 @@ QWasmWindow::QWasmWindow(QWindow *w, QWasmDeadKeySupport *deadKeySupport,
     // Set inputMode to none to stop the mobile keyboard from opening
     // when the user clicks on the window.
     m_window.set("inputMode", std::string("none"));
+    m_windowInput.set("inputMode", std::string("none"));
 
     // Hide the canvas from screen readers.
     m_canvas.call<void>("setAttribute", std::string("aria-hidden"), std::string("true"));
