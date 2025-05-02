@@ -1301,7 +1301,10 @@ protected:
     int columnCount(const QModelIndex &) const
     {
         // all levels of a tree have to have the same, static, column count
-        return Base::static_column_count;
+        if constexpr (Base::one_dimensional_range)
+            return 1;
+        else
+            return Base::static_column_count; // if static_column_count is -1, static assert fires
     }
 
     static constexpr Qt::ItemFlags defaultFlags()
