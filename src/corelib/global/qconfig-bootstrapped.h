@@ -52,6 +52,7 @@
 #define QT_NO_DATASTREAM
 #define QT_FEATURE_datestring 1
 #define QT_FEATURE_datetimeparser -1
+#define QT_FEATURE_dup3 -1
 #define QT_FEATURE_easingcurve -1
 #define QT_FEATURE_etw -1
 #define QT_FEATURE_futimens -1
