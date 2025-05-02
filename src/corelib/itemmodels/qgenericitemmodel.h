@@ -1505,7 +1505,7 @@ protected:
 private:
     range_type &childrenOf(row_ptr row)
     {
-        return row ? QGenericItemModelDetails::refTo(*this->protocol().childRows(*row))
+        return row ? QGenericItemModelDetails::refTo(this->protocol().childRows(*row))
                    : *this->m_data.model();
     }
 };
