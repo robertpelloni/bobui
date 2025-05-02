@@ -28,7 +28,7 @@ Q_CORE_EXPORT void qt_assert(const char *assertion, const char *file, int line) 
 #  if defined(QT_NO_DEBUG) && !defined(QT_FORCE_ASSERTS)
 #    define Q_ASSERT(cond) static_cast<void>(false && (cond))
 #  else
-#    define Q_ASSERT(cond) ((cond) ? static_cast<void>(0) : qt_assert(#cond, __FILE__, __LINE__))
+#    define Q_ASSERT(cond) ((cond) ? static_cast<void>(0) : QT_PREPEND_NAMESPACE(qt_assert)(#cond, __FILE__, __LINE__))
 #  endif
 #endif
 
@@ -44,7 +44,7 @@ inline bool qt_no_assert_x(bool, const char *, const char *) noexcept { return f
 #  if defined(QT_NO_DEBUG) && !defined(QT_FORCE_ASSERTS)
 #    define Q_ASSERT_X(cond, where, what) static_cast<void>(false && qt_no_assert_x(bool(cond), where, what))
 #  else
-#    define Q_ASSERT_X(cond, where, what) ((cond) ? static_cast<void>(0) : qt_assert_x(where, what, __FILE__, __LINE__))
+#    define Q_ASSERT_X(cond, where, what) ((cond) ? static_cast<void>(0) : QT_PREPEND_NAMESPACE(qt_assert_x)(where, what, __FILE__, __LINE__))
 #  endif
 #endif
 
@@ -64,12 +64,12 @@ Q_CORE_EXPORT void qBadAlloc();
 
 #ifdef QT_NO_EXCEPTIONS
 #  if defined(QT_NO_DEBUG) && !defined(QT_FORCE_ASSERTS)
-#    define Q_CHECK_PTR(p) qt_noop()
+#    define Q_CHECK_PTR(p) QT_PREPEND_NAMESPACE(qt_noop)()
 #  else
-#    define Q_CHECK_PTR(p) do {if (!(p)) qt_check_pointer(__FILE__,__LINE__);} while (false)
+#    define Q_CHECK_PTR(p) do {if (!(p)) QT_PREPEND_NAMESPACE(qt_check_pointer)(__FILE__,__LINE__);} while (false)
 #  endif
 #else
-#  define Q_CHECK_PTR(p) do { if (!(p)) qBadAlloc(); } while (false)
+#  define Q_CHECK_PTR(p) do { if (!(p)) QT_PREPEND_NAMESPACE(qBadAlloc)(); } while (false)
 #endif
 
 template <typename T>
