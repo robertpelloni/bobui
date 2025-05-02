@@ -204,6 +204,12 @@ public:
     using row_type = std::remove_reference_t<row_reference>;
     using protocol_type = QGenericItemModelDetails::wrapped_t<Protocol>;
 
+    static_assert(!QGenericItemModelDetails::is_any_of<range_type, std::optional>() &&
+                  !QGenericItemModelDetails::is_any_of<row_type, std::optional>(),
+                  "Currently, std::optional is not supported for ranges and rows, as "
+                  "it has range semantics in c++26. Once the required behavior is clarified, "
+                  "std::optional for ranges and rows will be supported.");
+
 protected:
     using Self = QGenericItemModelImpl<Structure, Range, Protocol>;
     Structure& that() { return static_cast<Structure &>(*this); }
