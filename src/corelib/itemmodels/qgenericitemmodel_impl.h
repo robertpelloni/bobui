@@ -605,6 +605,7 @@ private:
 
     CallConstFN *callConst_fn;
     CallTupleFN *call_fn;
+    QGenericItemModel *m_itemModel;
 
 protected:
     template <typename Impl> // type deduction
@@ -612,8 +613,6 @@ protected:
         : callConst_fn(&Impl::callConst), call_fn(&Impl::call), m_itemModel(itemModel)
     {}
     ~QGenericItemModelImplBase() = default;
-
-    QGenericItemModel *m_itemModel;
 
     inline QModelIndex createIndex(int row, int column, const void *ptr = nullptr) const;
     inline void changePersistentIndexList(const QModelIndexList &from, const QModelIndexList &to);
@@ -634,6 +633,8 @@ protected:
     inline bool beginMoveRows(const QModelIndex &sourceParent, int sourceFirst, int sourceLast,
                               const QModelIndex &destParent, int destRow);
     inline void endMoveRows();
+    inline QAbstractItemModel &itemModel();
+    inline const QAbstractItemModel &itemModel() const;
 
 public:
     template <typename Ret, typename ...Args>

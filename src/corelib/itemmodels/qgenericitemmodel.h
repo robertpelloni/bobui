@@ -183,6 +183,14 @@ void QGenericItemModelImplBase::endMoveRows()
 {
     m_itemModel->endMoveRows();
 }
+QAbstractItemModel &QGenericItemModelImplBase::itemModel()
+{
+    return *m_itemModel;
+}
+const QAbstractItemModel &QGenericItemModelImplBase::itemModel() const
+{
+    return *m_itemModel;
+}
 
 template <typename Structure, typename Range,
           typename Protocol = QGenericItemModelDetails::table_protocol_t<Range>>
@@ -363,7 +371,7 @@ public:
         if (row == index.row() && column == index.column())
             return index;
 
-        if (column < 0 || column >= m_itemModel->columnCount())
+        if (column < 0 || column >= itemModel().columnCount())
             return {};
 
         if (row == index.row())
@@ -420,7 +428,7 @@ public:
         QVariant result;
         if (role != Qt::DisplayRole || orientation != Qt::Horizontal
          || section < 0 || section >= that().columnCount({})) {
-            return m_itemModel->QAbstractItemModel::headerData(section, orientation, role);
+            return itemModel().QAbstractItemModel::headerData(section, orientation, role);
         }
 
         if constexpr (has_metaobject<wrapped_row_type>) {
@@ -438,7 +446,7 @@ public:
                 result = QString::fromUtf8(metaType.name());
         }
         if (!result.isValid())
-            result = m_itemModel->QAbstractItemModel::headerData(section, orientation, role);
+            result = itemModel().QAbstractItemModel::headerData(section, orientation, role);
         return result;
     }
 
@@ -533,7 +541,7 @@ public:
             readAt(index, readItemData);
 
             if (!tried) // no multi-role item found
-                result = m_itemModel->QAbstractItemModel::itemData(index);
+                result = itemModel().QAbstractItemModel::itemData(index);
         }
         return result;
     }
@@ -697,7 +705,7 @@ public:
                 // setItemData will emit the dataChanged signal
                 Q_ASSERT(!success);
                 emitDataChanged.dismiss();
-                success = m_itemModel->QAbstractItemModel::setItemData(index, data);
+                success = itemModel().QAbstractItemModel::setItemData(index, data);
             }
         }
         return success;
@@ -907,8 +915,8 @@ public:
             }
 
             if (sourceRow == destRow || sourceRow == destRow - 1 || count <= 0
-             || sourceRow < 0 || sourceRow + count - 1 >= m_itemModel->rowCount(sourceParent)
-             || destRow < 0 || destRow > m_itemModel->rowCount(destParent)) {
+             || sourceRow < 0 || sourceRow + count - 1 >= itemModel().rowCount(sourceParent)
+             || destRow < 0 || destRow > itemModel().rowCount(destParent)) {
                 return false;
             }
 
@@ -1614,7 +1622,7 @@ protected:
         // dynamically sized rows all have to have the same column count
         if constexpr (Base::dynamicColumns() && row_features::has_resize) {
             if (QGenericItemModelDetails::isValid(empty_row))
-                QGenericItemModelDetails::refTo(empty_row).resize(Base::m_itemModel->columnCount());
+                QGenericItemModelDetails::refTo(empty_row).resize(this->itemModel().columnCount());
         }
 
         return empty_row;
