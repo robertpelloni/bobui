@@ -343,6 +343,7 @@ void QWasmInputContext::updateInputElement()
         else
             m_inputElement.call<void>("blur");
 
+        m_inputElement.set("inputMode", std::string("none"));
         return;
     }
 
@@ -368,6 +369,7 @@ void QWasmInputContext::updateInputElement()
     m_inputElement.set("selectionStart", queryEvent.value(Qt::ImAnchorPosition).toUInt());
     m_inputElement.set("selectionEnd", queryEvent.value(Qt::ImCursorPosition).toUInt());
 
+    m_inputElement.set("inputMode", std::string("text"));
     m_inputElement.call<void>("focus");
 }
 
