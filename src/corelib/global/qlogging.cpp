@@ -1938,7 +1938,7 @@ static void win_outputDebugString_helper(const QString &message)
     if (message.length() <= maxOutputStringLength) {
         OutputDebugString(reinterpret_cast<const wchar_t *>(message.utf16()));
     } else {
-        wchar_t *messagePart = new wchar_t[maxOutputStringLength + 1];
+        wchar_t messagePart[maxOutputStringLength + 1];
         for (qsizetype i = 0; i < message.length(); i += maxOutputStringLength) {
             const qsizetype length = qMin(message.length() - i, maxOutputStringLength);
             const qsizetype len = QStringView{message}.mid(i, length).toWCharArray(messagePart);
@@ -1946,7 +1946,6 @@ static void win_outputDebugString_helper(const QString &message)
             messagePart[len] = 0;
             OutputDebugString(messagePart);
         }
-        delete[] messagePart;
     }
 }
 
