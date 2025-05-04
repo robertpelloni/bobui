@@ -30,33 +30,13 @@ Q_CORE_EXPORT bool qDecodeDataUrl(const QUrl &uri, QString &mimeType, QByteArray
     if (uri.scheme() != "data"_L1 || !uri.host().isEmpty())
         return false;
 
-    // the following would have been the correct thing, but
-    // reality often differs from the specification. People have
-    // data: URIs with ? and #
-    //QByteArray data = QByteArray::fromPercentEncoding(uri.path(QUrl::FullyEncoded).toLatin1());
-    const QByteArray dataArray =
-            QByteArray::fromPercentEncoding(uri.url(QUrl::FullyEncoded | QUrl::RemoveScheme).toLatin1());
-    auto data = QLatin1StringView{dataArray};
-
+    payload = QByteArray::fromPercentEncoding(uri.toEncoded(QUrl::RemoveScheme));
     // parse it:
-    const qsizetype pos = data.indexOf(u',');
+    const qsizetype pos = payload.indexOf(',');
     if (pos != -1) {
-        payload = QByteArray{data.sliced(pos + 1)};
+        auto data = QLatin1StringView{payload};
         data.truncate(pos);
         data = data.trimmed();
-
-        // find out if the payload is encoded in Base64
-        constexpr auto base64 = ";base64"_L1; // per the RFC, at the end of `data`
-        if (data.endsWith(base64, Qt::CaseInsensitive)) {
-            auto r = QByteArray::fromBase64Encoding(std::move(payload));
-            if (!r) {
-                // just in case someone uses `payload` without checking the returned bool
-                payload = {};
-                return false; // decoding failed
-            }
-            payload = std::move(r.decoded);
-            data.chop(base64.size());
-        }
 
         QLatin1StringView mime;
         QLatin1StringView charsetParam;
@@ -88,7 +68,26 @@ Q_CORE_EXPORT bool qDecodeDataUrl(const QUrl &uri, QString &mimeType, QByteArray
         else
             mimeType = mime;
 
+        // find out if the payload is encoded in Base64
+        constexpr auto base64 = ";base64"_L1; // per the RFC, at the end of `data`
+        const bool isBas64 = data.endsWith(base64, Qt::CaseInsensitive);
+
+        payload.slice(pos + 1);
+        data = {};
+
+        if (isBas64) {
+            auto r = QByteArray::fromBase64Encoding(std::move(payload));
+            if (!r) {
+                // just in case someone uses `payload` without checking the returned bool
+                payload = {};
+                return false; // decoding failed
+            }
+            payload = std::move(r.decoded);
+        }
+
         return true;
+    } else {
+        payload = {};
     }
 
     return false;
