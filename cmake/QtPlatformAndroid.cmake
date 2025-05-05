@@ -117,7 +117,7 @@ function(qt_internal_android_test_runner_arguments target out_test_runner out_te
     set(deployment_tool "${host_bin_dir}/androiddeployqt")
 
     _qt_internal_android_get_target_android_build_dir(android_build_dir ${target})
-    set(${out_test_arguments}
+    set(test_arguments
         "--path" "${android_build_dir}"
         "--adb" "${ANDROID_SDK_ROOT}/platform-tools/adb"
         "--skip-install-root"
@@ -128,8 +128,8 @@ function(qt_internal_android_test_runner_arguments target out_test_runner out_te
 
     if(QT_USE_ANDROID_MODERN_BUNDLE)
         _qt_internal_android_get_target_deployment_dir(target_deployment_dir ${target})
-        list(APPEND ${out_test_arguments} "--manifest" "${target_deployment_dir}/AndroidManifest.xml")
+        list(APPEND test_arguments "--manifest" "${target_deployment_dir}/AndroidManifest.xml")
     endif()
 
-    set(${out_test_arguments} "${${out_test_arguments}}" PARENT_SCOPE)
+    set(${out_test_arguments} "${test_arguments}" PARENT_SCOPE)
 endfunction()
