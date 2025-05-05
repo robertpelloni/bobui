@@ -30,12 +30,14 @@ Q_CORE_EXPORT bool qDecodeDataUrl(const QUrl &uri, QString &mimeType, QByteArray
     if (uri.scheme() != "data"_L1 || !uri.host().isEmpty())
         return false;
 
-    payload = QByteArray::fromPercentEncoding(uri.toEncoded(QUrl::RemoveScheme));
+    payload = uri.toEncoded(QUrl::RemoveScheme);
     // parse it:
+    // percent decode after finding the `,`, to workaround parameter
+    // values containing a percent-encoded comma
     const qsizetype pos = payload.indexOf(',');
     if (pos != -1) {
-        auto data = QLatin1StringView{payload};
-        data.truncate(pos);
+        QByteArray contentType = payload.first(pos).percentDecoded();
+        auto data = QLatin1StringView{contentType};
         data = data.trimmed();
 
         QLatin1StringView mime;
@@ -74,6 +76,7 @@ Q_CORE_EXPORT bool qDecodeDataUrl(const QUrl &uri, QString &mimeType, QByteArray
 
         payload.slice(pos + 1);
         data = {};
+        payload = std::move(payload).percentDecoded();
 
         if (isBas64) {
             auto r = QByteArray::fromBase64Encoding(std::move(payload));

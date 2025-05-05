@@ -62,6 +62,10 @@ void tst_QDataUrl::decode_data()
         "text/plain;charset=UTF-8", "");
     row("not-real-charset", "data:incharsetter=true,", true, defaultMimeType, "");
 
+    row("percent-encoded-comma-in-parameter-value",
+        "data:;charset=%22UTF-8%22;x-bar=\"a%2Cb%2Cc\",Hello%2C%20world", true,
+        "text/plain;charset=\"UTF-8\""_L1, "Hello, world");
+
     QString path = QFINDTESTDATA("arrow-down-16.png");
     QFile img(path);
     QVERIFY(img.open(QFile::ReadOnly));
