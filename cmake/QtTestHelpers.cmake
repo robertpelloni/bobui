@@ -1176,6 +1176,13 @@ function(qt_internal_collect_command_environment out_path out_plugin_path)
         set(test_env_path "${test_env_path}${QT_PATH_SEPARATOR}${install_prefix}")
     endforeach()
     set(test_env_path "${test_env_path}${QT_PATH_SEPARATOR}$ENV{PATH}")
+    if(ANDROID)
+        # Add android platform tools to path. Required for the correct androidtestrunner work.
+        _qt_internal_android_get_platform_tools_path(platform_tools)
+        string(PREPEND test_env_path
+            "${platform_tools}" "${QT_PATH_SEPARATOR}")
+    endif()
+
     string(REPLACE ";" "\;" test_env_path "${test_env_path}")
     set(${out_path} "${test_env_path}" PARENT_SCOPE)
 

@@ -30,6 +30,7 @@ include(UseJava)
 
 # Find JDK 8.0
 find_package(Java 1.8 COMPONENTS Development REQUIRED)
+find_package(Bundletool)
 
 # Ensure we are using the shared version of libc++
 if(NOT ANDROID_STL STREQUAL c++_shared)
@@ -122,14 +123,26 @@ function(qt_internal_android_test_runner_arguments target out_test_runner out_te
         "--path" "${android_build_dir}"
         "--adb" "${platform_tools}/adb"
         "--skip-install-root"
-        "--make" "\"${CMAKE_COMMAND}\" --build ${CMAKE_BINARY_DIR} --target ${target}_make_apk"
-        "--apk" "${android_build_dir}/${target}.apk"
         "--ndk-stack" "${ANDROID_NDK_ROOT}/ndk-stack"
     )
 
     if(QT_USE_ANDROID_MODERN_BUNDLE)
         _qt_internal_android_get_target_deployment_dir(target_deployment_dir ${target})
-        list(APPEND test_arguments "--manifest" "${target_deployment_dir}/AndroidManifest.xml")
+        list(APPEND test_arguments
+            "--manifest" "${target_deployment_dir}/AndroidManifest.xml")
+    endif()
+
+    if(EXISTS "${Bundletool_EXECUTABLE}" AND QT_USE_ANDROID_MODERN_BUNDLE)
+        list(APPEND test_arguments
+            "--make" "\"${CMAKE_COMMAND}\" --build ${CMAKE_BINARY_DIR} --target ${target}_make_aab"
+            "--aab" "${android_build_dir}/${target}.aab"
+            "--bundletool" "${Bundletool_EXECUTABLE}"
+        )
+    else()
+        list(APPEND test_arguments
+            "--make" "\"${CMAKE_COMMAND}\" --build ${CMAKE_BINARY_DIR} --target ${target}_make_apk"
+            "--apk" "${android_build_dir}/${target}.apk"
+        )
     endif()
 
     set(${out_test_arguments} "${test_arguments}" PARENT_SCOPE)
