@@ -342,6 +342,10 @@ public:
 
     static QThreadPool *qtGuiThreadPool();
 
+#ifndef QT_NO_OPENGL
+    bool ownGlobalShareContext = false;
+#endif
+
 protected:
     virtual void handleThemeChanged();
 
@@ -365,8 +369,6 @@ private:
     std::shared_ptr<QColorTrcLut> m_a8ColorProfile;
 #endif
     std::shared_ptr<QColorTrcLut> m_a32ColorProfile;
-
-    bool ownGlobalShareContext;
 
     static QInputDeviceManager *m_inputDeviceManager;
 

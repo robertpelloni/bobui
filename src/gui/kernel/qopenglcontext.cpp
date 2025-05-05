@@ -959,10 +959,6 @@ bool QOpenGLContext::supportsThreadedOpenGL()
     This is useful if you need to upload OpenGL objects (buffers, textures,
     etc.) before creating or showing a QOpenGLWidget or QQuickWidget.
 
-    \note You must set the Qt::AA_ShareOpenGLContexts flag on QGuiApplication
-    before creating the QGuiApplication object, otherwise Qt may not create a
-    global shared context.
-
     \warning Do not attempt to make the context returned by this function
     current on any surface. Instead, you can create a new context which shares
     with the global one, and then make the new context current.
@@ -972,6 +968,14 @@ bool QOpenGLContext::supportsThreadedOpenGL()
 QOpenGLContext *QOpenGLContext::globalShareContext()
 {
     Q_ASSERT(qGuiApp);
+    // Lazily create a global share context when enabled unless there is already one
+    if (!qt_gl_global_share_context() && qGuiApp->testAttribute(Qt::AA_ShareOpenGLContexts)) {
+        QOpenGLContext *ctx = new QOpenGLContext;
+        ctx->setFormat(QSurfaceFormat::defaultFormat());
+        ctx->create();
+        qt_gl_set_global_share_context(ctx);
+        QGuiApplicationPrivate::instance()->ownGlobalShareContext = true;
+    }
     return qt_gl_global_share_context();
 }
 

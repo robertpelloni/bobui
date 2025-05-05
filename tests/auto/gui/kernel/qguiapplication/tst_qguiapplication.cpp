@@ -1273,7 +1273,7 @@ void tst_QGuiApplication::globalShareContext()
     int argc = 1;
     char *argv[] = { const_cast<char*>("tst_qguiapplication") };
     QScopedPointer<QGuiApplication> app(new QGuiApplication(argc, argv));
-    QOpenGLContext *ctx = qt_gl_global_share_context();
+    QOpenGLContext *ctx = QOpenGLContext::globalShareContext();
     QVERIFY(ctx);
     app.reset();
     ctx = qt_gl_global_share_context();
@@ -1282,8 +1282,16 @@ void tst_QGuiApplication::globalShareContext()
     // Test that there is no global share context by default.
     QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts, false);
     app.reset(new QGuiApplication(argc, argv));
-    ctx = qt_gl_global_share_context();
+    ctx = QOpenGLContext::globalShareContext();
     QVERIFY(!ctx);
+
+    // Test that setting AA_ShareOpenGLContexts can happen after creating
+    // QGuiApplication.
+    app.reset();
+    app.reset(new QGuiApplication(argc, argv));
+    QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts, true);
+    ctx = QOpenGLContext::globalShareContext();
+    QVERIFY(ctx);
 #else
     QSKIP("No OpenGL support");
 #endif

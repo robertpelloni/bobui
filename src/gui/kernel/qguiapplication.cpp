@@ -727,8 +727,7 @@ QGuiApplication::~QGuiApplication()
 QGuiApplicationPrivate::QGuiApplicationPrivate(int &argc, char **argv)
     : QCoreApplicationPrivate(argc, argv),
       inputMethod(nullptr),
-      lastTouchType(QEvent::TouchEnd),
-      ownGlobalShareContext(false)
+      lastTouchType(QEvent::TouchEnd)
 {
     self = this;
     application_type = QCoreApplicationPrivate::Gui;
@@ -1738,17 +1737,6 @@ void Q_TRACE_INSTRUMENT(qtgui) QGuiApplicationPrivate::init()
 #if QT_CONFIG(animation)
     // trigger registering of animation interpolators
     qRegisterGuiGetInterpolator();
-#endif
-
-    // set a global share context when enabled unless there is already one
-#ifndef QT_NO_OPENGL
-    if (qApp->testAttribute(Qt::AA_ShareOpenGLContexts) && !qt_gl_global_share_context()) {
-        QOpenGLContext *ctx = new QOpenGLContext;
-        ctx->setFormat(QSurfaceFormat::defaultFormat());
-        ctx->create();
-        qt_gl_set_global_share_context(ctx);
-        ownGlobalShareContext = true;
-    }
 #endif
 
     QWindowSystemInterfacePrivate::eventTime.start();

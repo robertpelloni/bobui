@@ -1013,7 +1013,6 @@ void QCoreApplication::setAttribute(Qt::ApplicationAttribute attribute, bool on)
             case Qt::AA_UseDesktopOpenGL:
             case Qt::AA_UseOpenGLES:
             case Qt::AA_UseSoftwareOpenGL:
-            case Qt::AA_ShareOpenGLContexts:
 #ifdef QT_BOOTSTRAPPED
                 qWarning("Attribute %d must be set before QCoreApplication is created.",
                          attribute);

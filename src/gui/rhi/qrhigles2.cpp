@@ -771,7 +771,7 @@ bool QRhiGles2::create(QRhi::Flags flags)
         if (maybeShareContext) {
             ctx->setShareContext(maybeShareContext);
             ctx->setScreen(maybeShareContext->screen());
-        } else if (QOpenGLContext *shareContext = qt_gl_global_share_context()) {
+        } else if (QOpenGLContext *shareContext = QOpenGLContext::globalShareContext()) {
             ctx->setShareContext(shareContext);
             ctx->setScreen(shareContext->screen());
         } else if (maybeWindow) {
