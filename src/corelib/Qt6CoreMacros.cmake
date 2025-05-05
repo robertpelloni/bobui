@@ -1422,12 +1422,7 @@ function(qt6_extract_metatypes target)
         message(FATAL_ERROR "Metatype generation requires either the use of AUTOMOC or a manual list of generated json files")
     endif()
 
-    if (CMAKE_BUILD_TYPE AND NOT is_multi_config)
-        string(TOLOWER ${target}_${CMAKE_BUILD_TYPE} target_lowercase)
-    else()
-        string(TOLOWER ${target} target_lowercase)
-    endif()
-
+    string(TOLOWER ${target} target_lowercase)
     set(metatypes_file_name "qt6${target_lowercase}_metatypes.json")
     set(metatypes_file "${target_binary_dir}/meta_types/${metatypes_file_name}")
     set(metatypes_file_gen "${target_binary_dir}/meta_types/${metatypes_file_name}.gen")
