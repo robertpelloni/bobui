@@ -485,7 +485,7 @@ function(_qt_feature_check_feature_alias feature)
         return()
     endif()
     # Check if all values are consistent
-    list(TRANSFORM REMOVE_DUPLICATES expected_value)
+    list(REMOVE_DUPLICATES expected_value)
     list(LENGTH expected_value expected_value_length)
     if(expected_value_length GREATER 1)
         string(CONCAT msg
