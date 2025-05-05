@@ -7,7 +7,6 @@ add_library(corelib_snippets OBJECT
 
 target_link_libraries(corelib_snippets PRIVATE
     Qt::Core
-    Qt::Gui
 )
 
 if (TARGET Qt::Widgets)
