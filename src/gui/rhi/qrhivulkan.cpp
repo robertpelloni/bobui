@@ -4082,16 +4082,13 @@ void QRhiVulkan::enqueueResourceUpdates(QVkCommandBuffer *cbD, QRhiResourceUpdat
                 }
             }
 
-            void *p = nullptr;
-            VmaAllocation a = toVmaAllocation(bufD->stagingAllocations[currentFrameSlot]);
-            VkResult err = vmaMapMemory(toVmaAllocator(allocator), a, &p);
+            VkResult err = vmaCopyMemoryToAllocation(toVmaAllocator(allocator), u.data.constData(),
+                                                     toVmaAllocation(bufD->stagingAllocations[currentFrameSlot]),
+                                                     u.offset, u.data.size());
             if (err != VK_SUCCESS) {
-                qWarning("Failed to map buffer: %d", err);
+                qWarning("Failed to copy memory to buffer: %d", err);
                 continue;
             }
-            memcpy(static_cast<uchar *>(p) + u.offset, u.data.constData(), u.data.size());
-            vmaFlushAllocation(toVmaAllocator(allocator), a, u.offset, u.data.size());
-            vmaUnmapMemory(toVmaAllocator(allocator), a);
 
             trackedBufferBarrier(cbD, bufD, 0,
                                  VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
@@ -4130,13 +4127,13 @@ void QRhiVulkan::enqueueResourceUpdates(QVkCommandBuffer *cbD, QRhiResourceUpdat
             QVkBuffer *bufD = QRHI_RES(QVkBuffer, u.buf);
             if (bufD->m_type == QRhiBuffer::Dynamic) {
                 executeBufferHostWritesForSlot(bufD, currentFrameSlot);
-                void *p = nullptr;
-                VmaAllocation a = toVmaAllocation(bufD->allocations[currentFrameSlot]);
-                VkResult err = vmaMapMemory(toVmaAllocator(allocator), a, &p);
-                if (err == VK_SUCCESS) {
-                    u.result->data.resize(u.readSize);
-                    memcpy(u.result->data.data(), reinterpret_cast<char *>(p) + u.offset, u.readSize);
-                    vmaUnmapMemory(toVmaAllocator(allocator), a);
+                u.result->data.resizeForOverwrite(u.readSize);
+                VkResult err = vmaCopyAllocationToMemory(toVmaAllocator(allocator),
+                                                         toVmaAllocation(bufD->allocations[currentFrameSlot]),
+                                                         u.offset, u.result->data.data(), u.readSize);
+                if (err != VK_SUCCESS) {
+                    qWarning("Failed to copy memory from buffer: %d", err);
+                    u.result->data.clear();
                 }
                 if (u.result->completed)
                     u.result->completed();
@@ -4660,18 +4657,16 @@ void QRhiVulkan::finishActiveReadbacks(bool forced)
         if (forced || currentFrameSlot == readback.activeFrameSlot || readback.activeFrameSlot < 0) {
             readback.result->format = readback.format;
             readback.result->pixelSize = readback.rect.size();
-            VmaAllocation a = toVmaAllocation(readback.stagingAlloc);
-            void *p = nullptr;
-            VkResult err = vmaMapMemory(toVmaAllocator(allocator), a, &p);
-            if (err == VK_SUCCESS && p) {
-                readback.result->data.resize(int(readback.byteSize));
-                memcpy(readback.result->data.data(), p, readback.byteSize);
-                vmaUnmapMemory(toVmaAllocator(allocator), a);
-            } else {
-                qWarning("Failed to map texture readback buffer of size %u: %d", readback.byteSize, err);
+            readback.result->data.resizeForOverwrite(readback.byteSize);
+            VkResult err = vmaCopyAllocationToMemory(toVmaAllocator(allocator),
+                                                     toVmaAllocation(readback.stagingAlloc),
+                                                     0, readback.result->data.data(), readback.byteSize);
+            if (err != VK_SUCCESS) {
+                qWarning("Failed to copy texture readback buffer of size %u: %d", readback.byteSize, err);
+                readback.result->data.clear();
             }
 
-            vmaDestroyBuffer(toVmaAllocator(allocator), readback.stagingBuf, a);
+            vmaDestroyBuffer(toVmaAllocator(allocator), readback.stagingBuf, toVmaAllocation(readback.stagingAlloc));
 
             if (readback.result->completed)
                 completedCallbacks.append(readback.result->completed);
@@ -4683,18 +4678,16 @@ void QRhiVulkan::finishActiveReadbacks(bool forced)
     for (int i = activeBufferReadbacks.size() - 1; i >= 0; --i) {
         const QRhiVulkan::BufferReadback &readback(activeBufferReadbacks[i]);
         if (forced || currentFrameSlot == readback.activeFrameSlot || readback.activeFrameSlot < 0) {
-            VmaAllocation a = toVmaAllocation(readback.stagingAlloc);
-            void *p = nullptr;
-            VkResult err = vmaMapMemory(toVmaAllocator(allocator), a, &p);
-            if (err == VK_SUCCESS && p) {
-                readback.result->data.resize(readback.byteSize);
-                memcpy(readback.result->data.data(), p, readback.byteSize);
-                vmaUnmapMemory(toVmaAllocator(allocator), a);
-            } else {
-                qWarning("Failed to map buffer readback buffer of size %d: %d", readback.byteSize, err);
+            readback.result->data.resizeForOverwrite(readback.byteSize);
+            VkResult err = vmaCopyAllocationToMemory(toVmaAllocator(allocator),
+                                                     toVmaAllocation(readback.stagingAlloc),
+                                                     0, readback.result->data.data(), readback.byteSize);
+            if (err != VK_SUCCESS) {
+                qWarning("Failed to copy buffer readback buffer of size %d: %d", readback.byteSize, err);
+                readback.result->data.clear();
             }
 
-            vmaDestroyBuffer(toVmaAllocator(allocator), readback.stagingBuf, a);
+            vmaDestroyBuffer(toVmaAllocator(allocator), readback.stagingBuf, toVmaAllocation(readback.stagingAlloc));
 
             if (readback.result->completed)
                 completedCallbacks.append(readback.result->completed);
