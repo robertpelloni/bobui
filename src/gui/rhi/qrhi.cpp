@@ -9630,9 +9630,9 @@ void QRhiResourceUpdateBatch::uploadStaticBuffer(QRhiBuffer *buf, QByteArray dat
     if (buf->size() > 0 && quint32(data.size()) == buf->size()) {
         const int idx = d->activeBufferOpCount++;
         if (idx < d->bufferOps.size())
-            QRhiResourceUpdateBatchPrivate::BufferOp::changeToStaticUpload(&d->bufferOps[idx], buf, 0, 0, std::move(data));
+            QRhiResourceUpdateBatchPrivate::BufferOp::changeToStaticUpload(&d->bufferOps[idx], buf, 0, std::move(data));
         else
-            d->bufferOps.append(QRhiResourceUpdateBatchPrivate::BufferOp::staticUpload(buf, 0, 0, std::move(data)));
+            d->bufferOps.append(QRhiResourceUpdateBatchPrivate::BufferOp::staticUpload(buf, 0, std::move(data)));
     }
 }
 
