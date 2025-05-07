@@ -606,6 +606,7 @@ private slots:
     void invalidStringCharacters_data() const;
     void invalidStringCharacters() const;
     void writerErrors() const;
+    void stopWritingOnError() const;
     void readBack_data() const;
     void readBack() const;
     void roundTrip() const;
@@ -2404,7 +2405,201 @@ void tst_QXmlStream::writerErrors() const
         QCOMPARE(writer.error(), QXmlStreamWriter::Error::CustomError);
         QCOMPARE(writer.errorString(), "Custom error"_L1);
     }
+}
 
+void tst_QXmlStream::stopWritingOnError() const
+{
+    {
+        // Default - stopWritingOnError(false)
+        QByteArray buffer;
+        QXmlStreamWriter writer(&buffer);
+        writer.writeStartDocument();
+        writer.writeStartElement(u"root");
+        writer.writeCharacters(u"Invalid \x01 character");
+        writer.writeTextElement(u"text", u"element");
+        writer.writeComment(u"A comment");
+        writer.writeEmptyElement(u"emptyElement");
+        QVERIFY(writer.hasError());
+        QCOMPARE(writer.error(), QXmlStreamWriter::Error::InvalidCharacter);
+        QVERIFY(!writer.errorString().isEmpty());
+        QCOMPARE(buffer, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                         "<root>Invalid  character<text>element</text>"
+                         "<!--A comment--><emptyElement"_ba);
+
+        writer.writeCharacters(u"Let's raise another error!");
+        writer.raiseError(u"Custom error"_s);
+        writer.writeEndElement();
+        writer.writeTextElement(u"text", u"element");
+        QVERIFY(writer.hasError());
+        QCOMPARE(writer.error(), QXmlStreamWriter::Error::CustomError);
+        QVERIFY(!writer.errorString().isEmpty());
+        QCOMPARE(buffer, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                         "<root>Invalid  character<text>element</text>"
+                         "<!--A comment--><emptyElement/>"
+                         "Let's raise another error!</root>"
+                         "<text>element</text>"_ba);
+
+        writer.writeStartElement(u"child");
+        writer.writeCharacters(QChar(0xDC00));
+        writer.writeCharacters(u"I'm still standin' better than I ever did!");
+        writer.writeEndElement();
+        writer.writeEndDocument();
+        QVERIFY(writer.hasError());
+        QCOMPARE(writer.error(), QXmlStreamWriter::Error::EncodingError);
+        QVERIFY(!writer.errorString().isEmpty());
+        QCOMPARE(buffer, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                         "<root>Invalid  character<text>element</text>"
+                         "<!--A comment--><emptyElement/>"
+                         "Let's raise another error!</root><text>element</text>"
+                         "<child>I'm still standin' better than I ever did!</child>\n"_ba);
+    }
+
+    {
+        // Only IOError prevents further writing
+        QByteArray buffer;
+        QBuffer device(&buffer);
+        device.open(QIODevice::WriteOnly);
+        device.close();
+        QXmlStreamWriter writer(&device);
+        writer.setStopWritingOnError(false);
+        writer.writeStartDocument();
+        writer.writeStartElement(u"root");
+        writer.writeCharacters(u"Some characters");
+        QVERIFY(writer.hasError());
+        QCOMPARE(writer.error(), QXmlStreamWriter::Error::IOError);
+        QVERIFY(!writer.errorString().isEmpty());
+        QVERIFY(buffer.isEmpty());
+    }
+
+    {
+        // Valid input
+        QByteArray buffer;
+        QXmlStreamWriter writer(&buffer);
+        writer.setStopWritingOnError(true);
+        writer.writeStartDocument();
+        writer.writeStartElement(u"root");
+        writer.writeCharacters(u"Valid & possible to <escape> \"characters\"");
+        writer.writeTextElement(u"text", u"element");
+        writer.writeComment(u"A comment");
+        writer.writeEmptyElement(u"emptyElement");
+        writer.writeEndDocument();
+        QVERIFY(!writer.hasError());
+        QCOMPARE(writer.error(), QXmlStreamWriter::Error::NoError);
+        QVERIFY(writer.errorString().isEmpty());
+        QCOMPARE(buffer, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                         "<root>Valid &amp; possible to &lt;escape&gt; &quot;characters&quot;"
+                         "<text>element</text><!--A comment--><emptyElement/>"
+                         "</root>\n"_ba);
+    }
+
+    {
+        // Invalid character error: invalid \x01 character
+        QByteArray buffer;
+        QXmlStreamWriter writer(&buffer);
+        writer.setStopWritingOnError(true);
+        writer.writeStartDocument();
+        writer.writeStartElement(u"root");
+        writer.writeCharacters(u"Invalid \x01 character"); // Stop writing from here
+        writer.writeTextElement(u"text", u"element");
+        writer.writeComment(u"A comment");
+        writer.writeEmptyElement(u"emptyElement");
+        writer.writeCDATA(u"CDATA");
+        writer.writeEntityReference(u"entityReference");
+        writer.writeProcessingInstruction(u"PI");
+        writer.writeCharacters(u"Characters");
+        writer.writeDTD(u"DTD");
+        writer.writeDefaultNamespace(u"defaultNamespace");
+        writer.writeNamespace(u"namespace");
+        writer.writeEndElement();
+        writer.writeEndDocument();
+        QVERIFY(writer.hasError());
+        QCOMPARE(writer.error(), QXmlStreamWriter::Error::InvalidCharacter);
+        QVERIFY(!writer.errorString().isEmpty());
+        QCOMPARE(buffer, "<?xml version=\"1.0\" encoding=\"UTF-8\"?><root>"_ba);
+    }
+
+    {
+        // Invalid character error: invalid \v character
+        QByteArray buffer;
+        QXmlStreamWriter writer(&buffer);
+        writer.setStopWritingOnError(true);
+        writer.writeStartDocument();
+        writer.writeStartElement(u"root");
+        writer.writeTextElement(u"text", u"element");
+        writer.writeComment(u"A comment");
+        writer.writeEmptyElement(u"emptyElement");
+        writer.writeCDATA(u"CDATA");
+        writer.writeEntityReference(u"entityReference");
+        writer.writeProcessingInstruction(u"PI");
+        writer.writeCharacters(u"Characters");
+        writer.writeCharacters(u"Invalid \v character"); // Stop writing from here
+        writer.writeCharacters(u"More valid characters");
+        writer.writeDTD(u"DTD");
+        writer.writeDefaultNamespace(u"defaultNamespace");
+        writer.writeNamespace(u"namespace");
+        writer.writeEndElement();
+        writer.writeEndDocument();
+        QVERIFY(writer.hasError());
+        QCOMPARE(writer.error(), QXmlStreamWriter::Error::InvalidCharacter);
+        QVERIFY(!writer.errorString().isEmpty());
+        QCOMPARE(buffer, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                         "<root><text>element</text><!--A comment--><emptyElement/>"
+                         "<![CDATA[CDATA]]>&entityReference;<?PI?>Characters"_ba);
+    }
+
+    {
+        // Encoding error: lone low surrogate
+        QByteArray buffer;
+        QXmlStreamWriter writer(&buffer);
+        writer.writeStartDocument();
+        writer.setStopWritingOnError(true);
+        writer.writeStartElement(u"root");
+        writer.writeCharacters(QChar(0xDC00));  // Stop writing from here
+        QVERIFY(writer.hasError());
+        QCOMPARE(writer.error(), QXmlStreamWriter::Error::EncodingError);
+        QVERIFY(!writer.errorString().isEmpty());
+        QCOMPARE(buffer, "<?xml version=\"1.0\" encoding=\"UTF-8\"?><root>"_ba);
+
+        writer.writeCharacters(u"I am a valid sentence");
+        writer.writeCharacters(u"But I won't be written until the setting is changed.");
+        writer.setStopWritingOnError(false);
+        writer.writeCharacters(u"Resume writing!");
+        writer.writeEndElement();
+        writer.writeEndDocument();
+        // Changing the flag doesn't clear the error; it just allows writing again.
+        QVERIFY(writer.hasError());
+        QCOMPARE(writer.error(), QXmlStreamWriter::Error::EncodingError);
+        QVERIFY(!writer.errorString().isEmpty());
+        QCOMPARE(buffer, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                         "<root>Resume writing!</root>\n"_ba);
+
+        writer.setStopWritingOnError(true);
+        writer.writeCharacters(u"Valid characters rules!");
+        QVERIFY(writer.hasError());
+        QCOMPARE(writer.error(), QXmlStreamWriter::Error::EncodingError);
+        QVERIFY(!writer.errorString().isEmpty());
+        // Re-enabling stopWritingOnError does not clear the error state.
+        // Since the writer is still in error, further writes are ignored even if valid.
+        QCOMPARE(buffer, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                         "<root>Resume writing!</root>\n"_ba);
+    }
+
+    {
+        QByteArray buffer;
+        QXmlStreamWriter writer(&buffer);
+        writer.setStopWritingOnError(true);
+        writer.writeStartDocument();
+        writer.writeStartElement(u"root");
+        writer.writeCharacters(u"Some characters");
+        writer.raiseError(u"Raising custom error"_s);
+        writer.writeCharacters(u"No more writing for you.");
+        writer.writeEndElement();
+        writer.writeEndDocument();
+        QVERIFY(writer.hasError());
+        QCOMPARE(writer.error(), QXmlStreamWriter::Error::CustomError);
+        QVERIFY(!writer.errorString().isEmpty());
+        QCOMPARE(buffer, "<?xml version=\"1.0\" encoding=\"UTF-8\"?><root>Some characters"_ba);
+    }
 }
 
 void tst_QXmlStream::invalidStringCharacters() const

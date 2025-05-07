@@ -3075,12 +3075,17 @@ QStringView QXmlStreamReader::documentEncoding() const
 
   QXmlStreamWriter always encodes XML in UTF-8.
 
-  \note If an error occurs while writing, \l hasError() will return true.
-  However, data that was already buffered at the time the error occurred,
-  or data written from within the same operation, may still be written
-  to the underlying device. This applies to both \l EncodingError and
-  user-raised \l CustomError. Applications should treat the error state
-  as terminal and avoid further use of the writer after an error.
+  If an error occurs while writing, \l hasError() will return true.
+  However, by default, data that was already buffered at the time the error
+  occurred, or data written from within the same operation, may still be
+  written to the underlying device. This applies to \l Error::EncodingError,
+  \l Error::InvalidCharacter, and user-raised \l Error::CustomError.
+  To avoid this and ensure no data is written after an error, use the
+  \l stopWritingOnError property. When this property is enabled,
+  the first error stops output immediately and the writer ignores all
+  subsequent write operations.
+  Applications should treat the error state as terminal and avoid further
+  use of the writer after an error.
 
   The \l{QXmlStream Bookmarks Example} illustrates how to use a
   stream writer to write an XML bookmark file (XBEL) that
@@ -3146,6 +3151,7 @@ public:
     uint autoFormatting :1;
     uint didWriteStartDocument :1;
     uint didWriteAnyToken :1;
+    uint stopWritingOnError :1;
     std::string autoFormattingIndent = std::string(4, ' ');
     NamespaceDeclaration emptyNamespace;
     qsizetype lastNamespaceDeclaration = 1;
@@ -3170,7 +3176,8 @@ QXmlStreamWriterPrivate::QXmlStreamWriterPrivate(QXmlStreamWriter *q)
     : q_ptr(q), deleteDevice(false), inStartElement(false),
       inEmptyElement(false), lastWasStartElement(false),
       wroteSomething(false), autoFormatting(false),
-      didWriteStartDocument(false), didWriteAnyToken(false)
+      didWriteStartDocument(false), didWriteAnyToken(false),
+      stopWritingOnError(false)
 {
 }
 
@@ -3203,6 +3210,8 @@ void QXmlStreamWriterPrivate::raiseError(QXmlStreamWriter::Error errorCode, cons
 
 void QXmlStreamWriterPrivate::write(QAnyStringView s)
 {
+    if (stopWritingOnError && (error != QXmlStreamWriter::Error::NoError))
+        return;
     if (device) {
         if (error == QXmlStreamWriter::Error::IOError)
             return;
@@ -3296,6 +3305,8 @@ void QXmlStreamWriterPrivate::writeEscaped(QAnyStringView s, bool escapeWhitespa
                 case u'\v':
                 case u'\f':
                     raiseError(QXmlStreamWriter::Error::InvalidCharacter);
+                    if (stopWritingOnError)
+                        return;
                     replacement = ""_L1;
                     Q_ASSERT(!replacement.isNull());
                     break;
@@ -3309,6 +3320,8 @@ void QXmlStreamWriterPrivate::writeEscaped(QAnyStringView s, bool escapeWhitespa
                     raiseError(encodingError
                                        ? QXmlStreamWriter::Error::EncodingError
                                        : QXmlStreamWriter::Error::InvalidCharacter);
+                    if (stopWritingOnError)
+                        return;
                     replacement = ""_L1;
                     Q_ASSERT(!replacement.isNull());
                     break;
@@ -3615,6 +3628,35 @@ int QXmlStreamWriter::autoFormattingIndent() const
     Q_D(const QXmlStreamWriter);
     const QLatin1StringView indent(d->autoFormattingIndent);
     return indent.count(u' ') - indent.count(u'\t');
+}
+
+/*!
+    \property QXmlStreamWriter::stopWritingOnError
+    \since 6.10
+
+    \brief The option to stop writing to the device after encountering an error.
+
+    If this property is set to \c true, the writer stops writing immediately upon
+    encountering any error and ignores all subsequent write operations.
+    When this property is set to \c false, the writer may continue writing
+    after an error, skipping the invalid write but allowing further output.
+
+    Note that this includes \l Error::InvalidCharacter, \l Error::EncodingError,
+    and \l Error::CustomError. \l Error::IOError is always considered terminal
+    and stops writing regardless of this setting.
+
+    The default value is \c false.
+ */
+bool QXmlStreamWriter::stopWritingOnError() const
+{
+    Q_D(const QXmlStreamWriter);
+    return d->stopWritingOnError;
+}
+
+void QXmlStreamWriter::setStopWritingOnError(bool stop)
+{
+    Q_D(QXmlStreamWriter);
+    d->stopWritingOnError = stop;
 }
 
 /*!

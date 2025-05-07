@@ -377,6 +377,7 @@ class Q_CORE_EXPORT QXmlStreamWriter
 {
     QDOC_PROPERTY(bool autoFormatting READ autoFormatting WRITE setAutoFormatting)
     QDOC_PROPERTY(int autoFormattingIndent READ autoFormattingIndent WRITE setAutoFormattingIndent)
+    QDOC_PROPERTY(bool stopWritingOnError READ stopWritingOnError WRITE setStopWritingOnError)
 public:
     QXmlStreamWriter();
     explicit QXmlStreamWriter(QIODevice *device);
@@ -392,6 +393,9 @@ public:
 
     void setAutoFormattingIndent(int spacesOrTabs);
     int autoFormattingIndent() const;
+
+    void setStopWritingOnError(bool stop);
+    bool stopWritingOnError() const;
 
 #if QT_CORE_REMOVED_SINCE(6,5)
     void writeAttribute(const QString &qualifiedName, const QString &value);
