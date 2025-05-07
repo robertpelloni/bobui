@@ -2477,11 +2477,17 @@ QByteArray &QByteArray::remove(qsizetype pos, qsizetype len)
 
 QByteArray &QByteArray::replace(qsizetype pos, qsizetype len, QByteArrayView after)
 {
+    if (size_t(pos) > size_t(this->size()))
+        return *this;
+    if (len > this->size() - pos)
+        len = this->size() - pos;
+
     if (QtPrivate::q_points_into_range(after.data(), d)) {
         QVarLengthArray copy(after.data(), after.data() + after.size());
         return replace(pos, len, QByteArrayView{copy});
     }
-    if (len == after.size() && (pos + len <= size())) {
+
+    if (len == after.size()) {
         // same size: in-place replacement possible
         if (len > 0) {
             detach();

@@ -1481,7 +1481,7 @@ void tst_QByteArray::replace_data()
     QTest::newRow("4") << QByteArray() << 0 << 0 << QByteArray() << QByteArray() << QByteArray();
     // index out of range
     QTest::newRow("5") << QByteArray() << 3 << 0 << QByteArray() << QByteArray("hi")
-                       << QByteArray("   hi");
+                       << QByteArray();
     // Optimized path
     QTest::newRow("6") << QByteArray("abcdef") << 3 << 12 << QByteArray()
                        << QByteArray("abcdefghijkl") << QByteArray("abcabcdefghijkl");
