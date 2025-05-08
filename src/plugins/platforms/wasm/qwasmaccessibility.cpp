@@ -299,9 +299,7 @@ emscripten::val QWasmAccessibility::createHtmlElement(QAccessibleInterface *ifac
         } break;
 
         case QAccessible::StaticText: {
-            element = document.call<emscripten::val>("createElement", std::string("textarea"));
-            setAttribute(element, "readonly", "true");
-
+            element = document.call<emscripten::val>("createElement", std::string("div"));
         } break;
         case QAccessible::Dialog: {
             element = document.call<emscripten::val>("createElement", std::string("dialog"));
@@ -426,7 +424,11 @@ void QWasmAccessibility::setHtmlElementTextName(QAccessibleInterface *iface)
 {
     emscripten::val element = ensureHtmlElement(iface);
     const QString name = iface->text(QAccessible::Name);
-    setAttribute(element, "aria-label", name.toStdString());
+
+    if (iface->role() == QAccessible::StaticText)
+        setProperty(element, "innerHTML", name.toStdString());
+    else
+        setAttribute(element, "aria-label", name.toStdString());
 }
 
 void QWasmAccessibility::setHtmlElementTextNameLE(QAccessibleInterface *iface) {
