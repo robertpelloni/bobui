@@ -3208,43 +3208,53 @@ void QXmlStreamWriterPrivate::writeEscaped(QAnyStringView s, bool escapeWhitespa
             while (it != end) {
                 auto next_it = it;
                 auto [uc, encodingError] = decoder(next_it, end);
-                if (uc == u'<') {
+                switch (uc) {
+                case u'<':
                     replacement = "&lt;"_L1;
                     break;
-                } else if (uc == u'>') {
+                case u'>':
                     replacement = "&gt;"_L1;
                     break;
-                } else if (uc == u'&') {
+                case u'&':
                     replacement = "&amp;"_L1;
                     break;
-                } else if (uc == u'\"') {
+                case u'\"':
                     replacement = "&quot;"_L1;
                     break;
-                } else if (uc == u'\t') {
-                    if (escapeWhitespace) {
+                case u'\t':
+                    if (escapeWhitespace)
                         replacement = "&#9;"_L1;
-                        break;
-                    }
-                } else if (uc == u'\n') {
-                    if (escapeWhitespace) {
-                        replacement = "&#10;"_L1;
-                        break;
-                    }
-                } else if (uc == u'\v' || uc == u'\f') {
-                    raiseError(QXmlStreamWriter::Error::InvalidCharacter);
                     break;
-                } else if (uc == u'\r') {
-                    if (escapeWhitespace) {
+                case u'\n':
+                    if (escapeWhitespace)
+                        replacement = "&#10;"_L1;
+                    break;
+                case u'\r':
+                    if (escapeWhitespace)
                         replacement = "&#13;"_L1;
+                    break;
+                case u'\v':
+                case u'\f':
+                    raiseError(QXmlStreamWriter::Error::InvalidCharacter);
+                    replacement = ""_L1;
+                    Q_ASSERT(!replacement.isNull());
+                    break;
+                default:
+                    if (uc > 0x1F)
                         break;
-                    }
-                } else if (uc <= u'\x1F' || uc == u'\uFFFE' || uc == u'\uFFFF') {
-                    if (encodingError)
-                        raiseError(QXmlStreamWriter::Error::EncodingError);
-                    else
-                        raiseError(QXmlStreamWriter::Error::InvalidCharacter);
+                    // ASCII control characters
+                    Q_FALLTHROUGH();
+                case 0xFFFE:
+                case 0xFFFF:
+                    raiseError(encodingError
+                                       ? QXmlStreamWriter::Error::EncodingError
+                                       : QXmlStreamWriter::Error::InvalidCharacter);
+                    replacement = ""_L1;
+                    Q_ASSERT(!replacement.isNull());
                     break;
                 }
+                if (!replacement.isNull())
+                    break;
                 it = next_it;
             }
 
