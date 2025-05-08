@@ -126,6 +126,8 @@ public:
     static QWindowsBaseWindow *baseWindowOf(const QWindow *w);
     static HWND handleOf(const QWindow *w);
 
+    bool windowEvent(QEvent *event) override;
+
 protected:
     HWND parentHwnd() const { return GetAncestor(handle(), GA_PARENT); }
     bool isTopLevel_sys() const;

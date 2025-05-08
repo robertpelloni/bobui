@@ -1402,6 +1402,24 @@ void QWindowsBaseWindow::setCustomMargins(const QMargins &)
     Q_UNIMPLEMENTED();
 }
 
+bool QWindowsBaseWindow::windowEvent(QEvent *event)
+{
+    switch (event->type()) {
+    case QEvent::ChildWindowAdded:
+        if (!(GetWindowLongPtr(handle(), GWL_STYLE) & WS_CLIPCHILDREN)) {
+            auto *childWindowEvent = static_cast<QChildWindowEvent*>(event);
+            qWarning() << childWindowEvent->child() << "added as child to"
+                << window() << "which does not have WS_CLIPCHILDREN set."
+                << "This will result in drawing artifacts!";
+        }
+        break;
+    default:
+        break;
+    }
+
+    return QPlatformWindow::windowEvent(event);
+}
+
 /*!
     \class QWindowsDesktopWindow
     \brief Window wrapping GetDesktopWindow not allowing any manipulation.
@@ -2928,7 +2946,7 @@ bool QWindowsWindow::windowEvent(QEvent *event)
         break;
     }
 
-    return QPlatformWindow::windowEvent(event);
+    return QWindowsBaseWindow::windowEvent(event);
 }
 
 void QWindowsWindow::propagateSizeHints()
