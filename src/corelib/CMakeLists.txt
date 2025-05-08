@@ -52,6 +52,7 @@ qt_internal_add_module(Core
         global/qdarwinhelpers.h
         global/qendian.cpp global/qendian.h global/qendian_p.h
         global/qexceptionhandling.h
+        global/qexpected_p.h
         global/qflags.h
         global/qfloat16.cpp global/qfloat16.h
         global/qforeach.h
