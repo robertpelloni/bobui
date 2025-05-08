@@ -303,7 +303,7 @@ QString QFSFileEngine::currentPath(const QString &)
 QFileInfoList QFSFileEngine::drives()
 {
     QFileInfoList ret;
-    ret.append(QFileInfo(rootPath()));
+    ret.append(QFileInfo(QFileSystemEngine::rootPath()));
     return ret;
 }
 

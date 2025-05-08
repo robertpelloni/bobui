@@ -107,9 +107,6 @@ public:
     bool open(QIODevice::OpenMode flags, FILE *fh, QFile::FileHandleFlags handleFlags);
     static bool setCurrentPath(const QString &path);
     static QString currentPath(const QString &path = QString());
-    static QString homePath();
-    static QString rootPath();
-    static QString tempPath();
     static QFileInfoList drives();
 
 protected:
