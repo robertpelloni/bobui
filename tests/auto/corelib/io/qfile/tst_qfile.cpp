@@ -4009,6 +4009,10 @@ void tst_QFile::supportsMoveToTrash()
 #elif !defined(AT_FDCWD)
     // Unix platforms without the POSIX atfile support: not supported
     QVERIFY(!QFile::supportsMoveToTrash());
+#elif defined(Q_OS_VXWORKS)
+    // AT_FDCWD exists in VxWorks 25.03,
+    // but required POSIX APIs for trash support are missing
+    QVERIFY(!QFile::supportsMoveToTrash());
 #else
     QVERIFY(QFile::supportsMoveToTrash());
 #endif
