@@ -1846,13 +1846,39 @@ static bool systemd_default_message_handler(QtMsgType type,
         break;
     }
 
-    sd_journal_send("MESSAGE=%s",     message.toUtf8().constData(),
-                    "PRIORITY=%i",    priority,
-                    "CODE_FUNC=%s",   context.function ? context.function : "unknown",
-                    "CODE_LINE=%d",   context.line,
-                    "CODE_FILE=%s",   context.file ? context.file : "unknown",
-                    "QT_CATEGORY=%s", context.category ? context.category : "unknown",
-                    NULL);
+    // Explicit QByteArray instead of auto, to resolve the QStringBuilder proxy
+    const QByteArray messageField = "MESSAGE="_ba + message.toUtf8().constData();
+    const QByteArray priorityField = "PRIORITY="_ba + QByteArray::number(priority);
+    const QByteArray tidField = "TID="_ba + QByteArray::number(qlonglong(qt_gettid()));
+    const QByteArray fileField = context.file
+                                 ? "CODE_FILE="_ba + context.file : QByteArray();
+    const QByteArray funcField = context.function
+                                 ? "CODE_FUNC="_ba + context.function : QByteArray();
+    const QByteArray lineField = context.line
+                                 ? "CODE_LINE="_ba + QByteArray::number(context.line) : QByteArray();
+    const QByteArray categoryField = context.category
+                                 ? "QT_CATEGORY="_ba + context.category : QByteArray();
+
+    auto toIovec = [](const QByteArray &ba) {
+        return iovec{const_cast<char*>(ba.data()), ba.size()};
+    };
+
+    struct iovec fields[7] = {
+        toIovec(messageField),
+        toIovec(priorityField),
+        toIovec(tidField),
+    };
+    int nFields = 3;
+    if (context.file)
+        fields[nFields++] = toIovec(fileField);
+    if (context.function)
+        fields[nFields++] = toIovec(funcField);
+    if (context.line)
+        fields[nFields++] = toIovec(lineField);
+    if (context.category)
+        fields[nFields++] = toIovec(categoryField);
+
+    sd_journal_sendv(fields, nFields);
 
     return true; // Prevent further output to stderr
 }
