@@ -3681,95 +3681,24 @@ QString &QString::remove(QChar ch, Qt::CaseSensitivity cs)
   \sa remove()
 */
 
-
-/*! \internal
-  Instead of detaching, or reallocating if "before" is shorter than "after"
-  and there isn't enough capacity, create a new string, copy characters to it
-  as needed, then swap it with "str".
-*/
-static void replace_with_copy(QString &str, QSpan<qsizetype> indices, qsizetype blen,
-                              QStringView after)
-{
-    const qsizetype alen = after.size();
-    const char16_t *after_b = after.utf16();
-
-    const QString::DataPointer &str_d = str.data_ptr();
-    auto src_start = str_d.begin();
-    const qsizetype newSize = str_d.size + indices.size() * (alen - blen);
-    QString copy{ newSize, Qt::Uninitialized };
-    QString::DataPointer &copy_d = copy.data_ptr();
-    auto dst = copy_d.begin();
-    for (size_t index : indices) {
-        auto hit = str_d.begin() + index;
-        dst = std::copy(src_start, hit, dst);
-        dst = std::copy_n(after_b, alen, dst);
-        src_start = hit + blen;
-    }
-    dst = std::copy(src_start, str_d.end(), dst);
-    str.swap(copy);
-}
-
-// No detaching or reallocation is needed
-static void replace_in_place(QString &str, QSpan<qsizetype> indices,
-                             qsizetype blen, QStringView after)
-{
-    const qsizetype alen = after.size();
-    const char16_t *after_b = after.utf16();
-    const char16_t *after_e = after.utf16() + after.size();
-
-    if (blen == alen) { // Replace in place
-        for (size_t index : indices)
-            std::copy_n(after_b, alen, str.data_ptr().begin() + index);
-    } else if (blen > alen) { // Replace from front
-        char16_t *begin = str.data_ptr().begin();
-        char16_t *hit = begin + indices.front();
-        char16_t *to = hit;
-        to = std::copy_n(after_b, alen, to);
-        char16_t *movestart = hit + blen;
-        for (size_t index : indices.sliced(1)) {
-            hit = begin + index;
-            to = std::move(movestart, hit, to);
-            to = std::copy_n(after_b, alen, to);
-            movestart = hit + blen;
-        }
-        to = std::move(movestart, str.data_ptr().end(), to);
-        str.resize(std::distance(begin, to));
-    } else { // blen < alen, Replace from back
-        const qsizetype oldSize = str.data_ptr().size;
-        const qsizetype adjust = indices.size() * (alen - blen);
-        const qsizetype newSize = oldSize + adjust;
-
-        str.resize(newSize);
-        char16_t *begin = str.data_ptr().begin();
-        char16_t *moveend = begin + oldSize;
-        char16_t *to = str.data_ptr().end();
-
-        for (auto it = indices.rbegin(), end = indices.rend(); it != end; ++it) {
-            char16_t *hit = begin + *it;
-            char16_t *movestart = hit + blen;
-            to = std::move_backward(movestart, moveend, to);
-            to = std::copy_backward(after_b, after_e, to);
-            moveend = hit;
-        }
-    }
-}
-
 static void replace_helper(QString &str, QSpan<qsizetype> indices, qsizetype blen, QStringView after)
 {
     const qsizetype oldSize = str.data_ptr().size;
     const qsizetype adjust = indices.size() * (after.size() - blen);
     const qsizetype newSize = oldSize + adjust;
+    using A = QStringAlgorithms<QString>;
     if (str.data_ptr().needsDetach() || needsReallocate(str, newSize)) {
-        replace_with_copy(str, indices, blen, after);
+        A::replace_helper(str, blen, after, indices);
         return;
     }
 
-    if (QtPrivate::q_points_into_range(after.begin(), str))
+    if (QtPrivate::q_points_into_range(after.begin(), str)) {
         // Copy after if it lies inside our own d.b area (which we could
         // possibly invalidate via a realloc or modify by replacement)
-        replace_in_place(str, indices, blen, QVarLengthArray(after.begin(), after.end()));
-    else
-        replace_in_place(str, indices, blen, after);
+        A::replace_helper(str, blen, QVarLengthArray(after.begin(), after.end()), indices);
+    } else {
+        A::replace_helper(str, blen, after, indices);
+    }
 }
 
 /*!
