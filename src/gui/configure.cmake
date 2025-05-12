@@ -70,8 +70,19 @@ qt_find_package(Tslib PROVIDED_TARGETS PkgConfig::Tslib MODULE_NAME gui QMAKE_LI
 qt_find_package(WrapVulkanHeaders PROVIDED_TARGETS WrapVulkanHeaders::WrapVulkanHeaders
     MODULE_NAME gui QMAKE_LIB vulkan MARK_OPTIONAL)
 if((LINUX) OR QT_FIND_ALL_PACKAGES_ALWAYS)
-    qt_find_package(Wayland PROVIDED_TARGETS Wayland::Server MODULE_NAME gui QMAKE_LIB wayland_server)
-    qt_find_package(Wayland PROVIDED_TARGETS Wayland::Client MODULE_NAME gui QMAKE_LIB wayland_client)
+    qt_find_package(Wayland PROVIDED_TARGETS Wayland::Server
+                    MODULE_NAME gui QMAKE_LIB wayland_server)
+    qt_find_package(Wayland PROVIDED_TARGETS Wayland::Client
+                    MODULE_NAME gui QMAKE_LIB wayland_client)
+    # Gui doesn't use these, but the wayland qpa plugin does, and we
+    # need to list the rest of the provided targets here, so they are
+    # promoted to global, and can be accessed by the SBOM at the root
+    # project level. That's not possible to do in the wayland qpa subdir,
+    # due to different cmake directory scopes.
+    qt_find_package(Wayland PROVIDED_TARGETS Wayland::Cursor
+                    MODULE_NAME gui QMAKE_LIB wayland_cursor)
+    qt_find_package(Wayland PROVIDED_TARGETS Wayland::Egl
+                    MODULE_NAME gui QMAKE_LIB wayland_egl)
 endif()
 if((X11_SUPPORTED) OR QT_FIND_ALL_PACKAGES_ALWAYS)
     qt_find_package(X11 PROVIDED_TARGETS X11::X11 MODULE_NAME gui QMAKE_LIB xlib)
@@ -151,6 +162,25 @@ if((X11_SUPPORTED) OR QT_FIND_ALL_PACKAGES_ALWAYS)
     qt_find_package(XRender 0.6 PROVIDED_TARGETS PkgConfig::XRender MODULE_NAME gui QMAKE_LIB xrender)
 endif()
 qt_add_qmake_lib_dependency(xrender xlib)
+
+# qt wayland client
+if(LINUX OR QT_FIND_ALL_PACKAGES_ALWAYS)
+    # EGL
+    if(NOT TARGET EGL::EGL)
+        qt_find_package(EGL PROVIDED_TARGETS EGL::EGL MODULE_NAME gui QMAKE_LIB egl MARK_OPTIONAL)
+    endif()
+    # and Libdrm
+    if(NOT TARGET Libdrm::Libdrm)
+        qt_find_package(Libdrm
+            PROVIDED_TARGETS Libdrm::Libdrm
+            MODULE_NAME gui
+            QMAKE_LIB drm
+            MARK_OPTIONAL)
+    endif()
+endif()
+
+qt_find_package(Wayland 1.15)
+qt_find_package(WaylandScanner PROVIDED_TARGETS Wayland::Scanner)
 
 qt_find_package(RenderDoc PROVIDED_TARGETS RenderDoc::RenderDoc)
 
@@ -697,6 +727,128 @@ int main(int, char **)
 }
 ")
 
+# qtwayland client
+# drm-egl-server
+qt_config_compile_test(drm_egl_server
+    LABEL "DRM EGL Server"
+    LIBRARIES
+    EGL::EGL
+    CODE
+    "
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+
+int main(int argc, char **argv)
+{
+    (void)argc; (void)argv;
+    /* BEGIN TEST: */
+#ifdef EGL_MESA_drm_image
+return 0;
+#else
+#error Requires EGL_MESA_drm_image to be defined
+return 1;
+#endif
+    /* END TEST: */
+    return 0;
+}
+")
+
+# libhybris-egl-server
+qt_config_compile_test(libhybris_egl_server
+    LABEL "libhybris EGL Server"
+    LIBRARIES
+    EGL::EGL
+    CODE
+    "
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+#include <hybris/eglplatformcommon/hybris_nativebufferext.h>
+
+int main(int argc, char **argv)
+{
+    (void)argc; (void)argv;
+    /* BEGIN TEST: */
+#ifdef EGL_HYBRIS_native_buffer
+return 0;
+#else
+#error Requires EGL_HYBRIS_native_buffer to be defined
+return 1;
+#endif
+    /* END TEST: */
+    return 0;
+}
+")
+
+# dmabuf-server-buffer
+qt_config_compile_test(dmabuf_server_buffer
+    LABEL "Linux dma-buf Buffer Sharing"
+    LIBRARIES
+    EGL::EGL
+    Libdrm::Libdrm
+    CODE
+    "
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+#include <drm_fourcc.h>
+
+int main(int argc, char **argv)
+{
+    (void)argc; (void)argv;
+    /* BEGIN TEST: */
+#ifdef EGL_LINUX_DMA_BUF_EXT
+return 0;
+#else
+#error Requires EGL_LINUX_DMA_BUF_EXT
+return 1;
+#endif
+    /* END TEST: */
+    return 0;
+}
+")
+
+# vulkan-server-buffer
+qt_config_compile_test(vulkan_server_buffer
+    LABEL "Vulkan Buffer Sharing"
+    LIBRARIES
+    Wayland::Client
+    CODE
+    "#define VK_USE_PLATFORM_WAYLAND_KHR 1
+#include <vulkan/vulkan.h>
+
+int main(int argc, char **argv)
+{
+    (void)argc; (void)argv;
+    /* BEGIN TEST: */
+VkExportMemoryAllocateInfoKHR exportAllocInfo = {};
+exportAllocInfo.sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO_KHR;
+exportAllocInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
+return 0;
+    /* END TEST: */
+    return 0;
+}
+")
+
+# egl_1_5-wayland
+qt_config_compile_test(egl_1_5_wayland
+    LABEL "EGL 1.5 with Wayland Platform"
+    LIBRARIES
+    EGL::EGL
+    Wayland::Client
+    CODE
+    "
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+#include <wayland-client.h>
+
+int main(int argc, char **argv)
+{
+    (void)argc; (void)argv;
+    /* BEGIN TEST: */
+eglGetPlatformDisplay(EGL_PLATFORM_WAYLAND_EXT, (struct wl_display *)(nullptr), nullptr);
+    /* END TEST: */
+    return 0;
+}
+")
 
 #### Features
 
@@ -1344,6 +1496,81 @@ qt_feature("wayland" PUBLIC
     LABEL "Wayland"
     CONDITION TARGET Wayland::Client
 )
+qt_feature("waylandscanner" PUBLIC
+    SECTION "Wayland Scanner tool"
+    LABEL "Wayland Scanner"
+    CONDITION TARGET Wayland::Scanner
+)
+
+# qt wayland client
+qt_feature("wayland-client" PRIVATE
+    LABEL "Client"
+    CONDITION NOT WIN32 AND QT_FEATURE_wayland AND QT_FEATURE_waylandscanner
+)
+qt_feature("wayland-server" PRIVATE
+    LABEL "Qt Wayland Compositor"
+    CONDITION NOT WIN32 AND QT_FEATURE_wayland AND QT_FEATURE_waylandscanner
+)
+qt_feature("wayland-egl" PRIVATE
+    LABEL "EGL"
+    CONDITION (QT_FEATURE_wayland_client OR QT_FEATURE_wayland_server)
+              AND QT_FEATURE_opengl AND QT_FEATURE_egl
+              AND (NOT QNX OR QT_FEATURE_egl_extension_platform_wayland)
+)
+qt_feature("wayland-brcm" PRIVATE
+    LABEL "Raspberry Pi"
+    CONDITION (QT_FEATURE_wayland_client OR QT_FEATURE_wayland_server) AND QT_FEATURE_eglfs_brcm
+)
+qt_feature("wayland-drm-egl-server-buffer" PRIVATE
+    LABEL "DRM EGL"
+    CONDITION (QT_FEATURE_wayland_client OR QT_FEATURE_wayland_server) AND QT_FEATURE_opengl
+              AND QT_FEATURE_egl AND TEST_drm_egl_server
+              AND (NOT QNX OR QT_FEATURE_egl_extension_platform_wayland)
+)
+qt_feature("wayland-libhybris-egl-server-buffer" PRIVATE
+    LABEL "libhybris EGL"
+    CONDITION (QT_FEATURE_wayland_client OR QT_FEATURE_wayland_server) AND QT_FEATURE_opengl
+              AND QT_FEATURE_egl AND TEST_libhybris_egl_server
+)
+qt_feature("wayland-dmabuf-server-buffer" PRIVATE
+    LABEL "Linux dma-buf server buffer"
+    CONDITION (QT_FEATURE_wayland_client OR QT_FEATURE_wayland_server) AND QT_FEATURE_opengl
+              AND QT_FEATURE_egl AND TEST_dmabuf_server_buffer
+)
+qt_feature("wayland-shm-emulation-server-buffer" PRIVATE
+    LABEL "Shm emulation server buffer"
+    CONDITION (QT_FEATURE_wayland_client OR QT_FEATURE_wayland_server) AND QT_FEATURE_opengl
+)
+qt_feature("wayland-vulkan-server-buffer" PRIVATE
+    LABEL "Vulkan-based server buffer"
+    CONDITION (QT_FEATURE_wayland_client OR QT_FEATURE_wayland_server) AND QT_FEATURE_vulkan
+              AND QT_FEATURE_opengl AND QT_FEATURE_egl AND TEST_vulkan_server_buffer
+)
+qt_feature("wayland-datadevice" PRIVATE
+    CONDITION QT_FEATURE_draganddrop OR QT_FEATURE_clipboard
+)
+qt_feature("wayland-client-primary-selection" PRIVATE
+    LABEL "primary-selection clipboard"
+    CONDITION QT_FEATURE_clipboard
+)
+qt_feature("wayland-client-fullscreen-shell-v1" PRIVATE
+    LABEL "fullscreen-shell-v1"
+    CONDITION QT_FEATURE_wayland_client
+)
+qt_feature("wayland-client-wl-shell" PRIVATE
+    LABEL "wl-shell (deprecated)"
+    CONDITION QT_FEATURE_wayland_client
+)
+qt_feature("wayland-client-xdg-shell" PRIVATE
+    LABEL "xdg-shell"
+    CONDITION QT_FEATURE_wayland_client
+)
+qt_feature("egl-extension-platform-wayland" PRIVATE
+    LABEL "EGL wayland platform extension"
+    CONDITION QT_FEATURE_wayland_client AND QT_FEATURE_opengl AND QT_FEATURE_egl
+              AND TEST_egl_1_5_wayland
+)
+
 
 qt_configure_add_summary_section(NAME "Qt Gui")
 qt_configure_add_summary_entry(ARGS "accessibility")
@@ -1449,6 +1676,22 @@ qt_configure_add_summary_entry(ARGS "directwrite")
 qt_configure_add_summary_entry(ARGS "directwrite3")
 qt_configure_add_summary_entry(ARGS "directwritecolrv1")
 qt_configure_end_summary_section() # end of "Windows" section
+qt_configure_add_summary_section(NAME "Wayland")
+qt_configure_add_summary_entry(ARGS "wayland-client")
+qt_configure_add_summary_section(NAME "Hardware Integrations")
+qt_configure_add_summary_entry(ARGS "wayland-egl")
+qt_configure_add_summary_entry(ARGS "wayland-brcm")
+qt_configure_add_summary_entry(ARGS "wayland-drm-egl-server-buffer")
+qt_configure_add_summary_entry(ARGS "wayland-libhybris-egl-server-buffer")
+qt_configure_add_summary_entry(ARGS "wayland-dmabuf-server-buffer")
+qt_configure_add_summary_entry(ARGS "wayland-shm-emulation-server-buffer")
+qt_configure_add_summary_entry(ARGS "wayland-vulkan-server-buffer")
+qt_configure_end_summary_section() # end of "Qt Wayland Drivers" section
+qt_configure_add_summary_section(NAME "Shell Integrations")
+qt_configure_add_summary_entry(ARGS "wayland-client-xdg-shell")
+qt_configure_add_summary_entry(ARGS "wayland-client-wl-shell")
+qt_configure_end_summary_section() # end of "Shell Integrations" section
+qt_configure_end_summary_section() # end of "Wayland" section
 qt_configure_end_summary_section() # end of "QPA backends" section
 qt_configure_add_report_entry(
     TYPE NOTE
@@ -1485,3 +1728,26 @@ qt_configure_add_report_entry(
     MESSAGE "The desktopservices feature is required on macOS, iOS, and Android and cannot be disabled."
     CONDITION (APPLE OR ANDROID) AND NOT QT_FEATURE_desktopservices
 )
+qt_configure_add_report_entry(
+    TYPE NOTE
+    MESSAGE "Qt Gui has been built without 'qtwaylandscanner' feature. This feature is required for building Qt Wayland Client."
+    CONDITION NOT QT_FEATURE_waylandscanner AND QT_FEATURE_wayland_client
+)
+qt_configure_add_report_entry(
+    TYPE NOTE
+    MESSAGE "Qt Gui has been built without 'wayland' feature. This feature is required for building Qt Wayland Client."
+    CONDITION NOT QT_FEATURE_wayland AND QT_FEATURE_wayland_client
+)
+
+#### Inputs
+
+
+
+#### Libraries
+
+
+#### Tests
+
+
+#### Features
+
