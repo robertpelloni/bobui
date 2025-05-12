@@ -59,9 +59,9 @@ namespace qwasmglobal {
     }
 #endif // QT_CONFIG(thread)
 
-    void runAsync(std::function<void(void)> fn);
-    void runOnMainThread(std::function<void(void)> fn);
-    void runOnMainThreadAsync(std::function<void(void)> fn);
+    Q_CORE_EXPORT void runAsync(std::function<void(void)> fn);
+    Q_CORE_EXPORT void runOnMainThread(std::function<void(void)> fn);
+    Q_CORE_EXPORT void runOnMainThreadAsync(std::function<void(void)> fn);
 }
 
 QT_END_NAMESPACE
