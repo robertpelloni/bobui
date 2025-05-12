@@ -283,28 +283,33 @@ void QWasmInputContext::update(Qt::InputMethodQueries queries)
 {
     qCDebug(qLcQpaWasmInputContext) << Q_FUNC_INFO << queries;
 
+    if ((queries & Qt::ImEnabled) && (inputMethodAccepted() != m_inputMethodAccepted)) {
+        if (m_focusObject && !m_preeditString.isEmpty())
+            commitPreeditAndClear();
+        updateInputElement();
+    }
     QPlatformInputContext::update(queries);
 }
 
 void QWasmInputContext::showInputPanel()
 {
     qCDebug(qLcQpaWasmInputContext) << Q_FUNC_INFO;
-    m_visibleInputPanel = true;
 
+    // Note: showInputPanel not necessarily called, we shall
+    // still accept input if we have a focus object and
+    // inputMethodAccepted().
     updateInputElement();
 }
 
 void QWasmInputContext::updateGeometry()
 {
     const QWindow *focusWindow = QGuiApplication::focusWindow();
-    if (!m_focusObject || !focusWindow ||  !m_visibleInputPanel || !m_inputMethodAccepted) {
+    if (!m_focusObject || !focusWindow || !m_inputMethodAccepted) {
         m_inputElement["style"].set("left", "0px");
         m_inputElement["style"].set("top", "0px");
-    }
-    else {
+    } else {
         Q_ASSERT(focusWindow);
         Q_ASSERT(m_focusObject);
-        Q_ASSERT(m_visibleInputPanel);
         Q_ASSERT(m_inputMethodAccepted);
 
         // Set the geometry
@@ -329,13 +334,15 @@ void QWasmInputContext::updateGeometry()
 
 void QWasmInputContext::updateInputElement()
 {
+    m_inputMethodAccepted = inputMethodAccepted();
+
     // Mobile devices can dismiss keyboard/IME and focus is still on input.
     // Successive clicks on the same input should open the keyboard/IME.
     updateGeometry();
 
     // If there is no focus object, or no visible input panel, remove focus
     const QWindow *focusWindow = QGuiApplication::focusWindow();
-    if (!m_focusObject || !focusWindow || !m_visibleInputPanel || !m_inputMethodAccepted) {
+    if (!m_focusObject || !focusWindow || !m_inputMethodAccepted) {
         m_inputElement.set("value", "");
 
         if (QWasmWindow *wasmwindow = QWasmWindow::fromWindow(focusWindow))
@@ -349,7 +356,6 @@ void QWasmInputContext::updateInputElement()
 
     Q_ASSERT(focusWindow);
     Q_ASSERT(m_focusObject);
-    Q_ASSERT(m_visibleInputPanel);
     Q_ASSERT(m_inputMethodAccepted);
 
     qCDebug(qLcQpaWasmInputContext) << Q_FUNC_INFO << QRectF::fromDOMRect(m_inputElement.call<emscripten::val>("getBoundingClientRect"));
@@ -381,8 +387,8 @@ void QWasmInputContext::setFocusObject(QObject *object)
     if (m_focusObject && !m_preeditString.isEmpty())
         commitPreeditAndClear();
 
-    m_inputMethodAccepted = (object && inputMethodAccepted());
     m_focusObject = object;
+
     updateInputElement();
     QPlatformInputContext::setFocusObject(object);
 }
@@ -390,7 +396,6 @@ void QWasmInputContext::setFocusObject(QObject *object)
 void QWasmInputContext::hideInputPanel()
 {
     qCDebug(qLcQpaWasmInputContext) << Q_FUNC_INFO;
-    m_visibleInputPanel = false;
 
     // hide only if m_focusObject does not exist
     if (!m_focusObject)
