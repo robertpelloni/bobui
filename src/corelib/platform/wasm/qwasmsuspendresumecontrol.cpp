@@ -42,13 +42,15 @@ QWasmSuspendResumeControl *QWasmSuspendResumeControl::s_suspendResumeControl = n
 // Setup/constructor function for Module.suspendResumeControl.
 // FIXME if assigning to the Module object from C++ is/becomes possible
 // then this does not need to be a separate JS function.
-EM_JS(void, qtSuspendResumeControlClearJs, (), {
-    Module.qtSuspendResumeControl = {
-        resume: null,
-        eventHandlers: {},
-        pendingEvents: [],
-    };
-});
+void qtSuspendResumeControlClearJs() {
+    EM_ASM({
+        Module.qtSuspendResumeControl = ({
+            resume: null,
+            eventHandlers: {},
+            pendingEvents: [],
+        });
+    });
+}
 
 // Suspends the calling thread
 EM_ASYNC_JS(void, qtSuspendJs, (), {
@@ -60,23 +62,26 @@ EM_ASYNC_JS(void, qtSuspendJs, (), {
 // Registers a JS event handler which when called registers its index
 // as the "current" event handler, and then resumes the wasm instance.
 // The wasm instance will then call the C++ event after it is resumed.
-EM_JS(void, qtRegisterEventHandlerJs, (int index), {
-    let control = Module.qtSuspendResumeControl;
-    let handler = (arg) => {
-        control.pendingEvents.push({
-            index: index,
-            arg: arg
-        });
-        if (control.resume) {
-            const resume = control.resume;
-            control.resume = null;
-            resume();
-        } else {
-            Module.qtSendPendingEvents(); // not suspended, call the handler directly
-        }
-    };
-    control.eventHandlers[index] = handler;
-});
+void qtRegisterEventHandlerJs(int index) {
+    EM_ASM({
+        let index = $0;
+        let control = Module.qtSuspendResumeControl;
+        let handler = (arg) => {
+            control.pendingEvents.push({
+                index: index,
+                arg: arg
+            });
+            if (control.resume) {
+                const resume = control.resume;
+                control.resume = null;
+                resume();
+            } else {
+                Module.qtSendPendingEvents(); // not suspended, call the handler directly
+            }
+        };
+        control.eventHandlers[index] = handler;
+    }, index);
+}
 
 QWasmSuspendResumeControl::QWasmSuspendResumeControl()
 {
