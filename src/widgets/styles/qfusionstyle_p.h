@@ -73,6 +73,8 @@ public:
 protected:
     QFusionStyle(QFusionStylePrivate &dd);
 
+private:
+    bool isHighContrast() const;
 };
 
 #endif // style_fusion

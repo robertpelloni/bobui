@@ -643,6 +643,8 @@ void QFusionStyle::drawPrimitive(PrimitiveElement elem,
         circle.addEllipse(circleCenter, outlineRadius, outlineRadius);
         if (option->state & State_HasFocus && option->state & State_KeyboardFocusChange)
             painter->setPen(highlightedOutline);
+        else if (isHighContrast())
+            painter->setPen(outline);
         else
             painter->setPen(option->palette.window().color().darker(150));
         painter->drawPath(circle);
@@ -1727,7 +1729,7 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
 {
 
     Q_D (const QFusionStyle);
-
+    const QColor outline = d->outline(option->palette);
     switch (control) {
     case CC_GroupBox:
         painter->save();
@@ -1758,7 +1760,13 @@ void QFusionStyle::drawComplexControl(ComplexControl control, const QStyleOption
                     region -= finalRect.adjusted(0, 0, 0, 3 - textRect.height() / 2);
                 }
                 painter->setClipRegion(region);
-                proxy()->drawPrimitive(PE_FrameGroupBox, &frame, painter, widget);
+                if (isHighContrast()) {
+                    painter->setPen(outline);
+                    QMargins margins(3, 3, 3, 3);
+                    painter->drawRoundedRect(frame.rect.marginsRemoved(margins), 2, 2);
+                } else {
+                    proxy()->drawPrimitive(PE_FrameGroupBox, &frame, painter, widget);
+                }
                 painter->restore();
             }
 
@@ -3542,6 +3550,12 @@ QPixmap QFusionStyle::standardPixmap(StandardPixmap standardPixmap, const QStyle
     if (!icon.availableSizes().isEmpty())
         return icon.pixmap(QSize(16, 16), QStyleHelper::getDpr(widget));
     return QCommonStyle::standardPixmap(standardPixmap, opt, widget);
+}
+
+bool QFusionStyle::isHighContrast() const
+{
+    return QGuiApplicationPrivate::platformTheme()->contrastPreference()
+            == Qt::ContrastPreference::HighContrast;
 }
 
 QT_END_NAMESPACE

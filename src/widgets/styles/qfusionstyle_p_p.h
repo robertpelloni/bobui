@@ -65,6 +65,9 @@ public:
     }
 
     QColor outline(const QPalette &pal) const {
+        if (isHighContrast()) {
+            return pal.text().color();
+        }
         if (pal.window().style() == Qt::TexturePattern)
             return QColor(0, 0, 0, 160);
         return pal.window().color().darker(140);
@@ -97,6 +100,13 @@ public:
         menuRightBorder      = 15, // right border on menus
         menuCheckMarkWidth   = 12  // checkmarks width on menus
     };
+
+private:
+    bool isHighContrast() const
+    {
+        return QGuiApplicationPrivate::platformTheme()->contrastPreference()
+                == Qt::ContrastPreference::HighContrast;
+    }
 };
 
 QT_END_NAMESPACE
