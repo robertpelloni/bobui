@@ -1653,6 +1653,7 @@ endfunction()
 # module and is executed implicitly when configuring user projects.
 function(_qt_internal_android_executable_finalizer target)
     set_property(TARGET ${target} PROPERTY _qt_android_executable_finalizer_called TRUE)
+    set_property(TARGET ${target} PROPERTY _qt_android_in_finalizer "EXECUTABLE")
 
     _qt_internal_expose_android_package_source_dir_to_ide(${target})
 
@@ -1668,6 +1669,7 @@ function(_qt_internal_android_executable_finalizer target)
         qt6_android_add_apk_target("${target}")
     endif()
     _qt_internal_android_create_runner_wrapper("${target}")
+    set_property(TARGET ${target} PROPERTY _qt_android_in_finalizer "")
 endfunction()
 
 # Helper to add the android executable finalizer.
