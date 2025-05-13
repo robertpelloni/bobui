@@ -1763,7 +1763,7 @@ function(_qt_internal_android_get_target_deployment_dir out_deploy_dir target)
 endfunction()
 
 function(_qt_internal_expose_android_package_source_dir_to_ide target)
-    get_target_property(android_package_source_dir ${target} QT_ANDROID_PACKAGE_SOURCE_DIR)
+    _qt_internal_android_get_package_source_dir(android_package_source_dir ${target})
     if(android_package_source_dir)
         get_target_property(target_source_dir ${target} SOURCE_DIR)
         if(NOT IS_ABSOLUTE "${android_package_source_dir}")
@@ -1902,6 +1902,23 @@ function(_qt_internal_android_template_dir out_var)
         set(${out_var}
             "${QT6_INSTALL_PREFIX}/${QT6_INSTALL_DATA}/src/android/templates_cmake" PARENT_SCOPE)
     endif()
+endfunction()
+
+# Return the path to the target template directory if it's set for the target.
+# Then this path is stored in the target QT_ANDROID_PACKAGE_SOURCE_DIR property
+# and can only be effectively read in android finalizers.
+function(_qt_internal_android_get_package_source_dir out_var target)
+    get_target_property(in_finalizer ${target} _qt_android_in_finalizer)
+    if(NOT in_finalizer)
+        message(FATAL_ERROR "The '_qt_internal_android_get_package_source_dir' function is"
+            " called outside the Android finalizer."
+            " This is the Qt issue, please report a bug at https://bugreports.qt.io.")
+    endif()
+    get_target_property(package_src_dir ${target} QT_ANDROID_PACKAGE_SOURCE_DIR)
+    if(NOT package_src_dir)
+        set(package_src_dir "")
+    endif()
+    set(${out_var} "${package_src_dir}" PARENT_SCOPE)
 endfunction()
 
 # Add target_make_<apk|aab> as the depednecy for the respective global apk/aab
