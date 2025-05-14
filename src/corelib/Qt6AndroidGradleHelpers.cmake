@@ -1,12 +1,46 @@
 # Copyright (C) 2024 The Qt Company Ltd.
 # SPDX-License-Identifier: BSD-3-Clause
 
+# Returns the path to the template file from either user defined template directory, or
+# Qt default template directory.
+function(_qt_internal_android_get_template_path out_var target template_name)
+    if(template_name STREQUAL "")
+        message(FATAL_ERROR "Template name is empty."
+            " This is the Qt issue, please report a bug at https://bugreports.qt.io.")
+    endif()
+
+    _qt_internal_android_get_package_source_dir(user_template_directory ${target})
+    get_filename_component(user_template_directory "${user_template_directory}" ABSOLUTE)
+    _qt_internal_android_template_dir(template_directory)
+    get_filename_component(template_directory "${template_directory}" ABSOLUTE)
+
+    # The paths are ordered according to their priority, from highest to lowest.
+    set(possible_paths
+        "${user_template_directory}/${template_name}.in"
+        "${template_directory}/${template_name}.in"
+    )
+
+    set(template_path "")
+    foreach(possible_path IN LISTS possible_paths)
+        if(EXISTS "${possible_path}")
+            set(template_path "${possible_path}")
+            break()
+        endif()
+    endforeach()
+
+    if(template_path STREQUAL "")
+        message(FATAL_ERROR "'${template_name}' is not found."
+            " This is the Qt issue, please report a bug at https://bugreports.qt.io.")
+    endif()
+
+    set(${out_var} "${template_path}" PARENT_SCOPE)
+endfunction()
+
 # Generates the settings.gradle file for the target. Writes the result to the target android build
 # directory.
 function(_qt_internal_android_generate_bundle_settings_gradle target)
     set(settings_gradle_filename "settings.gradle")
-    _qt_internal_android_template_dir(template_directory)
-    set(template_file "${template_directory}/${settings_gradle_filename}.in")
+    _qt_internal_android_get_template_path(template_file ${target} "${settings_gradle_filename}")
 
     set(android_app_name "$<TARGET_PROPERTY:${target},QT_ANDROID_APP_NAME>")
     string(JOIN "" ROOT_PROJECT_NAME
@@ -136,12 +170,13 @@ function(_qt_internal_android_generate_target_build_gradle target)
         message(FATAL_ERROR "Unsupported target type for android bundle deployment ${target}")
     endif()
 
-    _qt_internal_android_get_target_deployment_dir(target_deployment_dir ${target})
     set(build_gradle_filename "build.gradle")
-    set(build_gradle_file "${target_deployment_dir}/${build_gradle_filename}")
-    _qt_internal_android_template_dir(template_directory)
-    _qt_internal_configure_file(GENERATE OUTPUT "${build_gradle_file}"
-        INPUT "${template_directory}/app/${build_gradle_filename}.in")
+    _qt_internal_android_get_target_deployment_dir(target_deployment_dir ${target})
+    _qt_internal_android_get_template_path(template_file ${target} "app/${build_gradle_filename}")
+    _qt_internal_configure_file(GENERATE
+        OUTPUT "${target_deployment_dir}/${build_gradle_filename}"
+        INPUT "${template_file}"
+    )
 endfunction()
 
 # Prepares the artifacts for the gradle build of the target.
@@ -286,13 +321,14 @@ endfunction()
 # Generates gradle.properties for the specific target. Usually contains the
 # target build type(executable, dynamic feature, library).
 function(_qt_internal_android_generate_target_gradle_properties target)
-    set(gradle_properties "gradle.properties")
-    _qt_internal_android_template_dir(template_directory)
-    set(template_file "${template_directory}/app/${gradle_properties}.in")
+    set(gradle_properties_file_name "gradle.properties")
     _qt_internal_android_get_target_deployment_dir(deployment_dir ${target})
-
-    _qt_internal_configure_file(CONFIGURE OUTPUT "${deployment_dir}/${gradle_properties}"
-        INPUT "${template_file}")
+    _qt_internal_android_get_template_path(template_file ${target}
+        "app/${gradle_properties_file_name}")
+    _qt_internal_configure_file(CONFIGURE
+        OUTPUT "${deployment_dir}/${gradle_properties_file_name}"
+        INPUT "${template_file}"
+    )
 endfunction()
 
 # Generates the top-level gradle.properties in the android-build directory
@@ -303,8 +339,7 @@ function(_qt_internal_android_generate_bundle_gradle_properties target)
 
     set(gradle_properties_file_name "gradle.properties")
     _qt_internal_android_get_target_android_build_dir(android_build_dir ${target})
-    _qt_internal_android_template_dir(template_directory)
-    set(template_file "${template_directory}/${gradle_properties_file_name}.in")
+    _qt_internal_android_get_template_path(template_file ${target} "${gradle_properties_file_name}")
     _qt_internal_configure_file(CONFIGURE
         OUTPUT "${android_build_dir}/${gradle_properties_file_name}"
         INPUT "${template_file}"
