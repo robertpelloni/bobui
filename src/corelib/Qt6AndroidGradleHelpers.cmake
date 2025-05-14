@@ -141,7 +141,7 @@ function(_qt_internal_android_generate_target_build_gradle target)
     set(build_gradle_file "${target_deployment_dir}/${build_gradle_filename}")
     _qt_internal_android_template_dir(template_directory)
     _qt_internal_configure_file(GENERATE OUTPUT "${build_gradle_file}"
-        INPUT "${template_directory}/${build_gradle_filename}.in")
+        INPUT "${template_directory}/app/${build_gradle_filename}.in")
 endfunction()
 
 # Prepares the artifacts for the gradle build of the target.
@@ -288,7 +288,7 @@ endfunction()
 function(_qt_internal_android_generate_target_gradle_properties target)
     set(gradle_properties "gradle.properties")
     _qt_internal_android_template_dir(template_directory)
-    set(template_file "${template_directory}/${gradle_properties}.in")
+    set(template_file "${template_directory}/app/${gradle_properties}.in")
     _qt_internal_android_get_target_deployment_dir(deployment_dir ${target})
 
     _qt_internal_configure_file(CONFIGURE OUTPUT "${deployment_dir}/${gradle_properties}"
