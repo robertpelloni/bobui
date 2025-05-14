@@ -7,13 +7,15 @@
 #include <private/qgregoriancalendar_p.h>
 Q_DECLARE_METATYPE(QCalendar::System)
 
+using namespace Qt::StringLiterals;
+
 class tst_QCalendar : public QObject
 {
     Q_OBJECT
 private:
     void checkYear(const QCalendar &cal, int year);
 
-private slots:
+private Q_SLOTS:
     void basic_data();
     void basic();
     void unspecified_data() { basic_data(); }
@@ -395,8 +397,8 @@ void tst_QCalendar::aliases()
 #if QT_CONFIG(islamiccivilcalendar)
     // Exercise all constructors from name, while we're at it:
     QCOMPARE(QCalendar(u"islamic-civil").name(), u"Islamic Civil");
-    QCOMPARE(QCalendar(QLatin1String("islamic")).name(), u"Islamic Civil");
-    QCOMPARE(QCalendar(QStringLiteral("Islamic")).name(), u"Islamic Civil");
+    QCOMPARE(QCalendar("islamic"_L1).name(), u"Islamic Civil");
+    QCOMPARE(QCalendar(u"Islamic"_s).name(), u"Islamic Civil");
 #endif
 
     // Invalid is handled gracefully:
