@@ -40,6 +40,15 @@ endfunction()
 # directory.
 function(_qt_internal_android_generate_bundle_settings_gradle target)
     set(settings_gradle_filename "settings.gradle")
+    _qt_internal_android_get_target_android_build_dir(android_build_dir ${target})
+    set(settings_gradle_file "${android_build_dir}/${settings_gradle_filename}")
+
+    # Skip generating the file if it's already provided by user.
+    get_target_property(deployment_files ${target} _qt_android_deployment_files)
+    if("${settings_gradle_file}" IN_LIST deployment_files)
+        return()
+    endif()
+
     _qt_internal_android_get_template_path(template_file ${target} "${settings_gradle_filename}")
 
     set(android_app_name "$<TARGET_PROPERTY:${target},QT_ANDROID_APP_NAME>")
@@ -50,11 +59,10 @@ function(_qt_internal_android_generate_bundle_settings_gradle target)
         ">"
     )
 
-    _qt_internal_android_get_target_android_build_dir(android_build_dir ${target})
-    set(settings_gradle_file "${android_build_dir}/${settings_gradle_filename}")
-
     _qt_internal_configure_file(GENERATE OUTPUT ${settings_gradle_file}
         INPUT "${template_file}")
+    set_property(TARGET ${target} APPEND PROPERTY _qt_android_deployment_files
+        "${settings_gradle_file}")
 endfunction()
 
 # Generates the source sets for the target.
@@ -126,6 +134,16 @@ endfunction()
 # Generates the build.gradle file for the target. Writes the result to the target app deployment
 # directory.
 function(_qt_internal_android_generate_target_build_gradle target)
+    set(build_gradle_filename "build.gradle")
+    _qt_internal_android_get_target_deployment_dir(target_deployment_dir ${target})
+    set(out_file "${target_deployment_dir}/${build_gradle_filename}")
+
+    # Skip generating the file if it's already provided by user.
+    get_target_property(deployment_files ${target} _qt_android_deployment_files)
+    if("${out_file}" IN_LIST deployment_files)
+        return()
+    endif()
+
     # TODO: The current build.gradle.in templates hardcodes couple values that needs to be
     # configurable in the future. For example the buildscript dependencies, or the use of
     # androidx.core:core:1.13.1 and the dependency for all user applications.
@@ -170,13 +188,12 @@ function(_qt_internal_android_generate_target_build_gradle target)
         message(FATAL_ERROR "Unsupported target type for android bundle deployment ${target}")
     endif()
 
-    set(build_gradle_filename "build.gradle")
-    _qt_internal_android_get_target_deployment_dir(target_deployment_dir ${target})
     _qt_internal_android_get_template_path(template_file ${target} "app/${build_gradle_filename}")
     _qt_internal_configure_file(GENERATE
-        OUTPUT "${target_deployment_dir}/${build_gradle_filename}"
+        OUTPUT "${out_file}"
         INPUT "${template_file}"
     )
+    set_property(TARGET ${target} APPEND PROPERTY _qt_android_deployment_files "${out_file}")
 endfunction()
 
 # Prepares the artifacts for the gradle build of the target.
@@ -185,6 +202,7 @@ function(_qt_internal_android_prepare_gradle_build target)
     _qt_internal_android_get_target_deployment_dir(deployment_dir ${target})
 
     _qt_internal_android_copy_gradle_files(${target} "${android_build_dir}")
+    _qt_internal_android_copy_target_package_sources(${target})
 
     _qt_internal_android_generate_bundle_gradle_properties(${target})
     _qt_internal_android_generate_bundle_settings_gradle(${target})
@@ -192,14 +210,6 @@ function(_qt_internal_android_prepare_gradle_build target)
     _qt_internal_android_generate_target_build_gradle(${target})
     _qt_internal_android_generate_target_gradle_properties(${target})
 
-    set(gradle_scripts
-        "${android_build_dir}/gradle.properties"
-        "${android_build_dir}/local.properties"
-        "${android_build_dir}/settings.gradle"
-        "${deployment_dir}/build.gradle"
-        "${deployment_dir}/gradle.properties"
-    )
-    set_target_properties(${target} PROPERTIES _qt_android_deployment_files "${gradle_scripts}")
 
     _qt_internal_android_add_gradle_build(${target} apk)
     _qt_internal_android_add_gradle_build(${target} aab)
@@ -323,12 +333,20 @@ endfunction()
 function(_qt_internal_android_generate_target_gradle_properties target)
     set(gradle_properties_file_name "gradle.properties")
     _qt_internal_android_get_target_deployment_dir(deployment_dir ${target})
+    set(out_file "${deployment_dir}/${gradle_properties_file_name}")
+    # Skip generating the file if it's already provided by user.
+    get_target_property(deployment_files ${target} _qt_android_deployment_files)
+    if("${out_file}" IN_LIST deployment_files)
+        return()
+    endif()
+
     _qt_internal_android_get_template_path(template_file ${target}
         "app/${gradle_properties_file_name}")
     _qt_internal_configure_file(CONFIGURE
-        OUTPUT "${deployment_dir}/${gradle_properties_file_name}"
+        OUTPUT "${out_file}"
         INPUT "${template_file}"
     )
+    set_property(TARGET ${target} APPEND PROPERTY _qt_android_deployment_files "${out_file}")
 endfunction()
 
 # Generates the top-level gradle.properties in the android-build directory
@@ -339,21 +357,101 @@ function(_qt_internal_android_generate_bundle_gradle_properties target)
 
     set(gradle_properties_file_name "gradle.properties")
     _qt_internal_android_get_target_android_build_dir(android_build_dir ${target})
+    set(out_file "${android_build_dir}/${gradle_properties_file_name}")
+
+    # Skip generating the file if it's already provided by user.
+    get_target_property(deployment_files ${target} _qt_android_deployment_files)
+    if("${out_file}" IN_LIST deployment_files)
+        return()
+    endif()
+
     _qt_internal_android_get_template_path(template_file ${target} "${gradle_properties_file_name}")
     _qt_internal_configure_file(CONFIGURE
-        OUTPUT "${android_build_dir}/${gradle_properties_file_name}"
+        OUTPUT "${out_file}"
         INPUT "${template_file}"
     )
+    set_property(TARGET ${target} APPEND PROPERTY _qt_android_deployment_files "${out_file}")
 endfunction()
 
 # Generates the local.properties for gradle builds. Contains the path to the
 # Android SDK root.
 function(_qt_internal_android_generate_bundle_local_properties target)
     _qt_internal_android_get_target_android_build_dir(android_build_dir ${target})
+    set(out_file "${android_build_dir}/local.properties")
+
+    # Skip generating the file if it's already provided by user.
+    get_target_property(deployment_files ${target} _qt_android_deployment_files)
+    if("${out_file}" IN_LIST deployment_files)
+        return()
+    endif()
 
     file(TO_CMAKE_PATH "${ANDROID_SDK_ROOT}" ANDROID_SDK_ROOT_NATIVE)
-    _qt_internal_configure_file(CONFIGURE OUTPUT "${android_build_dir}/local.properties"
+    _qt_internal_configure_file(CONFIGURE OUTPUT "${out_file}"
         CONTENT "sdk.dir=${ANDROID_SDK_ROOT_NATIVE}\n")
+endfunction()
+
+# Copies the customized Android package sources to the Android build directory
+function(_qt_internal_android_copy_target_package_sources target)
+    _qt_internal_android_get_package_source_dir(package_source_dir ${target})
+
+    if(NOT package_source_dir)
+        return()
+    endif()
+    get_filename_component(package_source_dir "${package_source_dir}" ABSOLUTE)
+
+    # Collect deployment files from use-defined package source directory
+    file(GLOB_RECURSE package_files
+        LIST_DIRECTORIES false
+        RELATIVE "${package_source_dir}"
+        "${package_source_dir}/*"
+    )
+
+    # Do not copy files that we treat as CMake templates, having '.in' extention.
+    #
+    # TODO: If it ever will be an issue we may exclude only templates that are
+    # known by our build system.
+    list(FILTER package_files EXCLUDE REGEX ".+\\.in$")
+
+    _qt_internal_android_get_target_android_build_dir(android_build_dir ${target})
+    list(TRANSFORM package_files PREPEND "${android_build_dir}/" OUTPUT_VARIABLE out_package_files)
+    list(TRANSFORM package_files PREPEND "${package_source_dir}/" OUTPUT_VARIABLE in_package_files)
+
+    # Remove AndroidManifest.xml from outputs, since final target AndroidManifest.xml version
+    # is cooked by androiddeployqt.
+    _qt_internal_android_get_target_deployment_dir(deployment_dir ${target})
+    list(REMOVE_ITEM out_package_files "${deployment_dir}/AndroidManifest.xml")
+
+
+    if(in_package_files)
+        # TODO: Add cmake < 3.26 support
+        if(CMAKE_VERSION VERSION_LESS 3.26)
+            message(FATAL_ERROR "The use of QT_ANDROID_PACKAGE_SOURCE_DIR property with
+                the QT_USE_ANDROID_MODERN_BUNDLE option enabled requires CMake version >= 3.26.")
+        endif()
+        set(copy_commands COMMAND "${CMAKE_COMMAND}" -E copy_directory_if_different
+            "${package_source_dir}" "${android_build_dir}")
+    else()
+        # We actually have nothing to deploy.
+        return()
+    endif()
+
+    if(NOT out_package_files)
+        # We remove some files from outputs since androiddeployqt make the postprocessing,
+        # so if the resulting list of the 'out_package_files' is empty, add the timestamp output
+        # to consider the 'in_package_files' as dependencies and make copies, but provide no real
+        # output.
+        set(out_package_files "${deployment_dir}/copy_package_source_dir.timestamp")
+        list(APPEND copy_commands COMMAND "${CMAKE_COMMAND}" -E touch "${out_package_files}")
+    endif()
+
+    add_custom_command(OUTPUT ${out_package_files}
+        ${copy_commands}
+        DEPENDS
+            ${in_package_files}
+        VERBATIM
+    )
+
+    set_target_properties(${target} PROPERTIES _qt_android_deployment_files "${out_package_files}")
 endfunction()
 
 # Copies gradle scripts to a build directory.
