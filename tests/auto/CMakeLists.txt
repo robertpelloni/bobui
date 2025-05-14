@@ -134,3 +134,7 @@ if (TARGET Qt::Xml)
 endif()
 # add_subdirectory(installed_cmake) ## FIXME: Does this still make sense in this form?
 add_subdirectory(other)
+if(QT_FEATURE_wayland)
+    add_subdirectory(wayland)
+endif()
+
