@@ -13,7 +13,9 @@
 #include <QGraphicsDropShadowEffect>
 #include <QLatin1StringView>
 #include <QtWidgets/qcombobox.h>
+#if QT_CONFIG(commandlinkbutton)
 #include <QtWidgets/qcommandlinkbutton.h>
+#endif
 #include <QtWidgets/qgraphicsview.h>
 #include <QtWidgets/qlistview.h>
 #include <QtWidgets/qmenu.h>
@@ -2217,8 +2219,11 @@ int QWindows11Style::pixelMetric(PixelMetric metric, const QStyleOption *option,
 
 void QWindows11Style::polish(QWidget* widget)
 {
+#if QT_CONFIG(commandlinkbutton)
     if (!qobject_cast<QCommandLinkButton *>(widget))
+#endif // QT_CONFIG(commandlinkbutton)
         QWindowsVistaStyle::polish(widget);
+
     const bool isScrollBar = qobject_cast<QScrollBar *>(widget);
     const auto comboBoxContainer = qobject_cast<const QComboBoxPrivateContainer *>(widget);
     if (isScrollBar || qobject_cast<QMenu *>(widget) || comboBoxContainer) {
@@ -2273,8 +2278,11 @@ void QWindows11Style::polish(QWidget* widget)
 
 void QWindows11Style::unpolish(QWidget *widget)
 {
+#if QT_CONFIG(commandlinkbutton)
     if (!qobject_cast<QCommandLinkButton *>(widget))
+#endif // QT_CONFIG(commandlinkbutton)
         QWindowsVistaStyle::unpolish(widget);
+
     if (const auto *scrollarea = qobject_cast<QAbstractScrollArea *>(widget);
         scrollarea
 #if QT_CONFIG(mdiarea)
