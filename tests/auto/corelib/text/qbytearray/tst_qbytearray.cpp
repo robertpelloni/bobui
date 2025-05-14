@@ -1480,6 +1480,12 @@ void tst_QByteArray::replace_pos_len_data()
     // index out of range
     QTest::newRow("5") << QByteArray() << 3 << 0 << QByteArray("hi")
                        << QByteArray();
+
+    QTest::newRow("negative-before-len-1") << QByteArray("yyyy") << 3 << -1
+                                           << QByteArray("ZZZZ") << QByteArray("yyyZZZZy");
+    QTest::newRow("negative-before-len-2") << QByteArray("yyyy") << 3 << -2
+                                           << QByteArray("ZZZZ") << QByteArray("yyyZZZZy");
+
     // Optimized path
     QTest::newRow("6") << QByteArray("abcdef") << 3 << 12
                        << QByteArray("abcdefghijkl") << QByteArray("abcabcdefghijkl");
