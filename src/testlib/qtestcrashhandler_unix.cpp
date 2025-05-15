@@ -34,6 +34,7 @@
 #include <signal.h>
 #include <time.h>
 #include <sys/mman.h>
+#include <sys/uio.h>
 #include <sys/wait.h>
 #include <unistd.h>
 # if !defined(Q_OS_INTEGRITY)
@@ -67,6 +68,51 @@
 QT_BEGIN_NAMESPACE
 
 using namespace Qt::StringLiterals;
+
+#  define OUR_SIGNALS(F)    \
+            F(HUP)              \
+            F(INT)              \
+            F(QUIT)             \
+            F(ABRT)             \
+            F(ILL)              \
+            F(BUS)              \
+            F(FPE)              \
+            F(SEGV)             \
+            F(PIPE)             \
+            F(TERM)             \
+    /**/
+#  define CASE_LABEL(S)             case SIG ## S:  return QT_STRINGIFY(S);
+#  define ENUMERATE_SIGNALS(S)      SIG ## S,
+static const char *signalName(int signum) noexcept
+{
+    switch (signum) {
+    OUR_SIGNALS(CASE_LABEL)
+    }
+
+#  if defined(__GLIBC_MINOR__) && (__GLIBC_MINOR__ >= 32 || __GLIBC__ > 2)
+    // get the other signal names from glibc 2.32
+    // (accessing the sys_sigabbrev variable causes linker warnings)
+    if (const char *p = sigabbrev_np(signum))
+        return p;
+#  endif
+    return "???";
+}
+static constexpr std::array fatalSignals = {
+    OUR_SIGNALS(ENUMERATE_SIGNALS)
+};
+#  undef CASE_LABEL
+#  undef ENUMERATE_SIGNALS
+
+static constexpr std::array crashingSignals = {
+    // Crash signals are special, because if we return from the handler
+    // without adjusting the machine state, the same instruction that
+    // originally caused the crash will get re-executed and will thus cause
+    // the same crash again. This is useful if our parent process logs the
+    // exit result or if core dumps are enabled: the core file will point
+    // to the actual instruction that crashed.
+    SIGILL, SIGBUS, SIGFPE, SIGSEGV
+};
+using OldActionsArray = std::array<struct sigaction, fatalSignals.size()>;
 
 template <typename... Args> static ssize_t writeToStderr(Args &&... args)
 {
@@ -146,6 +192,11 @@ struct iovec asyncSafeToString(int n, AsyncSafeIntBuffer &&result = Qt::Uninitia
 
 namespace QTest {
 namespace CrashHandler {
+Q_CONSTINIT static OldActionsArray oldActions {};
+static bool pauseOnCrash = false;
+
+static void actionHandler(int signum, siginfo_t *info, void * /* ucontext */);
+
 bool alreadyDebugging()
 {
 #if defined(Q_OS_LINUX)
@@ -361,7 +412,7 @@ void blockUnixSignals()
     sigfillset(&set);
 
     // we allow the crashing signals, in case we have bugs
-    for (int signo : FatalSignalHandler::fatalSignals)
+    for (int signo : fatalSignals)
         sigdelset(&set, signo);
 
     pthread_sigmask(SIG_BLOCK, &set, nullptr);
@@ -394,7 +445,10 @@ printCrashingSignalInfo(T *info)
 }
 [[maybe_unused]] static void printCrashingSignalInfo(...) {}
 
-bool FatalSignalHandler::pauseOnCrash = false;
+[[maybe_unused]] static void regularHandler(int signum)
+{
+    actionHandler(signum, nullptr, nullptr);
+}
 
 FatalSignalHandler::FatalSignalHandler()
 {
@@ -402,16 +456,16 @@ FatalSignalHandler::FatalSignalHandler()
     struct sigaction act;
     memset(&act, 0, sizeof(act));
     act.sa_handler = SIG_DFL;
-    oldActions().fill(act);
+    oldActions.fill(act);
 
     // Remove the handler after it is invoked.
     act.sa_flags = SA_RESETHAND | setupAlternateStack();
 
 #  ifdef SA_SIGINFO
     act.sa_flags |= SA_SIGINFO;
-    act.sa_sigaction = FatalSignalHandler::actionHandler;
+    act.sa_sigaction = actionHandler;
 #  else
-    act.sa_handler = FatalSignalHandler::regularHandler;
+    act.sa_handler = regularHandler;
 #  endif
 
     // Block all fatal signals in our signal handler so we don't try to close
@@ -421,7 +475,7 @@ FatalSignalHandler::FatalSignalHandler()
         sigaddset(&act.sa_mask, signal);
 
     for (size_t i = 0; i < fatalSignals.size(); ++i)
-        sigaction(fatalSignals[i], &act, &oldActions()[i]);
+        sigaction(fatalSignals[i], &act, &oldActions[i]);
 }
 
 FatalSignalHandler::~FatalSignalHandler()
@@ -430,15 +484,15 @@ FatalSignalHandler::~FatalSignalHandler()
     // If ours has been replaced, leave the replacement alone.
     auto isOurs = [](const struct sigaction &old) {
 #  ifdef SA_SIGINFO
-        return (old.sa_flags & SA_SIGINFO) && old.sa_sigaction == FatalSignalHandler::actionHandler;
+        return (old.sa_flags & SA_SIGINFO) && old.sa_sigaction == actionHandler;
 #  else
-        return old.sa_handler == FatalSignalHandler::regularHandler;
+        return old.sa_handler == regularHandler;
 #  endif
     };
     struct sigaction action;
 
     for (size_t i = 0; i < fatalSignals.size(); ++i) {
-        struct sigaction &act = oldActions()[i];
+        struct sigaction &act = oldActions[i];
         if (sigaction(fatalSignals[i], nullptr, &action))
             continue; // Failed to query present handler
         if (action.sa_flags == 0 && action.sa_handler == SIG_DFL)
@@ -450,13 +504,7 @@ FatalSignalHandler::~FatalSignalHandler()
     freeAlternateStack();
 }
 
-FatalSignalHandler::OldActionsArray &FatalSignalHandler::oldActions()
-{
-    Q_CONSTINIT static OldActionsArray oldActions {};
-    return oldActions;
-}
-
-auto FatalSignalHandler::alternateStackSize()
+static auto alternateStackSize() noexcept
 {
     struct R { size_t size, pageSize; };
     static constexpr size_t MinStackSize = 32 * 1024;
@@ -514,7 +562,7 @@ void FatalSignalHandler::freeAlternateStack()
 #  endif
 }
 
-void FatalSignalHandler::actionHandler(int signum, siginfo_t *info, void *)
+void actionHandler(int signum, siginfo_t *info, void *)
 {
     writeToStderr("Received signal ", asyncSafeToString(signum),
                   " (SIG", signalName(signum), ")");
@@ -540,7 +588,7 @@ void FatalSignalHandler::actionHandler(int signum, siginfo_t *info, void *)
 
     // chain back to the previous handler, if any
     for (size_t i = 0; i < fatalSignals.size(); ++i) {
-        struct sigaction &act = oldActions()[i];
+        struct sigaction &act = oldActions[i];
         if (signum != fatalSignals[i])
             continue;
 

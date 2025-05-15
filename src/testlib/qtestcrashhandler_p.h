@@ -21,11 +21,7 @@
 #include <QtCore/private/qtools_p.h>
 
 #ifdef Q_OS_UNIX
-#include <signal.h>
-#include <sys/mman.h>
-#include <sys/uio.h>
-#include <string.h>
-#include <unistd.h>
+#include <sys/mman.h>   // for MAP_FAILED
 #endif
 
 QT_BEGIN_NAMESPACE
@@ -53,71 +49,15 @@ namespace CrashHandler {
     class Q_TESTLIB_EXPORT FatalSignalHandler
     {
     public:
-    #  define OUR_SIGNALS(F)    \
-                F(HUP)              \
-                F(INT)              \
-                F(QUIT)             \
-                F(ABRT)             \
-                F(ILL)              \
-                F(BUS)              \
-                F(FPE)              \
-                F(SEGV)             \
-                F(PIPE)             \
-                F(TERM)             \
-        /**/
-    #  define CASE_LABEL(S)             case SIG ## S:  return QT_STRINGIFY(S);
-    #  define ENUMERATE_SIGNALS(S)      SIG ## S,
-                static const char *signalName(int signum) noexcept
-        {
-            switch (signum) {
-                OUR_SIGNALS(CASE_LABEL)
-            }
-
-    #  if defined(__GLIBC_MINOR__) && (__GLIBC_MINOR__ >= 32 || __GLIBC__ > 2)
-            // get the other signal names from glibc 2.32
-            // (accessing the sys_sigabbrev variable causes linker warnings)
-            if (const char *p = sigabbrev_np(signum))
-                return p;
-    #  endif
-            return "???";
-        }
-        static constexpr std::array fatalSignals = {
-            OUR_SIGNALS(ENUMERATE_SIGNALS)
-        };
-    #  undef CASE_LABEL
-    #  undef ENUMERATE_SIGNALS
-
-        static constexpr std::array crashingSignals = {
-            // Crash signals are special, because if we return from the handler
-            // without adjusting the machine state, the same instruction that
-            // originally caused the crash will get re-executed and will thus cause
-            // the same crash again. This is useful if our parent process logs the
-            // exit result or if core dumps are enabled: the core file will point
-            // to the actual instruction that crashed.
-            SIGILL, SIGBUS, SIGFPE, SIGSEGV
-        };
-        using OldActionsArray = std::array<struct sigaction, fatalSignals.size()>;
-
         FatalSignalHandler();
         ~FatalSignalHandler();
 
     private:
         Q_DISABLE_COPY_MOVE(FatalSignalHandler)
 
-        static OldActionsArray &oldActions();
-        auto alternateStackSize();
         int setupAlternateStack();
         void freeAlternateStack();
-
-        static void actionHandler(int signum, siginfo_t *info, void * /* ucontext */);
-
-        [[maybe_unused]] static void regularHandler(int signum)
-        {
-            actionHandler(signum, nullptr, nullptr);
-        }
-
         void *alternateStackBase = MAP_FAILED;
-        static bool pauseOnCrash;
     };
 #else // Q_OS_WASM or weird systems
 class Q_TESTLIB_EXPORT FatalSignalHandler {};
