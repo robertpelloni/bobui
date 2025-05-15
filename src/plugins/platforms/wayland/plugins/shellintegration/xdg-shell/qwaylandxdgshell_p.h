@@ -161,6 +161,7 @@ private:
     QString m_activationToken;
     QString m_appId;
     bool m_alertState = false;
+    QRect m_lastGeometry;
 
     friend class QWaylandXdgShell;
 };

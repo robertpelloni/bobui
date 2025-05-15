@@ -435,6 +435,7 @@ void QWaylandXdgSurface::applyConfigure()
     if (m_popup)
         m_popup->applyConfigure();
 
+    setContentGeometry(window()->windowContentGeometry());
     window()->updateExposure();
 }
 
@@ -450,8 +451,11 @@ void QWaylandXdgSurface::propagateSizeHints()
 
 void QWaylandXdgSurface::setContentGeometry(const QRect &rect)
 {
-    if (window()->isExposed())
-        set_window_geometry(rect.x(), rect.y(), rect.width(), rect.height());
+    if (!window()->isExposed() || m_lastGeometry == rect)
+        return;
+
+    set_window_geometry(rect.x(), rect.y(), rect.width(), rect.height());
+    m_lastGeometry = rect;
 }
 
 void QWaylandXdgSurface::setSizeHints()
