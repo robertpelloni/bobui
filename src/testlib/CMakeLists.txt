@@ -45,7 +45,7 @@ qt_internal_add_module(Test
         qtestblacklist.cpp qtestblacklist_p.h
         qtestcase.cpp qtestcase.h qtestcase_p.h
         qtestcoreelement_p.h
-        qtestcrashhandler.cpp qtestcrashhandler_p.h
+        qtestcrashhandler_p.h
         qtestdata.cpp qtestdata.h
         qtestelement.cpp qtestelement_p.h
         qtestelementattribute.cpp qtestelementattribute_p.h
@@ -146,6 +146,16 @@ qt_internal_extend_target(Test CONDITION MACOS
         ${FWApplicationServices}
         ${FWFoundation}
         ${FWIOKit}
+)
+
+qt_internal_extend_target(Test CONDITION UNIX AND (NOT WASM OR QT_FEATURE_thread)
+    SOURCES
+        qtestcrashhandler_unix.cpp
+)
+
+qt_internal_extend_target(Test CONDITION WIN32
+    SOURCES
+        qtestcrashhandler_win.cpp
 )
 
 set(qt_tc_build_dir "$<TARGET_PROPERTY:QT_TESTCASE_BUILDDIR>")
