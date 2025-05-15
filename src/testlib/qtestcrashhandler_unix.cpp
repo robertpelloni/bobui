@@ -21,12 +21,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#if defined(Q_OS_LINUX)
-#include <sys/prctl.h>
-#include <sys/types.h>
-#include <fcntl.h>
-#endif
-
 #include <errno.h>
 #if __has_include(<paths.h>)
 # include <paths.h>
@@ -41,16 +35,6 @@
 #  include <sys/resource.h>
 # endif
 
-# ifndef _PATH_DEFPATH
-#  define _PATH_DEFPATH     "/usr/bin:/bin"
-# endif
-# ifndef SIGSTKSZ
-#  define SIGSTKSZ          0       /* we have code to set the minimum */
-# endif
-# ifndef SA_RESETHAND
-#  define SA_RESETHAND      0
-# endif
-
 #if defined(Q_OS_MACOS)
 #include <QtCore/private/qcore_mac_p.h>
 #include <QtTest/private/qtestutil_macos_p.h>
@@ -59,10 +43,28 @@
 #include <mach/task.h>
 #include <mach/mach_init.h>
 #include <CoreFoundation/CFPreferences.h>
+
+#define CSR_ALLOW_UNRESTRICTED_FS (1 << 1)
+#endif
+
+#if defined(Q_OS_LINUX)
+#include <sys/prctl.h>
+#include <sys/types.h>
+#include <fcntl.h>
 #endif
 
 #if defined(Q_OS_WASM)
 #include <emscripten.h>
+#endif
+
+#ifndef _PATH_DEFPATH
+#  define _PATH_DEFPATH     "/usr/bin:/bin"
+#endif
+#ifndef SIGSTKSZ
+#  define SIGSTKSZ          0       /* we have code to set the minimum */
+#endif
+#ifndef SA_RESETHAND
+#  define SA_RESETHAND      0
 #endif
 
 QT_BEGIN_NAMESPACE
@@ -285,8 +287,7 @@ void prepareStackTrace()
     // where LLDB will hang and fail to provide a valid stack trace.
 # if defined(Q_PROCESSOR_ARM)
     return;
- #else
-    #define CSR_ALLOW_UNRESTRICTED_FS (1 << 1)
+# else
     std::optional<uint32_t> sipConfiguration = qt_mac_sipConfiguration();
     if (!sipConfiguration || !(*sipConfiguration & CSR_ALLOW_UNRESTRICTED_FS))
         return;
