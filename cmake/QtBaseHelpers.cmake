@@ -240,6 +240,8 @@ macro(qt_internal_qtbase_build_repo)
             include(src/corelib/Qt6WasmMacros.cmake)
         endif()
 
+        include(src/tools/qtwaylandscanner/Qt6WaylandCompositorMacros.cmake)
+
         ## Targets for global features, etc.:
         include(QtBaseGlobalTargets)
 
