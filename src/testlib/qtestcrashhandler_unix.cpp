@@ -244,8 +244,6 @@ bool alreadyDebugging()
 #endif
 }
 
-namespace {
-enum DebuggerProgram { None, Gdb, Lldb };
 static bool hasSystemCrashReporter()
 {
 #if defined(Q_OS_MACOS)
@@ -254,7 +252,6 @@ static bool hasSystemCrashReporter()
     return false;
 #endif
 }
-} // unnamed namespaced
 
 void maybeDisableCoreDump()
 {

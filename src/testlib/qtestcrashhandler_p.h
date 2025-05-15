@@ -27,6 +27,15 @@
 QT_BEGIN_NAMESPACE
 namespace QTest {
 namespace CrashHandler {
+    enum DebuggerProgram {
+        None,
+        Gdb,
+        Lldb,
+#ifdef Q_OS_WIN
+        Cdb,
+#endif
+    };
+
     bool alreadyDebugging();
     void blockUnixSignals();
 

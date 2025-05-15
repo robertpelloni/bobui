@@ -33,7 +33,6 @@ void maybeDisableCoreDump()
 {
 }
 
-enum DebuggerProgram { None, Gdb, Lldb, Cdb };
 static DebuggerProgram debugger = None;
 void prepareStackTrace()
 {
