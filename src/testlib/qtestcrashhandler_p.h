@@ -30,9 +30,6 @@
 
 #ifdef Q_OS_WIN
 #include <iostream>
-# if !defined(Q_CC_MINGW) || (defined(Q_CC_MINGW) && defined(__MINGW64_VERSION_MAJOR))
-#  include <crtdbg.h>
-# endif
 #include <qt_windows.h> // for Sleep
 #endif
 
@@ -87,56 +84,6 @@ namespace CrashHandler {
     Q_TESTLIB_EXPORT void prepareStackTrace();
 
 #if defined(Q_OS_WIN)
-    // Helper class for resolving symbol names by dynamically loading "dbghelp.dll".
-    class DebugSymbolResolver
-    {
-        Q_DISABLE_COPY_MOVE(DebugSymbolResolver)
-    public:
-        struct Symbol
-        {
-            Symbol() : name(nullptr), address(0) {}
-
-            const char *name; // Must be freed by caller.
-            DWORD64 address;
-        };
-
-        explicit DebugSymbolResolver(HANDLE process);
-        ~DebugSymbolResolver() { cleanup(); }
-
-        bool isValid() const { return m_symFromAddr; }
-
-        Symbol resolveSymbol(DWORD64 address) const;
-
-    private:
-        // typedefs from DbgHelp.h/.dll
-        struct DBGHELP_SYMBOL_INFO { // SYMBOL_INFO
-            ULONG       SizeOfStruct;
-            ULONG       TypeIndex;        // Type Index of symbol
-            ULONG64     Reserved[2];
-            ULONG       Index;
-            ULONG       Size;
-            ULONG64     ModBase;          // Base Address of module comtaining this symbol
-            ULONG       Flags;
-            ULONG64     Value;            // Value of symbol, ValuePresent should be 1
-            ULONG64     Address;          // Address of symbol including base address of module
-            ULONG       Register;         // register holding value or pointer to value
-            ULONG       Scope;            // scope of the symbol
-            ULONG       Tag;              // pdb classification
-            ULONG       NameLen;          // Actual length of name
-            ULONG       MaxNameLen;
-            CHAR        Name[1];          // Name of symbol
-        };
-
-        typedef BOOL (__stdcall *SymInitializeType)(HANDLE, PCSTR, BOOL);
-        typedef BOOL (__stdcall *SymFromAddrType)(HANDLE, DWORD64, PDWORD64, DBGHELP_SYMBOL_INFO *);
-
-        void cleanup();
-
-        const HANDLE m_process;
-        HMODULE m_dbgHelpLib;
-        SymFromAddrType m_symFromAddr;
-    };
-
     class Q_TESTLIB_EXPORT WindowsFaultHandler
     {
     public:
