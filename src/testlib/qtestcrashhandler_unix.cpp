@@ -2,53 +2,14 @@
 // Copyright (C) 2024 Intel Corporation.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
-#include <QtTest/qtestcase.h>
 #include <QtTest/private/qtestcrashhandler_p.h>
-#include <QtTest/qtestassert.h>
 
 #include <QtCore/qbytearray.h>
-#include <QtCore/qcoreapplication.h>
-#include <QtCore/qdebug.h>
-#include <QtCore/qdir.h>
-#include <QtCore/qdiriterator.h>
-#include <QtCore/qfile.h>
-#include <QtCore/qfileinfo.h>
-#include <QtCore/qfloat16.h>
-#include <QtCore/qlibraryinfo.h>
-#include <QtCore/qlist.h>
-#include <QtCore/qmetaobject.h>
-#include <QtCore/qobject.h>
-#include <QtCore/qstringlist.h>
-#include <QtCore/qtemporarydir.h>
-#include <QtCore/qthread.h>
-#include <QtCore/qvarlengtharray.h>
-#include <QtCore/private/qlocking_p.h>
-#include <QtCore/private/qtools_p.h>
-#include <QtCore/private/qwaitcondition_p.h>
+#include <QtCore/qstring.h>
+#include <QtCore/private/qcore_unix_p.h>
 
-#include <QtCore/qtestsupport_core.h>
-
+#include <QtTest/qtestcase.h>
 #include <QtTest/private/qtestlog_p.h>
-#include <QtTest/private/qtesttable_p.h>
-#include <QtTest/qtestdata.h>
-#include <QtTest/private/qtestresult_p.h>
-#include <QtTest/private/qsignaldumper_p.h>
-#include <QtTest/private/qbenchmark_p.h>
-#if QT_CONFIG(batch_test_support)
-#include <QtTest/private/qtestregistry_p.h>
-#endif  // QT_CONFIG(batch_test_support)
-#include <QtTest/private/cycle_include_p.h>
-#include <QtTest/private/qtestblacklist_p.h>
-#if defined(HAVE_XCTEST)
-#include <QtTest/private/qxctestlogger_p.h>
-#endif
-#if defined Q_OS_MACOS
-#include <QtTest/private/qtestutil_macos_p.h>
-#endif
-
-#if defined(Q_OS_DARWIN)
-#include <QtTest/private/qappletestlogger_p.h>
-#endif
 
 #if !defined(Q_OS_INTEGRITY) || __GHS_VERSION_NUMBER > 202014
 #  include <charconv>
@@ -66,9 +27,6 @@
 #include <fcntl.h>
 #endif
 
-#ifdef Q_OS_UNIX
-#include <QtCore/private/qcore_unix_p.h>
-
 #include <errno.h>
 #if __has_include(<paths.h>)
 # include <paths.h>
@@ -81,6 +39,7 @@
 # if !defined(Q_OS_INTEGRITY)
 #  include <sys/resource.h>
 # endif
+
 # ifndef _PATH_DEFPATH
 #  define _PATH_DEFPATH     "/usr/bin:/bin"
 # endif
@@ -90,9 +49,11 @@
 # ifndef SA_RESETHAND
 #  define SA_RESETHAND      0
 # endif
-#endif
 
 #if defined(Q_OS_MACOS)
+#include <QtCore/private/qcore_mac_p.h>
+#include <QtTest/private/qtestutil_macos_p.h>
+
 #include <IOKit/pwr_mgt/IOPMLib.h>
 #include <mach/task.h>
 #include <mach/mach_init.h>
@@ -109,7 +70,6 @@ using namespace Qt::StringLiterals;
 
 namespace QTest {
 namespace CrashHandler {
-#if defined(Q_OS_UNIX) && (!defined(Q_OS_WASM) || QT_CONFIG(thread))
 struct iovec IoVec(struct iovec vec)
 {
     return vec;
@@ -167,7 +127,6 @@ struct iovec asyncSafeToString(int n, AsyncSafeIntBuffer &&result)
     r.iov_len = ptr - result.array.data();
     return r;
 };
-#endif // defined(Q_OS_UNIX) && (!defined(Q_OS_WASM) || QT_CONFIG(thread))
 
 bool alreadyDebugging()
 {
@@ -192,8 +151,6 @@ bool alreadyDebugging()
     long int pid = strtol(tracerPid, &tracerPid, 10);
     close(fd);
     return pid != 0;
-#elif defined(Q_OS_WIN)
-    return IsDebuggerPresent();
 #elif defined(Q_OS_MACOS)
     // Check if there is an exception handler for the process:
     mach_msg_type_number_t portCount = 0;
@@ -270,7 +227,6 @@ void prepareStackTrace()
 # endif
 #endif
 
-#ifdef Q_OS_UNIX
     // like QStandardPaths::findExecutable(), but simpler
     auto hasExecutable = [](const char *execname) {
         std::string candidate;
@@ -315,10 +271,8 @@ void prepareStackTrace()
             break;
         }
     }
-#endif // Q_OS_UNIX
 }
 
-#if !defined(Q_OS_WASM) || QT_CONFIG(thread)
 void printTestRunTime()
 {
     const int msecsFunctionTime = qRound(QTestLog::msecsFunctionTime());
@@ -339,7 +293,7 @@ void generateStackTrace()
     (void) prctl(PR_SET_PTRACER, PR_SET_PTRACER_ANY);
 #  endif
 
-#  if defined(Q_OS_UNIX) && !defined(Q_OS_WASM) && !defined(Q_OS_INTEGRITY) && !defined(Q_OS_VXWORKS)
+#  if !defined(Q_OS_INTEGRITY) && !defined(Q_OS_VXWORKS)
     writeToStderr("\n=== Stack trace ===\n");
 
     // execlp() requires null-termination, so call the default constructor
@@ -377,17 +331,10 @@ void generateStackTrace()
     }
 
     writeToStderr("=== End of stack trace ===\n");
-#  endif // Q_OS_UNIX && !Q_OS_WASM && !Q_OS_INTEGRITY && !Q_OS_VXWORKS
+#  endif // !Q_OS_INTEGRITY && !Q_OS_VXWORKS
 }
-#endif  // !defined(Q_OS_WASM) || QT_CONFIG(thread)
 
-#if defined(Q_OS_WIN)
-void blockUnixSignals()
-{
-  // Windows does have C signals, but doesn't use them for the purposes we're
-  // talking about here
-}
-#elif defined(Q_OS_UNIX) && !defined(Q_OS_WASM)
+#ifndef Q_OS_WASM // no signal handling for WASM
 void blockUnixSignals()
 {
     // Block most Unix signals so the WatchDog thread won't be called when
@@ -401,109 +348,7 @@ void blockUnixSignals()
 
     pthread_sigmask(SIG_BLOCK, &set, nullptr);
 }
-#endif // Q_OS_* choice
 
-#if defined(Q_OS_WIN)
-void DebugSymbolResolver::cleanup()
-{
-    if (m_dbgHelpLib)
-        FreeLibrary(m_dbgHelpLib);
-    m_dbgHelpLib = 0;
-    m_symFromAddr = nullptr;
-}
-
-DebugSymbolResolver::DebugSymbolResolver(HANDLE process)
-    : m_process(process), m_dbgHelpLib(0), m_symFromAddr(nullptr)
-{
-    bool success = false;
-    m_dbgHelpLib = LoadLibraryW(L"dbghelp.dll");
-    if (m_dbgHelpLib) {
-        SymInitializeType symInitialize = reinterpret_cast<SymInitializeType>(
-            reinterpret_cast<QFunctionPointer>(GetProcAddress(m_dbgHelpLib, "SymInitialize")));
-        m_symFromAddr = reinterpret_cast<SymFromAddrType>(
-            reinterpret_cast<QFunctionPointer>(GetProcAddress(m_dbgHelpLib, "SymFromAddr")));
-        success = symInitialize && m_symFromAddr && symInitialize(process, NULL, TRUE);
-    }
-    if (!success)
-        cleanup();
-}
-
-DebugSymbolResolver::Symbol DebugSymbolResolver::resolveSymbol(DWORD64 address) const
-{
-    // reserve additional buffer where SymFromAddr() will store the name
-    struct NamedSymbolInfo : public DBGHELP_SYMBOL_INFO {
-        enum { symbolNameLength = 255 };
-
-        char name[symbolNameLength + 1];
-    };
-
-    Symbol result;
-    if (!isValid())
-        return result;
-    NamedSymbolInfo symbolBuffer;
-    memset(&symbolBuffer, 0, sizeof(NamedSymbolInfo));
-    symbolBuffer.MaxNameLen = NamedSymbolInfo::symbolNameLength;
-    symbolBuffer.SizeOfStruct = sizeof(DBGHELP_SYMBOL_INFO);
-    if (!m_symFromAddr(m_process, address, 0, &symbolBuffer))
-        return result;
-    result.name = qstrdup(symbolBuffer.Name);
-    result.address = symbolBuffer.Address;
-    return result;
-}
-
-WindowsFaultHandler::WindowsFaultHandler()
-{
-#  if !defined(Q_CC_MINGW)
-    _CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_DEBUG);
-#  endif
-    SetErrorMode(SetErrorMode(0) | SEM_NOGPFAULTERRORBOX);
-    SetUnhandledExceptionFilter(windowsFaultHandler);
-}
-
-LONG WINAPI WindowsFaultHandler::windowsFaultHandler(struct _EXCEPTION_POINTERS *exInfo)
-{
-    enum { maxStackFrames = 100 };
-    char appName[MAX_PATH];
-    if (!GetModuleFileNameA(NULL, appName, MAX_PATH))
-        appName[0] = 0;
-    const int msecsFunctionTime = qRound(QTestLog::msecsFunctionTime());
-    const int msecsTotalTime = qRound(QTestLog::msecsTotalTime());
-    const void *exceptionAddress = exInfo->ExceptionRecord->ExceptionAddress;
-    fprintf(stderr, "A crash occurred in %s.\n", appName);
-    if (const char *name = QTest::currentTestFunction())
-        fprintf(stderr, "While testing %s\n", name);
-    fprintf(stderr, "Function time: %dms Total time: %dms\n\n"
-                    "Exception address: 0x%p\n"
-                    "Exception code   : 0x%lx\n",
-            msecsFunctionTime, msecsTotalTime, exceptionAddress,
-            exInfo->ExceptionRecord->ExceptionCode);
-
-    DebugSymbolResolver resolver(GetCurrentProcess());
-    if (resolver.isValid()) {
-        DebugSymbolResolver::Symbol exceptionSymbol = resolver.resolveSymbol(DWORD64(exceptionAddress));
-        if (exceptionSymbol.name) {
-            fprintf(stderr, "Nearby symbol    : %s\n", exceptionSymbol.name);
-            delete [] exceptionSymbol.name;
-        }
-        Q_DECL_UNINITIALIZED void *stack[maxStackFrames];
-        fputs("\nStack:\n", stderr);
-        const unsigned frameCount = CaptureStackBackTrace(0, DWORD(maxStackFrames), stack, NULL);
-        for (unsigned f = 0; f < frameCount; ++f)     {
-            DebugSymbolResolver::Symbol symbol = resolver.resolveSymbol(DWORD64(stack[f]));
-            if (symbol.name) {
-                fprintf(stderr, "#%3u: %s() - 0x%p\n", f + 1, symbol.name, (const void *)symbol.address);
-                delete [] symbol.name;
-            } else {
-                fprintf(stderr, "#%3u: Unable to obtain symbol\n", f + 1);
-            }
-        }
-    }
-
-    fputc('\n', stderr);
-
-    return EXCEPTION_EXECUTE_HANDLER;
-}
-#elif defined(Q_OS_UNIX) && !defined(Q_OS_WASM)
 bool FatalSignalHandler::pauseOnCrash = false;
 
 FatalSignalHandler::FatalSignalHandler()
@@ -668,7 +513,7 @@ void FatalSignalHandler::actionHandler(int signum, siginfo_t *info, void *)
     // we shouldn't reach here!
     std::abort();
 }
-#endif // defined(Q_OS_UNIX) && !defined(Q_OS_WASM)
+#endif // !defined(Q_OS_WASM)
 
 } // namespace CrashHandler
 } // namespace QTest
