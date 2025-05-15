@@ -1522,16 +1522,31 @@ void QWaylandWindow::setScale(qreal newScale)
 #if QT_CONFIG(cursor)
 void QWaylandWindow::setMouseCursor(QWaylandInputDevice *device, const QCursor &cursor)
 {
-    int fallbackBufferScale = qCeil(devicePixelRatio());
-    device->setCursor(&cursor, {}, fallbackBufferScale);
+    setStoredCursor(cursor);
+    applyCursor(device, cursor);
 }
 
 void QWaylandWindow::restoreMouseCursor(QWaylandInputDevice *device)
 {
     if (const QCursor *overrideCursor = QGuiApplication::overrideCursor())
-        setMouseCursor(device, *overrideCursor);
-    else
-        setMouseCursor(device, window()->cursor());
+        applyCursor(device, *overrideCursor);
+    else if (mHasStoredCursor)
+        applyCursor(device, mStoredCursor);
+}
+
+void QWaylandWindow::setStoredCursor(const QCursor &cursor) {
+    if (mHasStoredCursor && mStoredCursor == cursor)
+        return;
+    mStoredCursor = cursor;
+    mHasStoredCursor = true;
+}
+
+void QWaylandWindow::applyCursor(QWaylandInputDevice *device, const QCursor &cursor) {
+    if (!device || !device->pointer() || device->pointer()->focusWindow() != this)
+        return;
+
+    int fallbackBufferScale = qCeil(devicePixelRatio());
+    device->setCursor(&cursor, {}, fallbackBufferScale);
 }
 #endif
 

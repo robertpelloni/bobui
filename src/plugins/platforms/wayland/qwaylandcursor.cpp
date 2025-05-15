@@ -311,16 +311,25 @@ QSharedPointer<QWaylandBuffer> QWaylandCursor::cursorBitmapBuffer(QWaylandDispla
 
 void QWaylandCursor::changeCursor(QCursor *cursor, QWindow *window)
 {
-    Q_UNUSED(window);
+    if (!window)
+        return;
     // Create the buffer here so we don't have to create one per input device
     QSharedPointer<QWaylandBuffer> bitmapBuffer;
     if (cursor && cursor->shape() == Qt::BitmapCursor)
         bitmapBuffer = cursorBitmapBuffer(mDisplay, cursor);
 
-    int fallbackOutputScale = qCeil(window->handle()->devicePixelRatio());
-    const auto seats = mDisplay->inputDevices();
-    for (auto *seat : seats)
-        seat->setCursor(cursor, bitmapBuffer, fallbackOutputScale);
+    QWaylandWindow *waylandWindow = static_cast<QWaylandWindow*>(window->handle());
+    if (!waylandWindow)
+        return;
+
+    if (cursor) {
+        waylandWindow->setStoredCursor(*cursor);
+
+        for (QWaylandInputDevice *device : mDisplay->inputDevices()) {
+            if (device->pointer() && device->pointer()->focusWindow() == waylandWindow)
+                device->setCursor(cursor, bitmapBuffer, qCeil(waylandWindow->devicePixelRatio()));
+        }
+    }
 }
 
 void QWaylandCursor::pointerEvent(const QMouseEvent &event)

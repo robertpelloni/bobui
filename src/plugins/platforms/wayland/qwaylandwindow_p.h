@@ -194,6 +194,8 @@ public:
 #if QT_CONFIG(cursor)
     void setMouseCursor(QWaylandInputDevice *device, const QCursor &cursor);
     void restoreMouseCursor(QWaylandInputDevice *device);
+    void setStoredCursor(const QCursor &cursor);
+    void applyCursor(QWaylandInputDevice *device, const QCursor &cursor);
 #endif
 
     QWaylandWindow *transientParent() const;
@@ -352,6 +354,11 @@ protected:
 
     std::unique_ptr<ColorManagementSurface> mColorManagementSurface;
     QSurfaceFormat mSurfaceFormat;
+
+#if QT_CONFIG(cursor)
+    QCursor mStoredCursor;
+    bool mHasStoredCursor = false;
+#endif
 
 private:
     void setGeometry_helper(const QRect &rect);
