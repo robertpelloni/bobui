@@ -28,7 +28,6 @@
 #include <QtCore/QRegularExpressionMatch>
 #include <QtCore/QSet>
 #include <QtCore/QSharedPointer>
-#include <QtCore/QScopedPointer>
 #include <QtCore/QTemporaryFile>
 #include <QtCore/QTimeZone>
 #include <QtCore/QUrl>
@@ -6546,9 +6545,10 @@ void tst_QNetworkReply::httpProxyCommandsSynchronous_data()
 }
 #endif // QT_CONFIG(networkproxy)
 
+namespace {
 struct QThreadCleanup
 {
-    static inline void cleanup(QThread *thread)
+    inline void operator()(QThread *thread)
     {
         thread->quit();
         if (thread->wait(3000))
@@ -6557,6 +6557,10 @@ struct QThreadCleanup
             qWarning("thread hung, leaking memory so test can finish");
     }
 };
+}
+
+using ThreadPtr = std::unique_ptr<QThread, QThreadCleanup>;
+using MiniServerPtr = std::unique_ptr<MiniHttpServer, QScopedPointerDeleteLater>;
 
 #if QT_CONFIG(networkproxy)
 void tst_QNetworkReply::httpProxyCommandsSynchronous()
@@ -6568,8 +6572,8 @@ void tst_QNetworkReply::httpProxyCommandsSynchronous()
     // when using synchronous commands, we need a different event loop for
     // the server thread, because the client is never returning to the
     // event loop
-    QScopedPointer<QThread, QThreadCleanup> serverThread(new QThread);
-    QScopedPointer<MiniHttpServer, QScopedPointerDeleteLater> proxyServer(new MiniHttpServer(responseToSend, false, serverThread.data()));
+    auto serverThread = ThreadPtr(new QThread);
+    auto proxyServer = MiniServerPtr(new MiniHttpServer(responseToSend, false, serverThread.get()));
     QNetworkProxy proxy(QNetworkProxy::HttpProxy, "127.0.0.1", proxyServer->serverPort());
 
     manager.setProxy(proxy);
@@ -6717,7 +6721,7 @@ void tst_QNetworkReply::httpConnectionCount_data()
 
 void tst_QNetworkReply::httpConnectionCount()
 {
-    QScopedPointer<QTcpServer> server;
+    std::unique_ptr<QTcpServer> server;
     QFETCH(bool, encrypted);
 #if QT_CONFIG(ssl)
     if (encrypted) {
@@ -6741,7 +6745,7 @@ void tst_QNetworkReply::httpConnectionCount()
         QNetworkRequest request(urlCopy);
         request.setAttribute(QNetworkRequest::Http2CleartextAllowedAttribute, http2Enabled);
         QNetworkReply* reply = manager.get(request);
-        reply->setParent(server.data());
+        reply->setParent(server.get());
         if (encrypted)
             reply->ignoreSslErrors();
     }
@@ -6777,7 +6781,7 @@ void tst_QNetworkReply::httpConnectionCount()
                     emit socket->readyRead();
             }
             pendingConnectionCount++;
-            socket->setParent(server.data());
+            socket->setParent(server.get());
             socket = server->nextPendingConnection();
         }
     }
@@ -8827,8 +8831,8 @@ void tst_QNetworkReply::synchronousAuthenticationCache()
     // when using synchronous commands, we need a different event loop for
     // the server thread, because the client is never returning to the
     // event loop
-    QScopedPointer<QThread, QThreadCleanup> serverThread(new QThread);
-    QScopedPointer<MiniHttpServer, QScopedPointerDeleteLater> server(new MiniAuthServer(serverThread.data()));
+    auto serverThread = ThreadPtr(new QThread);
+    auto server = MiniServerPtr(new MiniAuthServer(serverThread.get()));
     server->doClose = true;
 
     //1)  URL without credentials, we are not authenticated
@@ -10063,9 +10067,9 @@ void tst_QNetworkReply::autoDeleteRepliesAttribute()
     {
         // Get
         QNetworkRequest request(destination);
-        QScopedPointer<QNetworkReply> reply(manager.get(request));
-        QSignalSpy finishedSpy(reply.data(), &QNetworkReply::finished);
-        QSignalSpy destroyedSpy(reply.data(), &QObject::destroyed);
+        auto reply = std::unique_ptr<QNetworkReply>(manager.get(request));
+        QSignalSpy finishedSpy(reply.get(), &QNetworkReply::finished);
+        QSignalSpy destroyedSpy(reply.get(), &QObject::destroyed);
         QVERIFY(finishedSpy.wait());
         QCOMPARE(destroyedSpy.size(), 0);
         QCoreApplication::processEvents();
@@ -10075,9 +10079,9 @@ void tst_QNetworkReply::autoDeleteRepliesAttribute()
     {
         // Post
         QNetworkRequest request(destination);
-        QScopedPointer<QNetworkReply> reply(manager.post(request, QByteArrayLiteral("datastring")));
-        QSignalSpy finishedSpy(reply.data(), &QNetworkReply::finished);
-        QSignalSpy destroyedSpy(reply.data(), &QObject::destroyed);
+        auto reply = std::unique_ptr<QNetworkReply>(manager.post(request, "datastring"_ba));
+        QSignalSpy finishedSpy(reply.get(), &QNetworkReply::finished);
+        QSignalSpy destroyedSpy(reply.get(), &QObject::destroyed);
         QVERIFY(finishedSpy.wait());
         QCOMPARE(destroyedSpy.size(), 0);
         QCoreApplication::processEvents();
@@ -10124,9 +10128,9 @@ void tst_QNetworkReply::autoDeleteReplies()
         // Get
         QNetworkRequest request(destination);
         request.setAttribute(QNetworkRequest::AutoDeleteReplyOnFinishAttribute, false);
-        QScopedPointer<QNetworkReply> reply(manager.get(request));
-        QSignalSpy finishedSpy(reply.data(), &QNetworkReply::finished);
-        QSignalSpy destroyedSpy(reply.data(), &QObject::destroyed);
+        auto reply = std::unique_ptr<QNetworkReply>(manager.get(request));
+        QSignalSpy finishedSpy(reply.get(), &QNetworkReply::finished);
+        QSignalSpy destroyedSpy(reply.get(), &QObject::destroyed);
         QVERIFY(finishedSpy.wait());
         QCOMPARE(destroyedSpy.size(), 0);
         QCoreApplication::processEvents();
@@ -10137,9 +10141,9 @@ void tst_QNetworkReply::autoDeleteReplies()
         // Post
         QNetworkRequest request(destination);
         request.setAttribute(QNetworkRequest::AutoDeleteReplyOnFinishAttribute, false);
-        QScopedPointer<QNetworkReply> reply(manager.post(request, QByteArrayLiteral("datastring")));
-        QSignalSpy finishedSpy(reply.data(), &QNetworkReply::finished);
-        QSignalSpy destroyedSpy(reply.data(), &QObject::destroyed);
+        auto reply = std::unique_ptr<QNetworkReply>(manager.post(request, "datastring"_ba));
+        QSignalSpy finishedSpy(reply.get(), &QNetworkReply::finished);
+        QSignalSpy destroyedSpy(reply.get(), &QObject::destroyed);
         QVERIFY(finishedSpy.wait());
         QCOMPARE(destroyedSpy.size(), 0);
         QCoreApplication::processEvents();
@@ -10152,9 +10156,9 @@ void tst_QNetworkReply::autoDeleteReplies()
     {
         // Get
         QNetworkRequest request(destination);
-        QScopedPointer<QNetworkReply> reply(manager.get(request));
-        QSignalSpy finishedSpy(reply.data(), &QNetworkReply::finished);
-        QSignalSpy destroyedSpy(reply.data(), &QObject::destroyed);
+        auto reply = std::unique_ptr<QNetworkReply>(manager.get(request));
+        QSignalSpy finishedSpy(reply.get(), &QNetworkReply::finished);
+        QSignalSpy destroyedSpy(reply.get(), &QObject::destroyed);
         QVERIFY(finishedSpy.wait());
         QCOMPARE(destroyedSpy.size(), 0);
         QCoreApplication::processEvents();
@@ -10164,9 +10168,9 @@ void tst_QNetworkReply::autoDeleteReplies()
     {
         // Post
         QNetworkRequest request(destination);
-        QScopedPointer<QNetworkReply> reply(manager.post(request, QByteArrayLiteral("datastring")));
-        QSignalSpy finishedSpy(reply.data(), &QNetworkReply::finished);
-        QSignalSpy destroyedSpy(reply.data(), &QObject::destroyed);
+        auto reply = std::unique_ptr<QNetworkReply>(manager.post(request, "datastring"_ba));
+        QSignalSpy finishedSpy(reply.get(), &QNetworkReply::finished);
+        QSignalSpy destroyedSpy(reply.get(), &QObject::destroyed);
         QVERIFY(finishedSpy.wait());
         QCOMPARE(destroyedSpy.size(), 0);
         QCoreApplication::processEvents();
@@ -10772,7 +10776,7 @@ Hello World!)"_ba;
 
     QNetworkAccessManager manager;
     QNetworkRequest req(QUrl("http://127.0.0.1:" + QString::number(server.serverPort())));
-    std::unique_ptr<QNetworkReply> reply(manager.post(req, "my data goes here"_ba));
+    auto reply = std::unique_ptr<QNetworkReply>(manager.post(req, "my data goes here"_ba));
     QSignalSpy errorSignal(reply.get(), &QNetworkReply::errorOccurred);
     QSignalSpy finishedSignal(reply.get(), &QNetworkReply::finished);
 

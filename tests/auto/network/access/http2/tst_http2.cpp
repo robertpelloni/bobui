@@ -205,7 +205,7 @@ namespace {
 // instead of simple 'delete'.
 struct ServerDeleter
 {
-    static void cleanup(Http2Server *srv)
+    void operator()(Http2Server *srv)
     {
         if (srv) {
             srv->stopSendingDATAFrames();
@@ -216,7 +216,7 @@ struct ServerDeleter
 
 bool clearTextHTTP2 = false;
 
-using ServerPtr = QScopedPointer<Http2Server, ServerDeleter>;
+using ServerPtr = std::unique_ptr<Http2Server, ServerDeleter>;
 
 H2Type defaultConnectionType()
 {
@@ -301,7 +301,7 @@ void tst_Http2::singleRequest()
     QFETCH(const H2Type, connectionType);
     ServerPtr srv(newServer(defaultServerSettings, connectionType));
 
-    QMetaObject::invokeMethod(srv.data(), "startServer", Qt::QueuedConnection);
+    QMetaObject::invokeMethod(srv.get(), "startServer", Qt::QueuedConnection);
     runEventLoop();
 
     QVERIFY(serverPort != 0);
@@ -364,7 +364,7 @@ void tst_Http2::informationalRequest()
     QFETCH(const int, statusCode);
     srv->setInformationalStatusCode(statusCode);
 
-    QMetaObject::invokeMethod(srv.data(), "startServer", Qt::QueuedConnection);
+    QMetaObject::invokeMethod(srv.get(), "startServer", Qt::QueuedConnection);
     runEventLoop();
 
     QVERIFY(serverPort != 0);
@@ -413,7 +413,7 @@ void tst_Http2::multipleRequests()
 
     ServerPtr srv(newServer(defaultServerSettings, defaultConnectionType()));
 
-    QMetaObject::invokeMethod(srv.data(), "startServer", Qt::QueuedConnection);
+    QMetaObject::invokeMethod(srv.get(), "startServer", Qt::QueuedConnection);
 
     runEventLoop();
     QVERIFY(serverPort != 0);
@@ -466,7 +466,7 @@ void tst_Http2::flowControlClientSide()
     const QByteArray respond(int(Http2::defaultSessionWindowSize * 10), 'x');
     srv->setResponseBody(respond);
 
-    QMetaObject::invokeMethod(srv.data(), "startServer", Qt::QueuedConnection);
+    QMetaObject::invokeMethod(srv.get(), "startServer", Qt::QueuedConnection);
 
     runEventLoop();
     QVERIFY(serverPort != 0);
@@ -507,7 +507,7 @@ void tst_Http2::flowControlServerSide()
 
     const QByteArray payload(int(Http2::defaultSessionWindowSize * 500), 'x');
 
-    QMetaObject::invokeMethod(srv.data(), "startServer", Qt::QueuedConnection);
+    QMetaObject::invokeMethod(srv.get(), "startServer", Qt::QueuedConnection);
 
     runEventLoop();
     QVERIFY(serverPort != 0);
@@ -541,7 +541,7 @@ void tst_Http2::pushPromise()
     ServerPtr srv(newServer(defaultServerSettings, defaultConnectionType(), qt_H2ConfigurationToSettings(params)));
     srv->enablePushPromise(true, QByteArray("/script.js"));
 
-    QMetaObject::invokeMethod(srv.data(), "startServer", Qt::QueuedConnection);
+    QMetaObject::invokeMethod(srv.get(), "startServer", Qt::QueuedConnection);
     runEventLoop();
 
     QVERIFY(serverPort != 0);
@@ -621,7 +621,7 @@ void tst_Http2::goaway()
 
     ServerPtr srv(newServer(defaultServerSettings, defaultConnectionType()));
     srv->emulateGOAWAY(responseTimeoutMS);
-    QMetaObject::invokeMethod(srv.data(), "startServer", Qt::QueuedConnection);
+    QMetaObject::invokeMethod(srv.get(), "startServer", Qt::QueuedConnection);
     runEventLoop();
 
     QVERIFY(serverPort != 0);
@@ -668,7 +668,7 @@ void tst_Http2::earlyResponse()
 
     ServerPtr targetServer(newServer(defaultServerSettings, defaultConnectionType()));
 
-    QMetaObject::invokeMethod(targetServer.data(), "startServer", Qt::QueuedConnection);
+    QMetaObject::invokeMethod(targetServer.get(), "startServer", Qt::QueuedConnection);
     runEventLoop();
 
     QVERIFY(serverPort != 0);
@@ -679,7 +679,7 @@ void tst_Http2::earlyResponse()
     ServerPtr redirector(newServer(defaultServerSettings, defaultConnectionType()));
     redirector->redirectOpenStream(targetPort);
 
-    QMetaObject::invokeMethod(redirector.data(), "startServer", Qt::QueuedConnection);
+    QMetaObject::invokeMethod(redirector.get(), "startServer", Qt::QueuedConnection);
     runEventLoop();
 
     QVERIFY(serverPort);
@@ -711,7 +711,7 @@ void tst_Http2::earlyError()
                                                                              : H2Type::h2Alpn;
     ServerPtr server(newServer(defaultServerSettings, serverConnectionType));
     server->enableSendEarlyError(true);
-    QMetaObject::invokeMethod(server.data(), "startServer", Qt::QueuedConnection);
+    QMetaObject::invokeMethod(server.get(), "startServer", Qt::QueuedConnection);
     runEventLoop();
     QCOMPARE_NE(serverPort, 0);
 
@@ -788,7 +788,7 @@ void tst_Http2::abortReply()
                                                                              : H2Type::h2Alpn;
     ServerPtr targetServer(newServer(defaultServerSettings, serverConnectionType));
 
-    QMetaObject::invokeMethod(targetServer.data(), "startServer", Qt::QueuedConnection);
+    QMetaObject::invokeMethod(targetServer.get(), "startServer", Qt::QueuedConnection);
     runEventLoop();
 
     QVERIFY(serverPort != 0);
@@ -894,7 +894,7 @@ void tst_Http2::connectToHost()
         Q_ASSERT(targetServer->isClearText());
     }
 
-    QMetaObject::invokeMethod(targetServer.data(), "startServer", Qt::QueuedConnection);
+    QMetaObject::invokeMethod(targetServer.get(), "startServer", Qt::QueuedConnection);
     runEventLoop();
 
     QVERIFY(serverPort != 0);
@@ -991,11 +991,11 @@ void tst_Http2::maxFrameSize()
     ServerPtr srv(newServer(defaultServerSettings, connectionType,
                             qt_H2ConfigurationToSettings(h2Config)));
     srv->setResponseBody(QByteArray(Http2::minPayloadLimit * 2, 'q'));
-    QMetaObject::invokeMethod(srv.data(), "startServer", Qt::QueuedConnection);
+    QMetaObject::invokeMethod(srv.get(), "startServer", Qt::QueuedConnection);
     runEventLoop();
     QVERIFY(serverPort != 0);
 
-    const QSignalSpy frameCounter(srv.data(), &Http2Server::sendingData);
+    const QSignalSpy frameCounter(srv.get(), &Http2Server::sendingData);
     auto url = requestUrl(connectionType);
     url.setPath(QString("/stream1.html"));
 
@@ -1133,7 +1133,7 @@ void tst_Http2::moreActivitySignals()
     serverPort = 0;
     QFETCH(H2Type, connectionType);
     ServerPtr srv(newServer(defaultServerSettings, connectionType));
-    QMetaObject::invokeMethod(srv.data(), "startServer", Qt::QueuedConnection);
+    QMetaObject::invokeMethod(srv.get(), "startServer", Qt::QueuedConnection);
     runEventLoop(100);
     QVERIFY(serverPort != 0);
     auto url = requestUrl(connectionType);
@@ -1241,7 +1241,7 @@ void tst_Http2::contentEncoding()
     QFETCH(QByteArray, encoding);
     targetServer->setContentEncoding(encoding);
 
-    QMetaObject::invokeMethod(targetServer.data(), "startServer", Qt::QueuedConnection);
+    QMetaObject::invokeMethod(targetServer.get(), "startServer", Qt::QueuedConnection);
     runEventLoop();
 
     QVERIFY(serverPort != 0);
@@ -1310,7 +1310,7 @@ void tst_Http2::authenticationRequired()
     else
         targetServer->setAuthenticationRequired(true);
 
-    QMetaObject::invokeMethod(targetServer.data(), "startServer", Qt::QueuedConnection);
+    QMetaObject::invokeMethod(targetServer.get(), "startServer", Qt::QueuedConnection);
     runEventLoop();
 
     QVERIFY(serverPort != 0);
@@ -1324,8 +1324,7 @@ void tst_Http2::authenticationRequired()
 
     QByteArray expectedBody = "Hello, World!";
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
-    QScopedPointer<QNetworkReply> reply;
-    reply.reset(manager->post(request, expectedBody));
+    auto reply = std::unique_ptr<QNetworkReply>(manager->post(request, expectedBody));
 
     bool authenticationRequested = false;
     connect(manager.get(), &QNetworkAccessManager::authenticationRequired, reply.get(),
@@ -1404,7 +1403,7 @@ void tst_Http2::unsupportedAuthenticateChallenge()
     targetServer->setResponseBody(responseBody);
     targetServer->setAuthenticationHeader("Bearer realm=\"qt.io accounts\"");
 
-    QMetaObject::invokeMethod(targetServer.data(), "startServer", Qt::QueuedConnection);
+    QMetaObject::invokeMethod(targetServer.get(), "startServer", Qt::QueuedConnection);
     runEventLoop();
 
     QVERIFY(serverPort != 0);
@@ -1417,8 +1416,7 @@ void tst_Http2::unsupportedAuthenticateChallenge()
 
     QByteArray expectedBody = "Hello, World!";
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
-    QScopedPointer<QNetworkReply> reply;
-    reply.reset(manager->post(request, expectedBody));
+    auto reply = std::unique_ptr<QNetworkReply>(manager->post(request, expectedBody));
 
     bool authenticationRequested = false;
     connect(manager.get(), &QNetworkAccessManager::authenticationRequired, reply.get(),
@@ -1499,7 +1497,7 @@ void tst_Http2::h2cAllowedAttribute()
     ServerPtr targetServer(newServer(defaultServerSettings, H2Type::h2c));
     targetServer->setResponseBody("Hello");
 
-    QMetaObject::invokeMethod(targetServer.data(), "startServer", Qt::QueuedConnection);
+    QMetaObject::invokeMethod(targetServer.get(), "startServer", Qt::QueuedConnection);
     runEventLoop();
 
     QVERIFY(serverPort != 0);
@@ -1517,8 +1515,7 @@ void tst_Http2::h2cAllowedAttribute()
     }
     auto envCleanup = qScopeGuard([]() { qunsetenv("QT_NETWORK_H2C_ALLOWED"); });
 
-    QScopedPointer<QNetworkReply> reply;
-    reply.reset(manager->get(request));
+    auto reply = std::unique_ptr<QNetworkReply>(manager->get(request));
 
     if (success)
         connect(reply.get(), &QNetworkReply::finished, this, &tst_Http2::replyFinished);
@@ -1564,7 +1561,7 @@ void tst_Http2::redirect()
     ServerPtr targetServer(newServer(defaultServerSettings, defaultConnectionType()));
     targetServer->setRedirect(redirectUrl, redirectCount);
 
-    QMetaObject::invokeMethod(targetServer.data(), "startServer", Qt::QueuedConnection);
+    QMetaObject::invokeMethod(targetServer.get(), "startServer", Qt::QueuedConnection);
     runEventLoop();
 
     QVERIFY(serverPort != 0);
@@ -1580,8 +1577,7 @@ void tst_Http2::redirect()
     qputenv("QT_NETWORK_H2C_ALLOWED", "1");
     auto envCleanup = qScopeGuard([]() { qunsetenv("QT_NETWORK_H2C_ALLOWED"); });
 
-    QScopedPointer<QNetworkReply> reply;
-    reply.reset(manager->get(request));
+    auto reply = std::unique_ptr<QNetworkReply>(manager->get(request));
 
     if (success) {
         connect(reply.get(), &QNetworkReply::finished, this, &tst_Http2::replyFinished);
@@ -1616,7 +1612,7 @@ void tst_Http2::trailingHEADERS()
     ServerPtr targetServer(newServer(defaultServerSettings, defaultConnectionType()));
     targetServer->setSendTrailingHEADERS(true);
 
-    QMetaObject::invokeMethod(targetServer.data(), "startServer", Qt::QueuedConnection);
+    QMetaObject::invokeMethod(targetServer.get(), "startServer", Qt::QueuedConnection);
     runEventLoop();
 
     QVERIFY(serverPort != 0);
@@ -1651,7 +1647,7 @@ void tst_Http2::duplicateRequestsWithAborts()
     H2Type connectionType = H2Type::h2Direct;
     ServerPtr targetServer(newServer(defaultServerSettings, connectionType));
 
-    QMetaObject::invokeMethod(targetServer.data(), "startServer", Qt::QueuedConnection);
+    QMetaObject::invokeMethod(targetServer.get(), "startServer", Qt::QueuedConnection);
     runEventLoop();
 
     QVERIFY(serverPort != 0);
@@ -1703,7 +1699,7 @@ void tst_Http2::abortOnEncrypted()
 
     ServerPtr targetServer(newServer(defaultServerSettings, H2Type::h2Direct));
 
-    QMetaObject::invokeMethod(targetServer.data(), "startServer", Qt::QueuedConnection);
+    QMetaObject::invokeMethod(targetServer.get(), "startServer", Qt::QueuedConnection);
     runEventLoop();
 
     nRequests = 1;
@@ -1752,7 +1748,7 @@ void tst_Http2::limitedConcurrentStreamsAllowed()
     RawSettings oneConcurrentStream{ { Http2::Settings::MAX_CONCURRENT_STREAMS_ID, 1 } };
     ServerPtr targetServer(newServer(oneConcurrentStream, connectionType));
 
-    QMetaObject::invokeMethod(targetServer.data(), "startServer", Qt::QueuedConnection);
+    QMetaObject::invokeMethod(targetServer.get(), "startServer", Qt::QueuedConnection);
     runEventLoop();
 
     QVERIFY(serverPort != 0);
@@ -1799,7 +1795,7 @@ void tst_Http2::maxHeaderTableSize()
     RawSettings maxHeaderTableSize{ { Http2::Settings::HEADER_TABLE_SIZE_ID, 0 } };
     ServerPtr targetServer(newServer(maxHeaderTableSize, connectionType));
 
-    QMetaObject::invokeMethod(targetServer.data(), "startServer", Qt::QueuedConnection);
+    QMetaObject::invokeMethod(targetServer.get(), "startServer", Qt::QueuedConnection);
     runEventLoop();
 
     QVERIFY(serverPort != 0);
