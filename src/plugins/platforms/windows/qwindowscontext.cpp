@@ -1233,6 +1233,7 @@ bool QWindowsContext::windowsProc(HWND hwnd, UINT message,
         return true;
     }
     case QtWindows::CompositionSettingsChanged:
+        platformWindow->handleCompositionSettingsChanged();
         return true;
     case QtWindows::ActivateWindowEvent:
         if (platformWindow->window()->flags() & Qt::WindowDoesNotAcceptFocus) {
