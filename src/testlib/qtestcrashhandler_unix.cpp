@@ -17,6 +17,7 @@
 // Broken implementation, causes link failures just by #include'ing!
 #  undef __cpp_lib_to_chars     // in case <version> was included
 #endif
+#include <string_view>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -118,15 +119,11 @@ using OldActionsArray = std::array<struct sigaction, fatalSignals.size()>;
 
 template <typename... Args> static ssize_t writeToStderr(Args &&... args)
 {
-    auto makeIovec = [](auto &&arg) {
-        if constexpr (std::is_same_v<std::decay_t<decltype(arg)>, iovec>) {
-            return arg;
-        } else {
-            struct iovec r = {};
-            r.iov_base = const_cast<char *>(arg);
-            r.iov_len = strlen(arg);
-            return r;
-        }
+    auto makeIovec = [](std::string_view arg) {
+        struct iovec r = {};
+        r.iov_base = const_cast<char *>(arg.data());
+        r.iov_len = arg.size();
+        return r;
     };
     struct iovec vec[] = { makeIovec(std::forward<Args>(args))... };
     return ::writev(STDERR_FILENO, vec, std::size(vec));
@@ -145,7 +142,7 @@ struct AsyncSafeIntBuffer
     AsyncSafeIntBuffer(Qt::Initialization) {}       // leaves array uninitialized
 };
 
-struct iovec asyncSafeToString(int n, AsyncSafeIntBuffer &&result = Qt::Uninitialized)
+std::string_view asyncSafeToString(int n, AsyncSafeIntBuffer &&result = Qt::Uninitialized)
 {
     char *ptr = result.array.data();
     if (false) {
@@ -185,10 +182,7 @@ struct iovec asyncSafeToString(int n, AsyncSafeIntBuffer &&result = Qt::Uninitia
     // this isn't necessary, it just helps in the debugger
     *ptr = '\0';
 #endif
-    struct iovec r;
-    r.iov_base = result.array.data();
-    r.iov_len = ptr - result.array.data();
-    return r;
+    return std::string_view(result.array.data(), ptr - result.array.data());
 };
 } // unnamed namespace
 
@@ -433,10 +427,7 @@ printCrashingSignalInfo(T *info)
         int shift = sizeof(quintptr) * 8 - 4;
         for (size_t i = 0; i < sizeof(quintptr) * 2; ++i, shift -= 4)
             r[i] = QtMiscUtils::toHexLower(u >> shift);
-        struct iovec vec;
-        vec.iov_base = r.data();
-        vec.iov_len = r.size();
-        return vec;
+        return std::string_view(r.data(), r.size());
     };
     writeToStderr(", code ", asyncSafeToString(info->si_code),
                   ", for address 0x", toHexString(quintptr(info->si_addr)));
