@@ -35,6 +35,13 @@
 # if !defined(Q_OS_INTEGRITY)
 #  include <sys/resource.h>
 # endif
+# if __has_include(<sys/ucontext.h>)
+#  include <sys/ucontext.h>
+# elif __has_include(<ucontext.h>)
+#  include <ucontext.h>
+# else
+using ucontext_t = void;
+# endif
 
 #if defined(Q_OS_MACOS)
 #include <QtCore/private/qcore_mac_p.h>
@@ -361,7 +368,39 @@ void printTestRunTime()
 static quintptr getProgramCounter(void *ucontext)
 {
     quintptr pc = 0;
-    Q_UNUSED(ucontext);
+    if ([[maybe_unused]] auto ctx = static_cast<ucontext_t *>(ucontext)) {
+#if 0 // keep the list below alphabetical
+
+#elif defined(Q_OS_DARWIN) && defined(Q_PROCESSOR_ARM_64)
+        pc = ctx->uc_mcontext->__ss.__pc;
+#elif defined(Q_OS_DARWIN) && defined(Q_PROCESSOR_X86_64)
+        pc = ctx->uc_mcontext->__ss.__rip;
+
+#elif defined(Q_OS_FREEBSD) && defined(Q_PROCESSOR_X86_32)
+        pc = ctx->uc_mcontext.mc_eip;
+#elif defined(Q_OS_FREEBSD) && defined(Q_PROCESSOR_X86_64)
+        pc = ctx->uc_mcontext.mc_rip;
+
+#elif defined(Q_OS_LINUX) && defined(Q_PROCESSOR_ARM_32)
+        // pc = ctx->uc_mcontext.arm_pc;                // untested
+#elif defined(Q_OS_LINUX) && defined(Q_PROCESSOR_ARM_64)
+        pc = ctx->uc_mcontext.pc;
+#elif defined(Q_OS_LINUX) && defined(Q_PROCESSOR_MIPS)
+        // pc = ctx->uc_mcontext.pc;                    // untested
+#elif defined(Q_OS_LINUX) && defined(Q_PROCESSOR_LOONGARCH)
+        // pc = ctx->uc_mcontext.__pc;                  // untested
+#elif defined(Q_OS_LINUX) && defined(Q_PROCESSOR_POWER_32)
+        // pc = ctx->uc_mcontext.uc_regs->gregs[PT_NIP]; // untested
+#elif defined(Q_OS_LINUX) && defined(Q_PROCESSOR_POWER_64)
+        // pc = ctx->uc_mcontext.gregs[PT_NIP];         // untested
+#elif defined(Q_OS_LINUX) && defined(Q_PROCESSOR_RISCV)
+        // pc = ctx->uc_mcontext.__gregs[REG_PC];       // untested
+#elif defined(Q_OS_LINUX) && defined(Q_PROCESSOR_X86_32)
+        pc = ctx->uc_mcontext.gregs[REG_EIP];
+#elif defined(Q_OS_LINUX) && defined(Q_PROCESSOR_X86_64)
+        pc = ctx->uc_mcontext.gregs[REG_RIP];
+#endif
+    }
     return pc;
 }
 
