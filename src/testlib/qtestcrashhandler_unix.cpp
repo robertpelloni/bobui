@@ -383,19 +383,38 @@ void generateStackTrace()
         // child process
         (void) dup2(STDERR_FILENO, STDOUT_FILENO); // redirect stdout to stderr
 
+        struct Args {
+            std::array<const char *, 16> argv;
+            int count = 0;
+            Args &operator<<(const char *arg)
+            {
+                Q_ASSERT(count < int(argv.size()));
+                argv[count++] = arg;
+                return *this;
+            }
+            operator char **() const { return const_cast<char **>(argv.data()); }
+        } argv;
+
         switch (debugger) {
         case None:
             Q_UNREACHABLE();
             break;
         case Gdb:
-            execlp("gdb", "gdb", "--nx", "--batch", "-ex", "thread apply all bt",
-                   "-ex", "info proc mappings",
-                   "--pid", pidbuffer.array.data(), nullptr);
+            argv << "gdb" << "--nx" << "--batch"
+                 << "-ex" << "thread apply all bt"
+                 << "-ex" << "printf \"\\n\""
+                 << "-ex" << "info proc mappings"
+                 << "--pid";
             break;
         case Lldb:
-            execlp("lldb", "lldb", "--no-lldbinit", "--batch", "-o", "bt all",
-                   "--attach-pid", pidbuffer.array.data(), nullptr);
+            argv << "lldb" << "--no-lldbinit" << "--batch"
+                 << "-o" << "bt all"
+                 << "--attach-pid";
             break;
+        }
+        if (argv.count) {
+            argv << pidbuffer.array.data() << nullptr;
+            execvp(argv.argv[0], argv);
         }
         _exit(1);
     } else if (pid < 0) {
