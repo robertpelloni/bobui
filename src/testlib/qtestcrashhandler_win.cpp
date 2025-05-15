@@ -57,12 +57,13 @@ void printTestRunTime()
             name ? name : "[Non-test]", msecsFunctionTime, msecsTotalTime);
 }
 
-void generateStackTrace()
+void generateStackTrace(quintptr ip)
 {
     if (debugger == None || alreadyDebugging())
         return;
 
     // ### Implement starting a debugger on Windows
+    Q_UNUSED(ip);
 }
 
 void blockUnixSignals()

@@ -41,7 +41,7 @@ namespace CrashHandler {
 
 #if !defined(Q_OS_WASM) || QT_CONFIG(thread)
     void printTestRunTime();
-    void generateStackTrace();
+    void generateStackTrace(quintptr ip = 0);
 #endif
 
     void maybeDisableCoreDump();

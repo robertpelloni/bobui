@@ -358,7 +358,14 @@ void printTestRunTime()
                   "ms, total time: ", asyncSafeToString(msecsTotalTime), "ms\n");
 }
 
-void generateStackTrace()
+static quintptr getProgramCounter(void *ucontext)
+{
+    quintptr pc = 0;
+    Q_UNUSED(ucontext);
+    return pc;
+}
+
+void generateStackTrace(quintptr ip)
 {
     if (debugger == None || alreadyDebugging())
         return;
@@ -383,6 +390,14 @@ void generateStackTrace()
         // child process
         (void) dup2(STDERR_FILENO, STDOUT_FILENO); // redirect stdout to stderr
 
+        // disassemble the crashing instruction, if known
+        // (syntax is the same for gdb and lldb)
+        char disasmInstr[sizeof("x/i 0x") + sizeof(ip) * 2] = {};   // zero-init for terminator
+        if (ip) {
+            strcpy(disasmInstr, "x/i ");
+            asyncSafeToHexString(ip, disasmInstr + strlen(disasmInstr));
+        }
+
         struct Args {
             std::array<const char *, 16> argv;
             int count = 0;
@@ -400,15 +415,19 @@ void generateStackTrace()
             Q_UNREACHABLE();
             break;
         case Gdb:
-            argv << "gdb" << "--nx" << "--batch"
-                 << "-ex" << "thread apply all bt"
+            argv << "gdb" << "--nx" << "--batch";
+            if (ip)
+                argv << "-ex" << disasmInstr;
+            argv << "-ex" << "thread apply all bt"
                  << "-ex" << "printf \"\\n\""
                  << "-ex" << "info proc mappings"
                  << "--pid";
             break;
         case Lldb:
-            argv << "lldb" << "--no-lldbinit" << "--batch"
-                 << "-o" << "bt all"
+            argv << "lldb" << "--no-lldbinit" << "--batch";
+            if (ip)
+                argv << "-o" << disasmInstr;
+            argv << "-o" << "bt all"
                  << "--attach-pid";
             break;
         }
@@ -425,6 +444,8 @@ void generateStackTrace()
     }
 
     writeToStderr("=== End of stack trace ===\n");
+#  else
+    Q_UNUSED(ip);
 #  endif // !Q_OS_INTEGRITY && !Q_OS_VXWORKS
 }
 
@@ -453,14 +474,16 @@ printSentSignalInfo(T *info)
 [[maybe_unused]] static void printSentSignalInfo(...) {}
 
 template <typename T> static std::enable_if_t<sizeof(std::declval<T>().si_addr) >= 1>
-printCrashingSignalInfo(T *info)
+printCrashingSignalInfo(T *info, quintptr pc)
 {
     using HexString = std::array<char, sizeof(quintptr) * 2 + 2>;
     auto toHexString = [](quintptr u, HexString &&r = {}) {
         return asyncSafeToHexString(u, r.data());
     };
-    writeToStderr(", code ", asyncSafeToString(info->si_code),
-                  ", for address ", toHexString(quintptr(info->si_addr)));
+    writeToStderr(", code ", asyncSafeToString(info->si_code));
+    if (pc)
+        writeToStderr(", at instruction address ", toHexString(pc));
+    writeToStderr(", accessing address ", toHexString(quintptr(info->si_addr)));
 }
 [[maybe_unused]] static void printCrashingSignalInfo(...) {}
 
@@ -581,23 +604,24 @@ void FatalSignalHandler::freeAlternateStack()
 #  endif
 }
 
-void actionHandler(int signum, siginfo_t *info, void *)
+void actionHandler(int signum, siginfo_t *info, void *ucontext)
 {
     writeToStderr("Received signal ", asyncSafeToString(signum),
                   " (SIG", signalName(signum), ")");
 
+    quintptr pc = 0;
     bool isCrashingSignal =
             std::find(crashingSignals.begin(), crashingSignals.end(), signum) != crashingSignals.end();
     if (isCrashingSignal && (!info || info->si_code <= 0))
         isCrashingSignal = false;       // wasn't sent by the kernel, so it's not really a crash
     if (isCrashingSignal)
-        printCrashingSignalInfo(info);
+        printCrashingSignalInfo(info, (pc = getProgramCounter(ucontext)));
     else if (info && (info->si_code == SI_USER || info->si_code == SI_QUEUE))
         printSentSignalInfo(info);
 
     printTestRunTime();
     if (signum != SIGINT) {
-        generateStackTrace();
+        generateStackTrace(pc);
         if (pauseOnCrash) {
             writeToStderr("Pausing process ", asyncSafeToString(getpid()),
                    " for debugging\n");
