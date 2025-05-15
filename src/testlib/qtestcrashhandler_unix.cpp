@@ -184,6 +184,20 @@ std::string_view asyncSafeToString(int n, AsyncSafeIntBuffer &&result = Qt::Unin
 #endif
     return std::string_view(result.array.data(), ptr - result.array.data());
 };
+
+std::string_view asyncSafeToHexString(quintptr u, char *ptr)
+{
+    // We format with leading zeroes so the output is of fixed length.
+    // Formatting to shorter is more complex and unnecessary here (unlike
+    // decimals above).
+    int shift = sizeof(quintptr) * 8 - 4;
+    ptr[0] = '0';
+    ptr[1] = 'x';
+    for (size_t i = 0; i < sizeof(quintptr) * 2; ++i, shift -= 4)
+        ptr[i + 2] = QtMiscUtils::toHexLower(u >> shift);
+
+    return std::string_view(ptr, sizeof(quintptr) * 2 + 2);
+}
 } // unnamed namespace
 
 namespace QTest {
@@ -422,15 +436,12 @@ printSentSignalInfo(T *info)
 template <typename T> static std::enable_if_t<sizeof(std::declval<T>().si_addr) >= 1>
 printCrashingSignalInfo(T *info)
 {
-    using HexString = std::array<char, sizeof(quintptr) * 2>;
+    using HexString = std::array<char, sizeof(quintptr) * 2 + 2>;
     auto toHexString = [](quintptr u, HexString &&r = {}) {
-        int shift = sizeof(quintptr) * 8 - 4;
-        for (size_t i = 0; i < sizeof(quintptr) * 2; ++i, shift -= 4)
-            r[i] = QtMiscUtils::toHexLower(u >> shift);
-        return std::string_view(r.data(), r.size());
+        return asyncSafeToHexString(u, r.data());
     };
     writeToStderr(", code ", asyncSafeToString(info->si_code),
-                  ", for address 0x", toHexString(quintptr(info->si_addr)));
+                  ", for address ", toHexString(quintptr(info->si_addr)));
 }
 [[maybe_unused]] static void printCrashingSignalInfo(...) {}
 
