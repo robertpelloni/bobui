@@ -30,7 +30,6 @@
 
 #ifdef Q_OS_WIN
 #include <iostream>
-#include <qt_windows.h> // for Sleep
 #endif
 
 QT_BEGIN_NAMESPACE
@@ -88,9 +87,6 @@ namespace CrashHandler {
     {
     public:
         WindowsFaultHandler();
-
-    private:
-        static LONG WINAPI windowsFaultHandler(struct _EXCEPTION_POINTERS *exInfo);
     };
     using FatalSignalHandler = WindowsFaultHandler;
 #elif defined(Q_OS_UNIX) && !defined(Q_OS_WASM)

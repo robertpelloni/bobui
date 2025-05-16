@@ -16,6 +16,7 @@
 #if !defined(Q_CC_MINGW) || (defined(Q_CC_MINGW) && defined(__MINGW64_VERSION_MAJOR))
 #  include <crtdbg.h>
 #endif
+#include <qt_windows.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -168,6 +169,8 @@ DebugSymbolResolver::Symbol DebugSymbolResolver::resolveSymbol(DWORD64 address) 
 }
 } // unnamed namespace
 
+static LONG WINAPI windowsFaultHandler(struct _EXCEPTION_POINTERS *exInfo);
+
 WindowsFaultHandler::WindowsFaultHandler()
 {
 #  if !defined(Q_CC_MINGW)
@@ -177,7 +180,7 @@ WindowsFaultHandler::WindowsFaultHandler()
     SetUnhandledExceptionFilter(windowsFaultHandler);
 }
 
-LONG WINAPI WindowsFaultHandler::windowsFaultHandler(struct _EXCEPTION_POINTERS *exInfo)
+static LONG WINAPI windowsFaultHandler(struct _EXCEPTION_POINTERS *exInfo)
 {
     enum { maxStackFrames = 100 };
     char appName[MAX_PATH];
