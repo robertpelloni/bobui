@@ -54,6 +54,7 @@ private slots:
     void multipleResolve();
     void simpleReject();
     void multipleReject();
+    void throwInThen();
     void bareFinally();
     void finallyWithThen();
     void finallyWithThrow();
@@ -186,6 +187,28 @@ void WasmPromiseTest::multipleReject()
             testSupport.resolve['test' + i](`${i}`);
         }
     }, promiseCount);
+}
+
+void WasmPromiseTest::throwInThen()
+{
+    init();
+
+    qstdweb::Promise::make(m_testSupport, "makeTestPromise", {
+        .thenFunc = [](val result) {
+            Q_UNUSED(result);
+            EM_ASM({
+                throw "Expected error";
+            });
+        },
+        .catchFunc = [](val error) {
+            QWASMCOMPARE("Expected error", error.as<std::string>());
+            QWASMSUCCESS();
+         }
+    }, std::string("throwInThen"));
+
+    EM_ASM({
+        testSupport.resolve["throwInThen"]();
+    });
 }
 
 void WasmPromiseTest::bareFinally()

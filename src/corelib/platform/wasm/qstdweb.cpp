@@ -487,10 +487,15 @@ void Promise::adoptPromise(emscripten::val promise, PromiseCallbacks callbacks)
 
     // Set handlers on the promise
     if (thenIndex)
-        promise.call<emscripten::val>("then", suspendResume->jsEventHandlerAt(*thenIndex));
+        promise =
+                promise.call<emscripten::val>("then", suspendResume->jsEventHandlerAt(*thenIndex));
+
     if (catchIndex)
-        promise.call<emscripten::val>("catch", suspendResume->jsEventHandlerAt(*catchIndex));
-    promise.call<emscripten::val>("finally", suspendResume->jsEventHandlerAt(*finallyIndex));
+        promise = promise.call<emscripten::val>("catch",
+                                                suspendResume->jsEventHandlerAt(*catchIndex));
+
+    promise = promise.call<emscripten::val>("finally",
+                                            suspendResume->jsEventHandlerAt(*finallyIndex));
 }
 
 void Promise::all(std::vector<emscripten::val> promises, PromiseCallbacks callbacks)
