@@ -1492,11 +1492,12 @@ backtraceFramesForLogMessage(int frameCount,
             else
                 return std::move(function).toUtf8();    // -> QByteArray
         }();
-        QScopedPointer<char, QScopedPointerPodDeleter> demangled;
-        demangled.reset(abi::__cxa_demangle(fn, nullptr, nullptr, nullptr));
+        auto cleanup = [](auto *p) { free(p); };
+        using Ptr = std::unique_ptr<char, decltype(cleanup)>;
+        auto demangled = Ptr(abi::__cxa_demangle(fn, nullptr, nullptr, nullptr), cleanup);
 
         if (demangled)
-            return QString::fromUtf8(qCleanupFuncinfo(demangled.data()));
+            return QString::fromUtf8(qCleanupFuncinfo(demangled.get()));
         else
             return QString::fromUtf8(fn);       // restore
     };
@@ -1537,8 +1538,10 @@ backtraceFramesForLogMessage(int frameCount,
     static const QRegularExpression rx(QStringLiteral("^(?:[^(]*/)?([^(/]+)\\(([^+]*)(?:[\\+[a-f0-9x]*)?\\) \\[[a-f0-9x]*\\]$"));
 
     auto decodeFrame = [&](void *&addr) -> DecodedFrame {
-        QScopedPointer<char*, QScopedPointerPodDeleter> strings(backtrace_symbols(&addr, 1));
-        QString trace = QString::fromUtf8(strings.data()[0]);
+        auto cleanup = [](auto *p) { free(p); };
+        auto strings =
+            std::unique_ptr<char *, decltype(cleanup)>(backtrace_symbols(&addr, 1), cleanup);
+        QString trace = QString::fromUtf8(strings.get()[0]);
         QRegularExpressionMatch m = rx.match(trace);
         if (!m.hasMatch())
             return {};
