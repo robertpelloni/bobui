@@ -9,7 +9,6 @@
 #include <qplatformdefs.h>
 
 #include "QtCore/qapplicationstatic.h"
-#include "QtCore/qscopedpointer.h"
 #include <qabstracteventdispatcher.h>
 #include <qcoreapplication.h>
 #include <qmetaobject.h>

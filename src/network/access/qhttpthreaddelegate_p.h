@@ -30,11 +30,14 @@
 #include "qhttp1configuration.h"
 #include "qhttp2configuration.h"
 #include <QSharedPointer>
-#include <QScopedPointer>
 #include "private/qnoncontiguousbytedevice_p.h"
 #include "qnetworkaccessauthenticationmanager_p.h"
 #include <QtNetwork/private/http2protocol_p.h>
 #include <QtNetwork/qhttpheaders.h>
+
+#ifndef QT_NO_SSL
+#include <memory>
+#endif
 
 QT_REQUIRE_CONFIG(http);
 
@@ -57,7 +60,7 @@ public:
     // incoming
     bool ssl;
 #ifndef QT_NO_SSL
-    QScopedPointer<QSslConfiguration> incomingSslConfiguration;
+    std::unique_ptr<QSslConfiguration> incomingSslConfiguration;
 #endif
     QHttpNetworkRequest httpRequest;
     qint64 downloadBufferMaximumSize;

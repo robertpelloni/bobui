@@ -30,6 +30,10 @@
 #include "qhstsstore_p.h"
 #endif // QT_CONFIG(settings)
 
+#if QT_CONFIG(settings)
+#include <memory>
+#endif
+
 QT_BEGIN_NAMESPACE
 
 class QAuthenticator;
@@ -121,7 +125,7 @@ public:
 
     QHstsCache stsCache;
 #if QT_CONFIG(settings)
-    QScopedPointer<QHstsStore> stsStore;
+    std::unique_ptr<QHstsStore> stsStore;
 #endif // QT_CONFIG(settings)
     bool stsEnabled = false;
 

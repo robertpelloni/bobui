@@ -429,7 +429,7 @@ void QNetworkReplyHttpImpl::setSslConfigurationImplementation(const QSslConfigur
 void QNetworkReplyHttpImpl::sslConfigurationImplementation(QSslConfiguration &configuration) const
 {
     Q_D(const QNetworkReplyHttpImpl);
-    if (d->sslConfiguration.data())
+    if (d->sslConfiguration)
         configuration = *d->sslConfiguration;
     else
         configuration = request().sslConfiguration();
@@ -1557,7 +1557,7 @@ void QNetworkReplyHttpImplPrivate::replySslErrors(
 void QNetworkReplyHttpImplPrivate::replySslConfigurationChanged(const QSslConfiguration &newSslConfiguration)
 {
     // Receiving the used SSL configuration from the HTTP thread
-    if (sslConfiguration.data())
+    if (sslConfiguration)
         *sslConfiguration = newSslConfiguration;
     else
         sslConfiguration.reset(new QSslConfiguration(newSslConfiguration));

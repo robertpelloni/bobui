@@ -19,10 +19,11 @@
 #include <QtNetwork/private/qtnetworkglobal_p.h>
 #include <qhash.h>
 #include <qbytearray.h>
-#include <qscopedpointer.h>
 #include <qstring.h>
 #include <qauthenticator.h>
 #include <qvariant.h>
+
+#include <memory>
 
 QT_BEGIN_NAMESPACE
 
@@ -49,9 +50,9 @@ public:
     QString realm;
     QByteArray challenge;
 #if QT_CONFIG(sspi) // SSPI
-    QScopedPointer<QSSPIWindowsHandles> sspiWindowsHandles;
+    std::unique_ptr<QSSPIWindowsHandles> sspiWindowsHandles;
 #elif QT_CONFIG(gssapi) // GSSAPI
-    QScopedPointer<QGssApiHandles> gssApiHandles;
+    std::unique_ptr<QGssApiHandles> gssApiHandles;
 #endif
     bool hasFailed; //credentials have been tried but rejected by server.
 

@@ -693,7 +693,7 @@ void QNetworkAccessManager::enableStrictTransportSecurityStore(bool enabled, con
 #if QT_CONFIG(settings)
     Q_D(QNetworkAccessManager);
     d->stsStore.reset(enabled ? new QHstsStore(storeDir) : nullptr);
-    d->stsCache.setStore(d->stsStore.data());
+    d->stsCache.setStore(d->stsStore.get());
 #else
     Q_UNUSED(enabled);
     Q_UNUSED(storeDir);
@@ -714,7 +714,7 @@ bool QNetworkAccessManager::isStrictTransportSecurityStoreEnabled() const
 {
 #if QT_CONFIG(settings)
     Q_D(const QNetworkAccessManager);
-    return bool(d->stsStore.data());
+    return bool(d->stsStore);
 #else
     return false;
 #endif // QT_CONFIG(settings)

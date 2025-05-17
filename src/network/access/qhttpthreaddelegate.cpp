@@ -268,7 +268,7 @@ void QHttpThreadDelegate::startRequest()
 
 #if QT_CONFIG(ssl)
     // See qnetworkreplyhttpimpl, delegate's initialization code.
-    Q_ASSERT(!ssl || incomingSslConfiguration.data());
+    Q_ASSERT(!ssl || incomingSslConfiguration);
 #endif // QT_CONFIG(ssl)
 
     const bool isH2 = httpRequest.isHTTP2Allowed() || httpRequest.isHTTP2Direct();

@@ -57,6 +57,7 @@ qt_internal_add_module(Network
     DEFINES
         QT_NO_CONTEXTLESS_CONNECT
         QT_NO_FOREACH
+        QT_NO_SCOPED_POINTER
         QT_NO_USING_NAMESPACE
         QT_NO_CAST_FROM_ASCII
         QT_NO_CAST_TO_ASCII
