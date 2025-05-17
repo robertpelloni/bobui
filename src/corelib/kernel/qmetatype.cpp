@@ -74,12 +74,12 @@ namespace {
 struct QMetaTypeDeleter
 {
     const QtPrivate::QMetaTypeInterface *iface;
-    void operator()(void *data)
+    void operator()(void *data) const
     {
         if (iface->alignment > __STDCPP_DEFAULT_NEW_ALIGNMENT__) {
-            operator delete(data, std::align_val_t(iface->alignment));
+            operator delete(data, iface->size, std::align_val_t(iface->alignment));
         } else {
-            operator delete(data);
+            operator delete(data, iface->size);
         }
     }
 };
