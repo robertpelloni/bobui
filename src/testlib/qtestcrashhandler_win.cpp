@@ -51,9 +51,11 @@ void printTestRunTime()
     const int msecsFunctionTime = qRound(QTestLog::msecsFunctionTime());
     const int msecsTotalTime = qRound(QTestLog::msecsTotalTime());
     const char *const name = QTest::currentTestFunction();
-    writeToStderr("\n         ", name ? name : "[Non-test]",
-                  " function time: ", asyncSafeToString(msecsFunctionTime),
-                  "ms, total time: ", asyncSafeToString(msecsTotalTime), "ms\n");
+
+    // Windows doesn't have the concept of async-safety, so fprintf() is
+    // probably as good as WriteFile() and WriteConsole().
+    fprintf(stderr, "\n         %s function time: %dms, total time: %dms\n",
+            name ? name : "[Non-test]", msecsFunctionTime, msecsTotalTime);
 }
 
 void generateStackTrace()

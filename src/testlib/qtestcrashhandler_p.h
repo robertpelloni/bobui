@@ -28,49 +28,9 @@
 #include <unistd.h>
 #endif
 
-#ifdef Q_OS_WIN
-#include <iostream>
-#endif
-
 QT_BEGIN_NAMESPACE
 namespace QTest {
 namespace CrashHandler {
-#if defined(Q_OS_UNIX) && (!defined(Q_OS_WASM) || QT_CONFIG(thread))
-    struct iovec IoVec(struct iovec vec);
-    struct iovec IoVec(const char *str);
-
-    template <typename... Args> static ssize_t writeToStderr(Args &&... args)
-    {
-        struct iovec vec[] = { IoVec(std::forward<Args>(args))... };
-        return ::writev(STDERR_FILENO, vec, std::size(vec));
-    }
-
-    // async-signal-safe conversion from int to string
-    struct AsyncSafeIntBuffer
-    {
-        // digits10 + 1 for all possible digits
-        // +1 for the sign
-        // +1 for the terminating null
-        static constexpr int Digits10 = std::numeric_limits<int>::digits10 + 3;
-        std::array<char, Digits10> array;
-        constexpr AsyncSafeIntBuffer() : array{} {}     // initializes array
-        AsyncSafeIntBuffer(Qt::Initialization) {}       // leaves array uninitialized
-    };
-
-    struct iovec asyncSafeToString(int n, AsyncSafeIntBuffer &&result = Qt::Uninitialized);
-#elif defined(Q_OS_WIN)
-    // Windows doesn't need to be async-safe
-    template <typename... Args> static void writeToStderr(Args &&... args)
-    {
-        (std::cerr << ... << args);
-    }
-
-    inline std::string asyncSafeToString(int n)
-    {
-        return std::to_string(n);
-    }
-#endif // defined(Q_OS_UNIX) && (!defined(Q_OS_WASM) || QT_CONFIG(thread))
-
     bool alreadyDebugging();
     void blockUnixSignals();
 
@@ -149,32 +109,6 @@ namespace CrashHandler {
         int setupAlternateStack();
         void freeAlternateStack();
 
-        template <typename T> static
-                std::enable_if_t<sizeof(std::declval<T>().si_pid) + sizeof(std::declval<T>().si_uid) >= 1>
-                printSentSignalInfo(T *info)
-        {
-            writeToStderr(" sent by PID ", asyncSafeToString(info->si_pid),
-                          " UID ", asyncSafeToString(info->si_uid));
-        }
-        static void printSentSignalInfo(...) {}
-
-        template <typename T> static
-                std::enable_if_t<sizeof(std::declval<T>().si_addr) >= 1> printCrashingSignalInfo(T *info)
-        {
-            using HexString = std::array<char, sizeof(quintptr) * 2>;
-            auto toHexString = [](quintptr u, HexString &&r = {}) {
-                int shift = sizeof(quintptr) * 8 - 4;
-                for (size_t i = 0; i < sizeof(quintptr) * 2; ++i, shift -= 4)
-                    r[i] = QtMiscUtils::toHexLower(u >> shift);
-                struct iovec vec;
-                vec.iov_base = r.data();
-                vec.iov_len = r.size();
-                return vec;
-            };
-            writeToStderr(", code ", asyncSafeToString(info->si_code),
-                          ", for address 0x", toHexString(quintptr(info->si_addr)));
-        }
-        static void printCrashingSignalInfo(...) {}
         static void actionHandler(int signum, siginfo_t *info, void * /* ucontext */);
 
         [[maybe_unused]] static void regularHandler(int signum)
