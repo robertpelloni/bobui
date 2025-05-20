@@ -100,9 +100,9 @@ function(_qt_internal_android_get_gradle_dependencies out_var target)
     foreach(dep_type implementation api)
         string(JOIN "\n    " dep_prefix
             "\n    //noinspection GradleDependency"
-            "${dep_type} '"
+            "${dep_type} "
         )
-        set(dep_postfix "'")
+        set(dep_postfix "")
         set(dep_property "$<TARGET_PROPERTY:${target},_qt_android_gradle_${dep_type}_dependencies>")
         string(JOIN "" known_dependencies
             "${known_dependencies}"
@@ -127,7 +127,7 @@ function(_qt_internal_set_android_application_gradle_defaults target)
         _qt_android_gradle_assets_source_dirs "assets"
         _qt_android_gradle_jniLibs_source_dirs "libs"
         _qt_android_manifest "AndroidManifest.xml"
-        _qt_android_gradle_implementation_dependencies "androidx.core:core:1.13.1"
+        _qt_android_gradle_implementation_dependencies "'androidx.core:core:1.13.1'"
     )
 endfunction()
 
