@@ -134,9 +134,14 @@ endfunction()
 # Generates the build.gradle file for the target. Writes the result to the target app deployment
 # directory.
 function(_qt_internal_android_generate_target_build_gradle target)
+    cmake_parse_arguments(PARSE_ARGV 1 arg "" "DEPLOYMENT_DIR" "")
+
+    if(NOT arg_DEPLOYMENT_DIR)
+        message(FATAL_ERROR "DEPLOYMENT_DIR is not specified.")
+    endif()
+
     set(build_gradle_filename "build.gradle")
-    _qt_internal_android_get_target_deployment_dir(target_deployment_dir ${target})
-    set(out_file "${target_deployment_dir}/${build_gradle_filename}")
+    set(out_file "${arg_DEPLOYMENT_DIR}/${build_gradle_filename}")
 
     # Skip generating the file if it's already provided by user.
     get_target_property(deployment_files ${target} _qt_android_deployment_files)
@@ -207,8 +212,9 @@ function(_qt_internal_android_prepare_gradle_build target)
     _qt_internal_android_generate_bundle_gradle_properties(${target})
     _qt_internal_android_generate_bundle_settings_gradle(${target})
     _qt_internal_android_generate_bundle_local_properties(${target})
-    _qt_internal_android_generate_target_build_gradle(${target})
-    _qt_internal_android_generate_target_gradle_properties(${target})
+    _qt_internal_android_generate_target_build_gradle(${target} DEPLOYMENT_DIR "${deployment_dir}")
+    _qt_internal_android_generate_target_gradle_properties(${target}
+        DEPLOYMENT_DIR "${deployment_dir}")
 
 
     _qt_internal_android_add_gradle_build(${target} apk)
@@ -331,9 +337,14 @@ endfunction()
 # Generates gradle.properties for the specific target. Usually contains the
 # target build type(executable, dynamic feature, library).
 function(_qt_internal_android_generate_target_gradle_properties target)
+    cmake_parse_arguments(PARSE_ARGV 1 arg "" "DEPLOYMENT_DIR" "")
+
+    if(NOT arg_DEPLOYMENT_DIR)
+        message(FATAL_ERROR "DEPLOYMENT_DIR is not specified.")
+    endif()
+
     set(gradle_properties_file_name "gradle.properties")
-    _qt_internal_android_get_target_deployment_dir(deployment_dir ${target})
-    set(out_file "${deployment_dir}/${gradle_properties_file_name}")
+    set(out_file "${arg_DEPLOYMENT_DIR}/${gradle_properties_file_name}")
     # Skip generating the file if it's already provided by user.
     get_target_property(deployment_files ${target} _qt_android_deployment_files)
     if("${out_file}" IN_LIST deployment_files)
