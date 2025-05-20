@@ -9,16 +9,22 @@ function(_qt_internal_android_get_template_path out_var target template_name)
             " This is the Qt issue, please report a bug at https://bugreports.qt.io.")
     endif()
 
-    _qt_internal_android_get_package_source_dir(user_template_directory ${target})
-    get_filename_component(user_template_directory "${user_template_directory}" ABSOLUTE)
     _qt_internal_android_template_dir(template_directory)
     get_filename_component(template_directory "${template_directory}" ABSOLUTE)
 
     # The paths are ordered according to their priority, from highest to lowest.
     set(possible_paths
-        "${user_template_directory}/${template_name}.in"
         "${template_directory}/${template_name}.in"
     )
+
+    get_target_property(android_target_type ${target} _qt_android_target_type)
+    if(android_target_type STREQUAL "APPLICATION")
+        _qt_internal_android_get_package_source_dir(user_template_directory ${target})
+        get_filename_component(user_template_directory "${user_template_directory}" ABSOLUTE)
+
+        # Add user template with the higher priority
+        list(PREPEND possible_paths "${user_template_directory}/${template_name}.in")
+    endif()
 
     set(template_path "")
     foreach(possible_path IN LISTS possible_paths)
@@ -59,6 +65,18 @@ function(_qt_internal_android_generate_bundle_settings_gradle target)
         ">"
     )
 
+    set(target_dynamic_features "$<TARGET_PROPERTY:${target},_qt_android_dynamic_features>")
+    set(include_prefix "include(\":")
+    set(include_suffix "\")")
+    set(include_glue "${include_suffix}\n${include_prefix}")
+    string(JOIN "" SUBPROJECTS
+        "$<$<BOOL:${target_dynamic_features}>:"
+            "${include_prefix}"
+            "$<JOIN:${target_dynamic_features},${include_glue}>"
+            "${include_suffix}"
+        ">"
+    )
+
     _qt_internal_configure_file(GENERATE OUTPUT ${settings_gradle_file}
         INPUT "${template_file}")
     set_property(TARGET ${target} APPEND PROPERTY _qt_android_deployment_files
@@ -72,7 +90,7 @@ function(_qt_internal_android_get_gradle_source_sets out_var target)
     set(indent "            ")
     foreach(type IN LISTS known_types)
         set(source_dirs
-            "$<TARGET_PROPERTY:${target},_qt_android_gradle_${type}_source_dirs>")
+            "$<GENEX_EVAL:$<TARGET_PROPERTY:${target},_qt_android_gradle_${type}_source_dirs>>")
         string(JOIN "" source_set
             "${source_set}"
             "$<$<BOOL:${source_dirs}>:"
@@ -103,7 +121,7 @@ function(_qt_internal_android_get_gradle_dependencies out_var target)
             "${dep_type} "
         )
         set(dep_postfix "")
-        set(dep_property "$<TARGET_PROPERTY:${target},_qt_android_gradle_${dep_type}_dependencies>")
+        set(dep_property "$<GENEX_EVAL:$<TARGET_PROPERTY:${target},_qt_android_gradle_${dep_type}_dependencies>>")
         string(JOIN "" known_dependencies
             "${known_dependencies}"
             "$<$<BOOL:${dep_property}>:"
@@ -118,6 +136,14 @@ endfunction()
 function(_qt_internal_set_android_application_gradle_defaults target)
     _qt_internal_android_java_dir(android_java_dir)
 
+    set(target_dynamic_features "$<TARGET_PROPERTY:${target},_qt_android_dynamic_features>")
+    string(JOIN "" implementation_dependencies
+        "$<$<BOOL:${target_dynamic_features}>:'com.google.android.play:feature-delivery:2.1.0'>"
+    )
+    # TODO: make androidx.core:core version configurable.
+    # Currently, it is hardcoded to 1.16.0.
+    list(APPEND implementation_dependencies "'androidx.core:core:1.16.0'")
+
     set_target_properties(${target} PROPERTIES
         _qt_android_gradle_java_source_dirs "${android_java_dir}/src;src;java"
         _qt_android_gradle_aidl_source_dirs "${android_java_dir}/src;src;aidl"
@@ -127,7 +153,7 @@ function(_qt_internal_set_android_application_gradle_defaults target)
         _qt_android_gradle_assets_source_dirs "assets"
         _qt_android_gradle_jniLibs_source_dirs "libs"
         _qt_android_manifest "AndroidManifest.xml"
-        _qt_android_gradle_implementation_dependencies "'androidx.core:core:1.13.1'"
+        _qt_android_gradle_implementation_dependencies "${implementation_dependencies}"
     )
 endfunction()
 
@@ -184,16 +210,31 @@ function(_qt_internal_android_generate_target_build_gradle target)
         "ndk.abiFilters = ['${target_abi_list}']"
     )
 
-    set(ANDROID_DEPLOYMENT_EXTRAS "")
+    set(target_dynamic_features "$<TARGET_PROPERTY:${target},_qt_android_dynamic_features>")
+    set(include_prefix "\":")
+    set(include_suffix "\"")
+    set(include_glue "${include_suffix}$<COMMA>${include_prefix}")
+    string(APPEND ANDROID_DEPLOYMENT_EXTRAS
+        "$<$<BOOL:${target_dynamic_features}>:dynamicFeatures = ["
+            "${include_prefix}"
+            "$<JOIN:${target_dynamic_features},${include_glue}>"
+            "${include_suffix}]"
+        ">"
+    )
 
     get_target_property(android_target_type ${target} _qt_android_target_type)
     if(android_target_type STREQUAL "APPLICATION")
         set(GRADLE_PLUGIN_TYPE "com.android.application")
+        set(template_subdir "app")
+    elseif(android_target_type STREQUAL "DYNAMIC_FEATURE")
+        set(GRADLE_PLUGIN_TYPE "com.android.dynamic-feature")
+        set(template_subdir "dynamic_feature")
     else()
         message(FATAL_ERROR "Unsupported target type for android bundle deployment ${target}")
     endif()
 
-    _qt_internal_android_get_template_path(template_file ${target} "app/${build_gradle_filename}")
+    _qt_internal_android_get_template_path(template_file ${target}
+        "${template_subdir}/${build_gradle_filename}")
     _qt_internal_configure_file(GENERATE
         OUTPUT "${out_file}"
         INPUT "${template_file}"
@@ -250,6 +291,15 @@ function(_qt_internal_android_add_gradle_build target type)
     set(package_build_file_path
         "${package_build_dir}/${deployment_type_suffix}/app-${deployment_type_suffix}.${type}")
 
+    set(extra_deps "")
+    if(TARGET ${target}_copy_feature_names)
+        list(APPEND extra_deps ${target}_copy_feature_names)
+    endif()
+
+    if(TARGET ${target}_deploy_dynamic_features)
+        list(APPEND extra_deps ${target}_deploy_dynamic_features)
+    endif()
+
     set(gradle_scripts "$<TARGET_PROPERTY:${target},_qt_android_deployment_files>")
     add_custom_command(OUTPUT "${package_file_path}"
         BYPRODUCTS "${package_build_file_path}"
@@ -263,6 +313,7 @@ function(_qt_internal_android_add_gradle_build target type)
             ${gradle_scripts}
             ${target}_copy_gradle_files
             ${target}_android_deploy_aux
+            ${extra_deps}
         WORKING_DIRECTORY
             "${android_build_dir}"
         VERBATIM

@@ -120,6 +120,29 @@ function(_qt_internal_generate_android_permissions_json out_result target)
     set(${out_result} "${result}" PARENT_SCOPE)
 endfunction()
 
+# Add the specific dynamic library as the dynamic feature for the Android application target.
+function(qt6_add_android_dynamic_features target)
+    cmake_parse_arguments(PARSE_ARGV 1 arg "" "" "FEATURE_TARGETS")
+    if(NOT QT_USE_ANDROID_MODERN_BUNDLE)
+        message(FATAL_ERROR "qt6_add_android_dynamic_features is only supported with"
+            " 'QT_USE_ANDROID_MODERN_BUNDLE' enabled.")
+    endif()
+    if(NOT TARGET ${target})
+        message(FATAL_ERROR "${target} is not a target. Cannot add the dynamic features.")
+    endif()
+    get_target_property(android_type ${target} _qt_android_target_type)
+    if(NOT android_type STREQUAL "APPLICATION")
+        message(FATAL_ERROR "${target} is not an android executable target."
+            " Cannot add the dynamic features.")
+    endif()
+    if(arg_FEATURE_TARGETS)
+        set_property(TARGET ${target}
+            APPEND PROPERTY _qt_android_dynamic_features ${arg_FEATURE_TARGETS})
+    else()
+        message(WARNING "No dynamic features provided.")
+    endif()
+endfunction()
+
 # Generate the deployment settings json file for a cmake target.
 function(qt6_android_generate_deployment_settings target)
     # Information extracted from mkspecs/features/android/android_deployment_settings.prf
@@ -1658,6 +1681,9 @@ function(_qt_internal_android_executable_finalizer target)
     _qt_internal_configure_android_multiabi_target("${target}")
     qt6_android_generate_deployment_settings("${target}")
     if(QT_USE_ANDROID_MODERN_BUNDLE)
+        _qt_internal_android_generate_dynamic_feature_names("${target}")
+        _qt_internal_android_add_dynamic_feature_deployment("${target}")
+
         _qt_internal_android_prepare_gradle_build("${target}")
         _qt_internal_android_add_aux_deployment("${target}")
 
