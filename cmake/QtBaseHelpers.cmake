@@ -277,9 +277,8 @@ macro(qt_internal_qtbase_build_repo)
         endif()
 
         qt_internal_qtbase_install_mkspecs()
+        qt_internal_qtbase_install_wayland_files()
     endif()
-
-    qt_internal_qtbase_install_wayland_files()
 
     qt_build_repo_post_process()
 
