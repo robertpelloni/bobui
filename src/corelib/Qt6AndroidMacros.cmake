@@ -1803,8 +1803,6 @@ function(_qt_internal_android_add_aux_deployment target)
         _qt_internal_android_get_target_deployment_dir(deployment_dir ${target})
     endif()
 
-    set(android_manifest "${deployment_dir}/AndroidManifest.xml")
-
     cmake_policy(PUSH)
     if(POLICY CMP0116)
         # Without explicitly setting this policy to NEW, we get a warning
@@ -1825,7 +1823,11 @@ function(_qt_internal_android_add_aux_deployment target)
 
     _qt_internal_android_get_use_terminal_for_deployment(uses_terminal)
 
-    add_custom_command(OUTPUT "${android_manifest}"
+    # TODO: We use androiddeployqt to collect target depdenencies and produce the lib.xml file
+    # which autoloads the collected libraries. Should be done using GRE and transitive properties
+    # in the future.
+    set(libs_xml "${deployment_dir}/res/values/libs.xml")
+    add_custom_command(OUTPUT "${libs_xml}"
         COMMAND ${copy_command}
         COMMAND "${deployment_tool}"
             --input "${deployment_file}"
@@ -1844,7 +1846,7 @@ function(_qt_internal_android_add_aux_deployment target)
         set(arg_OUTPUT_TARGET_NAME ${target}_android_deploy_aux)
     endif()
 
-    add_custom_target(${arg_OUTPUT_TARGET_NAME} DEPENDS "${android_manifest}")
+    add_custom_target(${arg_OUTPUT_TARGET_NAME} DEPENDS "${libs_xml}")
 
     cmake_policy(POP)
 endfunction()

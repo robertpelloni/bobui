@@ -215,6 +215,8 @@ function(_qt_internal_android_prepare_gradle_build target)
     _qt_internal_android_generate_target_build_gradle(${target} DEPLOYMENT_DIR "${deployment_dir}")
     _qt_internal_android_generate_target_gradle_properties(${target}
         DEPLOYMENT_DIR "${deployment_dir}")
+    _qt_internal_android_generate_target_android_manifest(${target}
+        DEPLOYMENT_DIR "${deployment_dir}")
 
 
     _qt_internal_android_add_gradle_build(${target} apk)
@@ -360,6 +362,81 @@ function(_qt_internal_android_generate_target_gradle_properties target)
     set_property(TARGET ${target} APPEND PROPERTY _qt_android_deployment_files "${out_file}")
 endfunction()
 
+# Constucts generator expression that returns either target property or the default value
+function(_qt_internal_android_get_manifest_property out_var target property default)
+    set(target_property "$<TARGET_PROPERTY:${target},${property}>")
+    string(JOIN "" out_genex
+        "$<IF:$<BOOL:${target_property}>,"
+            "${target_property},"
+            "${default}"
+        ">"
+    )
+
+    set(${out_var} "${out_genex}" PARENT_SCOPE)
+endfunction()
+
+# Generates the target AndroidManifest.xml
+function(_qt_internal_android_generate_target_android_manifest target)
+    cmake_parse_arguments(PARSE_ARGV 1 arg "" "DEPLOYMENT_DIR" "")
+
+    if(NOT arg_DEPLOYMENT_DIR)
+        message(FATAL_ERROR "DEPLOYMENT_DIR is not specified.")
+    endif()
+
+    set(android_manifest_filename "AndroidManifest.xml")
+    set(out_file "${arg_DEPLOYMENT_DIR}/${android_manifest_filename}")
+
+    # Skip generating the file if it's already provided by user.
+    get_target_property(deployment_files ${target} _qt_android_deployment_files)
+    if("${out_file}" IN_LIST deployment_files)
+        return()
+    endif()
+
+    _qt_internal_android_get_template_path(template_file ${target}
+        "app/${android_manifest_filename}")
+    set(temporary_file "${out_file}.tmp")
+
+    # The file cannot be generated at cmake configure time, because androiddeployqt
+    # will override it at build time. We use this trick with temporary file to override
+    # it after the aux run of androiddeployqt.
+    add_custom_command(OUTPUT "${out_file}"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${temporary_file}"
+            "${out_file}"
+        DEPENDS
+            "${template_file}"
+            "${temporary_file}"
+            ${target}_android_deploy_aux
+    )
+
+    _qt_internal_android_get_manifest_property(APP_PACKAGE_NAME ${target}
+        QT_ANDROID_PACKAGE_NAME "org.qtproject.example.$<MAKE_C_IDENTIFIER:${target}>")
+    _qt_internal_android_get_manifest_property(APP_NAME ${target}
+        QT_ANDROID_APP_NAME "${target}")
+    _qt_internal_android_get_manifest_property(APP_VERSION_CODE ${target}
+        QT_ANDROID_VERSION_CODE "1")
+    _qt_internal_android_get_manifest_property(APP_VERSION_NAME ${target}
+        QT_ANDROID_VERSION_NAME "1")
+    _qt_internal_android_get_manifest_property(APP_LIB_NAME ${target} OUTPUT_NAME "${target}")
+
+    # For application icon we substitute the whole attribute definition, but not only value
+    # otherwise it leads to the Manifest processing issue.
+    set(target_property "$<TARGET_PROPERTY:${target},QT_ANDROID_APP_ICON>")
+    string(JOIN "" APP_ICON
+        "$<$<BOOL:${target_property}>:"
+            "android:icon=\"${target_property}\""
+        ">"
+    )
+
+    set(APP_ARGUMENTS "${QT_ANDROID_APPLICATION_ARGUMENTS}")
+
+    _qt_internal_configure_file(GENERATE OUTPUT "${out_file}.tmp"
+        INPUT "${template_file}")
+
+    set_property(TARGET ${target} APPEND PROPERTY
+        _qt_android_deployment_files "${out_file}" "${out_file}.tmp")
+endfunction()
+
 # Generates the top-level gradle.properties in the android-build directory
 # The file contains the information about the versions of the android build
 # tools, the list of supported ABIs.
@@ -427,12 +504,6 @@ function(_qt_internal_android_copy_target_package_sources target)
     list(TRANSFORM package_files PREPEND "${android_build_dir}/" OUTPUT_VARIABLE out_package_files)
     list(TRANSFORM package_files PREPEND "${package_source_dir}/" OUTPUT_VARIABLE in_package_files)
 
-    # Remove AndroidManifest.xml from outputs, since final target AndroidManifest.xml version
-    # is cooked by androiddeployqt.
-    _qt_internal_android_get_target_deployment_dir(deployment_dir ${target})
-    list(REMOVE_ITEM out_package_files "${deployment_dir}/AndroidManifest.xml")
-
-
     if(in_package_files)
         # TODO: Add cmake < 3.26 support
         if(CMAKE_VERSION VERSION_LESS 3.26)
@@ -444,15 +515,6 @@ function(_qt_internal_android_copy_target_package_sources target)
     else()
         # We actually have nothing to deploy.
         return()
-    endif()
-
-    if(NOT out_package_files)
-        # We remove some files from outputs since androiddeployqt make the postprocessing,
-        # so if the resulting list of the 'out_package_files' is empty, add the timestamp output
-        # to consider the 'in_package_files' as dependencies and make copies, but provide no real
-        # output.
-        set(out_package_files "${deployment_dir}/copy_package_source_dir.timestamp")
-        list(APPEND copy_commands COMMAND "${CMAKE_COMMAND}" -E touch "${out_package_files}")
     endif()
 
     add_custom_command(OUTPUT ${out_package_files}
