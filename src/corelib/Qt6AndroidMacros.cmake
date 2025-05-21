@@ -324,8 +324,9 @@ function(qt6_android_generate_deployment_settings target)
     __qt_internal_collect_plugin_library_files_v2("${target}" "${plugin_targets}" plugin_targets)
     string(APPEND file_contents "   \"android-deploy-plugins\":\"${plugin_targets}\",\n")
 
-    _qt_internal_generate_android_permissions_json(permissions_json_array "${target}")
-    string(APPEND file_contents "   \"permissions\": ${permissions_json_array},\n")
+
+    _qt_internal_android_convert_permissions(permissions_genex ${target} JSON)
+    string(APPEND file_contents "   \"permissions\": ${permissions_genex},\n")
 
     # App binary
     string(APPEND file_contents
@@ -426,27 +427,24 @@ function(_qt_internal_add_android_permission target)
         message(FATAL_ERROR "NAME for adding Android permission cannot be empty (${target})")
     endif()
 
-    set(permission_entry "${arg_NAME}")
-
+    set(permission_entry "name\;${arg_NAME}")
     if(arg_ATTRIBUTES)
         # Permission with additional attributes
         list(LENGTH arg_ATTRIBUTES attributes_len)
         math(EXPR attributes_modulus "${attributes_len} % 2")
         if(NOT (attributes_len GREATER 1 AND attributes_modulus EQUAL 0))
-            message(FATAL_ERROR "Android permission: ${arg_NAME} attributes: ${arg_ATTRIBUTES} must"
-                                " be name-value pairs (for example: minSdkVersion 30)")
+            message(FATAL_ERROR "Android permission: ${arg_NAME} attributes: ${arg_ATTRIBUTES}"
+                                " must be name-value pairs (for example: minSdkVersion 30)")
         endif()
         # Combine name-value pairs
         set(index 0)
-        set(attributes "")
         while(index LESS attributes_len)
             list(GET arg_ATTRIBUTES ${index} name)
             math(EXPR index "${index} + 1")
             list(GET arg_ATTRIBUTES ${index} value)
-            string(APPEND attributes "android:${name}=\'${value}\' ")
+            string(APPEND permission_entry "\\\;${name}\;${value}")
             math(EXPR index "${index} + 1")
         endwhile()
-        set(permission_entry "${permission_entry}\;${attributes}")
     endif()
 
     # Append the permission to the target's property

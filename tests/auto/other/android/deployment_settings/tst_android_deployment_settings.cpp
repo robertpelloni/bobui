@@ -83,10 +83,11 @@ void tst_android_deployment_settings::DeploymentSettings_data()
                                           << "org.qtproject.android_deployment_settings_test";
     QTest::newRow("android-app-name") << "android-app-name"
                                           << "Android Deployment Settings Test";
-    QTest::newRow("permissions") << "permissions"
-                        << "[{\"name\":\"PERMISSION_WITH_ATTRIBUTES\","
-                           "\"extras\":\"android:minSdkVersion='32' android:maxSdkVersion='34' \"},"
-                           "{\"name\":\"PERMISSION_WITHOUT_ATTRIBUTES\"}]";
+    QTest::newRow("permissions")
+            << "permissions"
+            << "[{\"maxSdkVersion\":\"34\",\"minSdkVersion\":\"32\",\"name\":\"PERMISSION_WITH_"
+               "ATTRIBUTES\"},{\"name\":\"PERMISSION_WITHOUT_ATTRIBUTES\"},{\"name\":\"android."
+               "permission.INTERNET\"},{\"name\":\"android.permission.WRITE_EXTERNAL_STORAGE\"}]";
 }
 
 void tst_android_deployment_settings::DeploymentSettings()

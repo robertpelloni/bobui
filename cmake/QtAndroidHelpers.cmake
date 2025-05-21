@@ -473,3 +473,21 @@ function(qt_internal_create_source_jar)
     add_dependencies(install_android_source_jar_${module} ${jar_target})
     add_dependencies(install_android_source_jars install_android_source_jar_${module})
 endfunction()
+
+# The function stores Android permissions that are required by the module target.
+# The stored INTERFACE_QT_ANDROID_PERMISSIONS is the transitive property.
+function(qt_internal_android_add_interface_permissions target)
+    get_target_property(permissions ${target} QT_ANDROID_PERMISSIONS)
+    if(NOT permissions)
+        return()
+    endif()
+
+    set(postprocessed_permissions "")
+    foreach(permission IN LISTS permissions)
+        # TODO: skip processing extras for now, add them back once internal API
+        # will cover adding extras using internal function.
+        list(APPEND postprocessed_permissions "name\;${permission}")
+    endforeach()
+    qt_internal_set_module_transitive_properties(${target} TYPE LINK PROPERTIES
+        INTERFACE_QT_ANDROID_PERMISSIONS "${postprocessed_permissions}")
+endfunction()

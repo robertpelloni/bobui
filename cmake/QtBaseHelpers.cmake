@@ -238,6 +238,7 @@ macro(qt_internal_qtbase_build_repo)
         if(ANDROID)
             include(src/corelib/Qt6AndroidMacros.cmake)
             include(src/corelib/Qt6AndroidGradleHelpers.cmake)
+            include(src/corelib/Qt6AndroidPermissionHelpers.cmake)
         endif()
 
         # Needed when building for WebAssembly.

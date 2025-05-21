@@ -428,6 +428,8 @@ function(_qt_internal_android_generate_target_android_manifest target)
         ">"
     )
 
+    _qt_internal_android_convert_permissions(APP_PERMISSIONS ${target} XML)
+
     set(APP_ARGUMENTS "${QT_ANDROID_APPLICATION_ARGUMENTS}")
 
     _qt_internal_configure_file(GENERATE OUTPUT "${out_file}.tmp"

@@ -1475,10 +1475,23 @@ bool readInputFile(Options *options)
             for (const QJsonValue &value : permissions) {
                 if (value.isObject()) {
                     QJsonObject permissionObj = value.toObject();
-                    QString name = permissionObj.value("name"_L1).toString();
+                    QString name;
                     QString extras;
-                    if (permissionObj.contains("extras"_L1))
-                        extras = permissionObj.value("extras"_L1).toString().trimmed();
+                    for (auto it = permissionObj.begin(); it != permissionObj.end(); ++it) {
+                        if (it.key() == "name"_L1) {
+                            name = it.value().toString();
+                        } else {
+                            extras.append(" android:"_L1)
+                                    .append(it.key())
+                                    .append("=\""_L1)
+                                    .append(it.value().toString())
+                                    .append("\""_L1);
+                        }
+                    }
+                    if (name.isEmpty()) {
+                        fprintf(stderr, "Missing permission 'name' in permission specification");
+                        return false;
+                    }
                     options->applicationPermissions.insert(name, extras);
                 }
             }
