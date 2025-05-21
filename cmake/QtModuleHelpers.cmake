@@ -216,6 +216,17 @@ function(qt_internal_add_module target)
         "_qt_package_version"
         "_qt_package_name"
     )
+
+    if(CMAKE_VERSION VERSION_LESS 3.30)
+        # For the CMake versions higher than 3.30 the corresponding INTERFACE_
+        # properties will be in Qt<Module>Targets.cmake without extra code
+        # needed.
+        list(APPEND export_properties
+            "_qt_transitive_compile_properties"
+            "_qt_transitive_link_properties"
+        )
+    endif()
+
     if(NOT is_internal_module)
         set_target_properties(${target} PROPERTIES
             _qt_is_public_module TRUE
@@ -726,6 +737,21 @@ function(qt_internal_add_module target)
     if (EXISTS "${CMAKE_CURRENT_LIST_DIR}/${INSTALL_CMAKE_NAMESPACE}${target}Macros.cmake")
         list(APPEND extra_cmake_files "${CMAKE_CURRENT_LIST_DIR}/${INSTALL_CMAKE_NAMESPACE}${target}Macros.cmake")
         list(APPEND extra_cmake_includes "${INSTALL_CMAKE_NAMESPACE}${target}Macros.cmake")
+    endif()
+
+    if(CMAKE_VERSION VERSION_LESS 3.30)
+        # For the CMake versions higher than 3.30 the corresponding INTERFACE_
+        # properties will be in Qt<Module>Targets.cmake without extra code
+        # needed.
+        configure_file(
+            "${QT_CMAKE_DIR}/QtTransitiveExtras.cmake.in"
+            "${config_build_dir}/${INSTALL_CMAKE_NAMESPACE}${target}TransitiveExtras.cmake"
+            @ONLY
+        )
+        list(APPEND extra_cmake_files
+            "${config_build_dir}/${INSTALL_CMAKE_NAMESPACE}${target}TransitiveExtras.cmake")
+        list(APPEND extra_cmake_includes
+            "${INSTALL_CMAKE_NAMESPACE}${target}TransitiveExtras.cmake")
     endif()
 
     if (EXISTS "${CMAKE_CURRENT_LIST_DIR}/${INSTALL_CMAKE_NAMESPACE}${target}ConfigExtras.cmake.in")

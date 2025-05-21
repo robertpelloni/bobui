@@ -227,6 +227,7 @@ function(qt_internal_get_qt_build_private_files_to_install out_var)
         ModuleDescription.json.in
         PkgConfigLibrary.pc.in
         Qt3rdPartyLibraryConfig.cmake.in
+        QtTransitiveExtras.cmake.in
         QtBaseTopLevelHelpers.cmake
         QtBuild.cmake
         QtBuildHelpers.cmake
