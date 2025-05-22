@@ -1790,3 +1790,100 @@ function(qt_internal_collect_module_headers out_var target)
             _qt_module_has_ssg_headers
     )
 endfunction()
+
+# Set the value of the respective module properties and make the properties
+# transitive. The property is not stored as target property, but is set as
+# INTERFACE property, so its value is not considered by target itself, but only
+# by depending targets. Also this require all properties have the
+# INTERFACE_<property_name> name format.
+#
+# Synopsis
+#   qt_internal_set_module_transitive_properties(<target>
+#       PROPERTIES <prop1> <value1> [<prop2> <value2>] ...
+#   )
+#
+# Arguments
+#
+# `target` Qt module target. Unlike CMake set_target_properties this function
+#   accepts only one target as argument.
+#
+# `PROPERTIES` List of the property name-value pairs.
+#
+# `TYPE` The transitive property type: COMPILE or LINK.
+function(qt_internal_set_module_transitive_properties target)
+    cmake_parse_arguments(PARSE_ARGV 1 arg "" "TYPE" "PROPERTIES")
+
+    if(NOT arg_PROPERTIES)
+        message(FATAL_ERROR "PROPERTIES argument is missing.")
+    endif()
+
+    if(NOT arg_TYPE)
+        message(FATAL_ERROR "TYPE argument is missing.")
+    endif()
+
+    list(LENGTH arg_PROPERTIES count)
+    math(EXPR even_args_count "${count} % 2")
+    if(NOT even_args_count EQUAL 0)
+        message(FATAL_ERROR "Insufficient number of PROPERTIES values.")
+    endif()
+
+    _qt_internal_dealias_target(target)
+
+    set(property_names "")
+    set(internal_property_names "")
+
+    math(EXPR last "${count} - 1")
+    foreach(name_idx RANGE 0 ${last} 2)
+        list(GET arg_PROPERTIES ${name_idx} interface_property_name)
+        if(interface_property_name MATCHES "^INTERFACE_(.+)$")
+            set(property_name "${CMAKE_MATCH_1}")
+        else()
+            message(FATAL_ERROR "Incorrect property name ${interface_property_name}. The property"
+            " name must have the INTERFACE_ prefix. Use regular set_target_properties call to set"
+            " the non-transitive property.")
+        endif()
+
+        string(TOLOWER "${property_name}" property_name_lower)
+        list(APPEND property_names ${property_name})
+
+        math(EXPR value_idx "${name_idx} + 1")
+        list(GET arg_PROPERTIES ${value_idx} property_value)
+
+        if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.30)
+            # The collected interface properties exposed in module build tree and have the
+            # same transitive capabilities as after the module is installed. Supported for
+            # CMake version >= 3.30
+            set_property(TARGET ${target} PROPERTY ${interface_property_name} "${property_value}")
+        else()
+            # Internal properties are exported within the Qt module. They have limitations that
+            # EXPORT_PROPERTIES apply. These properties are exported even if we are building Qt
+            # with CMake versions that do not support transitive properties. It allows using
+            # them as transitive properties in user projects if CMake allows this.
+            list(APPEND internal_property_names _qt_internal_${property_name_lower})
+            set_property(TARGET ${target} PROPERTY
+                _qt_internal_${property_name_lower} "${property_value}")
+        endif()
+
+        _qt_internal_add_transitive_property(${target} ${arg_TYPE} ${property_name})
+    endforeach()
+
+    get_target_property(transitive_properties ${target} _qt_transitive_${type_lower}_properties)
+    if(NOT transitive_properties)
+        set(transitive_properties "")
+    endif()
+    list(APPEND transitive_properties ${property_names})
+    list(REMOVE_DUPLICATES transitive_properties)
+
+    get_target_property(export_properties ${target} EXPORT_PROPERTIES)
+    if(NOT export_properties)
+        set(export_properties "")
+    endif()
+    list(APPEND export_properties ${internal_property_names})
+    list(REMOVE_DUPLICATES export_properties)
+
+    string(TOLOWER "${arg_TYPE}" type_lower)
+    set_target_properties(${target} PROPERTIES
+        EXPORT_PROPERTIES "${export_properties}"
+        _qt_transitive_${type_lower}_properties "${transitive_properties}"
+    )
+endfunction()
