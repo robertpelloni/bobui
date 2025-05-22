@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only
 
 #include <QTest>
-#include <QtCore/qgenericitemmodel.h>
+#include <QtCore/qrangemodel.h>
 #include <QtCore/qjsondocument.h>
 #include <QtCore/qjsonarray.h>
 
@@ -273,7 +273,7 @@ namespace std {
     { using type = decltype(get<I>(std::declval<tree_row>())); };
 }
 
-class tst_QGenericItemModel : public QObject
+class tst_QRangeModel : public QObject
 {
     Q_OBJECT
 
@@ -459,7 +459,7 @@ private:
             {"green", Qt::green, "0x00ff00"},
             {"blue", Qt::blue, "0x0000ff"},
         };
-        std::vector<QGenericItemModel::SingleColumn<Item>> listOfGadgets = {
+        std::vector<QRangeModel::SingleColumn<Item>> listOfGadgets = {
             {{"red", Qt::red, "0xff0000"}},
             {{"green", Qt::green, "0x00ff00"}},
             {{"blue", Qt::blue, "0x0000ff"}},
@@ -480,7 +480,7 @@ private:
         MetaObjectTuple mot1;
         MetaObjectTuple mot2;
         MetaObjectTuple mot3;
-        std::vector<QGenericItemModel::SingleColumn<MetaObjectTuple *>> listOfMetaObjectTuple = {
+        std::vector<QRangeModel::SingleColumn<MetaObjectTuple *>> listOfMetaObjectTuple = {
             &mot1,
             &mot2,
             &mot3,
@@ -488,7 +488,7 @@ private:
         MetaObjectTuple mot4;
         MetaObjectTuple mot5;
         MetaObjectTuple mot6;
-        std::vector<QGenericItemModel::MultiColumn<MetaObjectTuple *>> tableOfMetaObjectTuple = {
+        std::vector<QRangeModel::MultiColumn<MetaObjectTuple *>> tableOfMetaObjectTuple = {
             {&mot4},
             {&mot5},
             {&mot6},
@@ -613,7 +613,7 @@ public:
     Q_DECLARE_FLAGS(ChangeActions, ChangeAction);
 };
 
-Q_DECLARE_OPERATORS_FOR_FLAGS(tst_QGenericItemModel::ChangeActions)
+Q_DECLARE_OPERATORS_FOR_FLAGS(tst_QRangeModel::ChangeActions)
 
 using Factory = std::function<std::unique_ptr<QAbstractItemModel>()>;
 
@@ -629,7 +629,7 @@ void createBackup(QObject* object, T& model) {
 template <typename T, std::enable_if_t<!std::is_copy_assignable_v<T>, bool> = true>
 void createBackup(QObject* , T& ) {}
 
-void tst_QGenericItemModel::createTestData()
+void tst_QRangeModel::createTestData()
 {
     m_data.reset(new Data);
 
@@ -643,7 +643,7 @@ void tst_QGenericItemModel::createTestData()
 #define ADD_HELPER(Model, Tag, Policy, ColumnCount, Actions) \
     { \
         Factory factory = [this]() -> std::unique_ptr<QAbstractItemModel> { \
-            auto result = std::make_unique<QGenericItemModel>(Policy(m_data->Model)); \
+            auto result = std::make_unique<QRangeModel>(Policy(m_data->Model)); \
             createBackup(result.get(), m_data->Model); \
             return result; \
         }; \
@@ -735,7 +735,7 @@ void tst_QGenericItemModel::createTestData()
             {"2/0", "2/1", "2/2", "2/3"},
             {"3/0", "3/1", "3/2", "3/3"},
         };
-        return std::unique_ptr<QAbstractItemModel>(new QGenericItemModel(std::move(movedTable)));
+        return std::unique_ptr<QAbstractItemModel>(new QRangeModel(std::move(movedTable)));
     }) << 4 << 4 << ChangeActions(ChangeAction::All);
 
     // moved list of pointers -> model takes ownership
@@ -746,25 +746,25 @@ void tst_QGenericItemModel::createTestData()
         };
 
         return std::unique_ptr<QAbstractItemModel>(
-            new QGenericItemModel(std::move(movedListOfObjects))
+            new QRangeModel(std::move(movedListOfObjects))
         );
     }) << 6 << 2 << (ChangeAction::ChangeRows | ChangeAction::SetData);
 
     // special case: tree
     QTest::addRow("value tree (ref)") << Factory([this]{
-        return std::unique_ptr<QAbstractItemModel>(new QGenericItemModel(std::ref(*m_data->m_tree)));
+        return std::unique_ptr<QAbstractItemModel>(new QRangeModel(std::ref(*m_data->m_tree)));
     }) << int(std::size(*m_data->m_tree.get())) << int(std::tuple_size_v<tree_row>)
        << (ChangeAction::ChangeRows | ChangeAction::SetData);
 
     QTest::addRow("pointer tree") << Factory([this]{
         return std::unique_ptr<QAbstractItemModel>(
-            new QGenericItemModel(m_data->m_pointer_tree.get(), tree_row::ProtocolPointerImpl{})
+            new QRangeModel(m_data->m_pointer_tree.get(), tree_row::ProtocolPointerImpl{})
         );
     }) << int(std::size(*m_data->m_pointer_tree.get())) << int(std::tuple_size_v<tree_row>)
        << (ChangeAction::ChangeRows | ChangeAction::SetData);
 }
 
-void tst_QGenericItemModel::basics()
+void tst_QRangeModel::basics()
 {
 #if QT_CONFIG(itemmodeltester)
     QFETCH(Factory, factory);
@@ -778,25 +778,25 @@ void tst_QGenericItemModel::basics()
 
 using ModelFromData = std::function<std::unique_ptr<QAbstractItemModel>(std::vector<int> &)>;
 
-void tst_QGenericItemModel::modifies_data()
+void tst_QRangeModel::modifies_data()
 {
     QTest::addColumn<ModelFromData>("modelFromData");
     QTest::addColumn<bool>("modifiesOriginal");
 
     QTest::newRow("copy") << ModelFromData([](std::vector<int> &numbers){
-        return std::unique_ptr<QAbstractItemModel>(new QGenericItemModel(numbers));
+        return std::unique_ptr<QAbstractItemModel>(new QRangeModel(numbers));
     }) << false;
 
     QTest::newRow("reference_wrapper") << ModelFromData([](std::vector<int> &numbers){
-        return std::unique_ptr<QAbstractItemModel>(new QGenericItemModel(std::ref(numbers)));
+        return std::unique_ptr<QAbstractItemModel>(new QRangeModel(std::ref(numbers)));
     }) << true;
 
     QTest::newRow("pointer") << ModelFromData([](std::vector<int> &numbers){
-        return std::unique_ptr<QAbstractItemModel>(new QGenericItemModel(&numbers));
+        return std::unique_ptr<QAbstractItemModel>(new QRangeModel(&numbers));
     }) << true;
 }
 
-void tst_QGenericItemModel::modifies()
+void tst_QRangeModel::modifies()
 {
     QFETCH(ModelFromData, modelFromData);
     QFETCH(bool, modifiesOriginal);
@@ -824,7 +824,7 @@ void tst_QGenericItemModel::modifies()
     }
 }
 
-void tst_QGenericItemModel::minimalIterator()
+void tst_QRangeModel::minimalIterator()
 {
     struct Minimal
     {
@@ -861,7 +861,7 @@ void tst_QGenericItemModel::minimalIterator()
         int m_size;
     } minimal{100};
 
-    QGenericItemModel model(minimal);
+    QRangeModel model(minimal);
     QCOMPARE(model.rowCount(), minimal.m_size);
     for (int row = model.rowCount() - 1; row >= 0; --row) {
         const QModelIndex index = model.index(row, 0);
@@ -870,12 +870,12 @@ void tst_QGenericItemModel::minimalIterator()
     }
 }
 
-void tst_QGenericItemModel::ranges()
+void tst_QRangeModel::ranges()
 {
 #if defined(__cpp_lib_ranges)
     const int lowest = 1;
     const int highest = 10;
-    QGenericItemModel model(std::views::iota(lowest, highest));
+    QRangeModel model(std::views::iota(lowest, highest));
     QCOMPARE(model.rowCount(), highest - lowest);
     QCOMPARE(model.columnCount(), 1);
 #else
@@ -883,18 +883,18 @@ void tst_QGenericItemModel::ranges()
 #endif
 }
 
-void tst_QGenericItemModel::json()
+void tst_QRangeModel::json()
 {
     QJsonDocument json = QJsonDocument::fromJson(R"([ "one", "two" ])");
     QVERIFY(json.isArray());
-    QGenericItemModel model(json.array());
+    QRangeModel model(json.array());
     QCOMPARE(model.rowCount(), 2);
     const QModelIndex index = model.index(1, 0);
     QVERIFY(index.isValid());
     QCOMPARE(index.data().toString(), "two");
 }
 
-void tst_QGenericItemModel::ownership()
+void tst_QRangeModel::ownership()
 {
     { // a list of pointers to objects
         Object *object = new Object;
@@ -903,22 +903,22 @@ void tst_QGenericItemModel::ownership()
             object
         };
         { // model takes ownership of its own copy of the vector (!)
-            QGenericItemModel modelOnCopy(objects);
+            QRangeModel modelOnCopy(objects);
         }
         QVERIFY(!guard);
         objects[0] = new Object;
         guard = objects[0];
         { // model does not take ownership
-            QGenericItemModel modelOnPointer(&objects);
+            QRangeModel modelOnPointer(&objects);
         }
         QVERIFY(guard);
         { // model does not take ownership
-            QGenericItemModel modelOnRef(std::ref(objects));
+            QRangeModel modelOnRef(std::ref(objects));
         }
         QVERIFY(guard);
 
         { // model does take ownership
-            QGenericItemModel movedIntoModel(std::move(objects));
+            QRangeModel movedIntoModel(std::move(objects));
             QCOMPARE(movedIntoModel.columnCount(), 2);
         }
         QVERIFY(!guard);
@@ -932,25 +932,25 @@ void tst_QGenericItemModel::ownership()
         };
         { // model does not take ownership
             QCOMPARE(objects[0].use_count(), 1);
-            QGenericItemModel modelOnCopy(objects);
+            QRangeModel modelOnCopy(objects);
             QCOMPARE(modelOnCopy.rowCount(), 1);
             QCOMPARE(objects[0].use_count(), 2);
         }
         QCOMPARE(objects[0].use_count(), 1);
         { // model does not take ownership
-            QGenericItemModel modelOnPointer(&objects);
+            QRangeModel modelOnPointer(&objects);
             QCOMPARE(objects[0].use_count(), 1);
         }
         QCOMPARE(objects[0].use_count(), 1);
         QVERIFY(guard);
         { // model does not take ownership
-            QGenericItemModel modelOnRef(std::ref(objects));
+            QRangeModel modelOnRef(std::ref(objects));
             QCOMPARE(objects[0].use_count(), 1);
         }
         QCOMPARE(objects[0].use_count(), 1);
         QVERIFY(guard);
         { // model owns the last shared copy
-            QGenericItemModel movedIntoModel(std::move(objects));
+            QRangeModel movedIntoModel(std::move(objects));
         }
         QVERIFY(!guard);
     }
@@ -962,19 +962,19 @@ void tst_QGenericItemModel::ownership()
             {object}
         };
         { // model does not take ownership
-            QGenericItemModel modelOnCopy(table);
+            QRangeModel modelOnCopy(table);
         }
         QVERIFY(guard);
         { // model does not take ownership
-            QGenericItemModel modelOnPointer(&table);
+            QRangeModel modelOnPointer(&table);
         }
         QVERIFY(guard);
         { // model does not take ownership
-            QGenericItemModel modelOnRef(std::ref(table));
+            QRangeModel modelOnRef(std::ref(table));
         }
         QVERIFY(guard);
         { // model does take ownership of rows, but not of objects within each row
-            QGenericItemModel movedIntoModel(std::move(table));
+            QRangeModel movedIntoModel(std::move(table));
         }
         QVERIFY(guard);
         delete object;
@@ -984,7 +984,7 @@ void tst_QGenericItemModel::ownership()
         std::vector<std::shared_ptr<Object>> objects = { std::make_shared<Object>() };
 
         {
-            QGenericItemModel model(objects);
+            QRangeModel model(objects);
             QCOMPARE(objects.front().use_count(), 2);
         }
 
@@ -998,7 +998,7 @@ void tst_QGenericItemModel::ownership()
         };
 
         {
-            QGenericItemModel model(table);
+            QRangeModel model(table);
             QCOMPARE(table.front().use_count(), 2);
             QCOMPARE(table.front()->front().use_count(), 1);
         }
@@ -1008,7 +1008,7 @@ void tst_QGenericItemModel::ownership()
     }
 }
 
-void tst_QGenericItemModel::dimensions()
+void tst_QRangeModel::dimensions()
 {
     QFETCH(Factory, factory);
     auto model = factory();
@@ -1019,7 +1019,7 @@ void tst_QGenericItemModel::dimensions()
     QCOMPARE(model->columnCount(), expectedColumnCount);
 }
 
-void tst_QGenericItemModel::sibling()
+void tst_QRangeModel::sibling()
 {
     QFETCH(Factory, factory);
     auto model = factory();
@@ -1044,7 +1044,7 @@ void tst_QGenericItemModel::sibling()
         test(withChildren);
 }
 
-void tst_QGenericItemModel::flags()
+void tst_QRangeModel::flags()
 {
     QFETCH(Factory, factory);
     auto model = factory();
@@ -1061,7 +1061,7 @@ void tst_QGenericItemModel::flags()
              changeActions.testFlags(ChangeAction::SetData));
 }
 
-void tst_QGenericItemModel::data()
+void tst_QRangeModel::data()
 {
     QFETCH(Factory, factory);
     auto model = factory();
@@ -1077,7 +1077,7 @@ void tst_QGenericItemModel::data()
     QVERIFY(last.data().isValid());
 }
 
-void tst_QGenericItemModel::setData()
+void tst_QRangeModel::setData()
 {
     QFETCH(Factory, factory);
     auto model = factory();
@@ -1099,7 +1099,7 @@ void tst_QGenericItemModel::setData()
     QCOMPARE(first.data() == oldValue, !changeActions.testFlag(ChangeAction::SetData));
 }
 
-void tst_QGenericItemModel::itemData()
+void tst_QRangeModel::itemData()
 {
     QFETCH(Factory, factory);
     auto model = factory();
@@ -1115,7 +1115,7 @@ void tst_QGenericItemModel::itemData()
     }
 }
 
-void tst_QGenericItemModel::setItemData()
+void tst_QRangeModel::setItemData()
 {
     QFETCH(Factory, factory);
     auto model = factory();
@@ -1171,7 +1171,7 @@ void tst_QGenericItemModel::setItemData()
     }
 }
 
-void tst_QGenericItemModel::clearItemData()
+void tst_QRangeModel::clearItemData()
 {
     QFETCH(Factory, factory);
     auto model = factory();
@@ -1188,7 +1188,7 @@ void tst_QGenericItemModel::clearItemData()
     QCOMPARE(index1.data(), oldDataAt1);
 }
 
-void tst_QGenericItemModel::insertRows()
+void tst_QRangeModel::insertRows()
 {
     QFETCH(Factory, factory);
     auto model = factory();
@@ -1259,7 +1259,7 @@ void tst_QGenericItemModel::insertRows()
     verifyPmiList(pmiList);
 }
 
-void tst_QGenericItemModel::removeRows()
+void tst_QRangeModel::removeRows()
 {
     QFETCH(Factory, factory);
     auto model = factory();
@@ -1282,7 +1282,7 @@ void tst_QGenericItemModel::removeRows()
     QCOMPARE(couldRemove, model->rowCount() != newRowCount);
 }
 
-void tst_QGenericItemModel::moveRows()
+void tst_QRangeModel::moveRows()
 {
     QFETCH(Factory, factory);
     auto model = factory();
@@ -1325,7 +1325,7 @@ void tst_QGenericItemModel::moveRows()
     QCOMPARE(model->index(expectedRowCount - 1, 0).data(), last);
 }
 
-void tst_QGenericItemModel::insertColumns()
+void tst_QRangeModel::insertColumns()
 {
     QFETCH(Factory, factory);
     auto model = factory();
@@ -1344,7 +1344,7 @@ void tst_QGenericItemModel::insertColumns()
              changeActions.testFlag(ChangeAction::InsertColumns));
 }
 
-void tst_QGenericItemModel::removeColumns()
+void tst_QRangeModel::removeColumns()
 {
     QFETCH(Factory, factory);
     auto model = factory();
@@ -1356,7 +1356,7 @@ void tst_QGenericItemModel::removeColumns()
              changeActions.testFlag(ChangeAction::RemoveColumns));
 }
 
-void tst_QGenericItemModel::moveColumns()
+void tst_QRangeModel::moveColumns()
 {
     QFETCH(Factory, factory);
     auto model = factory();
@@ -1401,9 +1401,9 @@ void tst_QGenericItemModel::moveColumns()
     }
 }
 
-void tst_QGenericItemModel::inconsistentColumnCount()
+void tst_QRangeModel::inconsistentColumnCount()
 {
-    QTest::ignoreMessage(QtCriticalMsg, "QGenericItemModel: "
+    QTest::ignoreMessage(QtCriticalMsg, "QRangeModel: "
         "Column-range at row 1 is not large enough!");
 
     std::vector<std::vector<int>> fuzzyTable = {
@@ -1411,7 +1411,7 @@ void tst_QGenericItemModel::inconsistentColumnCount()
         {},
         {2},
     };
-    QGenericItemModel model(fuzzyTable);
+    QRangeModel model(fuzzyTable);
     QCOMPARE(model.columnCount(), 1);
     for (int row = 0; row < model.rowCount(); ++row) {
         auto debug = qScopeGuard([&]{
@@ -1430,7 +1430,7 @@ void tst_QGenericItemModel::inconsistentColumnCount()
 
 enum class TreeProtocol { ValueImplicit, ValueReadOnly, PointerExplicit, PointerExplicitMoved };
 
-void tst_QGenericItemModel::createTree()
+void tst_QRangeModel::createTree()
 {
     tree_row root[] = {
         {"1", "one"},
@@ -1469,7 +1469,7 @@ void tst_QGenericItemModel::createTree()
     m_data->m_pointer_tree->at(1)->addChildPointer("2.2", "two.two");
 }
 
-void tst_QGenericItemModel::tree_data()
+void tst_QRangeModel::tree_data()
 {
     m_data.reset(new Data);
     createTree();
@@ -1502,7 +1502,7 @@ void tst_QGenericItemModel::tree_data()
         << ChangeActions(ChangeAction::All);
 }
 
-std::unique_ptr<QAbstractItemModel> tst_QGenericItemModel::makeTreeModel()
+std::unique_ptr<QAbstractItemModel> tst_QRangeModel::makeTreeModel()
 {
     createTree();
 
@@ -1511,7 +1511,7 @@ std::unique_ptr<QAbstractItemModel> tst_QGenericItemModel::makeTreeModel()
     QFETCH(const TreeProtocol, protocol);
     switch (protocol) {
     case TreeProtocol::ValueImplicit:
-        model.reset(new QGenericItemModel(m_data->m_tree.get()));
+        model.reset(new QRangeModel(m_data->m_tree.get()));
         break;
     case TreeProtocol::ValueReadOnly: {
         struct { // minimal (read-only) implementation of the tree traversal protocol
@@ -1519,11 +1519,11 @@ std::unique_ptr<QAbstractItemModel> tst_QGenericItemModel::makeTreeModel()
             const std::optional<value_tree> &childRows(const tree_row &row) const
             { return row.childRows(); }
         } readOnlyProtocol;
-        model.reset(new QGenericItemModel(m_data->m_tree.get(), readOnlyProtocol));
+        model.reset(new QRangeModel(m_data->m_tree.get(), readOnlyProtocol));
         break;
     }
     case TreeProtocol::PointerExplicit:
-        model.reset(new QGenericItemModel(m_data->m_pointer_tree.get(),
+        model.reset(new QRangeModel(m_data->m_pointer_tree.get(),
                     tree_row::ProtocolPointerImpl{}));
         break;
     case TreeProtocol::PointerExplicitMoved: {
@@ -1537,7 +1537,7 @@ std::unique_ptr<QAbstractItemModel> tst_QGenericItemModel::makeTreeModel()
         moved_tree.at(1)->addChildPointer("2.1", "two.one");
         moved_tree.at(1)->addChildPointer("2.2", "two.two");
 
-        model.reset(new QGenericItemModel(std::move(moved_tree),
+        model.reset(new QRangeModel(std::move(moved_tree),
                     tree_row::ProtocolPointerImpl{}));
         break;
     }
@@ -1546,7 +1546,7 @@ std::unique_ptr<QAbstractItemModel> tst_QGenericItemModel::makeTreeModel()
     return model;
 }
 
-void tst_QGenericItemModel::tree()
+void tst_QRangeModel::tree()
 {
     auto model = makeTreeModel();
     QFETCH(const int, expectedRootRowCount);
@@ -1579,7 +1579,7 @@ void tst_QGenericItemModel::tree()
 #endif
 }
 
-void tst_QGenericItemModel::treeModifyBranch()
+void tst_QRangeModel::treeModifyBranch()
 {
     auto model = makeTreeModel();
     QFETCH(QList<int>, rowsWithChildren);
@@ -1641,7 +1641,7 @@ void tst_QGenericItemModel::treeModifyBranch()
 #endif
 }
 
-void tst_QGenericItemModel::treeCreateBranch()
+void tst_QRangeModel::treeCreateBranch()
 {
     auto model = makeTreeModel();
     QFETCH(QList<int>, rowsWithChildren);
@@ -1674,7 +1674,7 @@ void tst_QGenericItemModel::treeCreateBranch()
     verifyPmiList(pmiList);
 }
 
-void tst_QGenericItemModel::treeRemoveBranch()
+void tst_QRangeModel::treeRemoveBranch()
 {
     auto model = makeTreeModel();
     QFETCH(QList<int>, rowsWithChildren);
@@ -1701,7 +1701,7 @@ void tst_QGenericItemModel::treeRemoveBranch()
     QCOMPARE(model->rowCount(parent), 0);
 }
 
-void tst_QGenericItemModel::treeMoveRows()
+void tst_QRangeModel::treeMoveRows()
 {
     auto model = makeTreeModel();
     QFETCH(const QList<int>, rowsWithChildren);
@@ -1726,7 +1726,7 @@ void tst_QGenericItemModel::treeMoveRows()
     verifyPmiList(pmiList);
 }
 
-void tst_QGenericItemModel::treeMoveRowBranches()
+void tst_QRangeModel::treeMoveRowBranches()
 {
     auto model = makeTreeModel();
     QFETCH(const QList<int>, rowsWithChildren);
@@ -1797,5 +1797,5 @@ void tst_QGenericItemModel::treeMoveRowBranches()
     verifyPmiList(pmiList);
 }
 
-QTEST_MAIN(tst_QGenericItemModel)
-#include "tst_qgenericitemmodel.moc"
+QTEST_MAIN(tst_QRangeModel)
+#include "tst_qrangemodel.moc"

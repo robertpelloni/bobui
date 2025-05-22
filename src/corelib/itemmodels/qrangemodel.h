@@ -1,14 +1,14 @@
 // Copyright (C) 2025 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
-#ifndef QGENERICITEMMODEL_H
-#define QGENERICITEMMODEL_H
+#ifndef QRANGEMODEL_H
+#define QRANGEMODEL_H
 
-#include <QtCore/qgenericitemmodel_impl.h>
+#include <QtCore/qrangemodel_impl.h>
 
 QT_BEGIN_NAMESPACE
 
-class Q_CORE_EXPORT QGenericItemModel : public QAbstractItemModel
+class Q_CORE_EXPORT QRangeModel : public QAbstractItemModel
 {
     Q_OBJECT
 public:
@@ -25,7 +25,7 @@ public:
                                                                MultiColumn<T>>, bool>;
 
         template <typename V = T,
-                  std::enable_if_t<QGenericItemModelDetails::is_validatable<V>::value, bool> = true>
+                  std::enable_if_t<QRangeModelDetails::is_validatable<V>::value, bool> = true>
         constexpr explicit operator bool() const noexcept { return bool(data); }
 
         // unconstrained on size_t I, gcc internal error #3280
@@ -33,23 +33,23 @@ public:
         friend inline decltype(auto) get(V &&multiColumn)
         {
             static_assert(I < std::tuple_size_v<type>, "Index out of bounds for wrapped type");
-            return get<I>(QGenericItemModelDetails::refTo(q23::forward_like<V>(multiColumn.data)));
+            return get<I>(QRangeModelDetails::refTo(q23::forward_like<V>(multiColumn.data)));
         }
     };
 
     template <typename Range,
-              QGenericItemModelDetails::if_is_table_range<Range> = true>
-    explicit QGenericItemModel(Range &&range, QObject *parent = nullptr);
+              QRangeModelDetails::if_is_table_range<Range> = true>
+    explicit QRangeModel(Range &&range, QObject *parent = nullptr);
 
     template <typename Range,
-              QGenericItemModelDetails::if_is_tree_range<Range> = true>
-    explicit QGenericItemModel(Range &&range, QObject *parent = nullptr);
+              QRangeModelDetails::if_is_tree_range<Range> = true>
+    explicit QRangeModel(Range &&range, QObject *parent = nullptr);
 
     template <typename Range, typename Protocol,
-              QGenericItemModelDetails::if_is_tree_range<Range, Protocol> = true>
-    explicit QGenericItemModel(Range &&range, Protocol &&protocol, QObject *parent = nullptr);
+              QRangeModelDetails::if_is_tree_range<Range, Protocol> = true>
+    explicit QRangeModel(Range &&range, Protocol &&protocol, QObject *parent = nullptr);
 
-    ~QGenericItemModel() override;
+    ~QRangeModel() override;
 
     QModelIndex index(int row, int column, const QModelIndex &parent = {}) const override;
     QModelIndex parent(const QModelIndex &child) const override;
@@ -100,112 +100,112 @@ protected:
     bool eventFilter(QObject *, QEvent *) override;
 
 private:
-    Q_DISABLE_COPY_MOVE(QGenericItemModel)
+    Q_DISABLE_COPY_MOVE(QRangeModel)
 
-    friend class QGenericItemModelImplBase;
-    struct Deleter { void operator()(QGenericItemModelImplBase *that) { that->destroy(); } };
-    std::unique_ptr<QGenericItemModelImplBase, Deleter> impl;
+    friend class QRangeModelImplBase;
+    struct Deleter { void operator()(QRangeModelImplBase *that) { that->destroy(); } };
+    std::unique_ptr<QRangeModelImplBase, Deleter> impl;
 };
 
 // implementation of forwarders
-QModelIndex QGenericItemModelImplBase::createIndex(int row, int column, const void *ptr) const
+QModelIndex QRangeModelImplBase::createIndex(int row, int column, const void *ptr) const
 {
-    return m_itemModel->createIndex(row, column, ptr);
+    return m_rangeModel->createIndex(row, column, ptr);
 }
-void QGenericItemModelImplBase::changePersistentIndexList(const QModelIndexList &from,
+void QRangeModelImplBase::changePersistentIndexList(const QModelIndexList &from,
                                                           const QModelIndexList &to)
 {
-    m_itemModel->changePersistentIndexList(from, to);
+    m_rangeModel->changePersistentIndexList(from, to);
 }
-QHash<int, QByteArray> QGenericItemModelImplBase::roleNames() const
+QHash<int, QByteArray> QRangeModelImplBase::roleNames() const
 {
-    return m_itemModel->roleNames();
+    return m_rangeModel->roleNames();
 }
-void QGenericItemModelImplBase::dataChanged(const QModelIndex &from, const QModelIndex &to,
+void QRangeModelImplBase::dataChanged(const QModelIndex &from, const QModelIndex &to,
                                             const QList<int> &roles)
 {
-    m_itemModel->dataChanged(from, to, roles);
+    m_rangeModel->dataChanged(from, to, roles);
 }
-void QGenericItemModelImplBase::beginInsertColumns(const QModelIndex &parent, int start, int count)
+void QRangeModelImplBase::beginInsertColumns(const QModelIndex &parent, int start, int count)
 {
-    m_itemModel->beginInsertColumns(parent, start, count);
+    m_rangeModel->beginInsertColumns(parent, start, count);
 }
-void QGenericItemModelImplBase::endInsertColumns()
+void QRangeModelImplBase::endInsertColumns()
 {
-    m_itemModel->endInsertColumns();
+    m_rangeModel->endInsertColumns();
 }
-void QGenericItemModelImplBase::beginRemoveColumns(const QModelIndex &parent, int start, int count)
+void QRangeModelImplBase::beginRemoveColumns(const QModelIndex &parent, int start, int count)
 {
-    m_itemModel->beginRemoveColumns(parent, start, count);
+    m_rangeModel->beginRemoveColumns(parent, start, count);
 }
-void QGenericItemModelImplBase::endRemoveColumns()
+void QRangeModelImplBase::endRemoveColumns()
 {
-    m_itemModel->endRemoveColumns();
+    m_rangeModel->endRemoveColumns();
 }
-bool QGenericItemModelImplBase::beginMoveColumns(const QModelIndex &sourceParent, int sourceFirst,
+bool QRangeModelImplBase::beginMoveColumns(const QModelIndex &sourceParent, int sourceFirst,
                                                  int sourceLast, const QModelIndex &destParent,
                                                  int destColumn)
 {
-    return m_itemModel->beginMoveColumns(sourceParent, sourceFirst, sourceLast,
+    return m_rangeModel->beginMoveColumns(sourceParent, sourceFirst, sourceLast,
                                          destParent, destColumn);
 }
-void QGenericItemModelImplBase::endMoveColumns()
+void QRangeModelImplBase::endMoveColumns()
 {
-    m_itemModel->endMoveColumns();
+    m_rangeModel->endMoveColumns();
 }
 
-void QGenericItemModelImplBase::beginInsertRows(const QModelIndex &parent, int start, int count)
+void QRangeModelImplBase::beginInsertRows(const QModelIndex &parent, int start, int count)
 {
-    m_itemModel->beginInsertRows(parent, start, count);
+    m_rangeModel->beginInsertRows(parent, start, count);
 }
-void QGenericItemModelImplBase::endInsertRows()
+void QRangeModelImplBase::endInsertRows()
 {
-    m_itemModel->endInsertRows();
+    m_rangeModel->endInsertRows();
 }
-void QGenericItemModelImplBase::beginRemoveRows(const QModelIndex &parent, int start, int count)
+void QRangeModelImplBase::beginRemoveRows(const QModelIndex &parent, int start, int count)
 {
-    m_itemModel->beginRemoveRows(parent, start, count);
+    m_rangeModel->beginRemoveRows(parent, start, count);
 }
-void QGenericItemModelImplBase::endRemoveRows()
+void QRangeModelImplBase::endRemoveRows()
 {
-    m_itemModel->endRemoveRows();
+    m_rangeModel->endRemoveRows();
 }
-bool QGenericItemModelImplBase::beginMoveRows(const QModelIndex &sourceParent, int sourceFirst,
+bool QRangeModelImplBase::beginMoveRows(const QModelIndex &sourceParent, int sourceFirst,
                                               int sourceLast,
                                               const QModelIndex &destParent, int destRow)
 {
-    return m_itemModel->beginMoveRows(sourceParent, sourceFirst, sourceLast, destParent, destRow);
+    return m_rangeModel->beginMoveRows(sourceParent, sourceFirst, sourceLast, destParent, destRow);
 }
-void QGenericItemModelImplBase::endMoveRows()
+void QRangeModelImplBase::endMoveRows()
 {
-    m_itemModel->endMoveRows();
+    m_rangeModel->endMoveRows();
 }
-QAbstractItemModel &QGenericItemModelImplBase::itemModel()
+QAbstractItemModel &QRangeModelImplBase::itemModel()
 {
-    return *m_itemModel;
+    return *m_rangeModel;
 }
-const QAbstractItemModel &QGenericItemModelImplBase::itemModel() const
+const QAbstractItemModel &QRangeModelImplBase::itemModel() const
 {
-    return *m_itemModel;
+    return *m_rangeModel;
 }
 
 template <typename Range,
-          QGenericItemModelDetails::if_is_table_range<Range>>
-QGenericItemModel::QGenericItemModel(Range &&range, QObject *parent)
+          QRangeModelDetails::if_is_table_range<Range>>
+QRangeModel::QRangeModel(Range &&range, QObject *parent)
     : QAbstractItemModel(parent)
     , impl(new QGenericTableItemModelImpl<Range>(std::forward<Range>(range), this))
 {}
 
 template <typename Range,
-         QGenericItemModelDetails::if_is_tree_range<Range>>
-QGenericItemModel::QGenericItemModel(Range &&range, QObject *parent)
-    : QGenericItemModel(std::forward<Range>(range),
-                        QGenericItemModelDetails::DefaultTreeProtocol<Range>{}, parent)
+         QRangeModelDetails::if_is_tree_range<Range>>
+QRangeModel::QRangeModel(Range &&range, QObject *parent)
+    : QRangeModel(std::forward<Range>(range),
+                        QRangeModelDetails::DefaultTreeProtocol<Range>{}, parent)
 {}
 
 template <typename Range, typename Protocol,
-          QGenericItemModelDetails::if_is_tree_range<Range, Protocol>>
-QGenericItemModel::QGenericItemModel(Range &&range, Protocol &&protocol, QObject *parent)
+          QRangeModelDetails::if_is_tree_range<Range, Protocol>>
+QRangeModel::QRangeModel(Range &&range, Protocol &&protocol, QObject *parent)
     : QAbstractItemModel(parent)
    , impl(new QGenericTreeItemModelImpl<Range, Protocol>(std::forward<Range>(range),
                                                          std::forward<Protocol>(protocol), this))
@@ -215,13 +215,13 @@ QT_END_NAMESPACE
 
 namespace std {
     template <typename T>
-    struct tuple_size<QT_PREPEND_NAMESPACE(QGenericItemModel)::MultiColumn<T>>
-        : tuple_size<typename QT_PREPEND_NAMESPACE(QGenericItemModel)::MultiColumn<T>::type>
+    struct tuple_size<QT_PREPEND_NAMESPACE(QRangeModel)::MultiColumn<T>>
+        : tuple_size<typename QT_PREPEND_NAMESPACE(QRangeModel)::MultiColumn<T>::type>
     {};
     template <std::size_t I, typename T>
-    struct tuple_element<I, QT_PREPEND_NAMESPACE(QGenericItemModel)::MultiColumn<T>>
-        : tuple_element<I, typename QT_PREPEND_NAMESPACE(QGenericItemModel)::MultiColumn<T>::type>
+    struct tuple_element<I, QT_PREPEND_NAMESPACE(QRangeModel)::MultiColumn<T>>
+        : tuple_element<I, typename QT_PREPEND_NAMESPACE(QRangeModel)::MultiColumn<T>::type>
     {};
 }
 
-#endif // QGENERICITEMMODEL_H
+#endif // QRANGEMODEL_H

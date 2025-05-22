@@ -1,29 +1,29 @@
 // Copyright (C) 2025 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
-#include "qgenericitemmodel.h"
+#include "qrangemodel.h"
 #include <QtCore/qsize.h>
 
 QT_BEGIN_NAMESPACE
 
 /*!
-    \class QGenericItemModel
+    \class QRangeModel
     \inmodule QtCore
     \since 6.10
     \ingroup model-view
-    \brief QGenericItemModel implements QAbstractItemModel for any C++ range.
+    \brief QRangeModel implements QAbstractItemModel for any C++ range.
     \reentrant
 
-    QGenericItemModel can make the data in any sequentially iterable C++ type
+    QRangeModel can make the data in any sequentially iterable C++ type
     available to the \l{Model/View Programming}{model/view framework} of Qt.
     This makes it easy to display existing data structures in the Qt Widgets
     and Qt Quick item views, and to allow the user of the application to
     manipulate the data using a graphical user interface.
 
-    To use QGenericItemModel, instantiate it with a C++ range and set it as
+    To use QRangeModel, instantiate it with a C++ range and set it as
     the model of one or more views:
 
-    \snippet qgenericitemmodel/main.cpp array
+    \snippet qrangemodel/main.cpp array
 
     The range can be any C++ type for which the standard methods
     \c{std::cbegin} and \c{std::cend} are implemented, and for which the
@@ -43,7 +43,7 @@ QT_BEGIN_NAMESPACE
     QAbstractItemModel APIs that modify the model, such as setData() or
     insertRows(), have no impact on the original range.
 
-    \snippet qgenericitemmodel/main.cpp value
+    \snippet qrangemodel/main.cpp value
 
     As there is no API to retrieve the range again, constructing the model from
     a range by value is mostly only useful for displaying read-only data.
@@ -58,8 +58,8 @@ QT_BEGIN_NAMESPACE
     To make modifications of the model affect the original range, provide the
     range either by reference wrapper or by pointer.
 
-    \snippet qgenericitemmodel/main.cpp pointer
-    \snippet qgenericitemmodel/main.cpp reference_wrapper
+    \snippet qrangemodel/main.cpp pointer
+    \snippet qrangemodel/main.cpp reference_wrapper
 
     In this case, QAbstractItemModel APIs that modify the model also modify the
     range. Methods that modify the structure of the range, such as insertRows()
@@ -78,32 +78,32 @@ QT_BEGIN_NAMESPACE
     Use smart pointers to make sure that the range is only deleted when all
     clients are done with it.
 
-    \snippet qgenericitemmodel/main.cpp smart_pointer
+    \snippet qrangemodel/main.cpp smart_pointer
 
-    QGenericItemModel supports both shared and unique pointers.
+    QRangeModel supports both shared and unique pointers.
 
     \section2 Read-only or mutable
 
     For ranges that are const objects, for which access always yields constant
     values, or where the required container APIs are not available,
-    QGenericItemModel implements write-access APIs to do nothing and return
+    QRangeModel implements write-access APIs to do nothing and return
     \c{false}. In the example using \c{std::array}, the model cannot add or
     remove rows, as the number of entries in a C++ array is fixed. But the
     values can be changed using setData(), and the user can trigger editing of
     the values in the list view. By making the array const, the values also
     become read-only.
 
-    \snippet qgenericitemmodel/main.cpp const_array
+    \snippet qrangemodel/main.cpp const_array
 
     The values are also read-only if the element type is const, like in
 
-    \snippet qgenericitemmodel/main.cpp const_values
+    \snippet qrangemodel/main.cpp const_values
 
     In the above examples using \c{std::vector}, the model can add or remove
     rows, and the data can be changed. Passing the range as a constant
     reference will make the model read-only.
 
-    \snippet qgenericitemmodel/main.cpp const_ref
+    \snippet qrangemodel/main.cpp const_ref
 
     \note If the values in the range are const, then it's also not possible
     to remove or insert columns and rows through the QAbstractItemModel API.
@@ -112,18 +112,18 @@ QT_BEGIN_NAMESPACE
     \section1 Rows and columns
 
     The elements in the range are interpreted as rows of the model. Depending
-    on the type of these row elements, QGenericItemModel exposes the range as a
+    on the type of these row elements, QRangeModel exposes the range as a
     list, a table, or a tree.
 
     If the row elements are simple values, then the range gets represented as a
     list.
 
-    \snippet qgenericitemmodel/main.cpp list_of_int
+    \snippet qrangemodel/main.cpp list_of_int
 
     If the type of the row elements is an iterable range, such as a vector,
     list, or array, then the range gets represented as a table.
 
-    \snippet qgenericitemmodel/main.cpp grid_of_numbers
+    \snippet qrangemodel/main.cpp grid_of_numbers
 
     If the row type provides the standard C++ container APIs \c{resize()},
     \c{insert()}, \c{erase()}, then columns can be added and removed via
@@ -135,14 +135,14 @@ QT_BEGIN_NAMESPACE
     If the row type implements \l{the C++ tuple protocol}, then the range gets
     represented as a table with a fixed number of columns.
 
-    \snippet qgenericitemmodel/main.cpp pair_int_QString
+    \snippet qrangemodel/main.cpp pair_int_QString
 
     An easier and more flexible alternative to implementing the tuple protocol
     for a C++ type is to use Qt's \l{Meta-Object System}{meta-object system} to
     declare a type with \l{Qt's Property System}{properties}. This can be a
     value type that is declared as a \l{Q_GADGET}{gadget}, or a QObject subclass.
 
-    \snippet qgenericitemmodel/main.cpp gadget
+    \snippet qrangemodel/main.cpp gadget
 
     Using QObject subclasses allows properties to be \l{Qt Bindable Properties}
     {bindable}, or to have change notification signals. However, using QObject
@@ -170,13 +170,13 @@ QT_BEGIN_NAMESPACE
 
     If the item is an associative container that uses \c{int},
     \l{Qt::ItemDataRole}, or QString as the key type, and QVariant as the
-    mapped type, then QGenericItemModel interprets that container as the storage
+    mapped type, then QRangeModel interprets that container as the storage
     of the data for multiple roles. The data() and setData() functions return
     and modify the mapped value in the container, and setItemData() modifies all
     provided values, itemData() returns all stored values, and clearItemData()
     clears the entire container.
 
-    \snippet qgenericitemmodel/main.cpp color_map
+    \snippet qrangemodel/main.cpp color_map
 
     The most efficient data type to use as the key is Qt::ItemDataRole or
     \c{int}. When using \c{int}, itemData() returns the container as is, and
@@ -186,36 +186,36 @@ QT_BEGIN_NAMESPACE
     are the item type in a table. The names of the properties have to match the
     names of the roles.
 
-    \snippet qgenericitemmodel/main.cpp color_gadget_0
+    \snippet qrangemodel/main.cpp color_gadget_0
 
     When used in a list, these types are ambiguous: they can be represented as
     multi-column rows, with each property represented as a separate column. Or
     they can be single items with each property being a role. To disambiguate,
-    use the QGenericItemModel::SingleColumn and QGenericItemModel::MultiColumn
+    use the QRangeModel::SingleColumn and QRangeModel::MultiColumn
     wrappers.
 
-    \snippet qgenericitemmodel/main.cpp color_gadget_1
+    \snippet qrangemodel/main.cpp color_gadget_1
 
     \section1 Trees of data
 
-    QGenericItemModel can represent a data structure as a tree model. Such a
+    QRangeModel can represent a data structure as a tree model. Such a
     tree data structure needs to be homomorphic: on all levels of the tree, the
     list of child rows needs to use the exact same representation as the tree
     itself. In addition, the row type needs be of a static size: either a gadget
     or QObject type, or a type that implements the {C++ tuple protocol}.
 
     To represent such data as a tree, the row type has to implement a traversal
-    protocol that allows QGenericItemModel to navigate up and down the tree.
+    protocol that allows QRangeModel to navigate up and down the tree.
     For any given row, the model needs to be able to retrieve the parent row,
     and the span of children for any given row.
 
-    \snippet qgenericitemmodel/main.cpp tree_protocol_0
+    \snippet qrangemodel/main.cpp tree_protocol_0
 
     The tree itself is a vector of \c{TreeRow} values. See \l{Rows as pointers
     or values} for the considerations on whether to use values or pointers of
     items for the rows.
 
-    \snippet qgenericitemmodel/main.cpp tree_protocol_1
+    \snippet qrangemodel/main.cpp tree_protocol_1
 
     The row class can be of any fixed-size type described above: a type that
     implements the tuple protocol, a gadget, or a QObject. In this example, we
@@ -229,7 +229,7 @@ QT_BEGIN_NAMESPACE
     to construct new row data elements, for instance in the insertRow() or
     moveRows() implementations.
 
-    \snippet qgenericitemmodel/main.cpp tree_protocol_2
+    \snippet qrangemodel/main.cpp tree_protocol_2
 
     The tree traversal protocol can then be implemented as member functions of
     the row data type. A const \c{parentRow()} function has to return a pointer
@@ -242,7 +242,7 @@ QT_BEGIN_NAMESPACE
     model to implement mutating model APIs such as insertRows(), removeRows(),
     and moveRows(), we have to implement additional functions for write-access:
 
-    \snippet qgenericitemmodel/main.cpp tree_protocol_3
+    \snippet qrangemodel/main.cpp tree_protocol_3
 
     The model calls the \c{setParentRow()} function and mutable \c{childRows()}
     overload to move or insert rows into an existing tree branch, and to update
@@ -255,29 +255,29 @@ QT_BEGIN_NAMESPACE
     as separate steps. This keeps the protocol interface small.
 
     \dots
-    \snippet qgenericitemmodel/main.cpp tree_protocol_4
+    \snippet qrangemodel/main.cpp tree_protocol_4
 
     The rest of the class implementation is not relevant for the model, but
     a \c{addChild()} helper provides us with a convenient way to construct the
     initial state of the tree.
 
-    \snippet qgenericitemmodel/main.cpp tree_protocol_5
+    \snippet qrangemodel/main.cpp tree_protocol_5
 
-    A QGenericItemModel instantiated with an instance of such a range will
+    A QRangeModel instantiated with an instance of such a range will
     represent the data as a tree.
 
-    \snippet qgenericitemmodel/main.cpp tree_protocol_6
+    \snippet qrangemodel/main.cpp tree_protocol_6
 
     \section3 Tree traversal protocol in a separate class
 
     The tree traversal protocol can also be implemented in a separate class.
 
-    \snippet qgenericitemmodel/main.cpp explicit_tree_protocol_0
+    \snippet qrangemodel/main.cpp explicit_tree_protocol_0
 
-    Pass an instance of this protocol implementation to the QGenericItemModel
+    Pass an instance of this protocol implementation to the QRangeModel
     constructor:
 
-    \snippet qgenericitemmodel/main.cpp explicit_tree_protocol_1
+    \snippet qrangemodel/main.cpp explicit_tree_protocol_1
 
     \section2 Rows as pointers or values
 
@@ -290,41 +290,41 @@ QT_BEGIN_NAMESPACE
     the location of the parent row within the vector. Making sure that this
     parent (and QPersistentModelIndex instances referring to items within it)
     stays valid can incurr substantial performance overhead. The
-    QGenericItemModel implementation has to assume that all references into the
+    QRangeModel implementation has to assume that all references into the
     range become invalid when modifying the range.
 
     Alternatively, we can also use a range of row pointers as the tree type:
 
-    \snippet qgenericitemmodel/main.cpp tree_of_pointers_0
+    \snippet qrangemodel/main.cpp tree_of_pointers_0
 
     In this case, we have to allocate all TreeRow instances explicitly using
     operator \c{new}, and implement the destructor to \c{delete} all items in
     the vector of children.
 
-    \snippet qgenericitemmodel/main.cpp tree_of_pointers_1
-    \snippet qgenericitemmodel/main.cpp tree_of_pointers_2
+    \snippet qrangemodel/main.cpp tree_of_pointers_1
+    \snippet qrangemodel/main.cpp tree_of_pointers_2
 
     Before we can construct a model that represents this data as a tree, we need
     to also implement the tree traversal protocol.
 
-    \snippet qgenericitemmodel/main.cpp tree_of_pointers_3
+    \snippet qrangemodel/main.cpp tree_of_pointers_3
 
     An explicit protocol implementation for mutable trees of pointers has to
     provide two additional member functions, \c{newRow()} and
     \c{deleteRow(RowType *)}.
 
-    \snippet qgenericitemmodel/main.cpp tree_of_pointers_4
+    \snippet qrangemodel/main.cpp tree_of_pointers_4
 
     The model will call those functions when creating new rows in insertRows(),
     and when removing rows in removeRows(). In addition, if the model has
     ownership of the data, then it will also delete all top-level rows upon
     destruction. Note how in this example, we move the tree into the model, so
-    we must no longer perform any operations on it. QGenericItemModel, when
+    we must no longer perform any operations on it. QRangeModel, when
     constructed by moving tree-data with row-pointers into it, will take
     ownership of the data, and delete the row pointers in it's destructor.
 
     \note This is not the case for tables and lists that use pointers as their
-    row type. QGenericItemModel will never allocate new rows in lists and tables
+    row type. QRangeModel will never allocate new rows in lists and tables
     using operator new, and will never free any rows.
 
     Using pointers at rows comes with some memory allocation and management
@@ -346,7 +346,7 @@ QT_BEGIN_NAMESPACE
     type to make existing structured data available to the model/view framework
     in Qt.
 
-    \snippet qgenericitemmodel/main.cpp tuple_protocol
+    \snippet qrangemodel/main.cpp tuple_protocol
 
     In the above implementation, the \c{title} and \c{author} values of the
     \c{Book} type are returned as \c{const}, so the model flags items in those
@@ -358,25 +358,25 @@ QT_BEGIN_NAMESPACE
     those columns editable, both for the user and for programmatic access.
 
     \note The implementation of \c{get} above requires C++23. A C++17 compliant
-    implementation can be found in the unit test code for QGenericItemModel.
+    implementation can be found in the unit test code for QRangeModel.
 
     Types that have a meta objects, and implement the C++ tuple protocol, also
     can cause compile-time ambiguity when used as the row type, as the framework
     won't know which API to use to access the individual values. Use the
-    QGenericItemModel::SingleColumn and QGenericItemModel::MultiColumns wrapper
+    QRangeModel::SingleColumn and QRangeModel::MultiColumns wrapper
     to disambiguate.
 
     \sa {Model/View Programming}
 */
 
 /*!
-    \typedef QGenericItemModel::SingleColumn
+    \typedef QRangeModel::SingleColumn
 
     Use this type to disambiguate when using the type \c{T} as the row type in
     the range. If \c{T} provides a metaobject, then the framework will by
     default represent the type as multiple columns, resulting in a table model.
 
-    \snippet qgenericitemmodel/main.cpp color_gadget_0
+    \snippet qrangemodel/main.cpp color_gadget_0
 
     When stored in a sequential range, this type will be interpreted as
     multi-column rows with each property being one column. The range will be
@@ -386,25 +386,25 @@ QT_BEGIN_NAMESPACE
     QList<ColorEntry> colors = {
         // ...
     };
-    QGenericItemModel tableModel(colors); // columnCount() == 3
+    QRangeModel tableModel(colors); // columnCount() == 3
     \endcode
 
-    When wrapped into QGenericItemModel::SingleColumn, the model will be a list,
+    When wrapped into QRangeModel::SingleColumn, the model will be a list,
     with each instance of \c{T} represented as an item with multiple roles.
 
     \code
-    QList<QGenericItemModel::SingleColumn<ColorEntry>> colors = {
+    QList<QRangeModel::SingleColumn<ColorEntry>> colors = {
         // ...
     };
-    QGenericItemModel listModel(colors); // columnCount() == 1
+    QRangeModel listModel(colors); // columnCount() == 1
     \endcode
 
-    \sa QGenericItemModel::MultiColumn
+    \sa QRangeModel::MultiColumn
 */
 
 /*!
-    \class QGenericItemModel::MultiColumn
-    \brief Represents the wrapped type \c{T} as multiple columns in a QGenericItemModel.
+    \class QRangeModel::MultiColumn
+    \brief Represents the wrapped type \c{T} as multiple columns in a QRangeModel.
     \inmodule QtCore
     \ingroup model-view
     \since 6.10
@@ -414,29 +414,29 @@ QT_BEGIN_NAMESPACE
     multiple columns, and the individual values will be accessed through the
     tuple protocol.
 
-    \snippet qgenericitemmodel/main.cpp color_gadget_0
+    \snippet qrangemodel/main.cpp color_gadget_0
     \code
     namespace std {
         template <> struct tuple_size<ColorEntry> : integral_constant<size_t, 3> {};
         // ...
     }
 
-    QList<QGenericItemModel::MultiColumn<ColorEntry>> colors = {
+    QList<QRangeModel::MultiColumn<ColorEntry>> colors = {
         // ...
     };
-    QGenericItemModel colorList(colors);
+    QRangeModel colorList(colors);
     \endcode
 
     To represent the type a single column value with multiple roles, use
-    QGenericItemModel::SingleColumn instead.
+    QRangeModel::SingleColumn instead.
 
-    \sa QGenericItemModel::SingleColumn
+    \sa QRangeModel::SingleColumn
 */
 
 /*!
-    \fn template <typename Range, QGenericItemModelDetails::if_is_table_range<Range>> QGenericItemModel::QGenericItemModel(Range &&range, QObject *parent)
-    \fn template <typename Range, QGenericItemModelDetails::if_is_tree_range<Range>> QGenericItemModel::QGenericItemModel(Range &&range, QObject *parent)
-    \fn template <typename Range, typename Protocol, QGenericItemModelDetails::if_is_tree_range<Range, Protocol>> QGenericItemModel::QGenericItemModel(Range &&range, Protocol &&protocol, QObject *parent)
+    \fn template <typename Range, QRangeModelDetails::if_is_table_range<Range>> QRangeModel::QRangeModel(Range &&range, QObject *parent)
+    \fn template <typename Range, QRangeModelDetails::if_is_tree_range<Range>> QRangeModel::QRangeModel(Range &&range, QObject *parent)
+    \fn template <typename Range, typename Protocol, QRangeModelDetails::if_is_tree_range<Range, Protocol>> QRangeModel::QRangeModel(Range &&range, Protocol &&protocol, QObject *parent)
 
     Constructs a generic item model instance that operates on the data in \a
     range. The \a range has to be a sequential range for which \c{std::cbegin}
@@ -461,7 +461,7 @@ QT_BEGIN_NAMESPACE
 
     The range that the model was constructed from is not destroyed.
 */
-QGenericItemModel::~QGenericItemModel() = default;
+QRangeModel::~QRangeModel() = default;
 
 /*!
     \reimp
@@ -473,9 +473,9 @@ QGenericItemModel::~QGenericItemModel() = default;
 
     \sa parent()
 */
-QModelIndex QGenericItemModel::index(int row, int column, const QModelIndex &parent) const
+QModelIndex QRangeModel::index(int row, int column, const QModelIndex &parent) const
 {
-    return impl->callConst<QModelIndex>(QGenericItemModelImplBase::Index, row, column, parent);
+    return impl->callConst<QModelIndex>(QRangeModelImplBase::Index, row, column, parent);
 }
 
 /*!
@@ -490,9 +490,9 @@ QModelIndex QGenericItemModel::index(int row, int column, const QModelIndex &par
 
     \sa index(), hasChildren()
 */
-QModelIndex QGenericItemModel::parent(const QModelIndex &child) const
+QModelIndex QRangeModel::parent(const QModelIndex &child) const
 {
-    return impl->callConst<QModelIndex>(QGenericItemModelImplBase::Parent, child);
+    return impl->callConst<QModelIndex>(QRangeModelImplBase::Parent, child);
 }
 
 /*!
@@ -506,9 +506,9 @@ QModelIndex QGenericItemModel::parent(const QModelIndex &child) const
 
     \sa index(), QModelIndex::row(), QModelIndex::column()
 */
-QModelIndex QGenericItemModel::sibling(int row, int column, const QModelIndex &index) const
+QModelIndex QRangeModel::sibling(int row, int column, const QModelIndex &index) const
 {
-    return impl->callConst<QModelIndex>(QGenericItemModelImplBase::Sibling, row, column, index);
+    return impl->callConst<QModelIndex>(QRangeModelImplBase::Sibling, row, column, index);
 }
 
 /*!
@@ -524,9 +524,9 @@ QModelIndex QGenericItemModel::sibling(int row, int column, const QModelIndex &i
 
     \sa columnCount(), insertRows(), hasChildren()
 */
-int QGenericItemModel::rowCount(const QModelIndex &parent) const
+int QRangeModel::rowCount(const QModelIndex &parent) const
 {
-    return impl->callConst<int>(QGenericItemModelImplBase::RowCount, parent);
+    return impl->callConst<int>(QRangeModelImplBase::RowCount, parent);
 }
 
 /*!
@@ -542,9 +542,9 @@ int QGenericItemModel::rowCount(const QModelIndex &parent) const
 
     \sa rowCount, insertColumns()
 */
-int QGenericItemModel::columnCount(const QModelIndex &parent) const
+int QRangeModel::columnCount(const QModelIndex &parent) const
 {
-    return impl->callConst<int>(QGenericItemModelImplBase::ColumnCount, parent);
+    return impl->callConst<int>(QRangeModelImplBase::ColumnCount, parent);
 }
 
 /*!
@@ -559,9 +559,9 @@ int QGenericItemModel::columnCount(const QModelIndex &parent) const
 
     \sa Qt::ItemFlags
 */
-Qt::ItemFlags QGenericItemModel::flags(const QModelIndex &index) const
+Qt::ItemFlags QRangeModel::flags(const QModelIndex &index) const
 {
-    return impl->callConst<Qt::ItemFlags>(QGenericItemModelImplBase::Flags, index);
+    return impl->callConst<Qt::ItemFlags>(QRangeModelImplBase::Flags, index);
 }
 
 /*!
@@ -576,9 +576,9 @@ Qt::ItemFlags QGenericItemModel::flags(const QModelIndex &index) const
 
     \sa Qt::ItemDataRole, setHeaderData(), QHeaderView
 */
-QVariant QGenericItemModel::headerData(int section, Qt::Orientation orientation, int role) const
+QVariant QRangeModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
-    return impl->callConst<QVariant>(QGenericItemModelImplBase::HeaderData,
+    return impl->callConst<QVariant>(QRangeModelImplBase::HeaderData,
                                      section, orientation, role);
 }
 
@@ -599,9 +599,9 @@ QVariant QGenericItemModel::headerData(int section, Qt::Orientation orientation,
 
     \sa Qt::ItemDataRole, setData(), headerData()
 */
-QVariant QGenericItemModel::data(const QModelIndex &index, int role) const
+QVariant QRangeModel::data(const QModelIndex &index, int role) const
 {
-    return impl->callConst<QVariant>(QGenericItemModelImplBase::Data, index, role);
+    return impl->callConst<QVariant>(QRangeModelImplBase::Data, index, role);
 }
 
 /*!
@@ -624,9 +624,9 @@ QVariant QGenericItemModel::data(const QModelIndex &index, int role) const
     returns \c{false} immediately.
 //! [read-only-setData]
 */
-bool QGenericItemModel::setData(const QModelIndex &index, const QVariant &data, int role)
+bool QRangeModel::setData(const QModelIndex &index, const QVariant &data, int role)
 {
-    return impl->call<bool>(QGenericItemModelImplBase::SetData, index, data, role);
+    return impl->call<bool>(QRangeModelImplBase::SetData, index, data, role);
 }
 
 /*!
@@ -647,9 +647,9 @@ bool QGenericItemModel::setData(const QModelIndex &index, const QVariant &data, 
 
     \sa setItemData(), Qt::ItemDataRole, data()
 */
-QMap<int, QVariant> QGenericItemModel::itemData(const QModelIndex &index) const
+QMap<int, QVariant> QRangeModel::itemData(const QModelIndex &index) const
 {
-    return impl->callConst<QMap<int, QVariant>>(QGenericItemModelImplBase::ItemData, index);
+    return impl->callConst<QMap<int, QVariant>>(QRangeModelImplBase::ItemData, index);
 }
 
 /*!
@@ -678,9 +678,9 @@ QMap<int, QVariant> QGenericItemModel::itemData(const QModelIndex &index) const
 
     \sa itemData(), setData(), Qt::ItemDataRole
 */
-bool QGenericItemModel::setItemData(const QModelIndex &index, const QMap<int, QVariant> &data)
+bool QRangeModel::setItemData(const QModelIndex &index, const QMap<int, QVariant> &data)
 {
-    return impl->call<bool>(QGenericItemModelImplBase::SetItemData, index, data);
+    return impl->call<bool>(QRangeModelImplBase::SetItemData, index, data);
 }
 
 /*!
@@ -689,11 +689,11 @@ bool QGenericItemModel::setItemData(const QModelIndex &index, const QMap<int, QV
     Replaces the value stored in the range at \a index with a default-
     constructed value.
 
-    \include qgenericitemmodel.cpp read-only-setData
+    \include qrangemodel.cpp read-only-setData
 */
-bool QGenericItemModel::clearItemData(const QModelIndex &index)
+bool QRangeModel::clearItemData(const QModelIndex &index)
 {
-    return impl->call<bool>(QGenericItemModelImplBase::ClearItemData, index);
+    return impl->call<bool>(QRangeModelImplBase::ClearItemData, index);
 }
 
 /*
@@ -714,11 +714,11 @@ bool QGenericItemModel::clearItemData(const QModelIndex &index)
     of the range at \a parent. Returns \c{true} if successful; otherwise
     returns \c{false}.
 
-    \include qgenericitemmodel.cpp {column-change-requirement} {insert(const_iterator, size_t, value_type)}
+    \include qrangemodel.cpp {column-change-requirement} {insert(const_iterator, size_t, value_type)}
 */
-bool QGenericItemModel::insertColumns(int column, int count, const QModelIndex &parent)
+bool QRangeModel::insertColumns(int column, int count, const QModelIndex &parent)
 {
-    return impl->call<bool>(QGenericItemModelImplBase::InsertColumns, column, count, parent);
+    return impl->call<bool>(QRangeModelImplBase::InsertColumns, column, count, parent);
 }
 
 /*!
@@ -728,11 +728,11 @@ bool QGenericItemModel::insertColumns(int column, int count, const QModelIndex &
     range at \a parent. Returns \c{true} if successful, otherwise returns
     \c{false}.
 
-    \include qgenericitemmodel.cpp {column-change-requirement} {erase(const_iterator, size_t)}
+    \include qrangemodel.cpp {column-change-requirement} {erase(const_iterator, size_t)}
 */
-bool QGenericItemModel::removeColumns(int column, int count, const QModelIndex &parent)
+bool QRangeModel::removeColumns(int column, int count, const QModelIndex &parent)
 {
-    return impl->call<bool>(QGenericItemModelImplBase::RemoveColumns, column, count, parent);
+    return impl->call<bool>(QRangeModelImplBase::RemoveColumns, column, count, parent);
 }
 
 /*!
@@ -744,10 +744,10 @@ bool QGenericItemModel::removeColumns(int column, int count, const QModelIndex &
     Returns \c{true} if the columns were successfully moved; otherwise returns
     \c{false}.
 */
-bool QGenericItemModel::moveColumns(const QModelIndex &sourceParent, int sourceColumn, int count,
+bool QRangeModel::moveColumns(const QModelIndex &sourceParent, int sourceColumn, int count,
                                     const QModelIndex &destinationParent, int destinationColumn)
 {
-    return impl->call<bool>(QGenericItemModelImplBase::MoveColumns,
+    return impl->call<bool>(QRangeModelImplBase::MoveColumns,
                             sourceParent, sourceColumn, count,
                             destinationParent, destinationColumn);
 }
@@ -769,14 +769,14 @@ bool QGenericItemModel::moveColumns(const QModelIndex &sourceParent, int sourceC
     Inserts \a count empty rows before the given \a row into the range at
     \a parent. Returns \c{true} if successful; otherwise returns \c{false}.
 
-    \include qgenericitemmodel.cpp {row-change-requirement} {insert(const_iterator, size_t, value_type)}
+    \include qrangemodel.cpp {row-change-requirement} {insert(const_iterator, size_t, value_type)}
 
     \note For ranges with a dynamically sized column type, the column needs
     to provide a \c{resize(size_t)} member function.
 */
-bool QGenericItemModel::insertRows(int row, int count, const QModelIndex &parent)
+bool QRangeModel::insertRows(int row, int count, const QModelIndex &parent)
 {
-    return impl->call<bool>(QGenericItemModelImplBase::InsertRows, row, count, parent);
+    return impl->call<bool>(QRangeModelImplBase::InsertRows, row, count, parent);
 }
 
 /*!
@@ -785,11 +785,11 @@ bool QGenericItemModel::insertRows(int row, int count, const QModelIndex &parent
     Removes \a count rows from the range at \a parent, starting with the
     given \a row. Returns \c{true} if successful, otherwise returns \c{false}.
 
-    \include qgenericitemmodel.cpp {row-change-requirement} {erase(const_iterator, size_t)}
+    \include qrangemodel.cpp {row-change-requirement} {erase(const_iterator, size_t)}
 */
-bool QGenericItemModel::removeRows(int row, int count, const QModelIndex &parent)
+bool QRangeModel::removeRows(int row, int count, const QModelIndex &parent)
 {
-    return impl->call<bool>(QGenericItemModelImplBase::RemoveRows, row, count, parent);
+    return impl->call<bool>(QRangeModelImplBase::RemoveRows, row, count, parent);
 }
 
 /*!
@@ -801,10 +801,10 @@ bool QGenericItemModel::removeRows(int row, int count, const QModelIndex &parent
     Returns \c{true} if the rows were successfully moved; otherwise returns
     \c{false}.
 */
-bool QGenericItemModel::moveRows(const QModelIndex &sourceParent, int sourceRow, int count,
+bool QRangeModel::moveRows(const QModelIndex &sourceParent, int sourceRow, int count,
                                  const QModelIndex &destinationParent, int destinationRow)
 {
-    return impl->call<bool>(QGenericItemModelImplBase::MoveRows,
+    return impl->call<bool>(QRangeModelImplBase::MoveRows,
                             sourceParent, sourceRow, count,
                             destinationParent, destinationRow);
 }
@@ -812,7 +812,7 @@ bool QGenericItemModel::moveRows(const QModelIndex &sourceParent, int sourceRow,
 /*!
     \reimp
 */
-bool QGenericItemModel::canFetchMore(const QModelIndex &parent) const
+bool QRangeModel::canFetchMore(const QModelIndex &parent) const
 {
     return QAbstractItemModel::canFetchMore(parent);
 }
@@ -820,7 +820,7 @@ bool QGenericItemModel::canFetchMore(const QModelIndex &parent) const
 /*!
     \reimp
 */
-void QGenericItemModel::fetchMore(const QModelIndex &parent)
+void QRangeModel::fetchMore(const QModelIndex &parent)
 {
     QAbstractItemModel::fetchMore(parent);
 }
@@ -828,7 +828,7 @@ void QGenericItemModel::fetchMore(const QModelIndex &parent)
 /*!
     \reimp
 */
-bool QGenericItemModel::hasChildren(const QModelIndex &parent) const
+bool QRangeModel::hasChildren(const QModelIndex &parent) const
 {
     return QAbstractItemModel::hasChildren(parent);
 }
@@ -836,7 +836,7 @@ bool QGenericItemModel::hasChildren(const QModelIndex &parent) const
 /*!
     \reimp
 */
-QModelIndex QGenericItemModel::buddy(const QModelIndex &index) const
+QModelIndex QRangeModel::buddy(const QModelIndex &index) const
 {
     return QAbstractItemModel::buddy(index);
 }
@@ -844,7 +844,7 @@ QModelIndex QGenericItemModel::buddy(const QModelIndex &index) const
 /*!
     \reimp
 */
-bool QGenericItemModel::canDropMimeData(const QMimeData *data, Qt::DropAction action,
+bool QRangeModel::canDropMimeData(const QMimeData *data, Qt::DropAction action,
                                         int row, int column, const QModelIndex &parent) const
 {
     return QAbstractItemModel::canDropMimeData(data, action, row, column, parent);
@@ -853,7 +853,7 @@ bool QGenericItemModel::canDropMimeData(const QMimeData *data, Qt::DropAction ac
 /*!
     \reimp
 */
-bool QGenericItemModel::dropMimeData(const QMimeData *data, Qt::DropAction action,
+bool QRangeModel::dropMimeData(const QMimeData *data, Qt::DropAction action,
                                      int row, int column, const QModelIndex &parent)
 {
     return QAbstractItemModel::dropMimeData(data, action, row, column, parent);
@@ -862,7 +862,7 @@ bool QGenericItemModel::dropMimeData(const QMimeData *data, Qt::DropAction actio
 /*!
     \reimp
 */
-QMimeData *QGenericItemModel::mimeData(const QModelIndexList &indexes) const
+QMimeData *QRangeModel::mimeData(const QModelIndexList &indexes) const
 {
     return QAbstractItemModel::mimeData(indexes);
 }
@@ -870,7 +870,7 @@ QMimeData *QGenericItemModel::mimeData(const QModelIndexList &indexes) const
 /*!
     \reimp
 */
-QStringList QGenericItemModel::mimeTypes() const
+QStringList QRangeModel::mimeTypes() const
 {
     return QAbstractItemModel::mimeTypes();
 }
@@ -878,7 +878,7 @@ QStringList QGenericItemModel::mimeTypes() const
 /*!
     \reimp
 */
-QModelIndexList QGenericItemModel::match(const QModelIndex &start, int role, const QVariant &value,
+QModelIndexList QRangeModel::match(const QModelIndex &start, int role, const QVariant &value,
                                          int hits, Qt::MatchFlags flags) const
 {
     return QAbstractItemModel::match(start, role, value, hits, flags);
@@ -887,7 +887,7 @@ QModelIndexList QGenericItemModel::match(const QModelIndex &start, int role, con
 /*!
     \reimp
 */
-void QGenericItemModel::multiData(const QModelIndex &index, QModelRoleDataSpan roleDataSpan) const
+void QRangeModel::multiData(const QModelIndex &index, QModelRoleDataSpan roleDataSpan) const
 {
     QAbstractItemModel::multiData(index, roleDataSpan);
 }
@@ -895,7 +895,7 @@ void QGenericItemModel::multiData(const QModelIndex &index, QModelRoleDataSpan r
 /*!
     \reimp
 */
-QHash<int, QByteArray> QGenericItemModel::roleNames() const
+QHash<int, QByteArray> QRangeModel::roleNames() const
 {
     return QAbstractItemModel::roleNames();
 }
@@ -903,7 +903,7 @@ QHash<int, QByteArray> QGenericItemModel::roleNames() const
 /*!
     \reimp
 */
-void QGenericItemModel::sort(int column, Qt::SortOrder order)
+void QRangeModel::sort(int column, Qt::SortOrder order)
 {
     return QAbstractItemModel::sort(column, order);
 }
@@ -911,7 +911,7 @@ void QGenericItemModel::sort(int column, Qt::SortOrder order)
 /*!
     \reimp
 */
-QSize QGenericItemModel::span(const QModelIndex &index) const
+QSize QRangeModel::span(const QModelIndex &index) const
 {
     return QAbstractItemModel::span(index);
 }
@@ -919,7 +919,7 @@ QSize QGenericItemModel::span(const QModelIndex &index) const
 /*!
     \reimp
 */
-Qt::DropActions QGenericItemModel::supportedDragActions() const
+Qt::DropActions QRangeModel::supportedDragActions() const
 {
     return QAbstractItemModel::supportedDragActions();
 }
@@ -927,7 +927,7 @@ Qt::DropActions QGenericItemModel::supportedDragActions() const
 /*!
     \reimp
 */
-Qt::DropActions QGenericItemModel::supportedDropActions() const
+Qt::DropActions QRangeModel::supportedDropActions() const
 {
     return QAbstractItemModel::supportedDropActions();
 }
@@ -935,7 +935,7 @@ Qt::DropActions QGenericItemModel::supportedDropActions() const
 /*!
     \reimp
 */
-void QGenericItemModel::resetInternalData()
+void QRangeModel::resetInternalData()
 {
     QAbstractItemModel::resetInternalData();
 }
@@ -943,7 +943,7 @@ void QGenericItemModel::resetInternalData()
 /*!
     \reimp
 */
-bool QGenericItemModel::event(QEvent *event)
+bool QRangeModel::event(QEvent *event)
 {
     return QAbstractItemModel::event(event);
 }
@@ -951,11 +951,11 @@ bool QGenericItemModel::event(QEvent *event)
 /*!
     \reimp
 */
-bool QGenericItemModel::eventFilter(QObject *object, QEvent *event)
+bool QRangeModel::eventFilter(QObject *object, QEvent *event)
 {
     return QAbstractItemModel::eventFilter(object, event);
 }
 
 QT_END_NAMESPACE
 
-#include "moc_qgenericitemmodel.cpp"
+#include "moc_qrangemodel.cpp"

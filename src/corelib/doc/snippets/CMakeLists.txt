@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
 
 add_library(corelib_snippets OBJECT
-    qgenericitemmodel/main.cpp
+    qrangemodel/main.cpp
 )
 
 target_link_libraries(corelib_snippets PRIVATE

@@ -1,7 +1,7 @@
 // Copyright (C) 2025 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
 
-#include <QtCore/qgenericitemmodel.h>
+#include <QtCore/qrangemodel.h>
 
 #ifndef QT_NO_WIDGETS
 
@@ -19,7 +19,7 @@ void array()
 
 //! [array]
 std::array<int, 5> numbers = {1, 2, 3, 4, 5};
-QGenericItemModel model(numbers);
+QRangeModel model(numbers);
 listView.setModel(&model);
 //! [array]
 }
@@ -30,26 +30,26 @@ void construct_by()
 
 {
 //! [value]
-    QGenericItemModel model(numbers);
+    QRangeModel model(numbers);
 //! [value]
 }
 
 {
 //! [pointer]
-    QGenericItemModel model(&numbers);
+    QRangeModel model(&numbers);
 //! [pointer]
 }
 
 {
 //! [reference_wrapper]
-    QGenericItemModel model(std::ref(numbers));
+    QRangeModel model(std::ref(numbers));
 //! [reference_wrapper]
 }
 
 {
 //! [smart_pointer]
     auto shared_numbers = std::make_shared<std::vector<int>>(numbers);
-    QGenericItemModel model(shared_numbers);
+    QRangeModel model(shared_numbers);
 //! [smart_pointer]
 }
 }
@@ -59,7 +59,7 @@ void const_array()
 //! [const_array]
 const std::array<int, 5> numbers = {1, 2, 3, 4, 5};
 //! [const_array]
-QGenericItemModel model(numbers);
+QRangeModel model(numbers);
 }
 
 void const_values()
@@ -67,14 +67,14 @@ void const_values()
 //! [const_values]
 std::array<const int, 5> numbers = {1, 2, 3, 4, 5};
 //! [const_values]
-QGenericItemModel model(numbers);
+QRangeModel model(numbers);
 }
 
 void const_ref()
 {
     std::vector<int> numbers = {1, 2, 3, 4, 5};
 //! [const_ref]
-    QGenericItemModel model(std::cref(numbers));
+    QRangeModel model(std::cref(numbers));
 //! [const_ref]
 }
 
@@ -82,7 +82,7 @@ void list_of_int()
 {
 //! [list_of_int]
 QList<int> numbers = {1, 2, 3, 4, 5};
-QGenericItemModel model(numbers); // columnCount() == 1
+QRangeModel model(numbers); // columnCount() == 1
 QListView listView;
 listView.setModel(&model);
 //! [list_of_int]
@@ -96,7 +96,7 @@ std::vector<std::vector<int>> gridOfNumbers = {
     {6, 7, 8, 9, 10},
     {11, 12, 13, 14, 15},
 };
-QGenericItemModel model(&gridOfNumbers); // columnCount() == 5
+QRangeModel model(&gridOfNumbers); // columnCount() == 5
 QTableView tableView;
 tableView.setModel(&model);
 //! [grid_of_numbers]
@@ -111,7 +111,7 @@ QList<TableRow> numberNames = {
     {2, "two"},
     {3, "three"}
 };
-QGenericItemModel model(&numberNames); // columnCount() == 2
+QRangeModel model(&numberNames); // columnCount() == 2
 QTableView tableView;
 tableView.setModel(&model);
 //! [pair_int_QString]
@@ -220,7 +220,7 @@ public:
     std::optional<Tree> &childRows() { return m_children; }
 //! [tree_protocol_3]
 //! [tree_protocol_4]
-    // Helper to assembly a tree of rows, not used by QGenericItemModel
+    // Helper to assembly a tree of rows, not used by QRangeModel
     template <typename ...Args>
     TreeRow &addChild(Args &&...args)
     {
@@ -259,7 +259,7 @@ tree[2].addChild("...");
 {
 //! [tree_protocol_6]
 // instantiate the model with a pointer to the tree, not a copy!
-QGenericItemModel model(&tree);
+QRangeModel model(&tree);
 QTreeView view;
 view.setModel(&model);
 //! [tree_protocol_6]
@@ -280,7 +280,7 @@ void explicit_tree_protocol()
 {
 Tree tree;
 //! [explicit_tree_protocol_1]
-QGenericItemModel model(&tree, TreeTraversal{});
+QRangeModel model(&tree, TreeTraversal{});
 //! [explicit_tree_protocol_1]
 }
 } // namespace tree_protocol
@@ -366,7 +366,7 @@ int main(int argc, char **argv)
 
     Tree tree = make_tree_of_pointers();
 
-    QGenericItemModel model(std::move(tree), TreeTraversal{});
+    QRangeModel model(std::move(tree), TreeTraversal{});
     QTreeView treeView;
     treeView.setModel(&model);
     treeView.show();
@@ -391,7 +391,7 @@ for (const QString &name : colorNames) {
                          {Qt::DecorationRole, color},
                          {Qt::ToolTipRole, color.name()}};
 }
-QGenericItemModel colorModel(colors);
+QRangeModel colorModel(colors);
 QListView list;
 list.setModel(&colorModel);
 //! [color_map]
@@ -427,12 +427,12 @@ private:
 void color_list() {
 //! [color_gadget_1]
 const QStringList colorNames = QColor::colorNames();
-QList<QGenericItemModel::SingleColumn<ColorEntry>> colors;
+QList<QRangeModel::SingleColumn<ColorEntry>> colors;
 colors.reserve(colorNames.size());
 for (const QString &name : colorNames)
     colors << ColorEntry{name};
 
-QGenericItemModel colorModel(colors);
+QRangeModel colorModel(colors);
 QListView list;
 list.setModel(&colorModel);
 //! [color_gadget_1]

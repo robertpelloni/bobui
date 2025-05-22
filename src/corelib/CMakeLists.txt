@@ -1170,7 +1170,7 @@ qt_internal_extend_target(Core CONDITION QT_FEATURE_itemmodel
     SOURCES
         itemmodels/qabstractitemmodel.cpp itemmodels/qabstractitemmodel.h itemmodels/qabstractitemmodel_p.h
         itemmodels/qitemselectionmodel.cpp itemmodels/qitemselectionmodel.h itemmodels/qitemselectionmodel_p.h
-        itemmodels/qgenericitemmodel.h itemmodels/qgenericitemmodel_impl.h itemmodels/qgenericitemmodel.cpp
+        itemmodels/qrangemodel.h itemmodels/qrangemodel_impl.h itemmodels/qrangemodel.cpp
 )
 
 qt_internal_extend_target(Core CONDITION QT_FEATURE_proxymodel
