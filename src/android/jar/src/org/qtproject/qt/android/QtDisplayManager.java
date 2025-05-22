@@ -29,8 +29,11 @@ import android.graphics.Color;
 import android.util.TypedValue;
 import android.content.res.Resources.Theme;
 
-class QtDisplayManager {
+import android.util.Log;
 
+class QtDisplayManager
+{
+    private static String QtTAG = "QtDisplayManager";
     // screen methods
     static native void handleLayoutSizeChanged(int availableWidth, int availableHeight);
     static native void handleOrientationChanged(int newRotation, int nativeOrientation);
@@ -279,13 +282,18 @@ class QtDisplayManager {
             display.getRealMetrics(metrics);
             return new Size(metrics.widthPixels, metrics.heightPixels);
         } else {
-            Context displayContext = context.createDisplayContext(display);
-            Context windowsContext = displayContext.createWindowContext(
-                    WindowManager.LayoutParams.TYPE_APPLICATION, null);
-            WindowManager windowManager = (WindowManager) windowsContext.getSystemService(
-                    Context.WINDOW_SERVICE);
-            Rect bounds = windowManager.getMaximumWindowMetrics().getBounds();
-            return new Size(bounds.width(), bounds.height());
+            try {
+                Context displayContext = context.createDisplayContext(display);
+                Context windowsContext = displayContext.createWindowContext(
+                        WindowManager.LayoutParams.TYPE_APPLICATION, null);
+                WindowManager windowManager = (WindowManager) windowsContext.getSystemService(
+                        Context.WINDOW_SERVICE);
+                Rect bounds = windowManager.getMaximumWindowMetrics().getBounds();
+                return new Size(bounds.width(), bounds.height());
+            } catch (SecurityException e) {
+                Log.e(QtTAG, "Failed to retrieve display metrics with " + e);
+                return new Size(0, 0);
+            }
         }
     }
 
