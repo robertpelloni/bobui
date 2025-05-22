@@ -64,7 +64,7 @@ Q_CORE_EXPORT void qBadAlloc();
 
 #ifdef QT_NO_EXCEPTIONS
 #  if defined(QT_NO_DEBUG) && !defined(QT_FORCE_ASSERTS)
-#    define Q_CHECK_PTR(p) QT_PREPEND_NAMESPACE(qt_noop)()
+#    define Q_CHECK_PTR(p) qt_noop()
 #  else
 #    define Q_CHECK_PTR(p) do {if (!(p)) QT_PREPEND_NAMESPACE(qt_check_pointer)(__FILE__,__LINE__);} while (false)
 #  endif
