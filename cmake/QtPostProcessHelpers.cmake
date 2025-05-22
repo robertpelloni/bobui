@@ -791,6 +791,7 @@ function(qt_modules_process_android_dependencies)
     foreach (target ${repo_known_modules})
         qt_internal_android_dependencies(${target})
         qt_internal_android_add_interface_permissions(${target})
+        qt_internal_android_add_interface_features(${target})
     endforeach()
 endfunction()
 

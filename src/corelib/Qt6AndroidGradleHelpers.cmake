@@ -430,6 +430,17 @@ function(_qt_internal_android_generate_target_android_manifest target)
 
     _qt_internal_android_convert_permissions(APP_PERMISSIONS ${target} XML)
 
+    set(feature_prefix "\n    <uses-feature android:name=\"")
+    set(feature_suffix " \" android:required=\"false\" /$<ANGLE-R>")
+    set(feature_property "$<TARGET_PROPERTY:${target},QT_ANDROID_FEATURES>")
+    string(JOIN "" APP_FEATURES
+        "$<$<BOOL:${feature_property}>:"
+            "${feature_prefix}"
+            "$<JOIN:${feature_property},${feature_suffix},${feature_prefix}>"
+            "${feature_suffix}"
+        ">"
+    )
+
     set(APP_ARGUMENTS "${QT_ANDROID_APPLICATION_ARGUMENTS}")
 
     _qt_internal_configure_file(GENERATE OUTPUT "${out_file}.tmp"

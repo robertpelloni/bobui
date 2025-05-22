@@ -491,3 +491,15 @@ function(qt_internal_android_add_interface_permissions target)
     qt_internal_set_module_transitive_properties(${target} TYPE LINK PROPERTIES
         INTERFACE_QT_ANDROID_PERMISSIONS "${postprocessed_permissions}")
 endfunction()
+
+# The function stores Android features that are required by the module target.
+# The stored INTERFACE_QT_ANDROID_FEATURES is the transitive property.
+function(qt_internal_android_add_interface_features target)
+    get_target_property(features ${target} QT_ANDROID_FEATURES)
+    if(NOT features)
+        return()
+    endif()
+
+    qt_internal_set_module_transitive_properties(${target} TYPE LINK PROPERTIES
+        INTERFACE_QT_ANDROID_FEATURES "${features}")
+endfunction()
