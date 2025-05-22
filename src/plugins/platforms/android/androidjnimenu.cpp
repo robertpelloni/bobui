@@ -48,13 +48,13 @@ namespace QtAndroidMenu
     void resetMenuBar()
     {
         AndroidBackendRegister *reg = QtAndroid::backendRegister();
-        reg->callInterface<QtJniTypes::QtMenuInterface, void>("resetOptionsMenu");
+        reg->callInterface<QtJniTypes::QtMenuInterface>("resetOptionsMenu");
     }
 
     void openOptionsMenu()
     {
         AndroidBackendRegister *reg = QtAndroid::backendRegister();
-        reg->callInterface<QtJniTypes::QtMenuInterface, void>("openOptionsMenu");
+        reg->callInterface<QtJniTypes::QtMenuInterface>("openOptionsMenu");
     }
 
     void showContextMenu(QAndroidPlatformMenu *menu, const QRect &anchorRect)
@@ -75,7 +75,7 @@ namespace QtAndroidMenu
         QMutexLocker lock(&visibleMenuMutex);
         if (visibleMenu == menu) {
             AndroidBackendRegister *reg = QtAndroid::backendRegister();
-            reg->callInterface<QtJniTypes::QtMenuInterface, void>("closeContextMenu");
+            reg->callInterface<QtJniTypes::QtMenuInterface>("closeContextMenu");
             pendingContextMenus.clear();
         } else {
             pendingContextMenus.removeOne(menu);

@@ -105,7 +105,7 @@ public:
 
         If the interface is not registered, a warning is printed and an empty object is returned.
     */
-    template <typename Interface, typename Ret, typename... Args,
+    template <typename Interface, typename Ret = void, typename... Args,
               ValidInterfaceType<Interface> = true>
     auto callInterface(const char *func, Args... args)
     {
