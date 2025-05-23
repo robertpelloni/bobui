@@ -748,10 +748,13 @@ void tst_QDate::startOfDay_endOfDay_bounds()
     // First, check these *are* the start and end of QDateTime's range:
     QVERIFY(first.isValid());
     QVERIFY(last.isValid());
-    QVERIFY(first < epoch);
-    QVERIFY(last > epoch);
-    QVERIFY(!first.addMSecs(-1).isValid() || first.addMSecs(-1) > first);
-    QVERIFY(!last.addMSecs(1).isValid() || last.addMSecs(1) < last);
+    QCOMPARE_LT(first, epoch);
+    QCOMPARE_GT(last, epoch);
+    // Step off end of range => either invalid or at opposite end:
+    if (first.addMSecs(-1).isValid())
+        QCOMPARE_GT(first.addMSecs(-1), first);
+    if (last.addMSecs(1).isValid())
+        QCOMPARE_LT(last.addMSecs(1), last);
 
     // Now test start/end methods with them:
     QCOMPARE(first.date().endOfDay(UTC).time(), QTime(23, 59, 59, 999));

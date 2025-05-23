@@ -61,7 +61,7 @@ static void checkCenturyResolution(const QCalendar &cal, const QCalendar::YearMo
                 QCOMPARE_LT(gap / 100, 8);
                 QCOMPARE_GT(gap / 100, -8);
             } else {
-                QVERIFY(gap / 100 >= 8 || gap / 100 <= -8);
+                QCOMPARE_GE(qAbs(gap) / 100, 8);
             }
             report.dismiss();
         } else {
@@ -79,16 +79,16 @@ void tst_QCalendar::checkYear(const QCalendar &cal, int year)
 {
     const int moons = cal.monthsInYear(year);
     // Months are numbered from 1 to moons:
-    QVERIFY(moons > 0);
+    QCOMPARE_GT(moons, 0);
     QVERIFY(!cal.isDateValid(year, moons + 1, 1));
     QVERIFY(!cal.isDateValid(year, 0, 1));
     QVERIFY(!QDate(year, 0, 1, cal).isValid());
-    QVERIFY(moons <= cal.maximumMonthsInYear());
+    QCOMPARE_LE(moons, cal.maximumMonthsInYear());
     QCOMPARE(cal.standaloneMonthName(QLocale::c(), moons + 1, year), QString());
     QCOMPARE(cal.monthName(QLocale::c(), 0, year), QString());
 
     const int days = cal.daysInYear(year);
-    QVERIFY(days > 0);
+    QCOMPARE_GT(days, 0);
 
     int sum = 0;
     const int longest = cal.maximumDaysInMonth();
@@ -96,8 +96,8 @@ void tst_QCalendar::checkYear(const QCalendar &cal, int year)
         const int last = cal.daysInMonth(i, year);
         sum += last;
         // Valid month has some days and no more than max:
-        QVERIFY(last > 0);
-        QVERIFY(last <= longest);
+        QCOMPARE_GT(last, 0);
+        QCOMPARE_LE(last, longest);
         // Days are numbered from 1 to last:
         QVERIFY(cal.isDateValid(year, i, 1));
         QVERIFY(cal.isDateValid(year, i, last));
@@ -167,7 +167,7 @@ void tst_QCalendar::basic()
         for (int i = 10; i > 0 && cal.isLeapYear(year); --i)
             year--;
         if (!cal.isLeapYear(year))
-            QVERIFY(cal.daysInYear(year) < cal.daysInYear(leap));
+            QCOMPARE_LT(cal.daysInYear(year), cal.daysInYear(leap));
 
         CHECKYEAR(cal, leap);
     }
@@ -426,13 +426,13 @@ void tst_QCalendar::gregory()
                           lastTwo <= 31 && lastTwo > 12 ? lastTwo : 17);
         const int match = QGregorianCalendar::yearSharingWeekDays(probe);
         // A post-epoch year, no later than 2400 (implies four-digit):
-        QVERIFY(match >= 1970);
-        QVERIFY(match <= 2400);
+        QCOMPARE_GE(match, 1970);
+        QCOMPARE_LE(match, 2400);
         // Either that's the year we started with or:
         if (match != year) {
             // Its last two digits can't be mistaken for month or day:
-            QVERIFY(match % 100 != probe.month());
-            QVERIFY(match % 100 != probe.day());
+            QCOMPARE_NE(match % 100, probe.month());
+            QCOMPARE_NE(match % 100, probe.day());
             // If that wasn't in danger of happening, with year positive, they match lastTwo:
             if (year > 0 && lastTwo > 31)
                 QCOMPARE(match % 100, lastTwo);

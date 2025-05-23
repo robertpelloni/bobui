@@ -322,11 +322,11 @@ void tst_QDateTime::ctor()
     QDateTime dt3(QDate(2004, 1, 2), QTime(1, 2, 3), UTC);
     QCOMPARE(dt3.timeSpec(), Qt::UTC);
 
-    QVERIFY(dt1 == dt2);
+    QCOMPARE(dt1, dt2);
     if (zoneIsCET) {
-        QVERIFY(dt1 != dt3);
-        QVERIFY(dt1 < dt3);
-        QVERIFY(dt1.addSecs(3600).toUTC() == dt3);
+        QCOMPARE_NE(dt1, dt3);
+        QCOMPARE_LT(dt1, dt3);
+        QCOMPARE(dt1.addSecs(3600).toUTC(), dt3);
     }
 
     // Test OffsetFromUTC constructors
@@ -361,11 +361,11 @@ void tst_QDateTime::ctor()
 
 void tst_QDateTime::operator_eq()
 {
-    QVERIFY(QDateTime() != QDate(1970, 1, 1).startOfDay()); // QTBUG-79006
+    QCOMPARE_NE(QDateTime(), QDate(1970, 1, 1).startOfDay()); // QTBUG-79006
     QDateTime dt1(QDate(2004, 3, 24), QTime(23, 45, 57), UTC);
     QDateTime dt2(QDate(2005, 3, 11), QTime(0, 0), UTC);
     dt2 = dt1;
-    QVERIFY(dt1 == dt2);
+    QCOMPARE(dt1, dt2);
 }
 
 void tst_QDateTime::moveSemantics()
@@ -1163,7 +1163,7 @@ void tst_QDateTime::toString_textDate_extra()
 
 #if QT_CONFIG(timezone)
     if (QTimeZone::systemTimeZone().offsetFromUtc(dt))
-        QVERIFY(dt.toString() != QLatin1String("Thu Jan 1 00:00:00 1970"));
+        QCOMPARE_NE(dt.toString(), QLatin1String("Thu Jan 1 00:00:00 1970"));
     else
         QCOMPARE(dt.toString(), QLatin1String("Thu Jan 1 00:00:00 1970"));
 
@@ -1187,7 +1187,7 @@ void tst_QDateTime::toString_textDate_extra()
     }
 #else // timezone
     if (dt.offsetFromUtc())
-        QVERIFY(dt.toString() != QLatin1String("Thu Jan 1 00:00:00 1970"));
+        QCOMPARE_NE(dt.toString(), QLatin1String("Thu Jan 1 00:00:00 1970"));
     else
         QCOMPARE(dt.toString(), QLatin1String("Thu Jan 1 00:00:00 1970"));
 #endif
@@ -1285,9 +1285,13 @@ void tst_QDateTime::addDays()
     };
     for (const auto &zone : zones) {
         QDateTime dt = QDateTime(QDate(2004, 1, 1), QTime(12, 34, 56), zone).addDays(185);
-        QVERIFY(dt.date().year() == 2004 && dt.date().month() == 7 && dt.date().day() == 4);
-        QVERIFY(dt.time().hour() == 12 && dt.time().minute() == 34 && dt.time().second() == 56
-               && dt.time().msec() == 0);
+        QCOMPARE(dt.date().year(), 2004);
+        QCOMPARE(dt.date().month(), 7);
+        QCOMPARE(dt.date().day(), 4);
+        QCOMPARE(dt.time().hour(), 12);
+        QCOMPARE(dt.time().minute(), 34);
+        QCOMPARE(dt.time().second(), 56);
+        QCOMPARE(dt.time().msec(), 0);
         QCOMPARE(dt.timeRepresentation(), zone);
 
         dt = dt.addDays(-185);
@@ -1994,15 +1998,15 @@ void tst_QDateTime::secsTo()
     if (result.isValid()) {
         QCOMPARE(dt.secsTo(result), (qint64)nsecs);
         QCOMPARE(result.secsTo(dt), (qint64)-nsecs);
-        QVERIFY((dt == result) == (0 == nsecs));
-        QVERIFY((dt != result) == (0 != nsecs));
-        QVERIFY((dt < result) == (0 < nsecs));
-        QVERIFY((dt <= result) == (0 <= nsecs));
-        QVERIFY((dt > result) == (0 > nsecs));
-        QVERIFY((dt >= result) == (0 >= nsecs));
+        QCOMPARE(dt == result, 0 == nsecs);
+        QCOMPARE(dt != result, 0 != nsecs);
+        QCOMPARE(dt < result, 0 < nsecs);
+        QCOMPARE(dt <= result, 0 <= nsecs);
+        QCOMPARE(dt > result, 0 > nsecs);
+        QCOMPARE(dt >= result, 0 >= nsecs);
     } else {
-        QVERIFY(dt.secsTo(result) == 0);
-        QVERIFY(result.secsTo(dt) == 0);
+        QCOMPARE(dt.secsTo(result), 0);
+        QCOMPARE(result.secsTo(dt), 0);
     }
 }
 
@@ -2017,16 +2021,16 @@ void tst_QDateTime::msecsTo()
         QCOMPARE(result - dt, std::chrono::milliseconds(nsecs * 1000));
         QCOMPARE(result.msecsTo(dt), -qint64(nsecs) * 1000);
         QCOMPARE(dt - result, -std::chrono::milliseconds(nsecs * 1000));
-        QVERIFY((dt == result) == (0 == (qint64(nsecs) * 1000)));
-        QVERIFY((dt != result) == (0 != (qint64(nsecs) * 1000)));
-        QVERIFY((dt < result) == (0 < (qint64(nsecs) * 1000)));
-        QVERIFY((dt <= result) == (0 <= (qint64(nsecs) * 1000)));
-        QVERIFY((dt > result) == (0 > (qint64(nsecs) * 1000)));
-        QVERIFY((dt >= result) == (0 >= (qint64(nsecs) * 1000)));
+        QCOMPARE(dt == result, 0 == nsecs);
+        QCOMPARE(dt != result, 0 != nsecs);
+        QCOMPARE(dt < result, 0 < nsecs);
+        QCOMPARE(dt <= result, 0 <= nsecs);
+        QCOMPARE(dt > result, 0 > nsecs);
+        QCOMPARE(dt >= result, 0 >= nsecs);
     } else {
-        QVERIFY(dt.msecsTo(result) == 0);
+        QCOMPARE(dt.msecsTo(result), 0);
         QCOMPARE(result - dt, std::chrono::milliseconds(0));
-        QVERIFY(result.msecsTo(dt) == 0);
+        QCOMPARE(result.msecsTo(dt), 0);
         QCOMPARE(dt - result, std::chrono::milliseconds(0));
     }
 }
@@ -2518,8 +2522,8 @@ void tst_QDateTime::operator_eqeq()
     QT_TEST_EQUALITY_OPS(dt2, dt2, true);
     QT_TEST_EQUALITY_OPS(dt1, dt2, expectEqual);
 
-    QVERIFY(dt1 != QDateTime::currentDateTime());
-    QVERIFY(dt2 != QDateTime::currentDateTime());
+    QCOMPARE_NE(dt1, QDateTime::currentDateTime());
+    QCOMPARE_NE(dt2, QDateTime::currentDateTime());
 
     QVERIFY(dt1.toUTC() == dt1.toUTC());
 
@@ -2527,8 +2531,8 @@ void tst_QDateTime::operator_eqeq()
         QVERIFY(qHash(dt1) == qHash(dt2));
 
     if (checkEuro && zoneIsCET) {
-        QVERIFY(dt1.toUTC() == dt2);
-        QVERIFY(dt1 == dt2.toLocalTime());
+        QCOMPARE(dt1.toUTC(), dt2);
+        QCOMPARE(dt1, dt2.toLocalTime());
     }
 }
 
@@ -3894,8 +3898,10 @@ void tst_QDateTime::utcOffsetLessThan() const
     dt1.setTimeZone(QTimeZone::fromSecondsAheadOfUtc(-(2 * 60 * 60))); // Minus two hours.
     dt2.setTimeZone(QTimeZone::fromSecondsAheadOfUtc(-(3 * 60 * 60))); // Minus three hours.
 
+    QCOMPARE_NE(dt1, dt2);
     QVERIFY(dt1 != dt2);
     QVERIFY(!(dt1 == dt2));
+    QCOMPARE_LT(dt1, dt2);
     QVERIFY(dt1 < dt2);
     QVERIFY(!(dt2 < dt1));
 }
@@ -4354,7 +4360,7 @@ void tst_QDateTime::timeZones() const
     QCOMPARE(nzStd.timeSpec(), Qt::TimeZone);
     QCOMPARE(nzStd.date(), QDate(2012, 6, 1));
     QCOMPARE(nzStd.time(), QTime(12, 0));
-    QVERIFY(nzStd.timeZone() == nzTz);
+    QCOMPARE(nzStd.timeZone(), nzTz);
     QCOMPARE(nzStd.timeZone().id(), QByteArray("Pacific/Auckland"));
     QCOMPARE(nzStd.offsetFromUtc(), 43200);
     QVERIFY(!nzStd.isDaylightTime());
@@ -4364,7 +4370,7 @@ void tst_QDateTime::timeZones() const
     QCOMPARE(nzStdOffset.timeSpec(), Qt::TimeZone);
     QCOMPARE(nzStdOffset.date(), QDate(2012, 6, 1));
     QCOMPARE(nzStdOffset.time(), QTime(12, 0));
-    QVERIFY(nzStdOffset.timeZone() == nzTzOffset);
+    QCOMPARE(nzStdOffset.timeZone(), nzTzOffset);
     QCOMPARE(nzStdOffset.timeZone().id(), QByteArray("UTC+12:00"));
     QCOMPARE(nzStdOffset.offsetFromUtc(), 43200);
     QVERIFY(!nzStdOffset.isDaylightTime());
@@ -4631,7 +4637,7 @@ void tst_QDateTime::systemTimeZoneChange() const
 
     QCOMPARE(localDate, QDateTime(date, early));
     // Note: localDate.toMSecsSinceEpoch == localMsecs, unchanged, iff localDate is pimpled.
-    QVERIFY(localMsecs != QDateTime(date, early).toMSecsSinceEpoch());
+    QCOMPARE_NE(localMsecs, QDateTime(date, early).toMSecsSinceEpoch());
     QCOMPARE(utcDate, QDateTime(date, early, UTC));
     QCOMPARE(utcDate.toMSecsSinceEpoch(), utcMsecs);
 #if QT_CONFIG(timezone)
