@@ -2631,18 +2631,20 @@ void tst_QDateTime::operator_insert_extract_data()
     const QByteArray westernAustralia("AWST-8AWDT-9,M10.5.0,M3.5.0/03:00:00");
     const QByteArray hawaii("HAW10");
 
-    const QDataStream tmpDataStream;
-    const int thisVersion = tmpDataStream.version();
-    for (int version = QDataStream::Qt_1_0; version <= thisVersion; ++version) {
-        const QDataStream::Version dataStreamVersion = static_cast<QDataStream::Version>(version);
-        const QByteArray vN = QByteArray::number(dataStreamVersion);
-        QTest::addRow("v%d WA => HAWAII %d", version, 2012)
+    const QMetaEnum e = QMetaEnum::fromType<QDataStream::Version>();
+    for (int version = QDataStream::Qt_1_0; version <= QDataStream::Qt_DefaultCompiledVersion;
+         ++version) {
+        if (e.value(version) == -1 || qstrcmp(e.key(version), "Qt_DefaultCompiledVersion") == 0)
+            continue;
+        const auto dataStreamVersion = static_cast<QDataStream::Version>(version);
+        const char *const tag = e.key(version);
+        QTest::addRow("%s WA => HAWAII %d", tag, 2012)
             << 2012 << westernAustralia << hawaii << dataStreamVersion;
-        QTest::addRow("v%d WA => WA %d", version, 2012)
+        QTest::addRow("%s WA => WA %d", tag, 2012)
             << 2012 << westernAustralia << westernAustralia << dataStreamVersion;
-        QTest::addRow("v%d HAWAII => WA %d", version, -2012)
+        QTest::addRow("%s HAWAII => WA %d", tag, -2012)
             << -2012 << hawaii << westernAustralia << dataStreamVersion;
-        QTest::addRow("v%d HAWAII => HAWAII %d", version, 2012)
+        QTest::addRow("%s HAWAII => HAWAII %d", tag, 2012)
             << 2012 << hawaii << hawaii << dataStreamVersion;
     }
 }
