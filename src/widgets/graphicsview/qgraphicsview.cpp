@@ -2214,7 +2214,7 @@ QList<QGraphicsItem *> QGraphicsView::items() const
 
     This function is most commonly called from within mouse event handlers in
     a subclass in QGraphicsView. \a pos is in untransformed viewport
-    coordinates, just like QMouseEvent::pos().
+    coordinates, just like QMouseEvent::position().
 
     \snippet code/src_gui_graphicsview_qgraphicsview.cpp 5
 

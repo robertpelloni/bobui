@@ -9496,14 +9496,14 @@ void QWidget::changeEvent(QEvent * event)
     tracking is switched on, mouse move events occur even if no mouse
     button is pressed.
 
-    QMouseEvent::pos() reports the position of the mouse cursor,
+    QMouseEvent::position() reports the position of the mouse cursor,
     relative to this widget. For press and release events, the
     position is usually the same as the position of the last mouse
     move event, but it might be different if the user's hand shakes.
     This is a feature of the underlying window system, not Qt.
 
     If you want to show a tooltip immediately, while the mouse is
-    moving (e.g., to get the mouse coordinates with QMouseEvent::pos()
+    moving (e.g., to get the mouse coordinates with QMouseEvent::position()
     and show them as a tooltip), you must first enable mouse tracking
     as described above. Then, to ensure that the tooltip is updated
     immediately, you must call QToolTip::showText() instead of

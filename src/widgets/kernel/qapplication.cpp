@@ -238,8 +238,7 @@ void QApplicationPrivate::createEventDispatcher()
             palette(),
             setPalette(),
             font(),
-            setFont(),
-            fontMetrics().
+            setFont().
 
         \row
         \li  Event handling
