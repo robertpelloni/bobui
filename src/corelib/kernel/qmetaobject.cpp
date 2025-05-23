@@ -1733,16 +1733,8 @@ bool QMetaObject::invokeMethodImpl(QObject *object, QtPrivate::QSlotObjectBase *
                      "queued connections");
             return false;
         }
-        auto event = std::make_unique<QMetaCallEvent>(std::move(slot), nullptr, -1, parameterCount);
-        void **args = event->args();
-        QMetaType *types = event->types();
-
-        for (int i = 1; i < parameterCount; ++i) {
-            types[i] = QMetaType(metaTypes[i]);
-            args[i] = types[i].create(argv[i]);
-        }
-
-        QCoreApplication::postEvent(object, event.release());
+        QCoreApplication::postEvent(object, new QQueuedMetaCallEvent(std::move(slot), nullptr, -1,
+                                                                     parameterCount, metaTypes, params));
     } else if (type == Qt::BlockingQueuedConnection) {
 #if QT_CONFIG(thread)
         if (receiverInSameThread)
@@ -2889,31 +2881,27 @@ auto QMetaMethodInvoker::invokeImpl(QMetaMethod self, void *target,
             return InvokeFailReason::CouldNotQueueParameter;
         }
 
-        auto event = std::make_unique<QMetaCallEvent>(idx_offset, idx_relative, callFunction, nullptr, -1, paramCount);
-        QMetaType *types = event->types();
-        void **args = event->args();
-
+        QVarLengthArray<const QtPrivate::QMetaTypeInterface *> argTypes;
+        argTypes.emplace_back(nullptr); // return type
         // fill in the meta types first
         for (int i = 1; i < paramCount; ++i) {
-            types[i] = QMetaType(methodMetaTypes[i - 1]);
-            if (!types[i].iface() && (!MetaTypesAreOptional || metaTypes))
-                types[i] = QMetaType(metaTypes[i]);
-            if (!types[i].iface())
-                types[i] = priv->parameterMetaType(i - 1);
-            if (!types[i].iface() && typeNames[i])
-                types[i] = QMetaType::fromName(typeNames[i]);
-            if (!types[i].iface()) {
+            QMetaType type = QMetaType(methodMetaTypes[i - 1]);
+            if (!type.iface() && (!MetaTypesAreOptional || metaTypes))
+                type = QMetaType(metaTypes[i]);
+            if (!type.iface())
+                type = priv->parameterMetaType(i - 1);
+            if (!type.iface() && typeNames[i])
+                type = QMetaType::fromName(typeNames[i]);
+            if (!type.iface()) {
                 qWarning("QMetaMethod::invoke: Unable to handle unregistered datatype '%s'",
                          typeNames[i]);
                 return InvokeFailReason(int(InvokeFailReason::CouldNotQueueParameter) - i);
             }
+            argTypes.emplace_back(type.iface());
         }
 
-        // now create copies of our parameters using those meta types
-        for (int i = 1; i < paramCount; ++i)
-            args[i] = types[i].create(parameters[i]);
-
-        QCoreApplication::postEvent(object, event.release());
+        QCoreApplication::postEvent(object, new QQueuedMetaCallEvent(idx_offset, idx_relative, callFunction, nullptr,
+                                                                     -1, paramCount, argTypes.data(), parameters));
     } else { // blocking queued connection
 #if QT_CONFIG(thread)
         if (receiverInSameThread()) {

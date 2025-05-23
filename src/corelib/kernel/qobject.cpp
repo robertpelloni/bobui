@@ -599,14 +599,19 @@ QMetaCallEvent::QMetaCallEvent(QtPrivate::SlotObjUniquePtr slotO,
 /*!
     \internal
  */
+QMetaCallEvent::QMetaCallEvent(const QObject *sender, int signalId, Data &&data)
+    : QAbstractMetaCallEvent(sender, signalId),
+      d(std::move(data)),
+      prealloc_()
+{
+}
+
+/*!
+    \internal
+ */
 QMetaCallEvent::~QMetaCallEvent()
 {
     if (d.nargs_) {
-        QMetaType *t = types();
-        for (int i = 0; i < d.nargs_; ++i) {
-            if (t[i].isValid() && d.args_[i])
-                t[i].destroy(d.args_[i]);
-        }
         if (reinterpret_cast<void *>(d.args_) != reinterpret_cast<void *>(prealloc_))
             free(d.args_);
     }
@@ -625,6 +630,115 @@ void QMetaCallEvent::placeMetaCall(QObject *object)
         QMetaObject::metacall(object, QMetaObject::InvokeMetaMethod,
                               d.method_offset_ + d.method_relative_, d.args_);
     }
+}
+
+/*!
+    \internal
+
+    Constructs a QQueuedMetaCallEvent by copying the argument values using their meta-types.
+ */
+QQueuedMetaCallEvent::QQueuedMetaCallEvent(ushort method_offset, ushort method_relative,
+                                           QObjectPrivate::StaticMetaCallFunction callFunction,
+                                           const QObject *sender, int signalId, int argCount,
+                                           const QtPrivate::QMetaTypeInterface * const *argTypes,
+                                           const void * const *argValues)
+    : QMetaCallEvent(sender, signalId, {nullptr, nullptr, callFunction, argCount,
+                     method_offset, method_relative})
+{
+    allocArgs();
+    copyArgValues(argCount, argTypes, argValues);
+}
+
+/*!
+    \internal
+
+    Constructs a QQueuedMetaCallEvent by copying the argument values using their meta-types.
+ */
+QQueuedMetaCallEvent::QQueuedMetaCallEvent(QtPrivate::QSlotObjectBase *slotObj,
+                                           const QObject *sender, int signalId, int argCount,
+                                           const QtPrivate::QMetaTypeInterface * const *argTypes,
+                                           const void * const *argValues)
+    : QMetaCallEvent(sender, signalId, {QtPrivate::SlotObjUniquePtr(slotObj), nullptr, nullptr, argCount,
+                     0, ushort(-1)})
+{
+    if (d.slotObj_)
+        d.slotObj_->ref();
+    allocArgs();
+    copyArgValues(argCount, argTypes, argValues);
+}
+
+/*!
+    \internal
+
+    Constructs a QQueuedMetaCallEvent by copying the argument values using their meta-types.
+ */
+QQueuedMetaCallEvent::QQueuedMetaCallEvent(QtPrivate::SlotObjUniquePtr slotObj,
+                                           const QObject *sender, int signalId, int argCount,
+                                           const QtPrivate::QMetaTypeInterface * const *argTypes,
+                                           const void * const *argValues)
+    : QMetaCallEvent(sender, signalId, {std::move(slotObj), nullptr, nullptr, argCount,
+                     0, ushort(-1)})
+{
+    allocArgs();
+    copyArgValues(argCount, argTypes, argValues);
+}
+
+/*!
+    \internal
+ */
+QQueuedMetaCallEvent::~QQueuedMetaCallEvent()
+{
+    const QMetaType *t = types();
+    int inplaceIndex = 0;
+    for (int i = 0; i < d.nargs_; ++i) {
+        if (t[i].isValid() && d.args_[i]) {
+            if (typeFitsInPlace(t[i]) && inplaceIndex < InplaceValuesCapacity) {
+                // Only destruct
+                void *where = &valuesPrealloc_[inplaceIndex++].storage;
+                t[i].destruct(where);
+            } else {
+                // Destruct and deallocate
+                t[i].destroy(d.args_[i]);
+            }
+        }
+    }
+}
+
+/*!
+    \internal
+ */
+inline void QQueuedMetaCallEvent::copyArgValues(int argCount, const QtPrivate::QMetaTypeInterface * const *argTypes,
+                                                const void * const *argValues)
+{
+    void **args = d.args_;
+    QMetaType *types = this->types();
+    int inplaceIndex = 0;
+
+    types[0] = QMetaType(); // return type
+    args[0] = nullptr; // return value pointer
+    // no return value
+
+    for (int n = 1; n < argCount; ++n) {
+        types[n] = QMetaType(argTypes[n]);
+        if (typeFitsInPlace(types[n]) && inplaceIndex < InplaceValuesCapacity) {
+            // Copy-construct in place
+            void *where = &valuesPrealloc_[inplaceIndex++].storage;
+            types[n].construct(where, argValues[n]);
+            args[n] = where;
+        } else {
+            // Allocate and copy-construct
+            args[n] = types[n].create(argValues[n]);
+        }
+    }
+}
+
+/*!
+    \internal
+ */
+inline bool QQueuedMetaCallEvent::typeFitsInPlace(const QMetaType type)
+{
+    return (q20::cmp_less_equal(type.sizeOf(), sizeof(ArgValueStorage)) &&
+            q20::cmp_less_equal(type.alignOf(), alignof(ArgValueStorage)));
 }
 
 /*!
@@ -4069,26 +4183,19 @@ static void queued_activate(QObject *sender, int signal, QObjectPrivate::Connect
     SlotObjectGuard slotObjectGuard { c->isSlotObject ? c->slotObj : nullptr };
     locker.unlock();
 
-    QMetaCallEvent *ev = c->isSlotObject ?
-        new QMetaCallEvent(c->slotObj, sender, signal, nargs) :
-        new QMetaCallEvent(c->method_offset, c->method_relative, c->callFunction, sender, signal, nargs);
-
-    void **args = ev->args();
-    QMetaType *types = ev->types();
-
-    types[0] = QMetaType(); // return type
-    args[0] = nullptr; // return value
-
-    if (nargs > 1) {
-        for (int n = 1; n < nargs; ++n)
-            types[n] = QMetaType(argumentTypes[n - 1]);
-
-        for (int n = 1; n < nargs; ++n)
-            args[n] = types[n].create(argv[n]);
+    QVarLengthArray<const QtPrivate::QMetaTypeInterface *> argTypes;
+    argTypes.emplace_back(nullptr); // return type
+    for (int n = 1; n < nargs; ++n) {
+        argTypes.emplace_back(QMetaType(argumentTypes[n - 1]).iface()); // convert type ids to QMetaTypeInterfaces
     }
 
+    auto ev = c->isSlotObject ?
+        std::make_unique<QQueuedMetaCallEvent>(c->slotObj,
+                                               sender, signal, nargs, argTypes.data(), argv) :
+        std::make_unique<QQueuedMetaCallEvent>(c->method_offset, c->method_relative, c->callFunction,
+                                               sender, signal, nargs, argTypes.data(), argv);
+
     if (c->isSingleShot && !QObjectPrivate::removeConnection(c)) {
-        delete ev;
         return;
     }
 
@@ -4096,11 +4203,10 @@ static void queued_activate(QObject *sender, int signal, QObjectPrivate::Connect
     if (!c->isSingleShot && !c->receiver.loadRelaxed()) {
         // the connection has been disconnected while we were unlocked
         locker.unlock();
-        delete ev;
         return;
     }
 
-    QCoreApplication::postEvent(receiver, ev);
+    QCoreApplication::postEvent(receiver, ev.release());
 }
 
 template <bool callbacks_enabled>
