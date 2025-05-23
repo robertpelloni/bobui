@@ -37,17 +37,6 @@
 
 QT_BEGIN_NAMESPACE
 
-namespace {
-QWasmWindowStack::PositionPreference positionPreferenceFromWindowFlags(Qt::WindowFlags flags)
-{
-    if (flags.testFlag(Qt::WindowStaysOnTopHint))
-        return QWasmWindowStack::PositionPreference::StayOnTop;
-    if (flags.testFlag(Qt::WindowStaysOnBottomHint))
-        return QWasmWindowStack::PositionPreference::StayOnBottom;
-    return QWasmWindowStack::PositionPreference::Regular;
-}
-} // namespace
-
 Q_GUI_EXPORT int qt_defaultDpiX();
 
 QWasmWindow::QWasmWindow(QWindow *w, QWasmDeadKeySupport *deadKeySupport,
@@ -132,6 +121,16 @@ QWasmWindow::QWasmWindow(QWindow *w, QWasmDeadKeySupport *deadKeySupport,
 
     registerEventHandlers();
 
+    m_transientWindowChangedConnection =
+        QObject::connect(
+            window(), &QWindow::transientParentChanged,
+            window(), [this](QWindow *tp) { onTransientParentChanged(tp); });
+
+    m_modalityChangedConnection =
+            QObject::connect(
+                window(), &QWindow::modalityChanged,
+                window(), [this](Qt::WindowModality) { onModalityChanged(); });
+
     setParent(parent());
 }
 
@@ -214,6 +213,9 @@ QWasmWindow::~QWasmWindow()
 #if QT_CONFIG(accessibility)
     QWasmAccessibility::onRemoveWindow(window());
 #endif
+    QObject::disconnect(m_transientWindowChangedConnection);
+    QObject::disconnect(m_modalityChangedConnection);
+
     shutdown();
 
     emscripten::val::module_property("specialHTMLTargets").delete_(canvasSelector());
@@ -223,6 +225,37 @@ QWasmWindow::~QWasmWindow()
     commitParent(nullptr);
     if (m_requestAnimationFrameId > -1)
         emscripten_cancel_animation_frame(m_requestAnimationFrameId);
+}
+
+void QWasmWindow::shutdown()
+{
+    if (!window() ||
+        (QGuiApplication::focusWindow() && // Don't act if we have a focus window different from this
+         QGuiApplication::focusWindow() != window()))
+        return;
+
+    // Make a list of all windows sorted on active index.
+    // Skip windows with active index 0 as they have
+    // never been active.
+    std::map<uint64_t, QWasmWindow *> allWindows;
+    for (const auto &w : platformScreen()->allWindows()) {
+        if (w->getActiveIndex() > 0)
+            allWindows.insert({w->getActiveIndex(), w});
+    }
+
+    // window is not in all windows
+    if (getActiveIndex() > 0)
+        allWindows.insert({getActiveIndex(), this});
+
+    if (allWindows.size() >= 2) {
+        const auto lastIt = std::prev(allWindows.end());
+        const auto prevIt = std::prev(lastIt);
+        const auto lastW = lastIt->second;
+        const auto prevW = prevIt->second;
+
+        if (lastW == this) // Only act if window is last to be active
+            prevW->requestActivateWindow();
+    }
 }
 
 QSurfaceFormat QWasmWindow::format() const
@@ -235,6 +268,24 @@ QWasmWindow *QWasmWindow::fromWindow(const QWindow *window)
     if (!window ||!window->handle())
         return nullptr;
     return static_cast<QWasmWindow *>(window->handle());
+}
+
+QWasmWindow *QWasmWindow::transientParent() const
+{
+    if (!window())
+        return nullptr;
+
+    return fromWindow(window()->transientParent());
+}
+
+Qt::WindowFlags QWasmWindow::windowFlags() const
+{
+    return window()->flags();
+}
+
+bool QWasmWindow::isModal() const
+{
+    return window()->isModal();
 }
 
 void QWasmWindow::onRestoreClicked()
@@ -471,30 +522,14 @@ void QWasmWindow::onActivationChanged(bool active)
     dom::syncCSSClassWith(m_decoratedWindow, "inactive", !active);
 }
 
-// Fix top level window flags in case only the type flags are passed.
-static inline Qt::WindowFlags fixTopLevelWindowFlags(Qt::WindowFlags flags)
-{
-    if (!(flags.testFlag(Qt::CustomizeWindowHint))) {
-        if (flags.testFlag(Qt::Window)) {
-            flags |= Qt::WindowTitleHint | Qt::WindowSystemMenuHint
-                  |Qt::WindowMaximizeButtonHint|Qt::WindowCloseButtonHint;
-        }
-        if (flags.testFlag(Qt::Dialog) || flags.testFlag(Qt::Tool))
-            flags |= Qt::WindowTitleHint | Qt::WindowSystemMenuHint | Qt::WindowCloseButtonHint;
-
-        if ((flags & Qt::WindowType_Mask) == Qt::SplashScreen)
-            flags |= Qt::FramelessWindowHint;
-    }
-    return flags;
-}
-
 void QWasmWindow::setWindowFlags(Qt::WindowFlags flags)
 {
     flags = fixTopLevelWindowFlags(flags);
 
-    if (flags.testFlag(Qt::WindowStaysOnTopHint) != m_flags.testFlag(Qt::WindowStaysOnTopHint)
-        || flags.testFlag(Qt::WindowStaysOnBottomHint)
-                != m_flags.testFlag(Qt::WindowStaysOnBottomHint)) {
+    if ((flags.testFlag(Qt::WindowStaysOnTopHint) != m_flags.testFlag(Qt::WindowStaysOnTopHint))
+        || (flags.testFlag(Qt::WindowStaysOnBottomHint)
+            != m_flags.testFlag(Qt::WindowStaysOnBottomHint))
+        || shouldBeAboveTransientParentFlags(flags) != shouldBeAboveTransientParentFlags(m_flags)) {
         onPositionPreferenceChanged(positionPreferenceFromWindowFlags(flags));
     }
     m_flags = flags;
@@ -886,6 +921,55 @@ bool QWasmWindow::processWheel(const WheelEvent &event)
             Qt::MouseEventNotSynthesized, event.webkitDirectionInvertedFromDevice);
 }
 
+// Fix top level window flags in case only the type flags are passed.
+Qt::WindowFlags QWasmWindow::fixTopLevelWindowFlags(Qt::WindowFlags flags) const
+{
+    if (!(flags.testFlag(Qt::CustomizeWindowHint))) {
+        if (flags.testFlag(Qt::Window)) {
+            flags |= Qt::WindowTitleHint | Qt::WindowSystemMenuHint
+                  |Qt::WindowMaximizeButtonHint|Qt::WindowCloseButtonHint;
+        }
+        if (flags.testFlag(Qt::Dialog) || flags.testFlag(Qt::Tool))
+            flags |= Qt::WindowTitleHint | Qt::WindowSystemMenuHint | Qt::WindowCloseButtonHint;
+
+        if ((flags & Qt::WindowType_Mask) == Qt::SplashScreen)
+            flags |= Qt::FramelessWindowHint;
+    }
+    return flags;
+}
+
+bool QWasmWindow::shouldBeAboveTransientParentFlags(Qt::WindowFlags flags) const
+{
+    if (!transientParent())
+        return false;
+
+    if (isModal())
+        return true;
+
+    if (flags.testFlag(Qt::Tool) ||
+        flags.testFlag(Qt::SplashScreen) ||
+        flags.testFlag(Qt::ToolTip) ||
+        flags.testFlag(Qt::Popup))
+    {
+        return true;
+    }
+
+    return false;
+}
+
+QWasmWindowStack<>::PositionPreference QWasmWindow::positionPreferenceFromWindowFlags(Qt::WindowFlags flags) const
+{
+    flags = fixTopLevelWindowFlags(flags);
+
+    if (flags.testFlag(Qt::WindowStaysOnTopHint))
+        return QWasmWindowStack<>::PositionPreference::StayOnTop;
+    if (flags.testFlag(Qt::WindowStaysOnBottomHint))
+        return QWasmWindowStack<>::PositionPreference::StayOnBottom;
+    if (shouldBeAboveTransientParentFlags(flags))
+        return QWasmWindowStack<>::PositionPreference::StayAboveTransientParent;
+    return QWasmWindowStack<>::PositionPreference::Regular;
+}
+
 QRect QWasmWindow::normalGeometry() const
 {
     return m_normalGeometry;
@@ -996,6 +1080,22 @@ void QWasmWindow::setMask(const QRegion &region)
     m_decoratedWindow["style"].set("clipPath", emscripten::val(cssClipPath.str()));
 }
 
+void QWasmWindow::onTransientParentChanged(QWindow *newTransientParent)
+{
+    Q_UNUSED(newTransientParent);
+
+    const auto positionPreference = positionPreferenceFromWindowFlags(window()->flags());
+    QWasmWindowTreeNode::onParentChanged(parentNode(), nullptr, positionPreference);
+    QWasmWindowTreeNode::onParentChanged(nullptr, parentNode(), positionPreference);
+}
+
+void QWasmWindow::onModalityChanged()
+{
+    const auto positionPreference = positionPreferenceFromWindowFlags(window()->flags());
+    QWasmWindowTreeNode::onParentChanged(parentNode(), nullptr, positionPreference);
+    QWasmWindowTreeNode::onParentChanged(nullptr, parentNode(), positionPreference);
+}
+
 void QWasmWindow::setParent(const QPlatformWindow *)
 {
     // The window flags depend on whether we are a
@@ -1015,7 +1115,7 @@ emscripten::val QWasmWindow::containerElement()
     return m_window;
 }
 
-QWasmWindowTreeNode *QWasmWindow::parentNode()
+QWasmWindowTreeNode<> *QWasmWindow::parentNode()
 {
     if (parent())
         return static_cast<QWasmWindow *>(parent());
@@ -1028,7 +1128,7 @@ QWasmWindow *QWasmWindow::asWasmWindow()
 }
 
 void QWasmWindow::onParentChanged(QWasmWindowTreeNode *previous, QWasmWindowTreeNode *current,
-                                  QWasmWindowStack::PositionPreference positionPreference)
+                                  QWasmWindowStack<>::PositionPreference positionPreference)
 {
     if (previous)
         previous->containerElement().call<void>("removeChild", m_decoratedWindow);

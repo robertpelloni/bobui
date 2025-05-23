@@ -32,7 +32,7 @@ qt_internal_add_plugin(QWasmIntegrationPlugin
         qwasmwindowtreenode.cpp qwasmwindowtreenode.h
         qwasmwindownonclientarea.cpp qwasmwindownonclientarea.h
         qwasminputcontext.cpp qwasminputcontext.h
-        qwasmwindowstack.cpp qwasmwindowstack.h
+        qwasmwindowstack.h
     DEFINES
         QT_EGL_NO_X11
         QT_NO_FOREACH

@@ -37,7 +37,7 @@ struct WheelEvent;
 Q_DECLARE_LOGGING_CATEGORY(qLcQpaWasmInputContext)
 
 class QWasmWindow final : public QPlatformWindow,
-                          public QWasmWindowTreeNode,
+                          public QWasmWindowTreeNode<>,
                           public QNativeInterface::Private::QWasmWindow
 {
 public:
@@ -46,6 +46,9 @@ public:
     ~QWasmWindow() final;
 
     static QWasmWindow *fromWindow(const QWindow *window);
+    QWasmWindow *transientParent() const;
+    Qt::WindowFlags windowFlags() const;
+    bool isModal() const;
     QSurfaceFormat format() const override;
 
     void registerEventHandlers();
@@ -106,15 +109,23 @@ public:
     emscripten::val containerElement() final;
     QWasmWindowTreeNode *parentNode() final;
 
+public slots:
+    void onTransientParentChanged(QWindow *newTransientParent);
+    void onModalityChanged();
+
 private:
     friend class QWasmScreen;
     static constexpr auto defaultWindowSize = 160;
 
+    QMetaObject::Connection m_transientWindowChangedConnection;
+    QMetaObject::Connection m_modalityChangedConnection;
+
     // QWasmWindowTreeNode:
     QWasmWindow *asWasmWindow() final;
     void onParentChanged(QWasmWindowTreeNode *previous, QWasmWindowTreeNode *current,
-                         QWasmWindowStack::PositionPreference positionPreference) final;
+                         QWasmWindowStack<>::PositionPreference positionPreference) final;
 
+    void shutdown();
     void invalidate();
     bool hasFrame() const;
     bool hasTitleBar() const;
@@ -134,6 +145,9 @@ private:
     bool deliverPointerEvent(const PointerEvent &event);
     void handleWheelEvent(const emscripten::val &event);
     bool processWheel(const WheelEvent &event);
+    Qt::WindowFlags fixTopLevelWindowFlags(Qt::WindowFlags) const;
+    bool shouldBeAboveTransientParentFlags(Qt::WindowFlags flags) const;
+    QWasmWindowStack<>::PositionPreference positionPreferenceFromWindowFlags(Qt::WindowFlags) const;
 
     QWasmCompositor *m_compositor = nullptr;
     QWasmBackingStore *m_backingStore = nullptr;
