@@ -21,6 +21,7 @@ private slots:
     void init();
     void cleanup() { QTRY_VERIFY2(isClean(), qPrintable(dirtyMessage())); }
     void setCursor();
+    void overrideCursor();
 };
 
 tst_cursor::tst_cursor()
@@ -97,6 +98,74 @@ void tst_cursor::setCursor()
     window.setCursor(QCursor(myCustomPixmap));
     QVERIFY(setCursorSpy.wait());
     QVERIFY(setCursorShapeSpy.isEmpty());
+
+    window.setCursor(QCursor(Qt::ArrowCursor));
+}
+
+void tst_cursor::overrideCursor()
+{
+    QCOMPOSITOR_TRY_VERIFY(cursorShape());
+    QSignalSpy setCursorSpy(exec([&] { return pointer(); }), &Pointer::setCursor);
+    QSignalSpy setCursorShapeSpy(exec([&] { return cursorShape(); }),
+                                 &CursorShapeDevice::setCursor);
+
+    QRasterWindow window1;
+    window1.resize(64, 64);
+    window1.setCursor(QCursor(Qt::OpenHandCursor));
+    window1.show();
+    QCOMPOSITOR_TRY_VERIFY(xdgSurface() && xdgSurface()->m_committedConfigureSerial);
+
+    QRasterWindow window2;
+    window2.resize(64, 64);
+    window2.setCursor(QCursor(Qt::PointingHandCursor));
+    window2.show();
+
+    // first window should be shape_grab
+    uint enterSerial = exec([&] {
+        const auto enterSerial = pointer()->sendEnter(xdgSurface(0)->m_surface, { 32, 32 });
+        pointer()->sendFrame(client());
+        return enterSerial;
+    });
+    QVERIFY(setCursorShapeSpy.wait());
+    // verify we got given a cursor on enter
+    QCOMPOSITOR_COMPARE(cursorShape()->m_currentShape, CursorShapeDevice::shape_grab);
+    QVERIFY(setCursorSpy.isEmpty());
+    QCOMPARE(setCursorShapeSpy.takeFirst().at(0).toUInt(), enterSerial);
+
+    // leave the previous surface
+    exec([&] {
+        pointer()->sendLeave(xdgSurface(0)->m_surface);
+        pointer()->sendFrame(client());
+    });
+    setCursorShapeSpy.clear();
+
+    // second window should be shape_pointer
+    enterSerial = exec([&] {
+        const auto enterSerial = pointer()->sendEnter(xdgSurface(1)->m_surface, { 32, 32 });
+        pointer()->sendFrame(client());
+        return enterSerial;
+    });
+    QVERIFY(setCursorShapeSpy.wait());
+    // verify we got given a cursor on enter
+    QCOMPOSITOR_COMPARE(cursorShape()->m_currentShape, CursorShapeDevice::shape_pointer);
+    QVERIFY(setCursorSpy.isEmpty());
+    QCOMPARE(setCursorShapeSpy.takeFirst().at(0).toUInt(), enterSerial);
+
+    // set the override cursor
+    QGuiApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
+
+    // verify it's set to shape_wait
+    QVERIFY(setCursorShapeSpy.wait());
+    QCOMPOSITOR_COMPARE(cursorShape()->m_currentShape, CursorShapeDevice::shape_wait);
+    QVERIFY(setCursorSpy.isEmpty());
+
+    // now restore the override cursor
+    QGuiApplication::restoreOverrideCursor();
+
+    // it should be shape_pointer because we never left the second surface
+    QVERIFY(setCursorShapeSpy.wait());
+    QCOMPOSITOR_COMPARE(cursorShape()->m_currentShape, CursorShapeDevice::shape_pointer);
+    QVERIFY(setCursorSpy.isEmpty());
 }
 
 QCOMPOSITOR_TEST_MAIN(tst_cursor)
