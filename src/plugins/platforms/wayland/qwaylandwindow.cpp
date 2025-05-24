@@ -98,15 +98,6 @@ void QWaylandWindow::ensureSize()
 
 void QWaylandWindow::initWindow()
 {
-    /**
-     * Cleanup window state just before showing.
-     * This is necessary because a render could still have been running and commit
-     * after the window was last hidden and the last null was attached
-     *
-     * When we port to synchronous delivery it should be possible to drop this
-     */
-    mSurface->attach(nullptr, 0, 0);
-    mSurface->commit();
     resetFrameCallback();
 
     if (window()->type() == Qt::Desktop)
@@ -510,9 +501,22 @@ void QWaylandWindow::setGeometry(const QRect &r)
         QWindowSystemInterface::handleGeometryChange<QWindowSystemInterface::SynchronousDelivery>(window(), geometry());
         mSentInitialResize = true;
     }
+
+    // Wayland has no concept of areas being exposed or not, only the entire window, when our geometry changes, we need to flag the new area as exposed
+    // On other platforms (X11) the expose event would be received deferred from the X server
+    // we want our behaviour to match, and only run after control has returned to the event loop
+    QMetaObject::invokeMethod(this, &QWaylandWindow::synthesizeExposeOnGeometryChange, Qt::QueuedConnection);
+}
+
+void QWaylandWindow::synthesizeExposeOnGeometryChange()
+{
+    if (!isExposed())
+        return;
     QRect exposeGeometry(QPoint(), geometry().size());
-    if (isExposed() && !mInResizeFromApplyConfigure && exposeGeometry != mLastExposeGeometry)
-        sendExposeEvent(exposeGeometry);
+    if (exposeGeometry == mLastExposeGeometry)
+        return;
+
+    sendExposeEvent(exposeGeometry);
 }
 
 void QWaylandWindow::updateInputRegion()
@@ -598,22 +602,20 @@ void QWaylandWindow::sendExposeEvent(const QRect &rect)
 
     if (sQtTestMode) {
         mExposeEventNeedsAttachedBuffer = true;
-        QWindowSystemInterface::handleExposeEvent<QWindowSystemInterface::SynchronousDelivery>(window(), rect);
-        /**
-            *  If an expose is not handled by application code, explicitly attach a buffer
-            *  This primarily is a workaround for Qt unit tests using QWindow directly and
-            *  wanting focus.
-            */
-        if (mExposeEventNeedsAttachedBuffer && !rect.isNull()) {
-            auto buffer = new QWaylandShmBuffer(mDisplay, rect.size(), QImage::Format_ARGB32);
-            buffer->image()->fill(Qt::transparent);
-            buffer->setDeleteOnRelease(true);
-            attach(buffer, 0, 0);
-        }
-    } else {
-        QWindowSystemInterface::handleExposeEvent(window(), rect);
     }
+    QWindowSystemInterface::handleExposeEvent<QWindowSystemInterface::SynchronousDelivery>(window(), rect);
 
+    /**
+      *  If an expose is not handled by application code, explicitly attach a buffer
+      *  This primarily is a workaround for Qt unit tests using QWindow directly and
+      *  wanting focus.
+    */
+    if (mExposeEventNeedsAttachedBuffer && !rect.isNull()) {
+        auto buffer = new QWaylandShmBuffer(mDisplay, rect.size(), QImage::Format_ARGB32);
+        buffer->image()->fill(Qt::transparent);
+        buffer->setDeleteOnRelease(true);
+        attach(buffer, 0, 0);
+    }
 }
 
 QPlatformScreen *QWaylandWindow::calculateScreenFromSurfaceEvents() const
@@ -637,10 +639,6 @@ void QWaylandWindow::setVisible(bool visible)
         setGeometry(windowGeometry());
         initWindow();
         updateExposure();
-        // Don't flush the events here, or else the newly visible window may start drawing, but since
-        // there was no frame before it will be stuck at the waitForFrameSync() in
-        // QWaylandShmBackingStore::beginPaint().
-
         if (mShellSurface)
             mShellSurface->requestActivateOnShow();
     } else {
@@ -729,7 +727,6 @@ void QWaylandWindow::applyConfigure()
     mWaitingToApplyConfigure = false;
     QRect exposeGeometry(QPoint(), geometry().size());
     sendExposeEvent(exposeGeometry);
-    QWindowSystemInterface::flushWindowSystemEvents();
 }
 
 void QWaylandWindow::attach(QWaylandBuffer *buffer, int x, int y)

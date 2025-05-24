@@ -363,6 +363,7 @@ protected:
 
 private:
     void setGeometry_helper(const QRect &rect);
+    void synthesizeExposeOnGeometryChange();
     void initWindow();
     bool shouldCreateShellSurface() const;
     bool shouldCreateSubSurface() const;
