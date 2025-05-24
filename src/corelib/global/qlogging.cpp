@@ -1860,7 +1860,7 @@ static bool systemd_default_message_handler(QtMsgType type,
                                  ? "QT_CATEGORY="_ba + context.category : QByteArray();
 
     auto toIovec = [](const QByteArray &ba) {
-        return iovec{const_cast<char*>(ba.data()), ba.size()};
+        return iovec{ const_cast<char*>(ba.data()), size_t(ba.size()) };
     };
 
     struct iovec fields[7] = {
