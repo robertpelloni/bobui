@@ -423,7 +423,7 @@ void tst_QDir::mkdirRmdir()
 
 void tst_QDir::mkdirOnSymlink()
 {
-#if !defined(Q_OS_UNIX) || defined(Q_NO_SYMLINKS) || defined(Q_OS_INTEGRITY)
+#if !defined(Q_OS_UNIX) || defined(Q_NO_SYMLINKS) || defined(Q_OS_INTEGRITY) || defined(Q_OS_WASM)
     QSKIP("Test only valid on an OS that supports symlinks");
 #else
     // Create the structure:
