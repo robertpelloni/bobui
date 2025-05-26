@@ -7,6 +7,7 @@
 #include <qproperty.h>
 #include <private/qproperty_p.h>
 #include <private/qobject_p.h>
+#include <private/qcomparisontesthelper_p.h>
 
 #if __has_include(<source_location>) && __cplusplus >= 202002L && !defined(Q_QDOC)
 #include <source_location>
@@ -81,6 +82,8 @@ private slots:
     void noDoubleCapture();
     void compatPropertyNoDobuleNotification();
     void compatPropertySignals();
+
+    void compareAgainstValueType();
 
     void noFakeDependencies();
 #if QT_CONFIG(thread)
@@ -1733,6 +1736,39 @@ void tst_QProperty::compatPropertySignals()
     QCOMPARE(arguments.size(), 1);
     QCOMPARE(arguments.at(0).metaType().id(), QMetaType::Int);
     QCOMPARE(arguments.at(0).toInt(), 42);
+}
+
+struct CompareTestObject : QObject{
+    Q_OBJECT
+public:
+    CompareTestObject(const QVariantList &l) { varList = l; }
+    Q_OBJECT_BINDABLE_PROPERTY(CompareTestObject, QVariantList, varList)
+};
+
+
+void tst_QProperty::compareAgainstValueType()
+{
+    {
+        // compile time checks
+        QTestPrivate::testEqualityOperatorsCompile<QProperty<QVariantList>>();
+        QTestPrivate::testEqualityOperatorsCompile<QProperty<QVariantList>, QVariantList>();
+
+        using ObjectBindableProperty = decltype(std::declval<CompareTestObject>().varList);
+
+        QTestPrivate::testEqualityOperatorsCompile<ObjectBindableProperty>();
+        QTestPrivate::testEqualityOperatorsCompile<ObjectBindableProperty, QVariantList>();
+    }
+
+    QVariantList vl {1, QString(), QByteArray {}};
+    QProperty<QVariantList> vlProp { vl };
+    CompareTestObject o { vl };
+
+    QCOMPARE_EQ(vl, vlProp);
+    QCOMPARE_EQ(vl, o.varList);
+
+    vl.pop_back();
+    QCOMPARE_NE(vl, vlProp);
+    QCOMPARE_NE(vl, o.varList);
 }
 
 class FakeDependencyCreator : public QObject

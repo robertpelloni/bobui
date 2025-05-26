@@ -1277,6 +1277,9 @@ QString QPropertyBindingError::description() const
   \inmodule QtCore
   \brief The QProperty class is a template class that enables automatic property bindings.
   \since 6.0
+  \compares equality
+  \compareswith equality T
+  \endcompareswith
 
   \ingroup tools
 
@@ -1486,6 +1489,9 @@ QString QPropertyBindingError::description() const
          automatic property bindings for property data stored in QObject derived
          classes.
   \since 6.0
+  \compares equality
+  \compareswith equality T
+  \endcompareswith
 
   \ingroup tools
 

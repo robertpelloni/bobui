@@ -384,6 +384,10 @@ public:
 #endif
     ~QProperty() = default;
 
+    QT_DECLARE_EQUALITY_OPERATORS_HELPER(QProperty, QProperty, /* non-constexpr */, noexcept(false), template <typename Ty = T, std::enable_if_t<QTypeTraits::has_operator_equal_v<Ty>>* = nullptr>)
+    QT_DECLARE_EQUALITY_OPERATORS_HELPER(QProperty, T, /* non-constexpr */, noexcept(false), template <typename Ty = T, std::enable_if_t<QTypeTraits::has_operator_equal_v<Ty>>* = nullptr>)
+    QT_DECLARE_EQUALITY_OPERATORS_REVERSED_HELPER(QProperty, T, /* non-constexpr */, noexcept(false), template <typename Ty = T, std::enable_if_t<QTypeTraits::has_operator_equal_v<Ty>>* = nullptr>)
+
     parameter_type value() const
     {
         d.registerWithCurrentlyEvaluatingBinding();
@@ -504,6 +508,18 @@ public:
 
     const QtPrivate::QPropertyBindingData &bindingData() const { return d; }
 private:
+    template <typename Ty = T, std::enable_if_t<QTypeTraits::has_operator_equal_v<Ty>>* = nullptr>
+    friend bool comparesEqual(const QProperty &lhs, const QProperty &rhs)
+    {
+        return lhs.value() == rhs.value();
+    }
+
+    template <typename Ty = T, std::enable_if_t<QTypeTraits::has_operator_equal_v<Ty>>* = nullptr>
+    friend bool comparesEqual(const QProperty &lhs, const T &rhs)
+    {
+        return lhs.value() == rhs;
+    }
+
     void notify()
     {
         d.notifyObservers(this);
@@ -1068,6 +1084,10 @@ public:
     explicit QObjectBindableProperty(Functor &&f);
 #endif
 
+    QT_DECLARE_EQUALITY_OPERATORS_HELPER(QObjectBindableProperty, QObjectBindableProperty, /* non-constexpr */, noexcept(false), template <typename Ty = T, std::enable_if_t<QTypeTraits::has_operator_equal_v<Ty>>* = nullptr>)
+    QT_DECLARE_EQUALITY_OPERATORS_HELPER(QObjectBindableProperty, T, /* non-constexpr */, noexcept(false), template <typename Ty = T, std::enable_if_t<QTypeTraits::has_operator_equal_v<Ty>>* = nullptr>)
+    QT_DECLARE_EQUALITY_OPERATORS_REVERSED_HELPER(QObjectBindableProperty, T, /* non-constexpr */, noexcept(false), template <typename Ty = T, std::enable_if_t<QTypeTraits::has_operator_equal_v<Ty>>* = nullptr>)
+
     parameter_type value() const
     {
         qGetBindingStorage(owner())->registerDependency(this);
@@ -1208,6 +1228,18 @@ public:
         return *storage->bindingData(const_cast<ThisType *>(this), true);
     }
 private:
+    template <typename Ty = T, std::enable_if_t<QTypeTraits::has_operator_equal_v<Ty>>* = nullptr>
+    friend bool comparesEqual(const QObjectBindableProperty &lhs, const QObjectBindableProperty &rhs)
+    {
+        return lhs.value() == rhs.value();
+    }
+
+    template <typename Ty = T, std::enable_if_t<QTypeTraits::has_operator_equal_v<Ty>>* = nullptr>
+    friend bool comparesEqual(const QObjectBindableProperty &lhs, const T &rhs)
+    {
+        return lhs.value() == rhs;
+    }
+
     void notify(const QtPrivate::QPropertyBindingData *binding)
     {
         if (binding)
