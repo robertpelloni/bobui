@@ -430,7 +430,7 @@ void tst_QDir::mkdirRmdir()
 
 void tst_QDir::mkdirOnSymlink()
 {
-#if !defined(Q_OS_UNIX) || defined(Q_NO_SYMLINKS) || defined(Q_OS_INTEGRITY) || defined(Q_OS_WASM)
+#if !defined(Q_OS_UNIX) || defined(Q_NO_SYMLINKS) || defined(Q_OS_INTEGRITY)
     QSKIP("Test only valid on an OS that supports symlinks");
 #else
     // Create the structure:
@@ -476,9 +476,6 @@ void tst_QDir::mkdirOnSymlink()
     fi.setFile(path);
 #if defined(Q_OS_QNX)
     QSKIP("Fails on QNX QTBUG-98561");
-#endif
-#if defined (Q_OS_WASM)
-    QEXPECT_FAIL("", "fails on wasm, see bug: QTBUG-127766", Continue);
 #endif
     QVERIFY2(fi.exists() && fi.isDir(), msgDoesNotExist(path).constData());
 #endif
