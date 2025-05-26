@@ -77,9 +77,17 @@ struct QMetaTypeDeleter
     void operator()(void *data) const
     {
         if (iface->alignment > __STDCPP_DEFAULT_NEW_ALIGNMENT__) {
+#ifdef __cpp_sized_deallocation
             operator delete(data, iface->size, std::align_val_t(iface->alignment));
+#else
+            operator delete(data, std::align_val_t(iface->alignment));
+#endif
         } else {
+#ifdef __cpp_sized_deallocation
             operator delete(data, iface->size);
+#else
+            operator delete(data);
+#endif
         }
     }
 };
