@@ -1462,7 +1462,7 @@ void QWaylandWindow::handleScreensChanged()
     if (!newScreen || newScreen->screen() == window()->screen())
         return;
 
-    QWindowSystemInterface::handleWindowScreenChanged(window(), newScreen->QPlatformScreen::screen());
+    QWindowSystemInterface::handleWindowScreenChanged<QWindowSystemInterface::SynchronousDelivery>(window(), newScreen->QPlatformScreen::screen());
 
     if (fixedToplevelPositions && !QPlatformWindow::parent() && window()->type() != Qt::Popup
         && window()->type() != Qt::ToolTip
