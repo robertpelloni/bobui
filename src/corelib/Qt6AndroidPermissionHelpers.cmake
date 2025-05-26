@@ -66,3 +66,61 @@ function(_qt_internal_android_convert_permissions out_var target type)
 
     set(${out_var} "${permissions_genex}" PARENT_SCOPE)
 endfunction()
+
+# Add the specific Android permission to the target. The permission is stored
+# in the QT_ANDROID_PERMISSIONS property(the property is not a public API)
+# and has the following format:
+#    <name>\;<permission>\\\;<extra1>\;<value>\\\;<extra2>\;<value>
+#
+# Synopsis
+#   _qt_internal_add_android_permission(target NAME <permission>
+#       ATTRIBUTES <extra1> <value1>
+#           [<extra2> <value2>]...
+#   )
+#
+# Arguments
+#
+# `target`
+#   The Android target.
+#
+# `NAME`
+#   The permission name. E.g. 'android.permission.CAMERA'.
+#
+# `ATTRIBUTES`
+#   Extra permission attribute key-value pairs.
+#   See https://developer.android.com/guide/topics/manifest/uses-permission-element
+#   for details.
+function(_qt_internal_add_android_permission target)
+    if(NOT TARGET ${target})
+        message(FATAL_ERROR "Empty or invalid target for adding Android permission: (${target})")
+    endif()
+
+    cmake_parse_arguments(arg "" "NAME" "ATTRIBUTES" ${ARGN})
+
+    if(NOT arg_NAME)
+        message(FATAL_ERROR "NAME for adding Android permission cannot be empty (${target})")
+    endif()
+
+    set(permission_entry "name\;${arg_NAME}")
+    if(arg_ATTRIBUTES)
+        # Permission with additional attributes
+        list(LENGTH arg_ATTRIBUTES attributes_len)
+        math(EXPR attributes_modulus "${attributes_len} % 2")
+        if(NOT (attributes_len GREATER 1 AND attributes_modulus EQUAL 0))
+            message(FATAL_ERROR "Android permission: ${arg_NAME} attributes: ${arg_ATTRIBUTES}"
+                                " must be name-value pairs (for example: minSdkVersion 30)")
+        endif()
+        # Combine name-value pairs
+        set(index 0)
+        while(index LESS attributes_len)
+            list(GET arg_ATTRIBUTES ${index} name)
+            math(EXPR index "${index} + 1")
+            list(GET arg_ATTRIBUTES ${index} value)
+            string(APPEND permission_entry "\\\;${name}\;${value}")
+            math(EXPR index "${index} + 1")
+        endwhile()
+    endif()
+
+    # Append the permission to the target's property
+    set_property(TARGET ${target} APPEND PROPERTY QT_ANDROID_PERMISSIONS "${permission_entry}")
+endfunction()
