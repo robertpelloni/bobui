@@ -1570,6 +1570,11 @@ qt_feature("egl-extension-platform-wayland" PRIVATE
     CONDITION QT_FEATURE_wayland_client AND QT_FEATURE_opengl AND QT_FEATURE_egl
               AND TEST_egl_1_5_wayland
 )
+qt_feature("run-opengl-tests" PRIVATE
+    LABEL "Run opengl tests"
+    PURPOSE "Provides the ability to skip tests which require opengl to run"
+    CONDITION QT_FEATURE_opengl
+)
 
 
 qt_configure_add_summary_section(NAME "Qt Gui")
