@@ -769,3 +769,31 @@ instructions:
       condition: property
       property: host.os
       equals_value: Windows
+  - # Default value when not cross-compiling
+    type: EnvironmentVariable
+    variableName: TARGET_INSTALL_DIR
+    variableValue: "{{.InstallDir}}"
+  - type: Group
+    instructions:
+      - # Default value when cross-compiling
+        type: EnvironmentVariable
+        variableName: TARGET_INSTALL_DIR
+        variableValue: "{{.InstallDir}}{{.Env.CI_PATH_SEP}}target"
+      - type: EnvironmentVariable
+        variableName: TARGET_INSTALL_DIR
+        variableValue: "{{$android_artifact_path:=index .Env \"QT_CI_ARTIFACT_ID_PATH_Android-x86\"}}{{index .Env $android_artifact_path}}/install/target"
+        enable_if:
+          condition: and
+          conditions:
+            - condition: property
+              property: target.osVersion
+              equals_value: Android_ANY
+            - condition: property
+              property: target.arch
+              equals_value: Multi
+    enable_if:
+      # Only enable if cross-compiling
+      condition: property
+      property: target.osVersion
+      in_values: [Android_ANY, QEMU, IOS_ANY, QNX_710, QNX_800, WebAssembly, INTEGRITY, VxWorks]
+
