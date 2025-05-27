@@ -479,6 +479,11 @@ function(_qt_internal_android_generate_target_android_manifest target)
         ">"
     )
 
+    file(READ "${template_file}" manifest_content)
+    string(REPLACE ">" "$<ANGLE-R>" manifest_content "${manifest_content}")
+    string(REPLACE ";" "$<SEMICOLON>" manifest_content "${manifest_content}")
+    string(REPLACE "," "$<COMMA>" manifest_content "${manifest_content}")
+
     _qt_internal_android_convert_permissions(APP_PERMISSIONS ${target} XML)
 
     set(feature_prefix "\n    <uses-feature android:name=\"")
@@ -494,11 +499,11 @@ function(_qt_internal_android_generate_target_android_manifest target)
 
     set(APP_ARGUMENTS "${QT_ANDROID_APPLICATION_ARGUMENTS}")
 
-    _qt_internal_configure_file(GENERATE OUTPUT "${out_file}.tmp"
-        INPUT "${template_file}")
+    _qt_internal_configure_file(GENERATE OUTPUT "${temporary_file}"
+        CONTENT "${manifest_content}")
 
     set_property(TARGET ${target} APPEND PROPERTY
-        _qt_android_deployment_files "${out_file}" "${out_file}.tmp")
+        _qt_android_deployment_files "${out_file}" "${temporary_file}")
 endfunction()
 
 # Generates the top-level gradle.properties in the android-build directory
