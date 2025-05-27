@@ -535,6 +535,20 @@ HRESULT QWindowsUiaMainProvider::GetPropertyValue(PROPERTYID idProp, VARIANT *pR
             *pRetVal = QComVariant{ className }.release();
         }
         break;
+    case UIA_CulturePropertyId:
+    {
+        QLocale locale;
+        if (QAccessibleAttributesInterface *attributesIface = accessible->attributesInterface()) {
+            const QVariant localeVariant = attributesIface->attributeValue(QAccessible::Attribute::Locale);
+            if (localeVariant.isValid()) {
+                Q_ASSERT(localeVariant.canConvert<QLocale>());
+                locale = localeVariant.toLocale();
+            }
+        }
+        LCID lcid = LocaleNameToLCID(qUtf16Printable(locale.bcp47Name()), 0);
+        *pRetVal = QComVariant{ long(lcid) }.release();
+        break;
+    }
     case UIA_DescribedByPropertyId:
         fillVariantArrayForRelation(accessible, QAccessible::DescriptionFor, pRetVal);
         break;
