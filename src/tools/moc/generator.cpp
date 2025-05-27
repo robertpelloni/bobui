@@ -1238,7 +1238,7 @@ void Generator::generateStaticMetacall()
         }
 
         if (needReset) {
-            fprintf(out, "if (_c == QMetaObject::ResetProperty) {\n");
+            fprintf(out, "    if (_c == QMetaObject::ResetProperty) {\n");
             fprintf(out, "        switch (_id) {\n");
             for (int propindex = 0; propindex < int(cdef->propertyList.size()); ++propindex) {
                 const PropertyDef &p = cdef->propertyList.at(propindex);
