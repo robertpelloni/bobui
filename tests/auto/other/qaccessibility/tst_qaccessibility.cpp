@@ -234,6 +234,8 @@ private slots:
     void messageBoxTest_data();
     void messageBoxTest();
 
+    void widgetLocaleTest();
+
 protected slots:
     void onClicked();
 private:
@@ -4360,7 +4362,7 @@ private:
     bool m_focus;
 };
 
-class FocusChildTestAccessibleWidget : public QAccessibleWidget
+class FocusChildTestAccessibleWidget : public QAccessibleWidgetV2
 {
 public:
     static QAccessibleInterface *ifaceFactory(const QString &key, QObject *o)
@@ -4371,7 +4373,7 @@ public:
     }
 
     FocusChildTestAccessibleWidget(QtTestAccessibleWidget *w)
-        : QAccessibleWidget(w)
+        : QAccessibleWidgetV2(w)
     {
         m_children.push_back(new FocusChildTestAccessibleInterface(0, false, this));
         m_children.push_back(new FocusChildTestAccessibleInterface(1, true, this));
@@ -4380,7 +4382,7 @@ public:
 
     QAccessible::State state() const override
     {
-        QAccessible::State s = QAccessibleWidget::state();
+        QAccessible::State s = QAccessibleWidgetV2::state();
         s.focused = false;
         return s;
     }
@@ -4730,6 +4732,49 @@ void tst_QAccessibility::messageBoxTest()
     box.hide();
     QAccessibleEvent hideEvent(&box, QAccessible::DialogEnd);
     QVERIFY(QTestAccessibility::containsEvent(&hideEvent));
+
+    QTestAccessibility::clearEvents();
+}
+
+void tst_QAccessibility::widgetLocaleTest()
+{
+    QMainWindow mainWindow;
+    QWidget w(&mainWindow);
+    QHBoxLayout *box = new QHBoxLayout(&w);
+
+    QLabel *label = new QLabel("Hello world");
+    box->addWidget(label);
+
+    // "你好世界" is "Hello world" in Chinese
+    QLabel *chineseLabel = new QLabel(QString::fromUtf16(u"你好世界"));
+    const QLocale chinese(QLocale::Chinese, QLocale::China);
+    chineseLabel->setLocale(chinese);
+    box->addWidget(chineseLabel);
+
+    mainWindow.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&mainWindow));
+
+    // verify that locale is the default locale if none was set explicitly
+    QAccessibleInterface *labelAcc = QAccessible::queryAccessibleInterface(label);
+    QVERIFY(labelAcc);
+    QVERIFY(labelAcc->attributesInterface());
+    QVERIFY(labelAcc->attributesInterface()->attributeKeys().contains(
+            QAccessible::Attribute::Locale));
+    const QVariant localeVariant =
+            labelAcc->attributesInterface()->attributeValue(QAccessible::Attribute::Locale);
+    QVERIFY(localeVariant.isValid() && localeVariant.canConvert<QLocale>());
+    QCOMPARE(localeVariant.toLocale(), QLocale());
+
+    // verify that locale matches the one explicitly set for the widget
+    QAccessibleInterface *chineseLabelAcc = QAccessible::queryAccessibleInterface(chineseLabel);
+    QVERIFY(chineseLabelAcc);
+    QVERIFY(chineseLabelAcc->attributesInterface());
+    QVERIFY(chineseLabelAcc->attributesInterface()->attributeKeys().contains(
+            QAccessible::Attribute::Locale));
+    const QVariant chineseLocaleVariant =
+            chineseLabelAcc->attributesInterface()->attributeValue(QAccessible::Attribute::Locale);
+    QVERIFY(chineseLocaleVariant.isValid() && chineseLocaleVariant.canConvert<QLocale>());
+    QCOMPARE(chineseLocaleVariant.toLocale(), chinese);
 
     QTestAccessibility::clearEvents();
 }

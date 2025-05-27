@@ -6,6 +6,7 @@
 
 #include <QtWidgets/qtwidgetsglobal.h>
 #include <QtGui/qaccessibleobject.h>
+#include <QtCore/qlist.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -14,7 +15,8 @@ QT_BEGIN_NAMESPACE
 
 class QAccessibleWidgetPrivate;
 
-class Q_WIDGETS_EXPORT QAccessibleWidget : public QAccessibleObject, public QAccessibleActionInterface
+class Q_WIDGETS_EXPORT QAccessibleWidget : public QAccessibleObject,
+                                           public QAccessibleActionInterface
 {
 public:
     explicit QAccessibleWidget(QWidget *o, QAccessible::Role r = QAccessible::Client, const QString& name = QString());
@@ -57,6 +59,29 @@ private:
     Q_DISABLE_COPY(QAccessibleWidget)
 };
 
+class Q_WIDGETS_EXPORT QAccessibleWidgetV2 : public QAccessibleWidget,
+                                             public QAccessibleAttributesInterface
+{
+#ifdef Q_OS_INTEGRITY
+    // force instantiation to avoid error #2045
+    struct error2045 : QList<QAccessible::Attribute> {};
+#endif
+public:
+    explicit QAccessibleWidgetV2(QWidget *object, QAccessible::Role role = QAccessible::Client,
+                                 const QString& name = QString())
+        : QAccessibleWidget(object, role, name)
+    {}
+    ~QAccessibleWidgetV2() override;
+
+    void *interface_cast(QAccessible::InterfaceType t) override;
+
+    // QAccessibleAttributesInterface
+    QList<QAccessible::Attribute> attributeKeys() const override;
+    QVariant attributeValue(QAccessible::Attribute key) const override;
+
+private:
+    Q_DISABLE_COPY(QAccessibleWidgetV2)
+};
 
 #endif // QT_CONFIG(accessibility)
 

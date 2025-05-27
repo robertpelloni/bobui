@@ -481,6 +481,33 @@ void *QAccessibleWidget::interface_cast(QAccessible::InterfaceType t)
     return nullptr;
 }
 
+// QAccessibleWidgetV2 implementation
+
+QAccessibleWidgetV2::~QAccessibleWidgetV2() = default;
+
+/*! \reimp */
+void *QAccessibleWidgetV2::interface_cast(QAccessible::InterfaceType t)
+{
+    if (t == QAccessible::AttributesInterface)
+        return static_cast<QAccessibleAttributesInterface *>(this);
+    return QAccessibleWidget::interface_cast(t);
+}
+
+/*! \reimp */
+QList<QAccessible::Attribute> QAccessibleWidgetV2::attributeKeys() const
+{
+    return { QAccessible::Attribute::Locale };
+}
+
+/*! \reimp */
+QVariant QAccessibleWidgetV2::attributeValue(QAccessible::Attribute key) const
+{
+    if (key == QAccessible::Attribute::Locale)
+        return QVariant::fromValue(widget()->locale());
+
+    return QVariant();
+}
+
 QT_END_NAMESPACE
 
 #endif // QT_CONFIG(accessibility)
