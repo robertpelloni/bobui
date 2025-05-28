@@ -1292,6 +1292,24 @@ void tst_QGuiApplication::globalShareContext()
     QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts, true);
     ctx = QOpenGLContext::globalShareContext();
     QVERIFY(ctx);
+
+    // Test that the global share context is lazily created,
+    // even from secondary threads.
+    app.reset();
+    app.reset(new QGuiApplication(argc, argv));
+    QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts, true);
+    class Thread : public QThread
+    {
+        void run() override
+        {
+            auto *ctx = QOpenGLContext::globalShareContext();
+            QVERIFY(ctx);
+            QCOMPARE(ctx->thread(), qGuiApp->thread());
+        }
+    };
+    Thread thread;
+    thread.start();
+    thread.wait();
 #else
     QSKIP("No OpenGL support");
 #endif

@@ -968,11 +968,16 @@ bool QOpenGLContext::supportsThreadedOpenGL()
 QOpenGLContext *QOpenGLContext::globalShareContext()
 {
     Q_ASSERT(qGuiApp);
+
+    static QMutex mutex;
+    QMutexLocker locker(&mutex);
+
     // Lazily create a global share context when enabled unless there is already one
     if (!qt_gl_global_share_context() && qGuiApp->testAttribute(Qt::AA_ShareOpenGLContexts)) {
         QOpenGLContext *ctx = new QOpenGLContext;
         ctx->setFormat(QSurfaceFormat::defaultFormat());
         ctx->create();
+        ctx->moveToThread(qGuiApp->thread());
         qt_gl_set_global_share_context(ctx);
         QGuiApplicationPrivate::instance()->ownGlobalShareContext = true;
     }
