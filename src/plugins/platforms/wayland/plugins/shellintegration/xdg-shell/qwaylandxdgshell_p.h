@@ -57,7 +57,6 @@ public:
     void setWindowFlags(Qt::WindowFlags flags) override;
 
     bool isExposed() const override;
-    bool handleExpose(const QRegion &) override;
     bool handlesActiveState() const { return m_toplevel; }
     void applyConfigure() override;
     bool wantsDecorations() const override;

@@ -593,11 +593,6 @@ void QWaylandWindow::resizeFromApplyConfigure(const QSize &sizeWithMargins, cons
 
 void QWaylandWindow::sendExposeEvent(const QRect &rect)
 {
-    if (mShellSurface && mShellSurface->handleExpose(rect)) {
-        qCDebug(lcQpaWayland) << "sendExposeEvent: intercepted by shell extension, not sending";
-        return;
-    }
-
     static bool sQtTestMode = qEnvironmentVariableIsSet("QT_QTESTLIB_RUNNING");
     mLastExposeGeometry = rect;
 

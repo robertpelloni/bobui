@@ -410,15 +410,6 @@ bool QWaylandXdgSurface::isExposed() const
     return m_configured;
 }
 
-bool QWaylandXdgSurface::handleExpose(const QRegion &region)
-{
-    if (!isExposed() && !region.isEmpty()) {
-        return true;
-    }
-    setContentGeometry(window()->windowContentGeometry());
-    return false;
-}
-
 void QWaylandXdgSurface::applyConfigure()
 {
     // It is a redundant ack_configure, so skipped.
@@ -451,7 +442,7 @@ void QWaylandXdgSurface::propagateSizeHints()
 
 void QWaylandXdgSurface::setContentGeometry(const QRect &rect)
 {
-    if (!window()->isExposed() || m_lastGeometry == rect)
+    if (!isExposed() || m_lastGeometry == rect)
         return;
 
     set_window_geometry(rect.x(), rect.y(), rect.width(), rect.height());

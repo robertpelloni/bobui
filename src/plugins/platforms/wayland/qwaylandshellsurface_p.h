@@ -51,7 +51,6 @@ public:
     virtual void setWindowFlags(Qt::WindowFlags flags);
 
     virtual bool isExposed() const { return true; }
-    virtual bool handleExpose(const QRegion &) { return false; }
 
     virtual void raise() {}
     virtual void lower() {}
