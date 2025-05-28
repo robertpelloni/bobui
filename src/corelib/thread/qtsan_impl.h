@@ -65,6 +65,7 @@ inline void mutexPostUnlock(void *addr, unsigned flags)
 }
 
 enum : unsigned {
+    ReadLock = ::__tsan_mutex_read_lock,
     MutexWriteReentrant = ::__tsan_mutex_write_reentrant,
     TryLock = ::__tsan_mutex_try_lock,
     TryLockFailed = ::__tsan_mutex_try_lock_failed,
@@ -76,6 +77,7 @@ inline void latchCountDown(void *) {}
 inline void latchWait(const void *) {}
 
 enum : unsigned {
+    ReadLock,
     MutexWriteReentrant,
     TryLock,
     TryLockFailed,

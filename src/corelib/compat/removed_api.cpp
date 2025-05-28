@@ -1483,3 +1483,41 @@ bool QObject::doSetProperty(const char *name, const QVariant *lvalue, QVariant *
 // order sections alphabetically to reduce chances of merge conflicts
 
 #endif // QT_CORE_REMOVED_SINCE(6, 10)
+
+#if QT_CORE_REMOVED_SINCE(6, 11)
+
+#if QT_CONFIG(thread)
+// some of the previously inlined API became removed
+#include "qreadwritelock.h"
+
+void QReadWriteLock::lockForRead()
+{
+    tryLockForRead(QDeadlineTimer(QDeadlineTimer::Forever));
+}
+
+bool QReadWriteLock::tryLockForRead(QDeadlineTimer timeout)
+{
+    return QBasicReadWriteLock::tryLockForRead(timeout);
+}
+
+void QReadWriteLock::lockForWrite()
+{
+    tryLockForWrite(QDeadlineTimer(QDeadlineTimer::Forever));
+}
+
+bool QReadWriteLock::tryLockForWrite(QDeadlineTimer timeout)
+{
+    return QBasicReadWriteLock::tryLockForWrite(timeout);
+}
+
+void QReadWriteLock::unlock()
+{
+    QBasicReadWriteLock::unlock();
+}
+#endif // QT_CONFIG(thread)
+
+// #include "qotherheader.h"
+// // implement removed functions from qotherheader.h
+// order sections alphabetically to reduce chances of merge conflicts
+
+#endif // QT_CORE_REMOVED_SINCE(6, 11)
