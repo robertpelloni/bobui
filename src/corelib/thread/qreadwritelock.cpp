@@ -202,8 +202,8 @@ QBasicReadWriteLock::contendedTryLockForRead(QDeadlineTimer timeout, void *dd)
 
         if ((quintptr(d) & StateMask) == StateLockedForRead) {
             // locked for read, increase the counter
-            const auto val = reinterpret_cast<QReadWriteLockPrivate *>(quintptr(d) + (1U<<4));
-            Q_ASSERT_X(quintptr(val) > (1U<<4), "QReadWriteLock::tryLockForRead()",
+            const auto val = reinterpret_cast<QReadWriteLockPrivate *>(quintptr(d) + Counter);
+            Q_ASSERT_X(quintptr(val) > Counter, "QReadWriteLock::tryLockForRead()",
                        "Overflow in lock counter");
             if (!d_ptr.testAndSetAcquire(d, val, d))
                 continue;
@@ -375,7 +375,7 @@ void QBasicReadWriteLock::contendedUnlock(void *dd)
         }
 
         if ((quintptr(d) & StateMask) == StateLockedForRead) {
-            Q_ASSERT(quintptr(d) > (1U<<4)); //otherwise that would be the fast case
+            Q_ASSERT(quintptr(d) > Counter); //otherwise that would be the fast case
             // Just decrease the reader's count.
             auto val = reinterpret_cast<QReadWriteLockPrivate *>(quintptr(d) - (1U<<4));
             if (!d_ptr.testAndSetOrdered(d, val, d))
