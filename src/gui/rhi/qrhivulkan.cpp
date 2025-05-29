@@ -4802,7 +4802,7 @@ QList<QSize> QRhiVulkan::supportedShadingRates(int sampleCount) const
 
 void QRhiVulkan::enqueueTransitionPassResources(QVkCommandBuffer *cbD)
 {
-    cbD->passResTrackers.append(QRhiPassResourceTracker());
+    cbD->passResTrackers.emplace_back();
     cbD->currentPassResTrackerIndex = cbD->passResTrackers.size() - 1;
 
     QVkCommandBuffer::Command &cmd(cbD->commands.get());
@@ -5136,11 +5136,11 @@ void QRhiVulkan::recordTransitionPassResources(QVkCommandBuffer *cbD, const QRhi
     if (tracker.isEmpty())
         return;
 
-    for (auto it = tracker.cbeginBuffers(), itEnd = tracker.cendBuffers(); it != itEnd; ++it) {
-        QVkBuffer *bufD = QRHI_RES(QVkBuffer, it.key());
-        VkAccessFlags access = toVkAccess(it->access);
-        VkPipelineStageFlags stage = toVkPipelineStage(it->stage);
-        QVkBuffer::UsageState s = toVkBufferUsageState(it->stateAtPassBegin);
+    for (const auto &[rhiB, trackedB]: tracker.buffers()) {
+        QVkBuffer *bufD = QRHI_RES(QVkBuffer, rhiB);
+        VkAccessFlags access = toVkAccess(trackedB.access);
+        VkPipelineStageFlags stage = toVkPipelineStage(trackedB.stage);
+        QVkBuffer::UsageState s = toVkBufferUsageState(trackedB.stateAtPassBegin);
         if (!s.stage)
             continue;
         if (s.access == access && s.stage == stage) {
@@ -5153,7 +5153,7 @@ void QRhiVulkan::recordTransitionPassResources(QVkCommandBuffer *cbD, const QRhi
         bufMemBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         bufMemBarrier.srcAccessMask = s.access;
         bufMemBarrier.dstAccessMask = access;
-        bufMemBarrier.buffer = bufD->buffers[it->slot];
+        bufMemBarrier.buffer = bufD->buffers[trackedB.slot];
         bufMemBarrier.size = VK_WHOLE_SIZE;
         df->vkCmdPipelineBarrier(cbD->cb, s.stage, stage, 0,
                                  0, nullptr,
@@ -5161,12 +5161,12 @@ void QRhiVulkan::recordTransitionPassResources(QVkCommandBuffer *cbD, const QRhi
                                  0, nullptr);
     }
 
-    for (auto it = tracker.cbeginTextures(), itEnd = tracker.cendTextures(); it != itEnd; ++it) {
-        QVkTexture *texD = QRHI_RES(QVkTexture, it.key());
-        VkImageLayout layout = toVkLayout(it->access);
-        VkAccessFlags access = toVkAccess(it->access);
-        VkPipelineStageFlags stage = toVkPipelineStage(it->stage);
-        QVkTexture::UsageState s = toVkTextureUsageState(it->stateAtPassBegin);
+    for (const auto &[rhiT, trackedT]: tracker.textures()) {
+        QVkTexture *texD = QRHI_RES(QVkTexture, rhiT);
+        VkImageLayout layout = toVkLayout(trackedT.access);
+        VkAccessFlags access = toVkAccess(trackedT.access);
+        VkPipelineStageFlags stage = toVkPipelineStage(trackedT.stage);
+        QVkTexture::UsageState s = toVkTextureUsageState(trackedT.stateAtPassBegin);
         if (s.access == access && s.stage == stage && s.layout == layout) {
             if (!accessIsWrite(access))
                 continue;

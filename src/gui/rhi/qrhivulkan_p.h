@@ -560,7 +560,7 @@ struct QVkCommandBuffer : public QRhiCommandBuffer
     };
 
     QRhiBackendCommandList<Command> commands;
-    QVarLengthArray<QRhiPassResourceTracker, 8> passResTrackers;
+    QVector<QRhiPassResourceTracker> passResTrackers;
     int currentPassResTrackerIndex;
 
     void resetCommands() {

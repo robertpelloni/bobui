@@ -3931,13 +3931,15 @@ void QRhiGles2::executeCommandBuffer(QRhiCommandBuffer *cb)
             // barrier in theory. Hence setting all barrier bits whenever
             // something previously written is used for the first time in a
             // subsequent pass.
-            for (auto it = tracker.cbeginBuffers(), itEnd = tracker.cendBuffers(); it != itEnd; ++it) {
-                QGles2Buffer::Access accessBeforePass = QGles2Buffer::Access(it->stateAtPassBegin.access);
+            for (const auto &[rhiB, trackedB]: tracker.buffers()) {
+                Q_UNUSED(rhiB)
+                QGles2Buffer::Access accessBeforePass = QGles2Buffer::Access(trackedB.stateAtPassBegin.access);
                 if (bufferAccessIsWrite(accessBeforePass))
                     barriers |= barriersForBuffer();
             }
-            for (auto it = tracker.cbeginTextures(), itEnd = tracker.cendTextures(); it != itEnd; ++it) {
-                QGles2Texture::Access accessBeforePass = QGles2Texture::Access(it->stateAtPassBegin.access);
+            for (const auto &[rhiT, trackedT]: tracker.textures()) {
+                Q_UNUSED(rhiT)
+                QGles2Texture::Access accessBeforePass = QGles2Texture::Access(trackedT.stateAtPassBegin.access);
                 if (textureAccessIsWrite(accessBeforePass))
                     barriers |= barriersForTexture();
             }
@@ -4691,7 +4693,7 @@ QGles2RenderTargetData *QRhiGles2::enqueueBindFramebuffer(QRhiRenderTarget *rt, 
 
 void QRhiGles2::enqueueBarriersForPass(QGles2CommandBuffer *cbD)
 {
-    cbD->passResTrackers.append(QRhiPassResourceTracker());
+    cbD->passResTrackers.emplace_back();
     cbD->currentPassResTrackerIndex = cbD->passResTrackers.size() - 1;
     QGles2CommandBuffer::Command &cmd(cbD->commands.get());
     cmd.cmd = QGles2CommandBuffer::Command::BarriersForPass;

@@ -11708,15 +11708,16 @@ void QRhiPassResourceTracker::registerBuffer(QRhiBuffer *buf, int slot, BufferAc
 {
     auto it = m_buffers.find(buf);
     if (it != m_buffers.end()) {
-        if (it->access != *access) {
+        Buffer &b = it->second;
+        if (Q_UNLIKELY(b.access != *access)) {
             const QByteArray name = buf->name();
             qWarning("Buffer %p (%s) used with different accesses within the same pass, this is not allowed.",
                      buf, name.constData());
             return;
         }
-        if (it->stage != *stage) {
-            it->stage = earlierStage(it->stage, *stage);
-            *stage = it->stage;
+        if (b.stage != *stage) {
+            b.stage = earlierStage(b.stage, *stage);
+            *stage = b.stage;
         }
         return;
     }
@@ -11747,23 +11748,24 @@ void QRhiPassResourceTracker::registerTexture(QRhiTexture *tex, TextureAccess *a
 {
     auto it = m_textures.find(tex);
     if (it != m_textures.end()) {
-        if (it->access != *access) {
+        Texture &t = it->second;
+        if (t.access != *access) {
             // Different subresources of a texture may be used for both load
             // and store in the same pass. (think reading from one mip level
             // and writing to another one in a compute shader) This we can
             // handle by treating the entire resource as read-write.
-            if (isImageLoadStore(it->access) && isImageLoadStore(*access)) {
-                it->access = QRhiPassResourceTracker::TexStorageLoadStore;
-                *access = it->access;
+            if (Q_LIKELY(isImageLoadStore(t.access) && isImageLoadStore(*access))) {
+                t.access = QRhiPassResourceTracker::TexStorageLoadStore;
+                *access = t.access;
             } else {
                 const QByteArray name = tex->name();
                 qWarning("Texture %p (%s) used with different accesses within the same pass, this is not allowed.",
                          tex, name.constData());
             }
         }
-        if (it->stage != *stage) {
-            it->stage = earlierStage(it->stage, *stage);
-            *stage = it->stage;
+        if (t.stage != *stage) {
+            t.stage = earlierStage(t.stage, *stage);
+            *stage = t.stage;
         }
         return;
     }
