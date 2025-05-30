@@ -133,7 +133,8 @@ QWaylandDataControlSourceV1::QWaylandDataControlSourceV1(QWaylandDataControlMana
 {
     if (!mimeData)
         return;
-    for (auto &format : mimeData->formats())
+    const auto formats = QInternalMimeData::formatsHelper(mimeData);
+    for (const QString &format : formats)
         offer(format);
 }
 
