@@ -704,7 +704,7 @@ void QWaylandWindow::applyConfigureWhenPossible()
 {
     if (!mWaitingToApplyConfigure) {
         mWaitingToApplyConfigure = true;
-        QMetaObject::invokeMethod(this, "applyConfigure", Qt::QueuedConnection);
+        QMetaObject::invokeMethod(this, &QWaylandWindow::applyConfigure, Qt::QueuedConnection);
     }
 }
 
