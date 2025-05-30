@@ -884,7 +884,6 @@ bool QWaylandWindow::waitForFrameSync(int timeout)
     if (mWaitingForFrameCallback) {
         qCDebug(lcWaylandBackingstore) << "Didn't receive frame callback in time, window should now be inexposed";
         mFrameCallbackTimedOut = true;
-        mWaitingForUpdate = false;
         QMetaObject::invokeMethod(this, &QWaylandWindow::updateExposure, Qt::QueuedConnection);
     }
 
@@ -1747,7 +1746,6 @@ void QWaylandWindow::timerEvent(QTimerEvent *event)
 
     qCDebug(lcWaylandBackingstore) << "Didn't receive frame callback in time, window should now be inexposed";
     mFrameCallbackTimedOut = true;
-    mWaitingForUpdate = false;
     updateExposure();
 }
 
@@ -1762,13 +1760,6 @@ void QWaylandWindow::requestUpdate()
         if (mWaitingForFrameCallback)
             return;
     }
-
-    // If we've already called deliverUpdateRequest(), but haven't seen any attach+commit/swap yet
-    // This is a somewhat redundant behavior and might indicate a bug in the calling code, so log
-    // here so we can get this information when debugging update/frame callback issues.
-    // Continue as nothing happened, though.
-    if (mWaitingForUpdate)
-        qCDebug(lcWaylandBackingstore) << "requestUpdate called twice without committing anything";
 
     // Some applications (such as Qt Quick) depend on updates being delivered asynchronously,
     // so use invokeMethod to delay the delivery a bit.
@@ -1807,7 +1798,6 @@ void QWaylandWindow::handleUpdate()
     wl_proxy_wrapper_destroy(wrappedSurface);
     wl_callback_add_listener(mFrameCallback, &QWaylandWindow::callbackListener, this);
     mWaitingForFrameCallback = true;
-    mWaitingForUpdate = false;
 
     // Start a timer for handling the case when the compositor stops sending frame callbacks.
     if (mFrameCallbackTimeout > 0) {
@@ -1826,7 +1816,6 @@ void QWaylandWindow::handleUpdate()
 void QWaylandWindow::deliverUpdateRequest()
 {
     qCDebug(lcWaylandBackingstore) << "deliverUpdateRequest";
-    mWaitingForUpdate = true;
     QPlatformWindow::deliverUpdateRequest();
 }
 

@@ -314,8 +314,6 @@ protected:
     QMutex mFrameSyncMutex;
     QWaitCondition mFrameSyncWait;
 
-    // True when we have called deliverRequestUpdate, but the client has not yet attached a new buffer
-    std::atomic_bool mWaitingForUpdate = false;
     bool mExposed = false;
     std::atomic_bool mExposeEventNeedsAttachedBuffer = false;
 
