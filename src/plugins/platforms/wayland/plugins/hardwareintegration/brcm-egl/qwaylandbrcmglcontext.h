@@ -18,6 +18,7 @@ class QWaylandWindow;
 
 class QWaylandBrcmGLContext : public QPlatformOpenGLContext {
 public:
+    QWaylandBrcmGLContext();
     QWaylandBrcmGLContext(EGLDisplay eglDisplay, const QSurfaceFormat &format, QPlatformOpenGLContext *share);
     ~QWaylandBrcmGLContext();
 

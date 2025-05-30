@@ -34,6 +34,7 @@ class DecorationsBlitter;
 class Q_WAYLANDCLIENT_EXPORT QWaylandGLContext : public QEGLPlatformContext
 {
 public:
+    QWaylandGLContext();
     QWaylandGLContext(EGLDisplay eglDisplay, QWaylandDisplay *display, const QSurfaceFormat &format, QPlatformOpenGLContext *share);
     ~QWaylandGLContext();
     void swapBuffers(QPlatformSurface *surface) override;

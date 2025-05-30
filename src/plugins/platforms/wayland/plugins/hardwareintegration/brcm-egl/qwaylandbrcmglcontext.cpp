@@ -20,6 +20,8 @@ namespace QtWaylandClient {
 
 extern QSurfaceFormat brcmFixFormat(const QSurfaceFormat &format);
 
+QWaylandBrcmGLContext::QWaylandBrcmGLContext() = default;
+
 QWaylandBrcmGLContext::QWaylandBrcmGLContext(EGLDisplay eglDisplay, const QSurfaceFormat &format, QPlatformOpenGLContext *share)
     : QPlatformOpenGLContext()
     , m_eglDisplay(eglDisplay)

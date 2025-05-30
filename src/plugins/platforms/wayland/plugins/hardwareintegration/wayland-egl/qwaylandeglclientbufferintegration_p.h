@@ -40,6 +40,7 @@ public:
 
     QWaylandWindow *createEglWindow(QWindow *window) override;
     QPlatformOpenGLContext *createPlatformOpenGLContext(const QSurfaceFormat &glFormat, QPlatformOpenGLContext *share) const override;
+    QOpenGLContext *createOpenGLContext(EGLContext context, EGLDisplay contextDisplay, QOpenGLContext *shareContext) const override;
 
     void *nativeResource(NativeResource resource) override;
     void *nativeResourceForContext(NativeResource resource, QPlatformOpenGLContext *context) override;

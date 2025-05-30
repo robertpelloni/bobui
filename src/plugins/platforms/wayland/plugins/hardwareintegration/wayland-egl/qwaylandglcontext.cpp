@@ -191,6 +191,8 @@ public:
     int m_textureWrap;
 };
 
+QWaylandGLContext::QWaylandGLContext() = default;
+
 QWaylandGLContext::QWaylandGLContext(EGLDisplay eglDisplay, QWaylandDisplay *display,
                                      const QSurfaceFormat &fmt, QPlatformOpenGLContext *share)
     : QEGLPlatformContext(fmt, share, eglDisplay)

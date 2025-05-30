@@ -84,6 +84,11 @@ QPlatformOpenGLContext *QWaylandBrcmEglIntegration::createPlatformOpenGLContext(
     return new QWaylandBrcmGLContext(m_eglDisplay, glFormat, share);
 }
 
+QOpenGLContext *QWaylandBrcmEglIntegration::createOpenGLContext(EGLContext context, EGLDisplay contextDisplay, QOpenGLContext *shareContext) const
+{
+    return QEGLPlatformContext::createFrom<QWaylandBrcmGLContext>(context, contextDisplay, m_eglDisplay, shareContext);
+}
+
 EGLDisplay QWaylandBrcmEglIntegration::eglDisplay() const
 {
     return m_eglDisplay;

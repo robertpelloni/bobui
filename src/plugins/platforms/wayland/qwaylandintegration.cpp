@@ -161,6 +161,11 @@ QPlatformOpenGLContext *QWaylandIntegration::createPlatformOpenGLContext(QOpenGL
         return mDisplay->clientBufferIntegration()->createPlatformOpenGLContext(context->format(), context->shareHandle());
     return nullptr;
 }
+
+QOpenGLContext *QWaylandIntegration::createOpenGLContext(EGLContext context, EGLDisplay contextDisplay, QOpenGLContext *shareContext) const
+{
+    return mClientBufferIntegration->createOpenGLContext(context, contextDisplay, shareContext);
+}
 #endif  // opengl
 
 QPlatformBackingStore *QWaylandIntegration::createPlatformBackingStore(QWindow *window) const

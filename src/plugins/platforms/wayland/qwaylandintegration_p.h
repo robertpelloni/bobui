@@ -17,6 +17,7 @@
 
 #include <QtWaylandClient/qtwaylandclientglobal.h>
 #include <qpa/qplatformintegration.h>
+#include <qpa/qplatformopenglcontext.h>
 #include <QtCore/QScopedPointer>
 #include <QtCore/QMutex>
 #include <QtCore/private/qglobal_p.h>
@@ -37,6 +38,9 @@ class QWaylandCursor;
 class QWaylandPlatformServices;
 
 class Q_WAYLANDCLIENT_EXPORT QWaylandIntegration : public QPlatformIntegration
+#if QT_CONFIG(opengl)
+    , public QNativeInterface::Private::QEGLIntegration
+#endif
 {
 public:
     QWaylandIntegration(const QString &platformName);
@@ -50,6 +54,7 @@ public:
     QPlatformWindow *createPlatformWindow(QWindow *window) const override;
 #if QT_CONFIG(opengl)
     QPlatformOpenGLContext *createPlatformOpenGLContext(QOpenGLContext *context) const override;
+    QOpenGLContext *createOpenGLContext(EGLContext context, EGLDisplay display, QOpenGLContext *shareContext) const override;
 #endif
     QPlatformBackingStore *createPlatformBackingStore(QWindow *window) const override;
 

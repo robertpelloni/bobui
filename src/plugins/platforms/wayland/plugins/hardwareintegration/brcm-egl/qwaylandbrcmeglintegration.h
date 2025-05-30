@@ -38,6 +38,7 @@ public:
 
     QWaylandWindow *createEglWindow(QWindow *window);
     QPlatformOpenGLContext *createPlatformOpenGLContext(const QSurfaceFormat &glFormat, QPlatformOpenGLContext *share) const override;
+    QOpenGLContext *createOpenGLContext(EGLContext context, EGLDisplay contextDisplay, QOpenGLContext *shareContext) const override;
 
     EGLDisplay eglDisplay() const;
 
