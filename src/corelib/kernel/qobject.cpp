@@ -3060,18 +3060,19 @@ QMetaObject::Connection QObject::connect(const QObject *sender, const char *sign
     const QMetaObject *smeta = sender->metaObject();
     const char *signal_arg = signal;
     ++signal; // skip code
+    QByteArrayView signalView{signal}; // after skipping code
     QArgumentTypeArray signalTypes;
     Q_ASSERT(QMetaObjectPrivate::get(smeta)->revision >= 7);
-    QByteArrayView signalName = QMetaObjectPrivate::decodeMethodSignature(signal, signalTypes);
+    QByteArrayView signalName = QMetaObjectPrivate::decodeMethodSignature(signalView, signalTypes);
     int signal_index = QMetaObjectPrivate::indexOfSignalRelative(
             &smeta, signalName, signalTypes.size(), signalTypes.constData());
     if (signal_index < 0) {
         // check for normalized signatures
-        pinnedSignal = QMetaObject::normalizedSignature(signal);
-        signal = pinnedSignal.constData();
+        pinnedSignal = QMetaObjectPrivate::normalizedSignature(signalView);
+        signalView = pinnedSignal;
 
         signalTypes.clear();
-        signalName = QMetaObjectPrivate::decodeMethodSignature(signal, signalTypes);
+        signalName = QMetaObjectPrivate::decodeMethodSignature(signalView, signalTypes);
         smeta = sender->metaObject();
         signal_index = QMetaObjectPrivate::indexOfSignalRelative(
                 &smeta, signalName, signalTypes.size(), signalTypes.constData());
@@ -3087,9 +3088,10 @@ QMetaObject::Connection QObject::connect(const QObject *sender, const char *sign
     QByteArray pinnedMethod;
     const char *method_arg = method;
     ++method; // skip code
+    QByteArrayView methodView{method}; // after skipping code
 
     QArgumentTypeArray methodTypes;
-    QByteArrayView methodName = QMetaObjectPrivate::decodeMethodSignature(method, methodTypes);
+    QByteArrayView methodName = QMetaObjectPrivate::decodeMethodSignature(methodView, methodTypes);
     const QMetaObject *rmeta = receiver->metaObject();
     int method_index_relative = -1;
     Q_ASSERT(QMetaObjectPrivate::get(rmeta)->revision >= 7);
@@ -3105,11 +3107,11 @@ QMetaObject::Connection QObject::connect(const QObject *sender, const char *sign
     }
     if (method_index_relative < 0) {
         // check for normalized methods
-        pinnedMethod = QMetaObject::normalizedSignature(method);
-        method = pinnedMethod.constData();
+        pinnedMethod = QMetaObjectPrivate::normalizedSignature(methodView);
+        methodView = pinnedMethod;
 
         methodTypes.clear();
-        methodName = QMetaObjectPrivate::decodeMethodSignature(method, methodTypes);
+        methodName = QMetaObjectPrivate::decodeMethodSignature(methodView, methodTypes);
         // rmeta may have been modified above
         rmeta = receiver->metaObject();
         switch (membcode) {
@@ -3135,8 +3137,8 @@ QMetaObject::Connection QObject::connect(const QObject *sender, const char *sign
         qCWarning(lcConnect,
                   "QObject::connect: Incompatible sender/receiver arguments"
                   "\n        %s::%s --> %s::%s",
-                  sender->metaObject()->className(), signal, receiver->metaObject()->className(),
-                  method);
+                  sender->metaObject()->className(), signalView.constData(),
+                  receiver->metaObject()->className(), methodView.constData());
         return QMetaObject::Connection(nullptr);
     }
 

@@ -130,7 +130,8 @@ struct QMetaObjectPrivate
 
     static int originalClone(const QMetaObject *obj, int local_method_index);
 
-    static QByteArrayView decodeMethodSignature(const char *signature,
+    static QByteArray normalizedSignature(QByteArrayView method);
+    static QByteArrayView decodeMethodSignature(QByteArrayView signature,
                                                 QArgumentTypeArray &types);
     static int indexOfSignalRelative(const QMetaObject **baseObject,
                                      QByteArrayView name, int argc,

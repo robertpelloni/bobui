@@ -821,7 +821,7 @@ int QMetaObject::indexOfMethod(const char *method) const
     No normalization of the type names is performed.
 */
 QByteArrayView QMetaObjectPrivate::decodeMethodSignature(
-        const char *signature, QArgumentTypeArray &types)
+        QByteArrayView signature, QArgumentTypeArray &types)
 {
     Q_ASSERT(types.isEmpty());
     QVarLengthArray<QByteArrayView, 10> typeNames;
@@ -1430,9 +1430,9 @@ QByteArray QMetaObject::normalizedType(const char *type)
 
     \sa checkConnectArgs(), normalizedType()
  */
-QByteArray QMetaObject::normalizedSignature(const char *_method)
+QByteArray QMetaObjectPrivate::normalizedSignature(QByteArrayView method)
 {
-    QByteArrayView method = trimSpacesFromRight(_method);
+    method = trimSpacesFromRight(method);
     if (method.isEmpty())
         return {};
 
@@ -1473,6 +1473,11 @@ QByteArray QMetaObject::normalizedSignature(const char *_method)
     }
 
     return result;
+}
+
+QByteArray QMetaObject::normalizedSignature(const char *method)
+{
+    return QMetaObjectPrivate::normalizedSignature(method);
 }
 
 Q_DECL_COLD_FUNCTION static inline bool
