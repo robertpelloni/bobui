@@ -3064,8 +3064,7 @@ QMetaObject::Connection QObject::connect(const QObject *sender, const char *sign
     QArgumentTypeArray signalTypes;
     Q_ASSERT(QMetaObjectPrivate::get(smeta)->revision >= 7);
     QByteArrayView signalName = QMetaObjectPrivate::decodeMethodSignature(signalView, signalTypes);
-    int signal_index = QMetaObjectPrivate::indexOfSignalRelative(
-            &smeta, signalName, signalTypes.size(), signalTypes.constData());
+    int signal_index = QMetaObjectPrivate::indexOfSignalRelative(&smeta, signalName, signalTypes);
     if (signal_index < 0) {
         // check for normalized signatures
         pinnedSignal = QMetaObjectPrivate::normalizedSignature(signalView);
@@ -3074,8 +3073,7 @@ QMetaObject::Connection QObject::connect(const QObject *sender, const char *sign
         signalTypes.clear();
         signalName = QMetaObjectPrivate::decodeMethodSignature(signalView, signalTypes);
         smeta = sender->metaObject();
-        signal_index = QMetaObjectPrivate::indexOfSignalRelative(
-                &smeta, signalName, signalTypes.size(), signalTypes.constData());
+        signal_index = QMetaObjectPrivate::indexOfSignalRelative(&smeta, signalName, signalTypes);
     }
     if (signal_index < 0) {
         err_method_notfound(sender, signal_arg, "connect");
@@ -3098,13 +3096,14 @@ QMetaObject::Connection QObject::connect(const QObject *sender, const char *sign
     switch (membcode) {
     case QSLOT_CODE:
         method_index_relative = QMetaObjectPrivate::indexOfSlotRelative(
-                &rmeta, methodName, methodTypes.size(), methodTypes.constData());
+                &rmeta, methodName, methodTypes);
         break;
     case QSIGNAL_CODE:
         method_index_relative = QMetaObjectPrivate::indexOfSignalRelative(
-                &rmeta, methodName, methodTypes.size(), methodTypes.constData());
+                &rmeta, methodName, methodTypes);
         break;
     }
+
     if (method_index_relative < 0) {
         // check for normalized methods
         pinnedMethod = QMetaObjectPrivate::normalizedSignature(methodView);
@@ -3117,11 +3116,11 @@ QMetaObject::Connection QObject::connect(const QObject *sender, const char *sign
         switch (membcode) {
         case QSLOT_CODE:
             method_index_relative = QMetaObjectPrivate::indexOfSlotRelative(
-                    &rmeta, methodName, methodTypes.size(), methodTypes.constData());
+                    &rmeta, methodName, methodTypes);
             break;
         case QSIGNAL_CODE:
             method_index_relative = QMetaObjectPrivate::indexOfSignalRelative(
-                    &rmeta, methodName, methodTypes.size(), methodTypes.constData());
+                    &rmeta, methodName, methodTypes);
             break;
         }
     }
@@ -3132,8 +3131,7 @@ QMetaObject::Connection QObject::connect(const QObject *sender, const char *sign
         return QMetaObject::Connection(nullptr);
     }
 
-    if (!QMetaObjectPrivate::checkConnectArgs(signalTypes.size(), signalTypes.constData(),
-                                              methodTypes.size(), methodTypes.constData())) {
+    if (!QMetaObjectPrivate::checkConnectArgs(signalTypes, methodTypes)) {
         qCWarning(lcConnect,
                   "QObject::connect: Incompatible sender/receiver arguments"
                   "\n        %s::%s --> %s::%s",
@@ -3397,7 +3395,7 @@ bool QObject::disconnect(const QObject *sender, const char *signal,
         int signal_index = -1;
         if (signal) {
             signal_index = QMetaObjectPrivate::indexOfSignalRelative(
-                        &smeta, signalName, signalTypes.size(), signalTypes.constData());
+                        &smeta, signalName, signalTypes);
             if (signal_index < 0)
                 break;
             signal_index = QMetaObjectPrivate::originalClone(smeta, signal_index);
@@ -3411,7 +3409,7 @@ bool QObject::disconnect(const QObject *sender, const char *signal,
             const QMetaObject *rmeta = receiver->metaObject();
             do {
                 int method_index = QMetaObjectPrivate::indexOfMethod(
-                            rmeta, methodName, methodTypes.size(), methodTypes.constData());
+                            rmeta, methodName, methodTypes);
                 if (method_index >= 0)
                     while (method_index < rmeta->methodOffset())
                             rmeta = rmeta->superClass();
@@ -4418,8 +4416,7 @@ int QObjectPrivate::signalIndex(const char *signalName,
     Q_ASSERT(QMetaObjectPrivate::get(base)->revision >= 7);
     QArgumentTypeArray types;
     QByteArrayView name = QMetaObjectPrivate::decodeMethodSignature(signalName, types);
-    int relative_index = QMetaObjectPrivate::indexOfSignalRelative(
-            &base, name, types.size(), types.constData());
+    int relative_index = QMetaObjectPrivate::indexOfSignalRelative(&base, name, types);
     if (relative_index < 0)
         return relative_index;
     relative_index = QMetaObjectPrivate::originalClone(base, relative_index);
