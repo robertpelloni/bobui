@@ -1391,7 +1391,7 @@ static const char *qNormalizeType(QByteArrayView in, int &templdepth, QByteArray
             return next;
     }
 
-    result += normalizeTypeInternal(t, d);
+    normalizeTypeInternal(QByteArrayView{t, d}, result);
 
     return d;
 }
