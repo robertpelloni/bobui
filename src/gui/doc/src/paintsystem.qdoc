@@ -242,8 +242,7 @@
     Any color in Qt is represented by the QColor class which supports
     the RGB, HSV and CMYK color models. QColor also support
     alpha-blended outlining and filling (specifying the transparency
-    effect), and the class is platform and device independent (the
-    colors are mapped to hardware using the QColormap class). For more
+    effect), and the class is platform and device independent. For more
     information, see the QColor class documentation.
 
     The available fill patterns are described by the Qt::BrushStyle
