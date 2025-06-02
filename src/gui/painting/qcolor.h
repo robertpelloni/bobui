@@ -16,7 +16,6 @@ QT_BEGIN_NAMESPACE
 
 
 class QColor;
-class QColormap;
 class QVariant;
 
 #ifndef QT_NO_DEBUG_STREAM
@@ -256,7 +255,6 @@ private:
         ushort array[5];
     } ct;
 
-    friend class QColormap;
 #ifndef QT_NO_DATASTREAM
     friend Q_GUI_EXPORT QDataStream &operator<<(QDataStream &, const QColor &);
     friend Q_GUI_EXPORT QDataStream &operator>>(QDataStream &, QColor &);
