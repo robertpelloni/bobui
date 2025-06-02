@@ -3640,7 +3640,9 @@ void QApplication::setEffectEnabled(Qt::UIEffect effect, bool enable)
 bool QApplication::isEffectEnabled(Qt::UIEffect effect)
 {
     CHECK_QAPP_INSTANCE(false)
-    return QColormap::instance().depth() >= 16
+    const auto primaryScreenDepth = QGuiApplication::primaryScreen() ?
+        QGuiApplication::primaryScreen()->depth() : 24;
+    return primaryScreenDepth >= 16
            && (QApplicationPrivate::enabledAnimations & QPlatformTheme::GeneralUiEffect)
            && (QApplicationPrivate::enabledAnimations & uiEffectToFlag(effect));
 }
