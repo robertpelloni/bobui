@@ -31,7 +31,6 @@
 #include <private/qdnd_p.h>
 #endif
 #include "private/qguiapplication_p.h"
-#include "qcolormap.h"
 #include "qdebug.h"
 #if QT_CONFIG(style_stylesheet)
 #include "private/qstylesheetstyle_p.h"
@@ -480,7 +479,6 @@ void QApplicationPrivate::init()
     process_cmdline();
 
     // Must be called before initialize()
-    QColormap::initialize();
     initializeWidgetPalettesFromTheme();
     qt_init_tooltip_palette();
     QApplicationPrivate::initializeWidgetFontHash();
@@ -712,7 +710,6 @@ QApplication::~QApplication()
     d->cleanupMultitouch();
 
     QPixmapCache::clear();
-    QColormap::cleanup();
 
     QApplicationPrivate::active_window = nullptr; //### this should not be necessary
 

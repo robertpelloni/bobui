@@ -7,6 +7,8 @@
 #include "qscreen.h"
 #include "qguiapplication.h"
 
+#include <QtCore/qmutex.h>
+
 QT_BEGIN_NAMESPACE
 
 class QColormapPrivate
@@ -42,16 +44,26 @@ void QColormap::initialize()
         screenMap->mode = QColormap::Direct;
         screenMap->numcolors = -1;
     }
+
+    qAddPostRoutine(QColormap::cleanup);
 }
 
 void QColormap::cleanup()
 {
-    delete screenMap;
-    screenMap = nullptr;
+    if (screenMap) {
+        if (!screenMap->ref.deref())
+            delete screenMap;
+        screenMap = nullptr;
+    }
 }
 
 QColormap QColormap::instance(int /*screen*/)
 {
+    static QMutex mutex;
+    QMutexLocker locker(&mutex);
+    if (!screenMap)
+        initialize();
+
     return QColormap();
 }
 
