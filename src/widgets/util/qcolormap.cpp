@@ -11,6 +11,9 @@
 
 QT_BEGIN_NAMESPACE
 
+QT_WARNING_PUSH
+QT_WARNING_DISABLE_DEPRECATED
+
 class QColormapPrivate
 {
 public:
@@ -190,5 +193,7 @@ const QList<QColor> QColormap::colormap() const
 
 QColormap &QColormap::operator=(const QColormap &colormap)
 { qAtomicAssign(d, colormap.d); return *this; }
+
+QT_WARNING_POP
 
 QT_END_NAMESPACE

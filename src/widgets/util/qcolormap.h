@@ -12,11 +12,22 @@
 
 QT_BEGIN_NAMESPACE
 
-
 class QColor;
 class QColormapPrivate;
 
-class Q_WIDGETS_EXPORT QColormap
+#if QT_WARN_DEPRECATED_UP_TO >= QT_VERSION_CHECK(6, 11, 0)
+# if defined(Q_CC_GNU_ONLY) && Q_CC_GNU < 1300
+// GCC 12 and earlier has issues combining __attribute__ and [[]] syntax
+#  define QT_DEPRECATED_VERSION_6_11_CUSTOM __attribute__((deprecated))
+# else
+#  define QT_DEPRECATED_VERSION_6_11_CUSTOM QT_DEPRECATED
+# endif
+#else
+# define QT_DEPRECATED_VERSION_6_11_CUSTOM
+#endif
+
+#if QT_REMOVAL_QT7_DEPRECATED_SINCE(6, 11)
+class Q_WIDGETS_EXPORT QT_DEPRECATED_VERSION_6_11_CUSTOM QColormap
 {
 public:
     enum Mode { Direct, Indexed, Gray };
@@ -45,6 +56,9 @@ private:
     QColormap();
     QColormapPrivate *d;
 };
+#endif // QT_REMOVAL_QT7_DEPRECATED_SINCE(6, 11)
+
+#undef QT_DEPRECATED_VERSION_6_11_CUSTOM
 
 QT_END_NAMESPACE
 
