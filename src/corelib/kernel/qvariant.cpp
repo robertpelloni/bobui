@@ -1459,7 +1459,7 @@ QString QVariant::toString() const
 }
 
 /*!
-    Returns the variant as a QVariantMap if the variant has type() \l
+    Returns the variant as a QVariantMap if the variant has metaType() \l
     QMetaType::QVariantMap. If it doesn't, QVariant will attempt to
     convert the type to a map and then return it. This will succeed for
     any type that has registered a converter to QVariantMap or which was
@@ -1476,7 +1476,7 @@ QVariantMap QVariant::toMap() const
 
 /*!
     Returns the variant as a QHash<QString, QVariant> if the variant
-    has type() \l QMetaType::QVariantHash; otherwise returns an empty map.
+    has metaType() \l QMetaType::QVariantHash; otherwise returns an empty map.
 
     \sa canConvert(), convert()
 */
@@ -1492,7 +1492,7 @@ QVariantHash QVariant::toHash() const
     \l QMetaType::QDate, \l QMetaType::QDateTime, or \l QMetaType::QString;
     otherwise returns an invalid date.
 
-    If the type() is \l QMetaType::QString, an invalid date will be returned if
+    If the metaType() is \l QMetaType::QString, an invalid date will be returned if
     the string cannot be parsed as a Qt::ISODate format date.
 
     \sa canConvert(), convert()
@@ -1509,7 +1509,7 @@ QDate QVariant::toDate() const
     \l QMetaType::QTime, \l QMetaType::QDateTime, or \l QMetaType::QString;
     otherwise returns an invalid time.
 
-    If the type() is \l QMetaType::QString, an invalid time will be returned if
+    If the metaType() is \l QMetaType::QString, an invalid time will be returned if
     the string cannot be parsed as a Qt::ISODate format time.
 
     \sa canConvert(), convert()
@@ -1526,7 +1526,7 @@ QTime QVariant::toTime() const
     \l QMetaType::QDateTime, \l QMetaType::QDate, or \l QMetaType::QString;
     otherwise returns an invalid date/time.
 
-    If the type() is \l QMetaType::QString, an invalid date/time will be
+    If the metaType() is \l QMetaType::QString, an invalid date/time will be
     returned if the string cannot be parsed as a Qt::ISODate format date/time.
 
     \sa canConvert(), convert()
@@ -1746,7 +1746,7 @@ QPersistentModelIndex QVariant::toPersistentModelIndex() const
 /*!
     \since 5.0
 
-    Returns the variant as a QUuid if the variant has type()
+    Returns the variant as a QUuid if the variant has metaType()
     \l QMetaType::QUuid, \l QMetaType::QByteArray or \l QMetaType::QString;
     otherwise returns a default-constructed QUuid.
 
@@ -1914,7 +1914,7 @@ qlonglong QVariant::toLongLong(bool *ok) const
 
 /*!
     Returns the variant as an unsigned long long int if the
-    variant has type() \l QMetaType::ULongLong, \l QMetaType::Bool,
+    variant has metaType() \l QMetaType::ULongLong, \l QMetaType::Bool,
     \l QMetaType::QByteArray, \l QMetaType::QChar, \l QMetaType::Double,
     \l QMetaType::Int, \l QMetaType::LongLong, \l QMetaType::QString, or
     \l QMetaType::UInt; otherwise returns 0.
@@ -2136,7 +2136,7 @@ bool QVariant::view(int type, void *ptr)
 
     Returns \c true if \a lhs and \a rhs are equal; otherwise returns \c false.
 
-    QVariant uses the equality operator of the type() contained to check for
+    QVariant uses the equality operator of the metaType() contained to check for
     equality.
 
     Variants of different types will always compare as not equal with a few
@@ -2162,7 +2162,7 @@ bool QVariant::view(int type, void *ptr)
 
     Returns \c false if \a lhs and \a rhs are equal; otherwise returns \c true.
 
-    QVariant uses the equality operator of the type() contained to check for
+    QVariant uses the equality operator of the metaType() contained to check for
     equality.
 
     Variants of different types will always compare as not equal with a few

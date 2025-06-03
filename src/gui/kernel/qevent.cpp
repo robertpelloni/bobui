@@ -952,7 +952,7 @@ Qt::MouseEventFlags QMouseEvent::flags() const
     Mouse events occur when a mouse cursor is moved into, out of, or within a
     widget, and if the widget has the Qt::WA_Hover attribute.
 
-    The function pos() gives the current cursor position, while oldPos() gives
+    The function position() gives the current cursor position, while oldPos() gives
     the old mouse position.
 
     There are a few similarities between the events QEvent::HoverEnter
@@ -1008,12 +1008,12 @@ Qt::MouseEventFlags QMouseEvent::flags() const
 
     Returns the previous position of the mouse cursor, relative to the widget
     that received the event. If there is no previous position, oldPos() will
-    return the same position as pos().
+    return the same position as position().
 
     On QEvent::HoverEnter events, this position will always be
     QPoint(-1, -1).
 
-    \sa pos()
+    \sa position()
 */
 
 /*!
@@ -1034,12 +1034,12 @@ Qt::MouseEventFlags QMouseEvent::flags() const
 
     Returns the previous position of the mouse cursor, relative to the widget
     that received the event. If there is no previous position, oldPosF() will
-    return the same position as posF().
+    return the same position as position().
 
     On QEvent::HoverEnter events, this position will always be
     QPointF(-1, -1).
 
-    \sa posF()
+    \sa position()
 */
 
 /*!
