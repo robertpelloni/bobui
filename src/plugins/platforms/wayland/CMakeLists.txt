@@ -77,6 +77,7 @@ qt_internal_add_module(WaylandClient
         qwaylandplatformservices.cpp qwaylandplatformservices_p.h
         qwaylandpointergestures.cpp qwaylandpointergestures_p.h
         qwaylandscreen.cpp qwaylandscreen_p.h
+        qwaylandsessionmanager.cpp qwaylandsessionmanager_p.h
         qwaylandshellsurface.cpp qwaylandshellsurface_p.h
         qwaylandshm.cpp qwaylandshm_p.h
         qwaylandshmbackingstore.cpp qwaylandshmbackingstore_p.h
@@ -124,6 +125,8 @@ qt_internal_add_module(WaylandClient
         ../../../3rdparty/wayland/protocols/viewporter
         ../../../3rdparty/wayland/protocols/xdg-shell
         ../../../3rdparty/wayland/protocols/wlr-data-control
+        ../../../3rdparty/wayland/protocols/session-management
+
 )
 
 qt_internal_add_plugin(QWaylandIntegrationPlugin
@@ -164,6 +167,7 @@ qt6_generate_wayland_protocol_client_sources(WaylandClient
         ${CMAKE_CURRENT_SOURCE_DIR}/../../../3rdparty/wayland/extensions/server-buffer-extension.xml
         ${CMAKE_CURRENT_SOURCE_DIR}/../../../3rdparty/wayland/protocols/color-management/xx-color-management-v4.xml
         ${CMAKE_CURRENT_SOURCE_DIR}/../../../3rdparty/wayland/protocols/pointer-warp/pointer-warp-v1.xml
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../../3rdparty/wayland/protocols/session-management/xx-session-management-v1.xml
 )
 
 #### Keys ignored in scope 1:.:.:client.pro:<TRUE>:

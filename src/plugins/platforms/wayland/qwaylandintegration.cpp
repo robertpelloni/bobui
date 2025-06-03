@@ -56,6 +56,7 @@
 #include "qwaylandinputdeviceintegration_p.h"
 #include "qwaylandinputdeviceintegrationfactory_p.h"
 #include "qwaylandwindow_p.h"
+#include "qwaylandsessionmanager_p.h"
 
 #include <QtWaylandClient/private/qwayland-xdg-system-bell-v1.h>
 
@@ -527,6 +528,12 @@ QWaylandShellIntegration *QWaylandIntegration::createShellIntegration(const QStr
         qCWarning(lcQpaWayland) << "No shell integration named" << integrationName << "found";
         return nullptr;
     }
+}
+
+QPlatformSessionManager *QWaylandIntegration::createPlatformSessionManager(const QString &id, const QString &key) const
+{
+    Q_UNUSED(key);
+    return new QWaylandSessionManager(mDisplay.data(), id);
 }
 
 void QWaylandIntegration::reset()

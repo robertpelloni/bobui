@@ -30,6 +30,10 @@
 
 QT_BEGIN_NAMESPACE
 
+namespace QtWayland {
+    class xx_toplevel_session_v1;
+}
+
 namespace QtWaylandClient {
 
 class QWaylandDisplay;
@@ -41,6 +45,7 @@ class QWaylandXdgExporterV2;
 class QWaylandXdgDialogWmV1;
 class QWaylandXdgDialogV1;
 class QWaylandXdgToplevelIconManagerV1;
+class QWaylandTopLevelSession;
 
 class Q_WAYLANDCLIENT_EXPORT QWaylandXdgSurface : public QWaylandShellSurface, public QtWayland::xdg_surface
 {
@@ -114,6 +119,7 @@ private:
         QWaylandXdgToplevelDecorationV1 *m_decoration = nullptr;
         QScopedPointer<QWaylandXdgExportedV2> m_exported;
         QScopedPointer<QWaylandXdgDialogV1> m_xdgDialog;
+        QScopedPointer<QtWayland::xx_toplevel_session_v1> m_session;
     };
 
     class Positioner : public QtWayland::xdg_positioner {

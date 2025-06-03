@@ -1,6 +1,7 @@
 // Copyright (C) 2016 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
+#include "qwaylandsessionmanager_p.h"
 #include "qwaylandwindow_p.h"
 
 #include "qwaylandbuffer_p.h"
@@ -1932,6 +1933,16 @@ bool QWaylandWindow::windowEvent(QEvent *event)
 QSurfaceFormat QWaylandWindow::format() const
 {
     return mSurfaceFormat;
+}
+
+void QWaylandWindow::setSessionRestoreId(const QString &role)
+{
+    mSessionRestoreId = role;
+}
+
+QString QWaylandWindow::sessionRestoreId() const
+{
+    return mSessionRestoreId;
 }
 
 }

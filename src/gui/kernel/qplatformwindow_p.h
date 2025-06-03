@@ -135,6 +135,7 @@ public:
         auto role = std::any_cast<T *>(&anyRole);
         return role ? *role : nullptr;
     }
+    virtual void setSessionRestoreId(const QString &role) = 0;
 Q_SIGNALS:
     void surfaceCreated();
     void surfaceDestroyed();

@@ -8,6 +8,7 @@
 #include "qwaylandxdgexporterv2_p.h"
 #include "qwaylandxdgdialogv1_p.h"
 #include "qwaylandxdgtopleveliconv1_p.h"
+#include "qwaylandsessionmanager_p.h"
 
 #include <QtWaylandClient/private/qwaylanddisplay_p.h>
 #include <QtWaylandClient/private/qwaylandwindow_p.h>
@@ -22,6 +23,16 @@
 QT_BEGIN_NAMESPACE
 
 namespace QtWaylandClient {
+
+template <typename T, auto f>
+struct WithDestructor : public T
+{
+    using T::T;
+    ~WithDestructor()
+    {
+        f(this->object());
+    }
+};
 
 QWaylandXdgSurface::Toplevel::Toplevel(QWaylandXdgSurface *xdgSurface)
     : QtWayland::xdg_toplevel(xdgSurface->get_toplevel())
@@ -45,6 +56,12 @@ QWaylandXdgSurface::Toplevel::Toplevel(QWaylandXdgSurface *xdgSurface)
         m_xdgDialog.reset(m_xdgSurface->m_shell->m_xdgDialogWm->getDialog(object()));
         m_xdgDialog->set_modal();
     }
+
+#ifndef QT_NO_SESSIONMANAGER
+    const QString sessionRestoreId = xdgSurface->window()->sessionRestoreId();
+    if (!sessionRestoreId.isEmpty() && QWaylandSessionManager::instance()->session())
+        m_session.reset(new WithDestructor<QtWayland::xx_toplevel_session_v1, xx_toplevel_session_v1_destroy>(QWaylandSessionManager::instance()->session()->restore_toplevel(object(), sessionRestoreId)));
+#endif
 }
 
 QWaylandXdgSurface::Toplevel::~Toplevel()

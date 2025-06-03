@@ -36,6 +36,7 @@ class QWaylandInputDevice;
 class QWaylandScreen;
 class QWaylandCursor;
 class QWaylandPlatformServices;
+class QWaylandSessionManager;
 
 class Q_WAYLANDCLIENT_EXPORT QWaylandIntegration : public QPlatformIntegration
 #if QT_CONFIG(opengl)
@@ -131,6 +132,7 @@ private:
     void initializeShellIntegration();
     void initializeInputDeviceIntegration();
     QWaylandShellIntegration *createShellIntegration(const QString& interfaceName);
+    QPlatformSessionManager *createPlatformSessionManager(const QString &id, const QString &key) const override;
 
     const QString mPlatformName;
     QScopedPointer<QPlatformFontDatabase> mFontDb;

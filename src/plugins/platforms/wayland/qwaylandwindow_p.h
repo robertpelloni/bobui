@@ -252,6 +252,8 @@ public:
     bool windowEvent(QEvent *event) override;
 
     QSurfaceFormat format() const override;
+    void setSessionRestoreId(const QString &role) override;
+    QString sessionRestoreId() const;
 
 public Q_SLOTS:
     void applyConfigure();
@@ -346,6 +348,7 @@ protected:
     QWaylandShmBackingStore *mBackingStore = nullptr;
 
     QMargins mCustomMargins;
+    QString mSessionRestoreId;
 
     QPointer<QWaylandWindow> mTransientParent;
     QList<QPointer<QWaylandWindow>> mChildPopups;

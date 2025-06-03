@@ -1360,6 +1360,12 @@ void QWidgetPrivate::create()
             xcbWindow->setWindowRole(topData()->role);
     }
 #endif
+#if QT_CONFIG(wayland)
+    if (!topData()->role.isNull()) {
+        if (auto *waylandWindow = dynamic_cast<QWaylandWindow*>(win->handle()))
+            waylandWindow->setSessionRestoreId(topData()->role);
+    }
+#endif
 
     QBackingStore *store = q->backingStore();
     usesRhiFlush = false;
@@ -6359,17 +6365,24 @@ QString QWidget::windowRole() const
 */
 void QWidget::setWindowRole(const QString &role)
 {
-#if QT_CONFIG(xcb)
+#if QT_CONFIG(xcb) || QT_CONFIG(wayland)
     Q_D(QWidget);
     d->createTLExtra();
     d->topData()->role = role;
-    if (windowHandle()) {
-        if (auto *xcbWindow = dynamic_cast<QXcbWindow*>(windowHandle()->handle()))
-            xcbWindow->setWindowRole(role);
-    }
 #else
     Q_UNUSED(role);
 #endif
+
+    if (windowHandle()) {
+#if QT_CONFIG(xcb)
+        if (auto *xcbWindow = dynamic_cast<QXcbWindow*>(windowHandle()->handle()))
+            xcbWindow->setWindowRole(role);
+#endif
+#if QT_CONFIG(wayland)
+        if (auto *waylandWindow = dynamic_cast<QWaylandWindow*>(windowHandle()->handle()))
+           waylandWindow->setSessionRestoreId(role);
+#endif
+    }
 }
 
 /*!
