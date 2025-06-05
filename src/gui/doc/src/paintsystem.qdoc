@@ -28,8 +28,9 @@
     \ingroup qt-basic-concepts
 
 
-    Qt's paint system enables painting on screen and print devices
-    using the same API, and is primarily based on the QPainter,
+    Qt's paint system provides a unified and flexible framework for
+    rendering graphics on various surfaces, such as on-screen widgets,
+    images, and printed pages. It is primarily built around the QPainter,
     QPaintDevice, and QPaintEngine classes.
 
     QPainter is used to perform drawing operations, QPaintDevice is an
