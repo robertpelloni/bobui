@@ -828,7 +828,7 @@ inline QRandomGenerator::SystemGenerator &QRandomGenerator::SystemGenerator::sel
     if it is infinite or NaN, the result will be infinite or NaN too (that is,
     not random).
 
-    \sa generateDouble(), bounded()
+    \sa generateDouble(), bounded(quint64)
  */
 
 /*!
