@@ -900,13 +900,13 @@ bool QFileSystemEngine::fillMetaData(const QFileSystemEntry &entry, QFileSystemM
     }
     if (what & QFileSystemMetaData::AliasType)
         what |= QFileSystemMetaData::LinkType;
-#endif
+#endif // defined(Q_OS_DARWIN)
 #ifdef UF_HIDDEN
     if (what & QFileSystemMetaData::HiddenAttribute) {
         // OS X >= 10.5: st_flags & UF_HIDDEN
         what |= QFileSystemMetaData::PosixStatFlags;
     }
-#endif // defined(Q_OS_DARWIN)
+#endif
 
     // if we're asking for any of the stat(2) flags, then we're getting them all
     if (what & QFileSystemMetaData::PosixStatFlags)
@@ -929,7 +929,7 @@ bool QFileSystemEngine::fillMetaData(const QFileSystemEntry &entry, QFileSystemM
     //    entry still exist are EACCES, EFAULT, ENOMEM and EOVERFLOW. If we get
     //    EACCES or ENOMEM, then we have no choice on how to proceed, so we may
     //    as well conclude it doesn't exist; EFAULT can't happen and EOVERFLOW
-    //    shouldn't happen because we build in _LARGEFIE64.
+    //    shouldn't happen because we build in _LARGEFILE64.
     union {
         QT_STATBUF statBuffer;
         struct statx statxBuffer;
@@ -939,7 +939,7 @@ bool QFileSystemEngine::fillMetaData(const QFileSystemEntry &entry, QFileSystemM
         mode_t mode = 0;
         statResult = qt_lstatx(nativeFilePath, &statxBuffer);
         if (statResult == -ENOSYS) {
-            // use lstst(2)
+            // use lstat(2)
             statResult = QT_LSTAT(nativeFilePath, &statBuffer);
             if (statResult == 0)
                 mode = statBuffer.st_mode;
@@ -954,7 +954,7 @@ bool QFileSystemEngine::fillMetaData(const QFileSystemEntry &entry, QFileSystemM
                 data.entryFlags |= QFileSystemMetaData::LinkType;
                 statResult = -1;    // force stat(2) below
             } else {
-                // it's a reagular file and it exists
+                // it's a regular file and it exists
                 if (statResult)
                     data.fillFromStatxBuf(statxBuffer);
                 else
