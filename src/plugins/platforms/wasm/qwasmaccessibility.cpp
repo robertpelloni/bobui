@@ -454,7 +454,7 @@ void QWasmAccessibility::setHtmlElementVisibility(QAccessibleInterface *iface, b
 
     container.call<void>("appendChild", element);
 
-    visible = visible && !iface->state().invisible && !iface->state().disabled;
+    visible = visible && !iface->state().invisible;
     setProperty(element, "ariaHidden", !visible); // ariaHidden mean completely hidden; maybe some sort of soft-hidden should be used.
 }
 
@@ -511,6 +511,12 @@ void QWasmAccessibility::setHtmlElementFocus(QAccessibleInterface *iface)
 {
     auto element = ensureHtmlElement(iface);
     element.call<void>("focus");
+}
+
+void QWasmAccessibility::setHtmlElementDisabled(QAccessibleInterface *iface)
+{
+    auto element = ensureHtmlElement(iface);
+    setAttribute(element, "aria-disabled", iface->state().disabled);
 }
 
 void QWasmAccessibility::handleStaticTextUpdate(QAccessibleEvent *event)
@@ -677,6 +683,7 @@ void QWasmAccessibility::populateAccessibilityTree(QAccessibleInterface *iface)
         setHtmlElementVisibility(iface, true);
         setHtmlElementGeometry(iface);
         setHtmlElementTextName(iface);
+        setHtmlElementDisabled(iface);
         handleIdentifierUpdate(iface);
         handleDescriptionChanged(iface);
     }
@@ -853,6 +860,12 @@ void QWasmAccessibility::notifyAccessibilityUpdate(QAccessibleEvent *event)
     // Handle some common event types. See
     // https://doc.qt.io/qt-5/qaccessible.html#Event-enum
     switch (event->type()) {
+    case QAccessible::StateChanged: {
+        QAccessibleStateChangeEvent *stateChangeEvent = (QAccessibleStateChangeEvent *)event;
+        if (stateChangeEvent->changedStates().disabled)
+            setHtmlElementDisabled(iface);
+    } break;
+
     case QAccessible::DescriptionChanged:
         handleDescriptionChanged(iface);
         return;

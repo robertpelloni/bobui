@@ -3377,8 +3377,25 @@ QAction *QWidget::addAction(const QIcon &icon, const QString &text, const QKeySe
 void QWidget::setEnabled(bool enable)
 {
     Q_D(QWidget);
+
+#if QT_CONFIG(accessibility)
+    const bool wasEnabled = !testAttribute(Qt::WA_ForceDisabled);
+#endif
+
     setAttribute(Qt::WA_ForceDisabled, !enable);
     d->setEnabled_helper(enable);
+
+#if QT_CONFIG(accessibility)
+    // A widget is enabled if it's parent and itself is enabled.
+    // We do not send state changed events recursively. It is up
+    // to the receiver of the events to check children if required.
+    if (QAccessible::isActive() && wasEnabled != enable) {
+        QAccessible::State states;
+        states.disabled = 1;
+        QAccessibleStateChangeEvent scEvent(this, states);
+        QAccessible::updateAccessibility(&scEvent);
+    }
+#endif
 }
 
 void QWidgetPrivate::setEnabled_helper(bool enable)
