@@ -1380,7 +1380,7 @@ int QNativeSocketEnginePrivate::nativeSelect(QDeadlineTimer deadline, bool check
     }
 
     static const short read_flags = POLLIN | POLLHUP | POLLERR;
-    static const short write_flags = POLLOUT | POLLERR;
+    static const short write_flags = POLLOUT | POLLHUP | POLLERR;
 
     *selectForRead = ((pfd.revents & read_flags) != 0);
     *selectForWrite = ((pfd.revents & write_flags) != 0);
