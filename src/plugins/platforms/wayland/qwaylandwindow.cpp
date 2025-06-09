@@ -483,14 +483,12 @@ void QWaylandWindow::setGeometry(const QRect &r)
     }
     setGeometry_helper(rect);
 
-    if (mShellSurface) {
-        if (!mInResizeFromApplyConfigure) {
-            const QRect frameGeometry = r.marginsAdded(clientSideMargins()).marginsRemoved(windowContentMargins());
-            if (qt_window_private(window())->positionAutomatic)
-                mShellSurface->setWindowSize(frameGeometry.size());
-            else
-                mShellSurface->setWindowGeometry(frameGeometry);
-        }
+    if (mShellSurface && !mInResizeFromApplyConfigure) {
+        const QRect frameGeometry = r.marginsAdded(clientSideMargins()).marginsRemoved(windowContentMargins());
+        if (qt_window_private(window())->positionAutomatic)
+            mShellSurface->setWindowSize(frameGeometry.size());
+        else
+            mShellSurface->setWindowGeometry(frameGeometry);
     }
 
     if (mShellSurface)
