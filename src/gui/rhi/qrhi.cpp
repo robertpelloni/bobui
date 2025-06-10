@@ -936,16 +936,17 @@ Q_LOGGING_CATEGORY(QRHI_LOG_RUB, "qt.rhi.rub")
     avoided as it will not be supported by all backends. The maximum patch
     control point count portable between backends is 32.
 
-    \value GeometryShader Indicates that the geometry shader stage is
-    supported. When supported, a geometry shader can be specified in the
-    QRhiShaderStage list. Geometry Shaders are considered an experimental
-    feature in QRhi and can only be expected to be supported with Vulkan,
-    Direct 3D, OpenGL (3.2+) and OpenGL ES (3.2+), assuming the implementation
-    reports it as supported at run time. Geometry shaders have portability
-    issues between APIs, and therefore no guarantees can be given for a
-    universal solution. They will never be supported with Metal. Whereas with
-    Direct 3D a handwritten HLSL geometry shader must be injected into each
-    QShader for the geometry stage since qsb cannot generate this from SPIR-V.
+    \value GeometryShader Indicates that the geometry shader stage is supported.
+    When supported, a geometry shader can be specified in the QRhiShaderStage
+    list. Geometry Shaders are considered an experimental feature in QRhi and
+    can only be expected to be supported with Vulkan, Direct 3D 11 and 12,
+    OpenGL (3.2+) and OpenGL ES (3.2+), assuming the implementation reports it
+    as supported at run time. Starting with Qt 6.11 geometry shaders are
+    automatically translated to HLSL, and therefore no injection of handwritten
+    HLSL geometry shaders is necessary anymore (but note that gl_in and
+    expressions such as gl_in[0].gl_Position are not supported; rather, pass the
+    position as an output variable from the vertex shader). Geometry shaders are
+    not supported with Metal.
 
     \value TextureArrayRange Indicates that for
     \l{QRhi::newTextureArray()}{texture arrays} it is possible to specify a
