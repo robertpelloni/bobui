@@ -35,6 +35,8 @@ class tst_QDirListing : public QObject
 {
     Q_OBJECT
 
+    bool uncServerAvailable = false;
+
 private: // convenience functions
     QStringList createdDirectories;
     QStringList createdFiles;
@@ -168,7 +170,11 @@ void tst_QDirListing::initTestCase()
 #  endif
 #endif
 
-#if !defined(Q_OS_WIN)
+#ifdef Q_OS_WIN
+    // "When used with directories, _access determines only whether the specified directory exists"
+    if (_waccess(qUtf16Printable("//" + QTest::uncServerName() + "/testshare"), 0) == 0)
+        uncServerAvailable = true;
+#else
     createDirectory("hiddenDirs_hiddenFiles");
     createFile("hiddenDirs_hiddenFiles/normalFile");
     createFile("hiddenDirs_hiddenFiles/.hiddenFile");
@@ -674,6 +680,9 @@ void tst_QDirListing::relativePaths()
 #if defined(Q_OS_WIN)
 void tst_QDirListing::uncPaths_data()
 {
+    if (!uncServerAvailable)
+        QSKIP("UNC server not available");
+
     QTest::addColumn<QString>("dirName");
     QTest::newRow("uncserver")
             <<QString("//" + QTest::uncServerName());
