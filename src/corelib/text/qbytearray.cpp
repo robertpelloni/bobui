@@ -1870,6 +1870,11 @@ QByteArray::QByteArray(qsizetype size, char ch)
 
 /*!
     Constructs a byte array of size \a size with uninitialized contents.
+
+    For example:
+    \code
+    QByteArray buffer(123, Qt::Uninitialized);
+    \endcode
 */
 
 QByteArray::QByteArray(qsizetype size, Qt::Initialization)
