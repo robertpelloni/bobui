@@ -321,7 +321,7 @@ public:
     {
         if constexpr (std::is_same_v<InputIterator, iterator> || std::is_same_v<InputIterator, const_iterator>)
             return assign(QByteArrayView(first, last));
-        d.assign(first, last);
+        d->assign(first, last);
         if (d.data())
             d.data()[d.size] = '\0';
         return *this;

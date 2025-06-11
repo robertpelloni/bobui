@@ -578,7 +578,7 @@ public:
 
     template <typename InputIterator, if_input_iterator<InputIterator> = true>
     QList &assign(InputIterator first, InputIterator last)
-    { d.assign(first, last); return *this; }
+    { d->assign(first, last); return *this; }
 
     QList &assign(std::initializer_list<T> l)
     { return assign(l.begin(), l.end()); }
