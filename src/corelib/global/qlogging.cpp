@@ -379,7 +379,7 @@ using namespace QtPrivate;
 
     One example of direct use is to forward errors that stem from a scripting language, e.g. QML:
 
-    \snippet code/qlogging/qlogging.cpp 1
+    \snippet qlogging/qlogging.cpp 1
 
     \sa QMessageLogContext, qDebug(), qInfo(), qWarning(), qCritical(), qFatal()
 */
@@ -449,7 +449,7 @@ void QMessageLogger::info(const char *msg, ...) const
     This is a typedef for a pointer to a function with the following
     signature:
 
-    \snippet code/qlogging/qlogging.cpp 2
+    \snippet qlogging/qlogging.cpp 2
 
     The \c Q_DECLARE_LOGGING_CATEGORY macro generates a function declaration
     with this signature, and \c Q_LOGGING_CATEGORY generates its definition.

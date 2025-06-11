@@ -1,6 +1,8 @@
 // Copyright (C) 2021 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
+#include <QtCore/qglobal.h>
 
+#if defined(Q_QDOC) || defined(Q_OS_ANDROID)
 //! [QJniObject scope]
 void functionScope()
 {
@@ -61,3 +63,5 @@ private static native void callNativeTwo(int x);
 
 }
 //! [Java native methods]
+
+#endif

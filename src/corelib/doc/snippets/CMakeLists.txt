@@ -2,7 +2,29 @@
 # SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
 
 add_library(corelib_snippets OBJECT
+    customtype/customtypeexample.cpp
+    file/file.cpp
+    jni/src_qjniobject.cpp
+    process/process.cpp
+    qbytearraylist/main.cpp
+    qdir-listfiles/main.cpp
+    qdir-namefilters/main.cpp
+    qelapsedtimer/main.cpp
+    qloggingcategory/main.cpp
+    qmessageauthenticationcode/main.cpp
+    qmetatype/registerConverters.cpp
+    qprocess-environment/main.cpp
     qrangemodel/main.cpp
+    qstack/main.cpp
+    qstringlist/main.cpp
+    qstringlistmodel/main.cpp
+    qversionnumber/main.cpp
+    qxmlstreamwriter/main.cpp
+    settings/settings.cpp
+    sharedemployee/main.cpp
+    signalsandslots/signalsandslots.cpp
+    streaming/main.cpp
+    threads/threads.cpp
 )
 
 target_link_libraries(corelib_snippets PRIVATE
@@ -12,7 +34,37 @@ target_link_libraries(corelib_snippets PRIVATE
 qt_internal_extend_target(corelib_snippets CONDITION QT_FEATURE_widgets
     LIBRARIES
         Qt::Widgets
+    SOURCES
+        events/events.cpp
+        hellotrmain.cpp
+        fileinfo/main.cpp
+        pointer/pointer.cpp
+        qsortfilterproxymodel-details/main.cpp
+        qstring/main.cpp
+        qtcast/qtcast.cpp
+        settings/settings.cpp
 )
+
+qt_internal_extend_target(corelib_snippets CONDITION QT_FEATURE_gui
+    LIBRARIES
+        Qt::Gui
+    SOURCES
+        buffer/buffer.cpp
+        qdebug/qdebugsnippet.cpp
+)
+
+find_package(Qt6 OPTIONAL_COMPONENTS Qml)
+
+if(Qt6Qml_FOUND)
+    qt_internal_extend_target(corelib_snippets
+        LIBRARIES
+            Qt::Qml
+        SOURCES
+            qlogging/qlogging.cpp
+    )
+else()
+    message("Qml was not found")
+endif()
 
 if ("${CMAKE_CXX_COMPILE_FEATURES}" MATCHES "cxx_std_23")
     set_property(TARGET corelib_snippets PROPERTY CXX_STANDARD 23)

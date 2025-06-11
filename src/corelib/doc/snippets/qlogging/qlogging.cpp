@@ -3,7 +3,6 @@
 
 #undef QT_NO_FOREACH // this file contains unported legacy Q_FOREACH uses
 
-#include <QtGui>
 #include <QtDebug>
 #include <QQmlComponent>
 
