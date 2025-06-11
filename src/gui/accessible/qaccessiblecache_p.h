@@ -40,7 +40,7 @@ public:
     bool containsObject(QObject *obj) const;
     QAccessible::Id insert(QObject *object, QAccessibleInterface *iface) const;
     void deleteInterface(QAccessible::Id id, QObject *obj = nullptr);
-
+    void sendObjectDestroyedEvent(QObject *obj);
 #ifdef Q_OS_APPLE
     QT_MANGLE_NAMESPACE(QMacAccessibilityElement) *elementForId(QAccessible::Id axid) const;
     bool insertElement(QAccessible::Id axid, QT_MANGLE_NAMESPACE(QMacAccessibilityElement) *element) const;

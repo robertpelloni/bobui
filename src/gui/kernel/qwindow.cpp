@@ -19,7 +19,8 @@
 #include "qwindow_p.h"
 #include "qguiapplication_p.h"
 #if QT_CONFIG(accessibility)
-#  include "qaccessible.h"
+# include "qaccessible.h"
+# include <private/qaccessiblecache_p.h>
 #endif
 #include "qhighdpiscaling_p.h"
 #if QT_CONFIG(draganddrop)
@@ -184,6 +185,11 @@ QWindow::QWindow(QWindowPrivate &dd, QWindow *parent)
 QWindow::~QWindow()
 {
     Q_D(QWindow);
+
+#if QT_CONFIG(accessibility)
+    if (QGuiApplicationPrivate::is_app_running && !QGuiApplicationPrivate::is_app_closing && QAccessible::isActive())
+        QAccessibleCache::instance()->sendObjectDestroyedEvent(this);
+#endif
 
     // Delete child windows up front, instead of waiting for ~QObject,
     // in case the destruction of the child references its parent as

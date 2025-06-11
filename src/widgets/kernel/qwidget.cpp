@@ -24,6 +24,7 @@
 #include "qstylehints.h"
 #if QT_CONFIG(accessibility)
 # include "qaccessible.h"
+# include <private/qaccessiblecache_p.h>
 #endif
 #include <qpa/qplatformwindow.h>
 #include <qpa/qplatformwindow_p.h>
@@ -1457,6 +1458,11 @@ QWidget::~QWidget()
 {
     Q_D(QWidget);
     d->data.in_destructor = true;
+
+#if QT_CONFIG(accessibility)
+    if (QGuiApplicationPrivate::is_app_running && !QGuiApplicationPrivate::is_app_closing && QAccessible::isActive())
+        QAccessibleCache::instance()->sendObjectDestroyedEvent(this);
+#endif
 
 #if defined (QT_CHECK_STATE)
     if (Q_UNLIKELY(paintingActive()))

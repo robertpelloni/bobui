@@ -9,6 +9,19 @@
 
 QT_BEGIN_NAMESPACE
 
+namespace {
+    class QAccessibleObjectDestroyedEvent : public QAccessibleEvent
+    {
+    public:
+        QAccessibleObjectDestroyedEvent(QAccessible::Id ifaceId, QObject *object)
+            :
+            QAccessibleEvent(object, QAccessible::ObjectDestroyed)
+        {
+            m_uniqueId = ifaceId;
+        }
+    };
+}
+
 Q_STATIC_LOGGING_CATEGORY(lcAccessibilityCache, "qt.accessibility.cache");
 
 /*!
@@ -156,6 +169,17 @@ void QAccessibleCache::objectDestroyed(QObject* obj)
         QAccessible::Id id = pair.first;
         Q_ASSERT_X(idToInterface.contains(id), "", "QObject with accessible interface deleted, where interface not in cache!");
         deleteInterface(id, obj);
+    }
+}
+
+void QAccessibleCache::sendObjectDestroyedEvent(QObject *obj)
+{
+    for (auto pair : objectToId.values(obj)) {
+        QAccessible::Id id = pair.first;
+        Q_ASSERT_X(idToInterface.contains(id), "", "QObject with accessible interface deleted, where interface not in cache!");
+
+        QAccessibleObjectDestroyedEvent event(id, obj);
+        QAccessible::updateAccessibility(&event);
     }
 }
 

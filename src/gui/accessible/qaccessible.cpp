@@ -1455,7 +1455,7 @@ QAccessibleEvent::~QAccessibleEvent()
 */
 QAccessible::Id QAccessibleEvent::uniqueId() const
 {
-    if (!m_object)
+    if (!m_object || m_type == QAccessible::ObjectDestroyed)
         return m_uniqueId;
     QAccessibleInterface *iface = QAccessible::queryAccessibleInterface(m_object);
     if (!iface)
@@ -1468,6 +1468,14 @@ QAccessible::Id QAccessibleEvent::uniqueId() const
         }
     }
     return QAccessible::uniqueId(iface);
+}
+
+void QAccessibleEvent::setChild(int chld)
+{
+    if (m_type == QAccessible::ObjectDestroyed)
+        qCWarning(lcAccessibilityCore) << "Calling QAccessibleEvent::setChild on ObjectDestroyed event " <<
+            "is not supported";
+    m_child = chld;
 }
 
 /*!
@@ -1894,7 +1902,7 @@ QAccessibleAnnouncementEvent::~QAccessibleAnnouncementEvent()
 */
 QAccessibleInterface *QAccessibleEvent::accessibleInterface() const
 {
-    if (m_object == nullptr)
+    if (m_object == nullptr || m_type == QAccessible::ObjectDestroyed)
         return QAccessible::accessibleInterface(m_uniqueId);
 
     QAccessibleInterface *iface = QAccessible::queryAccessibleInterface(m_object);

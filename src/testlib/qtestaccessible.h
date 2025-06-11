@@ -25,6 +25,21 @@
 
 QT_BEGIN_NAMESPACE
 
+namespace {
+    // If we want to look at the object pointer we should do
+    // so directly in the callback. This event is stored for
+    // later retrieval so nullptr for object makes more sense.
+    class QAccessibleObjectDestroyedEvent : public QAccessibleEvent
+    {
+    public:
+        QAccessibleObjectDestroyedEvent(QAccessibleInterface *iface)
+            :
+            QAccessibleEvent(static_cast<QObject *>(nullptr), QAccessible::ObjectDestroyed)
+        {
+            m_uniqueId = QAccessible::uniqueId(iface);
+        }
+    };
+}
 
 class QObject;
 
@@ -121,6 +136,10 @@ public:
         }
         return false;
     }
+    static void setUpdateHandler(std::function<void(QAccessibleEvent *event)> updateHandler)
+    {
+        instance()->m_updateHandler = updateHandler;
+    }
 
 private:
     QTestAccessibility()
@@ -149,6 +168,8 @@ private:
 
     static void updateHandler(QAccessibleEvent *event)
     {
+        instance()->m_updateHandler(event);
+
         auto ev = copyEvent(event);
         if (auto obj = ev->object()) {
             QObject::connect(obj, &QObject::destroyed, obj, [&, ev](){
@@ -163,7 +184,9 @@ private:
     static QAccessibleEvent *copyEvent(QAccessibleEvent *event)
     {
         QAccessibleEvent *ev;
-        if (event->type() == QAccessible::StateChanged) {
+        if (event->type() == QAccessible::ObjectDestroyed) {
+            ev = new QAccessibleObjectDestroyedEvent(event->accessibleInterface());
+        } else if (event->type() == QAccessible::StateChanged) {
             if (event->object())
                 ev = new QAccessibleStateChangeEvent(event->object(),
                         static_cast<QAccessibleStateChangeEvent*>(event)->changedStates());
@@ -245,7 +268,9 @@ private:
             else
                 ev = new QAccessibleEvent(event->accessibleInterface(), event->type());
         }
-        ev->setChild(event->child());
+
+        if (ev->type() != QAccessible::ObjectDestroyed)
+            ev->setChild(event->child());
         return ev;
     }
 
@@ -273,6 +298,7 @@ private:
             str << ' ' << *e;
         return rc;
     }
+    std::function<void(QAccessibleEvent *event)> m_updateHandler = [](QAccessibleEvent *) { ; };
 
 };
 

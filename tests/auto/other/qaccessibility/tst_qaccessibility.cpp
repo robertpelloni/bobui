@@ -444,8 +444,20 @@ void tst_QAccessibility::deletedWidget()
     QVERIFY(iface->isValid());
     QCOMPARE(iface->object(), (QObject*)widget);
 
+    QAccessibleEvent event(iface, QAccessible::ObjectDestroyed);
+
+    // The interface is only valid within the callback
+    bool gotEvent = false;
+    QTestAccessibility::setUpdateHandler(
+        [iface,&gotEvent](QAccessibleEvent *event) {
+            gotEvent = true;
+            QCOMPARE(event->type(), QAccessible::ObjectDestroyed);
+            QVERIFY(!iface->isValid());
+            QCOMPARE(event->accessibleInterface(), iface);
+    });
     widgetHolder.reset();
-    // fixme: QVERIFY(!iface->isValid());
+    QTestAccessibility::setUpdateHandler([](QAccessibleEvent *) { ; });
+    QTRY_VERIFY(gotEvent);
 }
 
 void tst_QAccessibility::subclassedWidget()
@@ -2635,7 +2647,7 @@ void tst_QAccessibility::groupBoxTest()
     QCOMPARE(relation.first->object(), groupBox);
     QCOMPARE(relation.second, QAccessible::Label);
     }
-
+    QTestAccessibility::clearEvents();
     {
     auto gbHolder = std::make_unique<QGroupBox>();
     auto groupBox = gbHolder.get();
@@ -2663,6 +2675,7 @@ void tst_QAccessibility::groupBoxTest()
     QAccessibleStateChangeEvent ev2(groupBox, st);
     QVERIFY_EVENT(&ev2);
     }
+    QTestAccessibility::clearEvents();
 }
 
 bool accessibleInterfaceLeftOf(const QAccessibleInterface *a1, const QAccessibleInterface *a2)
