@@ -921,19 +921,17 @@ public:
                 std::forward_iterator_tag>;
         constexpr bool IsIdentity = std::is_same_v<Projection, q20::identity>;
 
-        if constexpr (IsFwdIt) {
-            const qsizetype n = std::distance(first, last);
-            if (this->needsDetach() || n > this->constAllocatedCapacity()) {
-                DataPointer allocated(this->detachCapacity(n));
-                this->swap(allocated);
-            }
-        } else if (this->needsDetach()) {
+        const qsizetype n = IsFwdIt ? std::distance(first, last) : 0;
+        qsizetype offset = -1;
+        bool needCapacity = n > this->constAllocatedCapacity();
+        if (needCapacity || this->needsDetach()) {
             DataPointer allocated(this->allocatedCapacity());
             this->swap(allocated);
-            // We don't want to copy data that we know we'll overwrite
+            offset = 0; // no prepend optimization to undo
         }
 
-        auto offset = this->freeSpaceAtBegin();
+        if (offset < 0)
+            offset = this->freeSpaceAtBegin();
         const auto capacityBegin = this->begin() - offset;
         const auto prependBufferEnd = this->begin();
 
