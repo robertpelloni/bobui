@@ -97,6 +97,13 @@ struct QMetaTypeDeleter
 namespace {
 struct QMetaTypeCustomRegistry
 {
+    // HasTypedefs is used as a pointer tag to optimize unregistering of metatypes.
+    // The entry in aliases for the main/official name has the tag on whether
+    // there are other typedefs for this type. If there are, we need to search all
+    // aliases in order to purge them when unregistering a metatype.
+    enum class HasTypedefs : bool { No, Yes };
+    using Alias = QTaggedPointer<const QtPrivate::QMetaTypeInterface, HasTypedefs>;
+
 #if QT_VERSION < QT_VERSION_CHECK(7, 0, 0)
     QMetaTypeCustomRegistry()
     {
@@ -106,13 +113,14 @@ struct QMetaTypeCustomRegistry
           will get the correct built-in type-id (the interface pointers
           might still not match, but we already deal with that case.
         */
-        aliases.insert("qfloat16", QtPrivate::qMetaTypeInterfaceForType<qfloat16>());
+        aliases.insert(
+                "qfloat16", Alias(QtPrivate::qMetaTypeInterfaceForType<qfloat16>(), HasTypedefs::No));
     }
 #endif
 
     QReadWriteLock lock;
     QList<const QtPrivate::QMetaTypeInterface *> registry;
-    QHash<QByteArray, const QtPrivate::QMetaTypeInterface *> aliases;
+    QHash<QByteArray, Alias> aliases;
     // index of first empty (unregistered) type in registry, if any.
     int firstEmpty = 0;
 
@@ -135,7 +143,7 @@ struct QMetaTypeCustomRegistry
                 ti->typeId.storeRelaxed(id);
                 return id;
             }
-            aliases[name] = ti;
+            aliases[name] = Alias(ti, HasTypedefs::No);
             int size = registry.size();
             while (firstEmpty < size && registry[firstEmpty])
                 ++firstEmpty;
@@ -163,7 +171,17 @@ struct QMetaTypeCustomRegistry
         auto &ti = registry[idx];
 
         // We must unregister all names.
-        aliases.removeIf([ti] (const auto &kv) { return kv.value() == ti; });
+        auto it = aliases.find(ti->name);
+        if (it->data() == ti) {
+            switch (it->tag()) {
+            case HasTypedefs::Yes:
+                aliases.removeIf([ti] (const auto &kv) { return kv->data() == ti; });
+                break;
+            case HasTypedefs::No:
+                aliases.erase(it);
+                break;
+            }
+        }
 
         ti = nullptr;
 
@@ -194,7 +212,7 @@ const char *QtMetaTypePrivate::typedefNameForType(const QtPrivate::QMetaTypeInte
     auto it = r->aliases.constBegin();
     auto end = r->aliases.constEnd();
     for ( ; it != end; ++it) {
-        if (it.value() != type_d)
+        if (it->data() != type_d)
             continue;
         if (it.key() == officialName)
             continue;               // skip the official name
@@ -206,7 +224,7 @@ const char *QtMetaTypePrivate::typedefNameForType(const QtPrivate::QMetaTypeInte
 #ifndef QT_NO_DEBUG
     QByteArrayList otherNames;
     for ( ; it != end; ++it) {
-        if (it.value() == type_d && it.key() != officialName)
+        if (it->data() == type_d && it.key() != officialName)
             otherNames << it.key();
     }
     l.unlock();
@@ -2849,7 +2867,10 @@ void QMetaType::registerNormalizedTypedef(const NS(QByteArray) & normalizedTypeN
         auto &al = reg->aliases[normalizedTypeName];
         if (al)
             return;
-        al = metaType.d_ptr;
+
+        al = QMetaTypeCustomRegistry::Alias(
+                metaType.d_ptr, QMetaTypeCustomRegistry::HasTypedefs::Yes);
+        reg->aliases[metaType.name()].setTag(QMetaTypeCustomRegistry::HasTypedefs::Yes);
     }
 }
 #endif // !QT_BOOTSTRAPPED
