@@ -27,7 +27,6 @@
 #include <QSignalSpy>
 
 #include <atomic>
-#include <optional>
 #include <thread>
 
 using namespace std::chrono_literals;
@@ -618,7 +617,7 @@ void tst_QEventLoop::canUseQThreadQuitToExitEventLoopInStdThread()
         });
 
     QObject obj;
-    std::optional joiner = qScopeGuard([&] { t.join(); }); // CTAD
+    auto joiner = qScopeGuard([&] { t.join(); });
 #ifdef __cpp_lib_atomic_wait
     adopted.wait(nullptr); // no timed version exists :(
     QVERIFY(adopted.load());
@@ -632,7 +631,7 @@ void tst_QEventLoop::canUseQThreadQuitToExitEventLoopInStdThread()
                                                 called.store(true);
                                                 QThread::currentThread()->quit();
                                             }, Qt::QueuedConnection));
-    joiner.reset(); // joins
+    joiner.commit();
     QVERIFY(!timedOut.load());
     QVERIFY(called.load());
 }
