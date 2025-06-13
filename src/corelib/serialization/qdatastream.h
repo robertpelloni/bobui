@@ -198,6 +198,8 @@ public:
     QDataStream &operator<<(char16_t c);
     QDataStream &operator<<(char32_t c);
 
+    explicit operator bool() const noexcept { return status() == Ok; }
+
 #if QT_DEPRECATED_SINCE(6, 11)
     QT_DEPRECATED_VERSION_X_6_11("Use an overload that takes qint64 length.")
     QDataStream &readBytes(char *&, uint &len);
@@ -309,8 +311,7 @@ QDataStream &readArrayBasedContainer(QDataStream &s, Container &c)
     c.reserve(n);
     for (qsizetype i = 0; i < n; ++i) {
         typename Container::value_type t;
-        s >> t;
-        if (s.status() != QDataStream::Ok) {
+        if (!(s >> t)) {
             c.clear();
             break;
         }
@@ -334,8 +335,7 @@ QDataStream &readListBasedContainer(QDataStream &s, Container &c)
     }
     for (qsizetype i = 0; i < n; ++i) {
         typename Container::value_type t;
-        s >> t;
-        if (s.status() != QDataStream::Ok) {
+        if (!(s >> t)) {
             c.clear();
             break;
         }
@@ -360,8 +360,7 @@ QDataStream &readAssociativeContainer(QDataStream &s, Container &c)
     for (qsizetype i = 0; i < n; ++i) {
         typename Container::key_type k;
         typename Container::mapped_type t;
-        s >> k >> t;
-        if (s.status() != QDataStream::Ok) {
+        if (!(s >> k >> t)) {
             c.clear();
             break;
         }
