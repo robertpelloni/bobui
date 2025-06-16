@@ -4,6 +4,7 @@
 #include "qatomicwait_p.h"
 
 #include <qendian.h>
+#include "qfutex_p.h"
 #include "qwaitcondition_p.h"
 
 #include <array>
@@ -96,8 +97,21 @@ struct QAtomicWaitLocks
 };
 } // unnamed namespace
 
+static inline void checkFutexUse()
+{
+#if !defined(QATOMICWAIT_USE_FALLBACK)
+    if (QtFutex::futexAvailable()) {
+        // This will disable the code and data on systems where futexes are
+        // always available (currently: FreeBSD, Linux, Windows).
+        qFatal("Implementation should have used futex!");
+    }
+#endif
+}
+
 static QAtomicWaitLocks &atomicLocks() noexcept
 {
+    checkFutexUse();
+
     static QAtomicWaitLocks global {};
     return global;
 }
