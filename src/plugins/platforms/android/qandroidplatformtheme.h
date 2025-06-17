@@ -52,6 +52,7 @@ public:
 
     static QAndroidPlatformTheme *instance(
                     QAndroidPlatformNativeInterface * androidPlatformNativeInterface = nullptr);
+    QIcon fileIcon(const QFileInfo &fileInfo, QPlatformTheme::IconOptions iconOptions) const override;
 
 private:
     QAndroidPlatformTheme(QAndroidPlatformNativeInterface * androidPlatformNativeInterface);

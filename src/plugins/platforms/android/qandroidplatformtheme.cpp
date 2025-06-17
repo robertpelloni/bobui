@@ -4,6 +4,7 @@
 #include "androidjnimain.h"
 #include "androidjnimenu.h"
 #include "qandroidplatformtheme.h"
+#include "qandroidplatformfileiconengine.h"
 #include "qandroidplatformiconengine.h"
 #include "qandroidplatformmenubar.h"
 #include "qandroidplatformmenu.h"
@@ -507,6 +508,23 @@ const QFont *QAndroidPlatformTheme::font(Font type) const
 QIconEngine *QAndroidPlatformTheme::createIconEngine(const QString &iconName) const
 {
     return new QAndroidPlatformIconEngine(iconName);
+}
+
+QIcon QAndroidPlatformTheme::fileIcon(const QFileInfo &fileInfo,
+                                      QPlatformTheme::IconOptions options) const
+{
+#ifndef QT_NO_ICON
+    std::unique_ptr<QIconEngine> iconEngine(new QAndroidPlatformFileIconEngine(fileInfo, options));
+    if (iconEngine->isNull()) {
+        // If we didn't get an icon for the file type, return a generic file
+        // icon. Assuming the Material Symbols font, this is the "draft" icon
+        // with code point e66d.
+        iconEngine.reset(new QAndroidPlatformIconEngine(u"\ue66d"_s));
+    }
+    return QIcon(iconEngine.release());
+#else
+    return {};
+#endif
 }
 
 QVariant QAndroidPlatformTheme::themeHint(ThemeHint hint) const
