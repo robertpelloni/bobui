@@ -110,6 +110,9 @@ define_property(TARGET
         "This variable can be used to exclude Qt shared libraries from being packaged inside the APK when deploying on Android. Not supported when deploying as Android Application Bundle."
 )
 
+option(QT_ANDROID_POST_BUILD_GRADLE_CLEANUP
+    "Clean Android libs and Gradle's build directories after APK creation." OFF)
+
 # Returns test execution arguments for Android targets
 function(qt_internal_android_test_runner_arguments target out_test_runner out_test_arguments)
     qt_internal_get_host_info_var_prefix(host_info_var_prefix)
