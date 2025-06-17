@@ -324,19 +324,31 @@ class IconModel : public QAbstractItemModel
         u"weather-storm"_s,
     };
 
-    const QStringList fileIconTypes = {
+    QStringList fileIconTypes = {
         u"Computer"_s,
         u"Desktop"_s,
         u"Trashcan"_s,
         u"Network"_s,
         u"Drive"_s,
         u"Folder"_s,
-        u"File"_s
+        u"File"_s,
     };
 
     QAbstractFileIconProvider m_fileIconProvider;
+
 public:
-    using QAbstractItemModel::QAbstractItemModel;
+    IconModel()
+    {
+        for (const auto &ext : {u"txt"_s, u"pdf"_s, u"png"_s}) {
+            QTemporaryFile *tempFile = new QTemporaryFile(u"XXXXXX.%1"_s.arg(ext), this);
+            if (!tempFile->open()) {
+                qWarning() << "Couldn't create temporary file" << ext;
+                fileIconTypes << u"file.%1"_s.arg(ext);
+            } else {
+                fileIconTypes << QFileInfo(*tempFile).absoluteFilePath();
+            }
+        }
+    }
 
     enum Columns {
         Name,
@@ -422,7 +434,9 @@ public:
             case File:
                 if (row >= fileIconTypes.size())
                     break;
-                return m_fileIconProvider.icon(QAbstractFileIconProvider::IconType(row));
+                if (row <= QAbstractFileIconProvider::File)
+                    return m_fileIconProvider.icon(QAbstractFileIconProvider::IconType(row));
+                return m_fileIconProvider.icon(QFileInfo(fileIconTypes.at(row)));
             }
             break;
         default:

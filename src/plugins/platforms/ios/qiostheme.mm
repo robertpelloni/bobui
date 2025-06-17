@@ -11,6 +11,7 @@
 #include <QtGui/private/qcoregraphics_p.h>
 
 #include <QtGui/private/qcoretextfontdatabase_p.h>
+#include <QtGui/private/qapplefileiconengine_p.h>
 #include <QtGui/private/qappleiconengine_p.h>
 #include <QtGui/private/qguiapplication_p.h>
 #include <qpa/qplatformintegration.h>
@@ -219,5 +220,11 @@ QIconEngine *QIOSTheme::createIconEngine(const QString &iconName) const
 {
     return new QAppleIconEngine(iconName);
 }
+
+QIcon QIOSTheme::fileIcon(const QFileInfo &fileInfo, QPlatformTheme::IconOptions iconOptions) const
+{
+    return QIcon(new QAppleFileIconEngine(fileInfo, iconOptions));
+}
+
 
 QT_END_NAMESPACE

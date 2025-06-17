@@ -36,6 +36,7 @@ public:
 
     const QFont *font(Font type = SystemFont) const override;
     QIconEngine *createIconEngine(const QString &iconName) const override;
+    QIcon fileIcon(const QFileInfo &fileInfo, QPlatformTheme::IconOptions options = {}) const override;
 
     static const char *name;
 

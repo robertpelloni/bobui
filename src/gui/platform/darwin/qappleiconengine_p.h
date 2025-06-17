@@ -72,7 +72,6 @@ private:
     mutable QHash<CacheKey, QPixmap> m_cache;
 };
 
-
 QT_END_NAMESPACE
 
 #endif // QAPPLEICONENGINE_P_H
