@@ -817,6 +817,8 @@ macro(qt_build_tests)
         endif()
     endif()
 
+    qt_internal_add_default_tests()
+
     if(NOT QT_SUPERBUILD)
         # In a super build, we don't want to finalize the batch blacklist at the end of each repo,
         # but rather once at the end of the top-level configuration.

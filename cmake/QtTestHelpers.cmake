@@ -1214,3 +1214,7 @@ function(qt_internal_add_test_finalizers target)
         qt_add_list_file_finalizer(_qt_internal_finalize_executable "${target}")
     endif()
 endfunction()
+
+# Collection of tests and targets added to all repos
+function(qt_internal_add_default_tests)
+endfunction()
