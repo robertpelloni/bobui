@@ -2909,18 +2909,9 @@ bool QMetaType::isRegistered(int type)
     return interfaceForTypeNoWarning(type) != nullptr;
 }
 
-namespace {
-enum NormalizeTypeMode {
-    DontNormalizeType,
-    TryNormalizeType
-};
-}
-template <NormalizeTypeMode tryNormalizedType> static inline
-const QtPrivate::QMetaTypeInterface *qMetaTypeTypeImpl(QByteArrayView name)
+static const QtPrivate::QMetaTypeInterface *findMetaTypeByName(QByteArrayView name)
 {
-    if (name.isEmpty())
-        return nullptr;
-
+    Q_PRE(!name.isEmpty());
     int type = qMetaTypeStaticType(name);
     if (type != QMetaType::UnknownType) {
         return interfaceForStaticType(type);
@@ -2930,19 +2921,6 @@ const QtPrivate::QMetaTypeInterface *qMetaTypeTypeImpl(QByteArrayView name)
         auto it = customTypeRegistry->aliases.constFind(name);
         if (it != customTypeRegistry->aliases.constEnd())
             return it.value().data();
-
-#ifndef QT_NO_QOBJECT
-        if (tryNormalizedType) {
-            const char *typeName = name.constData();
-            const NS(QByteArray) normalizedTypeName = QMetaObject::normalizedType(typeName);
-            type = qMetaTypeStaticType(normalizedTypeName);
-            if (type == QMetaType::UnknownType) {
-                return customTypeRegistry->aliases.value(normalizedTypeName).data();
-            } else {
-                return interfaceForStaticType(type);
-            }
-        }
-#endif
 #endif
     }
     return nullptr;
@@ -2969,7 +2947,9 @@ const QtPrivate::QMetaTypeInterface *qMetaTypeTypeImpl(QByteArrayView name)
 */
 int qMetaTypeTypeInternal(QByteArrayView name)
 {
-    const QtPrivate::QMetaTypeInterface *iface = qMetaTypeTypeImpl<DontNormalizeType>(name);
+    const QtPrivate::QMetaTypeInterface *iface = nullptr;
+    if (!name.isEmpty())
+        iface = findMetaTypeByName(name);
     return iface ? iface->typeId.loadRelaxed() : QMetaType::UnknownType;
 }
 
@@ -3138,7 +3118,20 @@ QMetaType QMetaType::underlyingType() const
  */
 QMetaType QMetaType::fromName(QByteArrayView typeName)
 {
-    return QMetaType(qMetaTypeTypeImpl<TryNormalizeType>(typeName));
+    if (typeName.isEmpty())
+        return QMetaType();
+
+    const QtPrivate::QMetaTypeInterface *iface = findMetaTypeByName(typeName);
+    if (iface)
+        return QMetaType(iface);
+
+#if !defined(QT_NO_QOBJECT)
+    const NS(QByteArray) normalizedTypeName = QMetaObject::normalizedType(typeName.constData());
+    if (normalizedTypeName != typeName)
+        iface = findMetaTypeByName(normalizedTypeName);
+#endif
+
+    return QMetaType(iface);
 }
 
 /*!
