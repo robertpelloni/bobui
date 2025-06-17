@@ -7,6 +7,24 @@ instructions:
   - type: EnvironmentVariable
     variableName: CMAKE_GENERATOR
     variableValue: Ninja
+  - type: Group
+    instructions:
+      - type: AppendToEnvironmentVariable
+        variableName: COMMON_CMAKE_ARGS
+        variableValue: " -DCMAKE_MAKE_PROGRAM={{.Env.NINJA_EXECUTABLE}}"
+      - type: AppendToEnvironmentVariable
+        variableName: COMMON_NON_QTBASE_CMAKE_ARGS
+        variableValue: " -DCMAKE_MAKE_PROGRAM={{.Env.NINJA_EXECUTABLE}}"
+      - type: AppendToEnvironmentVariable
+        variableName: COMMON_TARGET_CMAKE_ARGS
+        variableValue: " -DCMAKE_MAKE_PROGRAM={{.Env.NINJA_EXECUTABLE}}"
+      - type: AppendToEnvironmentVariable
+        variableName: COMMON_NON_QTBASE_TARGET_CMAKE_ARGS
+        variableValue: " -DCMAKE_MAKE_PROGRAM={{.Env.NINJA_EXECUTABLE}}"
+    enable_if:
+      condition: runtime
+      env_var: NINJA_EXECUTABLE
+      not_equals_value: null
 
   # Set path separator based on host platform.
   # \ on Windows (double \\ for escaping the backslash)
