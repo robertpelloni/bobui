@@ -2967,7 +2967,7 @@ const QtPrivate::QMetaTypeInterface *qMetaTypeTypeImpl(QByteArrayView name)
 
     Used by only QMetaObject, which means the type is always already normalized.
 */
-Q_CORE_EXPORT int qMetaTypeTypeInternal(QByteArrayView name)
+int qMetaTypeTypeInternal(QByteArrayView name)
 {
     const QtPrivate::QMetaTypeInterface *iface = qMetaTypeTypeImpl<DontNormalizeType>(name);
     return iface ? iface->typeId.loadRelaxed() : QMetaType::UnknownType;

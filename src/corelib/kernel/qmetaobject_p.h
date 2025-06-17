@@ -36,7 +36,7 @@ using namespace QtMocConstants;
 Q_DECLARE_FLAGS(MetaObjectFlags, MetaObjectFlag)
 Q_DECLARE_OPERATORS_FOR_FLAGS(MetaObjectFlags)
 
-Q_CORE_EXPORT int qMetaTypeTypeInternal(QByteArrayView name);
+int qMetaTypeTypeInternal(QByteArrayView name); // in qmetatype.cpp
 
 class QArgumentType
 {
