@@ -2841,9 +2841,8 @@ bool QtPrivate::hasRegisteredMutableViewFunctionToIterableMetaAssociation(QMetaT
 /*
     Similar to QMetaType::type(), but only looks in the static set of types.
 */
-static inline int qMetaTypeStaticType(const char *typeName, int length)
+static inline int qMetaTypeStaticType(QByteArrayView name)
 {
-    QByteArrayView name(typeName, length);
     for (int i = 0; i < types.count(); ++i) {
         if (types.viewAt(i) == name)
             return types.typeIdMap[i];
@@ -2852,32 +2851,6 @@ static inline int qMetaTypeStaticType(const char *typeName, int length)
 }
 
 #ifndef QT_BOOTSTRAPPED
-/*
-    Similar to QMetaType::type(), but only looks in the custom set of
-    types, and doesn't lock the mutex.
-
-*/
-static int qMetaTypeCustomType_unlocked(const char *typeName, int length)
-{
-    auto type = [&] {
-#ifdef __cpp_concepts
-        return QByteArrayView(typeName, length);
-#else
-        return QByteArray::fromRawData(typeName, length);
-#endif
-    };
-    if (customTypeRegistry.exists()) {
-        auto reg = &*customTypeRegistry;
-#if QT_CONFIG(thread)
-        Q_ASSERT(!reg->lock.tryLockForWrite());
-#endif
-        if (auto ti = reg->aliases.value(type(), nullptr)) {
-            return ti->typeId.loadRelaxed();
-        }
-    }
-    return QMetaType::UnknownType;
-}
-
 /*!
     \internal
 
@@ -2903,6 +2876,14 @@ void QMetaType::registerNormalizedTypedef(const NS(QByteArray) & normalizedTypeN
 }
 #endif // !QT_BOOTSTRAPPED
 
+static const QtPrivate::QMetaTypeInterface *interfaceForStaticType(int typeId)
+{
+    Q_ASSERT(typeId < QMetaType::User);
+    if (auto moduleHelper = qModuleHelperForType(typeId))
+        return moduleHelper->interfaceForType(typeId);
+    return nullptr;
+}
+
 static const QtPrivate::QMetaTypeInterface *interfaceForTypeNoWarning(int typeId)
 {
     const QtPrivate::QMetaTypeInterface *iface = nullptr;
@@ -2912,8 +2893,7 @@ static const QtPrivate::QMetaTypeInterface *interfaceForTypeNoWarning(int typeId
             iface = customTypeRegistry->getCustomType(typeId);
 #endif
     } else {
-        if (auto moduleHelper = qModuleHelperForType(typeId))
-            iface = moduleHelper->interfaceForType(typeId);
+        iface = interfaceForStaticType(typeId);
     }
     return iface;
 }
@@ -2935,30 +2915,37 @@ enum NormalizeTypeMode {
     TryNormalizeType
 };
 }
-template <NormalizeTypeMode tryNormalizedType>
-static inline int qMetaTypeTypeImpl(const char *typeName, int length)
+template <NormalizeTypeMode tryNormalizedType> static inline
+const QtPrivate::QMetaTypeInterface *qMetaTypeTypeImpl(QByteArrayView name)
 {
-    if (!length)
-        return QMetaType::UnknownType;
-    int type = qMetaTypeStaticType(typeName, length);
-    if (type == QMetaType::UnknownType) {
+    if (name.isEmpty())
+        return nullptr;
+
+    int type = qMetaTypeStaticType(name);
+    if (type != QMetaType::UnknownType) {
+        return interfaceForStaticType(type);
 #ifndef QT_BOOTSTRAPPED
+    } else {
         QReadLocker locker(&customTypeRegistry()->lock);
-        type = qMetaTypeCustomType_unlocked(typeName, length);
+        auto it = customTypeRegistry->aliases.constFind(name);
+        if (it != customTypeRegistry->aliases.constEnd())
+            return it.value().data();
+
 #ifndef QT_NO_QOBJECT
-        if ((type == QMetaType::UnknownType) && tryNormalizedType) {
+        if (tryNormalizedType) {
+            const char *typeName = name.constData();
             const NS(QByteArray) normalizedTypeName = QMetaObject::normalizedType(typeName);
-            type = qMetaTypeStaticType(normalizedTypeName.constData(),
-                                       normalizedTypeName.size());
+            type = qMetaTypeStaticType(normalizedTypeName);
             if (type == QMetaType::UnknownType) {
-                type = qMetaTypeCustomType_unlocked(normalizedTypeName.constData(),
-                                                    normalizedTypeName.size());
+                return customTypeRegistry->aliases.value(normalizedTypeName).data();
+            } else {
+                return interfaceForStaticType(type);
             }
         }
 #endif
 #endif
     }
-    return type;
+    return nullptr;
 }
 
 /*!
@@ -2977,10 +2964,13 @@ static inline int qMetaTypeTypeImpl(const char *typeName, int length)
     Similar to QMetaType::type(); the only difference is that this function
     doesn't attempt to normalize the type name (i.e., the lookup will fail
     for type names in non-normalized form).
+
+    Used by only QMetaObject, which means the type is always already normalized.
 */
 Q_CORE_EXPORT int qMetaTypeTypeInternal(QByteArrayView name)
 {
-    return qMetaTypeTypeImpl<DontNormalizeType>(name.data(), name.size());
+    const QtPrivate::QMetaTypeInterface *iface = qMetaTypeTypeImpl<DontNormalizeType>(name);
+    return iface ? iface->typeId.loadRelaxed() : QMetaType::UnknownType;
 }
 
 /*!
@@ -3148,7 +3138,7 @@ QMetaType QMetaType::underlyingType() const
  */
 QMetaType QMetaType::fromName(QByteArrayView typeName)
 {
-    return QMetaType(qMetaTypeTypeImpl<TryNormalizeType>(typeName.data(), typeName.size()));
+    return QMetaType(qMetaTypeTypeImpl<TryNormalizeType>(typeName));
 }
 
 /*!
