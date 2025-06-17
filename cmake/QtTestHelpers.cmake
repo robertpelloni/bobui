@@ -1217,4 +1217,19 @@ endfunction()
 
 # Collection of tests and targets added to all repos
 function(qt_internal_add_default_tests)
+    # Check the installed json module files satisfy the schemas
+    # This is not made as a test to avoid downstream using it and carrying the python test
+    # dependencies
+    if(NOT TARGET check_qt_module_json_schemas)
+        qt_path_join(__check_qt_module_json_schemas_py
+            "${QT_STAGING_PREFIX}"
+            "${INSTALL_LIBEXECDIR}"
+            "check_qt_module_json_schemas.py"
+        )
+        add_custom_target(check_qt_module_json_schemas
+            COMMAND python3 ${__check_qt_module_json_schemas_py}
+                "--install-prefix=${QT_STAGING_PREFIX}"
+                "--qt-sharedir=${INSTALL_QT_SHAREDIR}"
+        )
+    endif()
 endfunction()
