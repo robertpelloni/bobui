@@ -841,6 +841,11 @@ public:
         return QtJniTypes::Traits<Class>::className().data();
     }
 
+    static bool isClassAvailable()
+    {
+        return QJniObject::isClassAvailable(QtJniTypes::Traits<Class>::className().data());
+    }
+
 private:
     friend bool comparesEqual(const JObject &lhs, const JObject &rhs)
     { return lhs.m_object == rhs.m_object; }

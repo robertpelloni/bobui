@@ -34,7 +34,7 @@ QAndroidPlatformFileIconEngine::QAndroidPlatformFileIconEngine(const QFileInfo &
 {
     // MimeTypeInfo requires API level 29
     static bool hasMimeTypeInfo = []{
-        if (!QJniObject::isClassAvailable(QtJniTypes::Traits<MimeTypeInfo>::className().data())) {
+        if (!MimeTypeInfo::isClassAvailable()) {
             qCWarning(lcAndroidFileIconEngine) << "MimeTypeInfo not available, requires API level 29";
             return false;
         }
