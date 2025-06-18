@@ -981,12 +981,6 @@ void QMetaType::unregisterMetaType(QMetaType type)
     than the QMetaType \a rhs, otherwise returns \c false.
 */
 
-/*! \internal */
-bool QMetaTypeModuleHelper::convert(const void *, int, void *, int) const
-{
-    return false;
-}
-
 static constexpr auto createStaticTypeToIdMap()
 {
 #define QT_ADD_STATIC_METATYPE(MetaTypeName, MetaTypeId, RealName) \
@@ -1049,8 +1043,8 @@ static bool qIntegerConversionFromFPHelper(From from, To *to)
     return true;
 }
 
-// NOLINTNEXTLINE(cppcoreguidelines-virtual-class-destructor): this is not a base class
-static constexpr struct : QMetaTypeModuleHelper
+namespace {
+struct QCoreVariantHelper : QMetaTypeModuleHelper
 {
     template<typename T, typename LiteralWrapper =
              std::conditional_t<std::is_same_v<T, QString>, QLatin1StringView, const char *>>
@@ -1060,7 +1054,8 @@ static constexpr struct : QMetaTypeModuleHelper
         return !(str.isEmpty() || str == LiteralWrapper("0") || str == LiteralWrapper("false"));
     }
 
-    const QtPrivate::QMetaTypeInterface *interfaceForType(int type) const override {
+    static const QtPrivate::QMetaTypeInterface *interfaceForType(int type)
+    {
         switch (type) {
             QT_FOR_EACH_STATIC_PRIMITIVE_TYPE(QT_METATYPE_CONVERT_ID_TO_TYPE)
             QT_FOR_EACH_STATIC_PRIMITIVE_POINTER(QT_METATYPE_CONVERT_ID_TO_TYPE)
@@ -1072,11 +1067,14 @@ static constexpr struct : QMetaTypeModuleHelper
         }
     }
 
-#ifndef QT_BOOTSTRAPPED
-    bool convert(const void *from, int fromTypeId, void *to, int toTypeId) const override
+    static bool convert(const void *from, int fromTypeId, void *to, int toTypeId)
     {
         Q_ASSERT(fromTypeId != toTypeId);
 
+#ifdef QT_BOOTSTRAPPED
+        Q_UNUSED(from);
+        Q_UNUSED(to);
+#else
         // canConvert calls with two nullptr
         bool onlyCheck = (from == nullptr && to == nullptr);
 
@@ -1747,22 +1745,28 @@ QT_WARNING_DISABLE_CLANG("-Wtautological-compare")
 
 QT_WARNING_POP
         }
+#endif // !QT_BOOTSTRAPPED
         return false;
     }
-#endif // !QT_BOOTSTRAPPED
-} metatypeHelper = {};
+};
+} // unnamed namespace
 
-Q_CONSTINIT Q_CORE_EXPORT const QMetaTypeModuleHelper *qMetaTypeGuiHelper = nullptr;
-Q_CONSTINIT Q_CORE_EXPORT const QMetaTypeModuleHelper *qMetaTypeWidgetsHelper = nullptr;
+static constexpr QMetaTypeModuleHelper metatypeHelper = {
+    &QCoreVariantHelper::interfaceForType,
+    &QCoreVariantHelper::convert,
+};
+Q_CONSTINIT Q_CORE_EXPORT QMetaTypeModuleHelper qMetaTypeGuiHelper = {};
+Q_CONSTINIT Q_CORE_EXPORT QMetaTypeModuleHelper qMetaTypeWidgetsHelper = {};
+
 
 static const QMetaTypeModuleHelper *qModuleHelperForType(int type)
 {
     if (type <= QMetaType::LastCoreType)
         return &metatypeHelper;
     if (type >= QMetaType::FirstGuiType && type <= QMetaType::LastGuiType)
-        return qMetaTypeGuiHelper;
+        return &qMetaTypeGuiHelper;
     else if (type >= QMetaType::FirstWidgetsType && type <= QMetaType::LastWidgetsType)
-        return qMetaTypeWidgetsHelper;
+        return &qMetaTypeWidgetsHelper;
     return nullptr;
 }
 
