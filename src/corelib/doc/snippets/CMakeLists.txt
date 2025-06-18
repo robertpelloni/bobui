@@ -71,3 +71,8 @@ if ("${CMAKE_CXX_COMPILE_FEATURES}" MATCHES "cxx_std_23")
 endif()
 
 set_target_properties(corelib_snippets PROPERTIES UNITY_BUILD OFF)
+
+add_subdirectory(eventfilters)
+add_subdirectory(qmetaobject-invokable)
+add_subdirectory(qmetaobject-revision)
+add_subdirectory(qprocess)

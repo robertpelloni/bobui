@@ -5,6 +5,7 @@
 
 #include <QtWidgets>
 
+#ifdef EXAMPLE_ONE
 //! [0]
 ButtonWidget::ButtonWidget(const QStringList &texts, QWidget *parent)
     : QWidget(parent)
@@ -25,7 +26,7 @@ ButtonWidget::ButtonWidget(const QStringList &texts, QWidget *parent)
             this, &ButtonWidget::clicked);
 }
 //! [2]
-
+#else
 //! [3]
 ButtonWidget::ButtonWidget(const QStringList &texts, QWidget *parent)
     : QWidget(parent)
@@ -39,3 +40,4 @@ ButtonWidget::ButtonWidget(const QStringList &texts, QWidget *parent)
     }
 }
 //! [3]
+#endif
