@@ -39,6 +39,7 @@ qt_internal_extend_target(corelib_snippets CONDITION QT_FEATURE_widgets
         hellotrmain.cpp
         fileinfo/main.cpp
         pointer/pointer.cpp
+        qsignalmapper/buttonwidget.cpp
         qsortfilterproxymodel-details/main.cpp
         qstring/main.cpp
         qtcast/qtcast.cpp
