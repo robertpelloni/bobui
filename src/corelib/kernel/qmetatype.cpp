@@ -1751,26 +1751,22 @@ QT_WARNING_POP
 };
 } // unnamed namespace
 
-static constexpr QMetaTypeModuleHelper metatypeHelper = {
-    &QCoreVariantHelper::interfaceForType,
-    &QCoreVariantHelper::convert,
-};
 Q_CONSTINIT Q_CORE_EXPORT QMetaTypeModuleHelper qMetaTypeGuiHelper = {};
 Q_CONSTINIT Q_CORE_EXPORT QMetaTypeModuleHelper qMetaTypeWidgetsHelper = {};
 
-
-static const QMetaTypeModuleHelper *qModuleHelperForType(int type)
+#ifndef QT_BOOTSTRAPPED
+static bool tryConvertBuiltinTypes(const void *from, int fromTypeId, void *to, int toTypeId)
 {
+    int type = qMax(fromTypeId, toTypeId);
     if (type <= QMetaType::LastCoreType)
-        return &metatypeHelper;
+        return QCoreVariantHelper::convert(from, fromTypeId, to, toTypeId);
     if (type >= QMetaType::FirstGuiType && type <= QMetaType::LastGuiType)
-        return &qMetaTypeGuiHelper;
+        return qMetaTypeGuiHelper.convert(from, fromTypeId, to, toTypeId);
     else if (type >= QMetaType::FirstWidgetsType && type <= QMetaType::LastWidgetsType)
-        return &qMetaTypeWidgetsHelper;
-    return nullptr;
+        return qMetaTypeWidgetsHelper.convert(from, fromTypeId, to, toTypeId);
+    return false;
 }
 
-#ifndef QT_BOOTSTRAPPED
 template<typename T, typename Key>
 class QMetaTypeFunctionRegistry
 {
@@ -2475,10 +2471,8 @@ bool QMetaType::convert(QMetaType fromType, const void *from, QMetaType toType, 
     int fromTypeId = fromType.id();
     int toTypeId = toType.id();
 
-    if (auto moduleHelper = qModuleHelperForType(qMax(fromTypeId, toTypeId))) {
-        if (moduleHelper->convert(from, fromTypeId, to, toTypeId))
-            return true;
-    }
+    if (tryConvertBuiltinTypes(from, fromTypeId, to, toTypeId))
+        return true;
     const auto f = customTypesConversionRegistry()->function({fromTypeId, toTypeId});
     if (f)
         return (*f)(from, to);
@@ -2680,10 +2674,9 @@ bool QMetaType::canConvert(QMetaType fromType, QMetaType toType)
     if (fromTypeId == toTypeId)
         return true;
 
-    if (auto moduleHelper = qModuleHelperForType(qMax(fromTypeId, toTypeId))) {
-        if (moduleHelper->convert(nullptr, fromTypeId, nullptr, toTypeId))
-            return true;
-    }
+    if (tryConvertBuiltinTypes(nullptr, fromTypeId, nullptr, toTypeId))
+        return true;
+
     const ConverterFunction * const f =
         customTypesConversionRegistry()->function(std::make_pair(fromTypeId, toTypeId));
     if (f)
@@ -2883,8 +2876,12 @@ void QMetaType::registerNormalizedTypedef(const NS(QByteArray) & normalizedTypeN
 static const QtPrivate::QMetaTypeInterface *interfaceForStaticType(int typeId)
 {
     Q_ASSERT(typeId < QMetaType::User);
-    if (auto moduleHelper = qModuleHelperForType(typeId))
-        return moduleHelper->interfaceForType(typeId);
+    if (typeId <= QMetaType::LastCoreType)
+        return QCoreVariantHelper::interfaceForType(typeId);
+    if (typeId >= QMetaType::FirstGuiType && typeId <= QMetaType::LastGuiType)
+        return qMetaTypeGuiHelper.interfaceForType(typeId);
+    if (typeId >= QMetaType::FirstWidgetsType && typeId <= QMetaType::LastWidgetsType)
+        return qMetaTypeWidgetsHelper.interfaceForType(typeId);
     return nullptr;
 }
 
