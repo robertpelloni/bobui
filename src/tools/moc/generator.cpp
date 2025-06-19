@@ -695,14 +695,12 @@ void Generator::addFunctions(const QList<FunctionDef> &list, const char *functyp
 void Generator::generateTypeInfo(const QByteArray &typeName, bool allowEmptyName)
 {
     Q_UNUSED(allowEmptyName);
-    if (isBuiltinType(typeName)) {
-        int type;
+    if (int type = nameToBuiltinType(typeName); type != QMetaType::UnknownType) {
         const char *valueString;
         if (typeName == "qreal") {
             type = QMetaType::UnknownType;
             valueString = "QReal";
         } else {
-            type = nameToBuiltinType(typeName);
             valueString = metaTypeEnumValueString(type);
         }
         if (valueString) {
