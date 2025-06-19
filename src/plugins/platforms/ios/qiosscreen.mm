@@ -137,6 +137,19 @@ static QString deviceModelIdentifier()
 }
 #endif // !defined(Q_OS_VISIONOS)
 
+
+void QIOSScreen::initializeScreens()
+{
+#if defined(Q_OS_VISIONOS)
+    // Qt requires a screen, so let's give it a dummy one
+    QWindowSystemInterface::handleScreenAdded(new QIOSScreen);
+#else
+    Q_ASSERT([UIScreen.screens containsObject:UIScreen.mainScreen]);
+    for (UIScreen *screen in UIScreen.screens)
+        QWindowSystemInterface::handleScreenAdded(new QIOSScreen(screen));
+#endif
+}
+
 #if defined(Q_OS_VISIONOS)
 QIOSScreen::QIOSScreen()
 {

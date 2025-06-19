@@ -75,27 +75,14 @@ QIOSIntegration::QIOSIntegration()
 
 void QIOSIntegration::initialize()
 {
-#if defined(Q_OS_VISIONOS)
-    // Qt requires a screen, so let's give it a dummy one
-    QWindowSystemInterface::handleScreenAdded(new QIOSScreen);
-#else
-    UIScreen *mainScreen = [UIScreen mainScreen];
-    NSMutableArray<UIScreen *> *screens = [[[UIScreen screens] mutableCopy] autorelease];
-    if (![screens containsObject:mainScreen]) {
-        // Fallback for iOS 7.1 (QTBUG-42345)
-        [screens insertObject:mainScreen atIndex:0];
-    }
-
-    for (UIScreen *screen in screens)
-        QWindowSystemInterface::handleScreenAdded(new QIOSScreen(screen));
-#endif
+    QIOSScreen::initializeScreens();
 
     // Depends on a primary screen being present
     m_inputContext = new QIOSInputContext;
 
     QPointingDevice::Capabilities touchCapabilities = QPointingDevice::Capability::Position | QPointingDevice::Capability::NormalizedPosition;
 #if !defined(Q_OS_VISIONOS)
-    if (mainScreen.traitCollection.forceTouchCapability == UIForceTouchCapabilityAvailable)
+    if (UIScreen.mainScreen.traitCollection.forceTouchCapability == UIForceTouchCapabilityAvailable)
         touchCapabilities |= QPointingDevice::Capability::Pressure;
 #endif
     m_touchDevice = new QPointingDevice("touchscreen", 0, QInputDevice::DeviceType::TouchScreen,

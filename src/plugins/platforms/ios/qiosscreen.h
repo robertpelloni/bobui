@@ -51,6 +51,7 @@ public:
     void updateProperties();
 
 private:
+    static void initializeScreens();
     void deliverUpdateRequests() const;
 
 #if !defined(Q_OS_VISIONOS)
@@ -65,6 +66,8 @@ private:
 #endif
     QSizeF m_physicalSize;
     CADisplayLink *m_displayLink = nullptr;
+
+    friend class QIOSIntegration;
 };
 
 QT_END_NAMESPACE
