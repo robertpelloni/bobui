@@ -2916,8 +2916,8 @@ static const QtPrivate::QMetaTypeInterface *findMetaTypeByName(QByteArrayView na
     if (type != QMetaType::UnknownType) {
         return interfaceForStaticType(type);
 #ifndef QT_BOOTSTRAPPED
-    } else {
-        QReadLocker locker(&customTypeRegistry()->lock);
+    } else if (customTypeRegistry.exists()) {
+        QReadLocker locker(&customTypeRegistry->lock);
         auto it = customTypeRegistry->aliases.constFind(name);
         if (it != customTypeRegistry->aliases.constEnd())
             return it.value().data();
