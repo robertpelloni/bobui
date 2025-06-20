@@ -962,7 +962,12 @@ public:
             capacityBegin = Data::dataStart(this->d, alignof(typename Data::AlignmentDummy));
             offset = dst - capacityBegin;
         }
-        if (offset) { // avoids dead stores
+        if constexpr (!QTypeInfo<T>::isComplex) {
+            this->setBegin(capacityBegin); // undo prepend optimization
+            dst = capacityBegin;
+
+            // there's nothing to destroy or overwrite
+        } else if (offset) { // avoids dead stores
             T *prependBufferEnd = dst;
             this->setBegin(capacityBegin); // undo prepend optimization
             dst = capacityBegin;
