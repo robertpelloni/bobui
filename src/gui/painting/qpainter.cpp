@@ -2057,7 +2057,8 @@ void QPainter::setOpacity(qreal opacity)
 
 
 /*!
-    Returns the currently set brush origin.
+    Returns the current brush origin.
+    Prefer using QPainter::brushOriginF() to get the precise origin.
 
     \sa setBrushOrigin(), {QPainter#Settings}{Settings}
 */
@@ -2070,6 +2071,23 @@ QPoint QPainter::brushOrigin() const
         return QPoint();
     }
     return QPointF(d->state->brushOrigin).toPoint();
+}
+
+/*!
+    Returns the current brush origin.
+
+    \sa setBrushOrigin(), {QPainter#Settings}{Settings}
+    \since 6.11
+*/
+
+QPointF QPainter::brushOriginF() const
+{
+    Q_D(const QPainter);
+    if (!d->engine) {
+        qWarning("QPainter::brushOrigin: Painter not active");
+        return QPointF();
+    }
+    return d->state->brushOrigin;
 }
 
 /*!
