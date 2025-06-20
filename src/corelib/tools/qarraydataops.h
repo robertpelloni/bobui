@@ -922,7 +922,7 @@ public:
         constexpr bool IsIdentity = std::is_same_v<Projection, q20::identity>;
 
         const qsizetype n = IsFwdIt ? std::distance(first, last) : 0;
-        qsizetype offset = -1;
+        bool undoPrependOptimization = true;
         bool needCapacity = n > this->constAllocatedCapacity();
         if (needCapacity || this->needsDetach()) {
             bool wasLastRef = !this->deref();
@@ -931,7 +931,6 @@ public:
                 // free memory we can't reuse
                 this->destroyAll();
                 Data::deallocate(this->d);
-                this->d = nullptr;
             }
             if (!needCapacity && wasLastRef) {
                 // we were the last reference and can reuse the storage
@@ -940,30 +939,33 @@ public:
                 // we must allocate new memory
                 std::tie(this->d, this->ptr) = Data::allocate(newCapacity);
                 this->size = 0;
-                offset = 0; // no prepend optimization to undo
+                undoPrependOptimization = false;
             }
         }
-
-        if (offset < 0)
-            offset = this->freeSpaceAtBegin();
-        const auto capacityBegin = this->begin() - offset;
-        const auto prependBufferEnd = this->begin();
 
         if constexpr (!std::is_nothrow_constructible_v<T, decltype(std::invoke(proj, *first))>) {
             // If construction can throw, and we have freeSpaceAtBegin(),
             // it's easiest to just clear the container and start fresh.
             // The alternative would be to keep track of two active, disjoint ranges.
-            if (offset) {
+            if (undoPrependOptimization) {
                 this->truncate(0);
-                this->setBegin(capacityBegin);
-                offset = 0;
+                this->setBegin(Data::dataStart(this->d, alignof(typename Data::AlignmentDummy)));
+                undoPrependOptimization = false;
             }
         }
 
-        auto dst = capacityBegin;
         const auto dend = this->end();
+        T *dst = this->begin();
+        T *capacityBegin = dst;
+        qsizetype offset = 0;
+        if (undoPrependOptimization) {
+            capacityBegin = Data::dataStart(this->d, alignof(typename Data::AlignmentDummy));
+            offset = dst - capacityBegin;
+        }
         if (offset) { // avoids dead stores
+            T *prependBufferEnd = dst;
             this->setBegin(capacityBegin); // undo prepend optimization
+            dst = capacityBegin;
 
             // By construction, the following loop is nothrow!
             // (otherwise, we can't reach here)
