@@ -1137,23 +1137,24 @@ void QWindowsStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPai
 #if QT_CONFIG(menubar)
     case CE_MenuBarItem:
         if (const QStyleOptionMenuItem *mbi = qstyleoption_cast<const QStyleOptionMenuItem *>(opt)) {
-            bool active = mbi->state & State_Selected;
-            bool hasFocus = mbi->state & State_HasFocus;
-            bool down = mbi->state & State_Sunken;
+            const bool active = mbi->state & State_Selected;
+            const QBrush buttonBrush = mbi->palette.brush(QPalette::Button);
             QStyleOptionMenuItem newMbi = *mbi;
-            p->fillRect(mbi->rect, mbi->palette.brush(QPalette::Button));
-            if (active || hasFocus) {
-                QBrush b = mbi->palette.brush(QPalette::Button);
-                if (active && down)
-                    p->setBrushOrigin(p->brushOrigin() + QPoint(1, 1));
-                if (active && hasFocus)
-                    qDrawShadeRect(p, mbi->rect.x(), mbi->rect.y(), mbi->rect.width(),
-                                   mbi->rect.height(), mbi->palette, active && down, 1, 0, &b);
-                if (active && down) {
-                    newMbi.rect.translate(proxy()->pixelMetric(PM_ButtonShiftHorizontal, mbi, widget),
-                                       proxy()->pixelMetric(PM_ButtonShiftVertical, mbi, widget));
-                    p->setBrushOrigin(p->brushOrigin() - QPoint(1, 1));
+            p->fillRect(mbi->rect, buttonBrush);
+            if (active) {
+                const bool hasFocus = mbi->state & State_HasFocus;
+                const bool down = mbi->state & State_Sunken;
+                QPainterStateGuard psg(p, QPainterStateGuard::InitialState::NoSave);
+                if (down) {
+                    psg.save();
+                    p->setBrushOrigin(p->brushOriginF() + QPointF(1, 1));
                 }
+                if (hasFocus)
+                    qDrawShadeRect(p, mbi->rect.x(), mbi->rect.y(), mbi->rect.width(),
+                                   mbi->rect.height(), mbi->palette, active && down, 1, 0, &buttonBrush);
+                if (down)
+                    newMbi.rect.translate(proxy()->pixelMetric(PM_ButtonShiftHorizontal, mbi, widget),
+                                          proxy()->pixelMetric(PM_ButtonShiftVertical, mbi, widget));
             }
             QCommonStyle::drawControl(ce, &newMbi, p, widget);
         }
