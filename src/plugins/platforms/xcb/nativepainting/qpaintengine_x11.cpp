@@ -1782,7 +1782,7 @@ void QX11PaintEnginePrivate::fillPolygon_dev(const QPointF *polygonPoints, int p
                 painter.setPen(Qt::NoPen);
                 painter.setBrush(fill);
                 if (gcMode == BrushGC)
-                    painter.setBrushOrigin(q->painter()->brushOrigin());
+                    painter.setBrushOrigin(q->painter()->brushOriginF());
                 painter.drawPolygon(poly);
                 painter.end();
 

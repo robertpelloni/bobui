@@ -1536,7 +1536,7 @@ void QWindows11Style::drawControl(ControlElement element, const QStyleOption *op
             newMbi.font.setPointSize(10);
             if (enabled && active) {
                 if (down)
-                    painter->setBrushOrigin(painter->brushOrigin() + QPoint(1, 1));
+                    painter->setBrushOrigin(painter->brushOriginF() + QPoint(1, 1));
                 if (hasFocus) {
                     if (highContrastTheme)
                         painter->setPen(QPen(newMbi.palette.highlight().color(), 2));
