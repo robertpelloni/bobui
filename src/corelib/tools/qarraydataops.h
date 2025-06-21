@@ -925,9 +925,23 @@ public:
         qsizetype offset = -1;
         bool needCapacity = n > this->constAllocatedCapacity();
         if (needCapacity || this->needsDetach()) {
-            DataPointer allocated(this->allocatedCapacity());
-            this->swap(allocated);
-            offset = 0; // no prepend optimization to undo
+            bool wasLastRef = !this->deref();
+            qsizetype newCapacity = this->detachCapacity(n);
+            if (wasLastRef && needCapacity) {
+                // free memory we can't reuse
+                this->destroyAll();
+                Data::deallocate(this->d);
+                this->d = nullptr;
+            }
+            if (!needCapacity && wasLastRef) {
+                // we were the last reference and can reuse the storage
+                this->d->ref_.storeRelaxed(1);
+            } else {
+                // we must allocate new memory
+                std::tie(this->d, this->ptr) = Data::allocate(newCapacity);
+                this->size = 0;
+                offset = 0; // no prepend optimization to undo
+            }
         }
 
         if (offset < 0)
