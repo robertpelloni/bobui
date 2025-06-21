@@ -19,6 +19,7 @@
 #endif
 #include "qpaintengine.h"
 #include "qpainter.h"
+#include "qpainterstateguard.h"
 #if QT_CONFIG(rubberband)
 #include "qrubberband.h"
 #endif
@@ -571,48 +572,42 @@ void QWindowsStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, 
 
     switch (pe) {
 #if QT_CONFIG(toolbar)
-  case PE_IndicatorToolBarSeparator:
-        {
-            QRect rect = opt->rect;
-            const int margin = 2;
-            QPen oldPen = p->pen();
-            if (opt->state & State_Horizontal){
-                const int offset = rect.width()/2;
-                p->setPen(opt->palette.dark().color());
-                p->drawLine(rect.bottomLeft().x() + offset,
-                            rect.bottomLeft().y() - margin,
-                            rect.topLeft().x() + offset,
-                            rect.topLeft().y() + margin);
-                p->setPen(opt->palette.light().color());
-                p->drawLine(rect.bottomLeft().x() + offset + 1,
-                            rect.bottomLeft().y() - margin,
-                            rect.topLeft().x() + offset + 1,
-                            rect.topLeft().y() + margin);
-            }
-            else{ //Draw vertical separator
-                const int offset = rect.height()/2;
-                p->setPen(opt->palette.dark().color());
-                p->drawLine(rect.topLeft().x() + margin ,
-                            rect.topLeft().y() + offset,
-                            rect.topRight().x() - margin,
-                            rect.topRight().y() + offset);
-                p->setPen(opt->palette.light().color());
-                p->drawLine(rect.topLeft().x() + margin ,
-                            rect.topLeft().y() + offset + 1,
-                            rect.topRight().x() - margin,
-                            rect.topRight().y() + offset + 1);
-            }
-            p->setPen(oldPen);
+    case PE_IndicatorToolBarSeparator: {
+        QPainterStateGuard psg(p);
+        const QRect &rect = opt->rect;
+        constexpr int margin = 2;
+        if (opt->state & State_Horizontal){
+            const int offset = rect.width() / 2;
+            const auto &tl = rect.topLeft();
+            const auto &bl = rect.bottomLeft();
+            p->setPen(opt->palette.dark().color());
+            p->drawLine(QLine(bl.x() + offset, bl.y() - margin,
+                              tl.x() + offset, tl.y() + margin));
+            p->setPen(opt->palette.light().color());
+            p->drawLine(QLine(bl.x() + offset + 1, bl.y() - margin,
+                              tl.x() + offset + 1, tl.y() + margin));
+        }
+        else{ //Draw vertical separator
+            const int offset = rect.height() / 2;
+            const auto &tl = rect.topLeft();
+            const auto &tr = rect.topRight();
+            p->setPen(opt->palette.dark().color());
+            p->drawLine(QLine(tl.x() + margin, tl.y() + offset,
+                              tr.x() - margin, tr.y() + offset));
+            p->setPen(opt->palette.light().color());
+            p->drawLine(QLine(tl.x() + margin, tl.y() + offset + 1,
+                              tr.x() - margin, tr.y() + offset + 1));
         }
         break;
-    case PE_IndicatorToolBarHandle:
-        p->save();
+    }
+    case PE_IndicatorToolBarHandle: {
+        QPainterStateGuard psg(p);
         p->translate(opt->rect.x(), opt->rect.y());
         if (opt->state & State_Horizontal) {
-            int x = opt->rect.width() / 2 - 4;
-            if (opt->direction == Qt::RightToLeft)
-                x -= 2;
             if (opt->rect.height() > 4) {
+                int x = opt->rect.width() / 2 - 4;
+                if (opt->direction == Qt::RightToLeft)
+                    x -= 2;
                 qDrawShadePanel(p, x, 2, 3, opt->rect.height() - 4,
                                 opt->palette, false, 1, nullptr);
                 qDrawShadePanel(p, x + 3, 2, 3, opt->rect.height() - 4,
@@ -627,9 +622,8 @@ void QWindowsStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, 
                                 opt->palette, false, 1, nullptr);
             }
         }
-        p->restore();
         break;
-
+    }
 #endif // QT_CONFIG(toolbar)
     case PE_FrameButtonTool:
     case PE_PanelButtonTool: {
