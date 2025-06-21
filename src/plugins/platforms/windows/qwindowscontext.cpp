@@ -43,6 +43,7 @@
 #include <QtCore/qsysinfo.h>
 #include <QtCore/qscopedpointer.h>
 #include <QtCore/quuid.h>
+#include <QtCore/qscopeguard.h>
 #include <QtCore/private/qwinregistry_p.h>
 #if QT_CONFIG(cpp_winrt)
 #  include <QtCore/private/qfactorycacheregistration_p.h>
@@ -428,6 +429,10 @@ QDebug operator<<(QDebug d, QtWindows::DpiAwareness dpiAwareness)
 bool QWindowsContext::setProcessDpiAwareness(QtWindows::DpiAwareness dpiAwareness)
 {
     qCDebug(lcQpaWindow) << __FUNCTION__ << dpiAwareness;
+    [[maybe_unused]] const auto updatePMv2Status = qScopeGuard([](){
+        QWindowsContextPrivate::m_v2DpiAware =
+            processDpiAwareness() == QtWindows::DpiAwareness::PerMonitorVersion2;
+    });
     if (processDpiAwareness() == dpiAwareness)
         return true;
     const auto context = qtDpiAwarenessToDpiAwarenessContext(dpiAwareness);
@@ -445,8 +450,6 @@ bool QWindowsContext::setProcessDpiAwareness(QtWindows::DpiAwareness dpiAwarenes
             << "(https://doc.qt.io/qt-6/highdpi.html#configuring-windows).";
         return false;
     }
-    QWindowsContextPrivate::m_v2DpiAware
-        = processDpiAwareness() == QtWindows::DpiAwareness::PerMonitorVersion2;
     return true;
 }
 
