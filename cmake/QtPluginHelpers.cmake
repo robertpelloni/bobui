@@ -304,7 +304,6 @@ function(qt_internal_add_plugin target)
         PUBLIC_LIBRARIES ${arg_PUBLIC_LIBRARIES}
         DEFINES
             ${arg_DEFINES}
-            ${deprecation_define}
         PUBLIC_DEFINES
             ${arg_PUBLIC_DEFINES}
         FEATURE_DEPENDENCIES ${arg_FEATURE_DEPENDENCIES}

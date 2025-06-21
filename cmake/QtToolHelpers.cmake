@@ -140,7 +140,6 @@ function(qt_internal_add_tool target_name)
             ${arg_INCLUDE_DIRECTORIES}
         DEFINES
             ${arg_DEFINES}
-            ${deprecation_define}
         ${corelib}
         LIBRARIES
             ${arg_LIBRARIES}

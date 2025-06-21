@@ -45,10 +45,6 @@ function(qt_internal_add_benchmark target)
         OUTPUT_DIRECTORY "${arg_OUTPUT_DIRECTORY}" # avoid polluting bin directory
         ${exec_args}
     )
-    qt_internal_extend_target(${target}
-        DEFINES
-            ${deprecation_define}
-    )
 
     # Benchmarks on iOS must be app bundles.
     if(IOS)
@@ -274,7 +270,7 @@ function(qt_internal_add_test_to_batch batch_name name)
             ${is_manual}
             OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/build_dir"
             SOURCES "${QT_CMAKE_DIR}/qbatchedtestrunner.in.cpp"
-            DEFINES QTEST_BATCH_TESTS ${deprecation_define}
+            DEFINES QTEST_BATCH_TESTS
             INCLUDE_DIRECTORIES ${private_includes}
             LIBRARIES ${QT_CMAKE_EXPORT_NAMESPACE}::Core
                     ${QT_CMAKE_EXPORT_NAMESPACE}::Test
@@ -555,7 +551,6 @@ function(qt_internal_add_test name)
                 ${private_includes}
             DEFINES
                 ${arg_DEFINES}
-                ${deprecation_define}
             LIBRARIES
                 ${arg_LIBRARIES}
                 ${arg_PUBLIC_LIBRARIES}
