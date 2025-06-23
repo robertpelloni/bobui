@@ -471,8 +471,10 @@
     \macro Q_DECLARE_OPERATORS_FOR_FLAGS(Flags)
     \relates QFlags
 
-    The Q_DECLARE_OPERATORS_FOR_FLAGS() macro declares global \c
-    operator|() functions for \a Flags, which is of type QFlags<T>.
+    The Q_DECLARE_OPERATORS_FOR_FLAGS() macro declares global
+    bitwise operator functions \c operator|(), \c operator&(),
+    \c operator^(), \c operator~() and their assignment forms:
+    &=, |=, and ^=. for \a Flags, which is of type QFlags<T>.
 
     See the QFlags documentation for details.
 
