@@ -41,6 +41,8 @@
 #include <private/qrawfont_p.h>
 #include <private/qfont_p.h>
 
+#include <QtCore/private/qtclasshelper_p.h>
+
 QT_BEGIN_NAMESPACE
 
 using namespace Qt::StringLiterals;
@@ -3652,6 +3654,8 @@ void QPainter::setPen(const QColor &color)
 }
 
 /*!
+    \fn void QPainter::setPen(const QPen &pen)
+
     Sets the painter's pen to be the given \a pen.
 
     The \a pen defines how to draw lines and outlines, and it also
@@ -3660,7 +3664,13 @@ void QPainter::setPen(const QColor &color)
     \sa pen(), {QPainter#Settings}{Settings}
 */
 
-void QPainter::setPen(const QPen &pen)
+/*!
+    \fn void QPainter::setPen(QPen &&pen)
+    \since 6.11
+    \overload
+*/
+
+void QPainter::doSetPen(const QPen &pen, QPen *rvalue)
 {
 
 #ifdef QT_DEBUG_DRAW
@@ -3677,7 +3687,7 @@ void QPainter::setPen(const QPen &pen)
     if (d->state->pen == pen)
         return;
 
-    d->state->pen = pen;
+    q_choose_assign(d->state->pen, pen, rvalue);
 
     if (d->extended) {
         d->checkEmulation();
@@ -3733,6 +3743,8 @@ const QPen &QPainter::pen() const
 
 
 /*!
+    \fn void QPainter::setBrush(const QBrush &brush)
+
     Sets the painter's brush to the given \a brush.
 
     The painter's brush defines how shapes are filled.
@@ -3740,7 +3752,13 @@ const QPen &QPainter::pen() const
     \sa brush(), {QPainter#Settings}{Settings}
 */
 
-void QPainter::setBrush(const QBrush &brush)
+/*!
+    \fn void QPainter::setBrush(QBrush &&brush)
+    \since 6.11
+    \overload
+*/
+
+void QPainter::doSetBrush(const QBrush &brush, QBrush *rvalue)
 {
 #ifdef QT_DEBUG_DRAW
     if constexpr (qt_show_painter_debug_output)
@@ -3756,13 +3774,13 @@ void QPainter::setBrush(const QBrush &brush)
         return;
 
     if (d->extended) {
-        d->state->brush = brush;
+        q_choose_assign(d->state->brush, brush, rvalue);
         d->checkEmulation();
         d->extended->brushChanged();
         return;
     }
 
-    d->state->brush = brush;
+    q_choose_assign(d->state->brush, brush, rvalue);
     d->state->dirtyFlags |= QPaintEngine::DirtyBrush;
 }
 

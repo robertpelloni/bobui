@@ -91,6 +91,8 @@ void QWindowSystemInterface::handleContextMenuEvent(QWindow *window, bool mouseT
 
 #if QT_GUI_REMOVED_SINCE(6, 11)
 
+#include "qpainter.h" // inlined API
+
 #include "qquaternion.h" // inlined API
 
 
