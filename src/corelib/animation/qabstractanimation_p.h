@@ -150,9 +150,9 @@ public:
     */
     void setConsistentTiming(bool consistent) { consistentTiming = consistent; }
 
-    //these facilitate fine-tuning of complex animations
-    void setSlowModeEnabled(bool enabled) { slowMode = enabled; }
-    void setSlowdownFactor(qreal factor) { slowdownFactor = factor; }
+    // This facilitates both fine-tuning of complex animations by slowing them
+    // them down, and reducing execution time of auto tests by speeding them up.
+    void setSpeedModifier(qreal speed) { speedModifier = speed; }
 
     void installAnimationDriver(QAnimationDriver *driver);
     void uninstallAnimationDriver(QAnimationDriver *driver);
@@ -194,15 +194,13 @@ private:
     bool insideTick;
     bool insideRestart;
     bool consistentTiming;
-    bool slowMode;
     bool startTimersPending;
     bool stopTimerPending;
     bool allowNegativeDelta;
 
-    // This factor will be used to divide the DEFAULT_TIMER_INTERVAL at each tick
-    // when slowMode is enabled. Setting it to 0 or higher than DEFAULT_TIMER_INTERVAL (16)
-    // stops all animations.
-    qreal slowdownFactor;
+    // This factor will be used to multiply the DEFAULT_TIMER_INTERVAL (16) at each tick
+    // if it's not equal to 1. Setting it to less than 1 / 16 (0.0625) stops all animations.
+    qreal speedModifier;
 
     QList<QAbstractAnimationTimer*> animationTimers, animationTimersToStart;
     QList<QAbstractAnimationTimer*> pausedAnimationTimers;
