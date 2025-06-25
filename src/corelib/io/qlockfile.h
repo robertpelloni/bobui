@@ -48,10 +48,9 @@ public:
     };
     LockError error() const;
 
-protected:
+private:
     QScopedPointer<QLockFilePrivate> d_ptr;
 
-private:
     Q_DECLARE_PRIVATE(QLockFile)
     Q_DISABLE_COPY(QLockFile)
 };
