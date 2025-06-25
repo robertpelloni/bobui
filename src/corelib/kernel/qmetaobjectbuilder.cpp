@@ -1059,13 +1059,10 @@ QMetaStringTable::QMetaStringTable(const QByteArray &className)
 // entered). Returns the index of the string.
 int QMetaStringTable::enter(const QByteArray &value)
 {
-    Entries::iterator it = m_entries.find(value);
-    if (it != m_entries.end())
-        return it.value();
-    int pos = m_index;
-    m_entries.insert(value, pos);
-    ++m_index;
-    return pos;
+    auto [it, inserted] = m_entries.tryInsert(value, m_index);
+    if (inserted)
+        ++m_index;
+    return it.value();
 }
 
 int QMetaStringTable::preferredAlignment()
@@ -1287,10 +1284,12 @@ static int buildMetaObject(QMetaObjectBuilderPrivate *d, char *buf,
     auto getTypeInfo = [&](const auto &typeName) {
         if (QtPrivate::isBuiltinType(typeName))
             return QMetaType::fromName(typeName).id();
+        int index;
         if constexpr (std::is_same_v<decltype(typeName), const QByteArrayView &>)
-            return int(IsUnresolvedType | strings.enter(typeName.toByteArray()));
+            index = strings.enter(QByteArray::fromRawData(typeName.constData(), typeName.size()));
         else
-            return int(IsUnresolvedType | strings.enter(typeName));
+            index = strings.enter(typeName);
+        return int(IsUnresolvedType | index);
     };
 
     // Output the method parameters in the class.
