@@ -5,8 +5,10 @@
 
 int main(int argc, char *argv[])
 {
+    Q_UNUSED(argc)
+    Q_UNUSED(argv)
 //! [0]
-    QObject *parent;
+    QObject *parent = new QObject;
 //! [0]
 
 //! [1]
