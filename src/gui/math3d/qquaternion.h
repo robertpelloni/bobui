@@ -111,8 +111,18 @@ QT_WARNING_POP
     inline QVector3D toEulerAngles() const;
     static inline QQuaternion fromEulerAngles(const QVector3D &angles);
 #endif
-    QT7_ONLY(Q_GUI_EXPORT) void getEulerAngles(float *pitch, float *yaw, float *roll) const;
-    QT7_ONLY(Q_GUI_EXPORT) static QQuaternion fromEulerAngles(float pitch, float yaw, float roll);
+    template <typename T>
+    struct EulerAngles
+    {
+        T pitch, yaw, roll;
+    };
+    QT7_ONLY(Q_GUI_EXPORT) EulerAngles<float> eulerAngles() const;
+    static QQuaternion fromEulerAngles(EulerAngles<float> angles)
+    { return fromEulerAngles(angles.pitch, angles.yaw, angles.roll); }
+
+    QT_GUI_INLINE_SINCE(6, 11)
+    void getEulerAngles(float *pitch, float *yaw, float *roll) const;
+    static QQuaternion fromEulerAngles(float pitch, float yaw, float roll);
 
     QT7_ONLY(Q_GUI_EXPORT) QMatrix3x3 toRotationMatrix() const;
     QT7_ONLY(Q_GUI_EXPORT) static QQuaternion fromRotationMatrix(const QMatrix3x3 &rot3x3);
@@ -296,6 +306,19 @@ constexpr bool qFuzzyCompare(const QQuaternion &q1, const QQuaternion &q2) noexc
            qFuzzyCompare(q1.zp, q2.zp);
 }
 
+#if QT_GUI_INLINE_IMPL_SINCE(6, 11)
+void QQuaternion::getEulerAngles(float *pitch, float *yaw, float *roll) const
+{
+    Q_PRE(pitch);
+    Q_PRE(yaw);
+    Q_PRE(roll);
+    const auto angles = eulerAngles();
+    *pitch = angles.pitch;
+    *yaw   = angles.yaw;
+    *roll  = angles.roll;
+}
+#endif // QT_GUI_INLINE_IMPL_SINCE
+
 #ifndef QT_NO_VECTOR3D
 
 constexpr QQuaternion::QQuaternion(float aScalar, const QVector3D &aVector) noexcept
@@ -327,9 +350,8 @@ void QQuaternion::getAxisAndAngle(QVector3D *axis, float *angle) const
 
 QVector3D QQuaternion::toEulerAngles() const
 {
-    float pitch, yaw, roll;
-    getEulerAngles(&pitch, &yaw, &roll);
-    return QVector3D(pitch, yaw, roll);
+    const auto angles = eulerAngles();
+    return QVector3D{angles.pitch, angles.yaw, angles.roll};
 }
 
 QQuaternion QQuaternion::fromEulerAngles(const QVector3D &angles)

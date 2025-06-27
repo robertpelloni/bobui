@@ -448,7 +448,12 @@ QQuaternion QQuaternion::fromAxisAndAngle
 #endif // QT_NO_VECTOR3D
 
 /*!
+    \fn void QQuaternion::getEulerAngles(float *pitch, float *yaw, float *roll) const
     \since 5.5
+
+    \obsolete
+
+    Use eulerAngles() instead.
 
     Calculates \a roll, \a pitch, and \a yaw Euler angles (in degrees)
     that corresponds to this quaternion.
@@ -456,11 +461,58 @@ QQuaternion QQuaternion::fromAxisAndAngle
     All of \a pitch, \a yaw, and \a roll must be valid, non-\nullptr pointers,
     otherwise the behavior is undefined.
 
+    \sa eulerAngles(), fromEulerAngles()
+*/
+
+/*!
+    \since 6.11
+    \class QQuaternion::EulerAngles
+    \ingroup painting-3D
+    \inmodule QtGui
+
+    A struct containing three fields \l{pitch}, \l{yaw}, and \l{roll},
+    representing the three Euler angles that define a
+    \l{QQuaternion}{quaternion}.
+
+    Consult the documentation of functions taking or returning an EulerAngles
+    object for the order in which the rotations are applied.
+
+    \sa QQuaternion::eulerAngles(), QQuaternion::fromEulerAngles(QQuaternion::EulerAngles<float>)
+*/
+
+/*!
+    \variable QQuaternion::EulerAngles::pitch
+
+    The pitch represents the rotation around the x-axis.
+*/
+
+/*!
+    \variable QQuaternion::EulerAngles::yaw
+
+    The yaw represents the rotation around the y-axis.
+*/
+
+/*!
+    \variable QQuaternion::EulerAngles::roll
+
+    The roll represents the rotation around the z-axis.
+*/
+
+/*!
+    \since 6.11
+
+    Returns the Euler angles (in degrees) that correspond to this quaternion.
+
     \sa fromEulerAngles()
 */
-void QQuaternion::getEulerAngles(float *pitch, float *yaw, float *roll) const
+auto QQuaternion::eulerAngles() const -> EulerAngles<float>
 {
-    Q_ASSERT(pitch && yaw && roll);
+    EulerAngles<float> result;
+
+    // to avoid churn
+    auto pitch = &result.pitch;
+    auto yaw = &result.yaw;
+    auto roll = &result.roll;
 
     // Algorithm adapted from:
     // https://ingmec.ual.es/~jlblanco/papers/jlblanco2010geometry3D_techrep.pdf
@@ -508,6 +560,8 @@ void QQuaternion::getEulerAngles(float *pitch, float *yaw, float *roll) const
     *pitch = qRadiansToDegrees(*pitch);
     *yaw = qRadiansToDegrees(*yaw);
     *roll = qRadiansToDegrees(*roll);
+
+    return result;
 }
 
 /*!
@@ -517,7 +571,7 @@ void QQuaternion::getEulerAngles(float *pitch, float *yaw, float *roll) const
     \a roll degrees around the z axis, \a pitch degrees around the x axis,
     and \a yaw degrees around the y axis (in that order).
 
-    \sa getEulerAngles()
+    \sa eulerAngles(), toEulerAngles(), fromEulerAngles(QQuaternion::EulerAngles<float>)
 */
 QQuaternion QQuaternion::fromEulerAngles(float pitch, float yaw, float roll)
 {
@@ -548,6 +602,19 @@ QQuaternion QQuaternion::fromEulerAngles(float pitch, float yaw, float roll)
 
     return QQuaternion(w, x, y, z);
 }
+
+/*!
+    \fn QQuaternion QQuaternion::fromEulerAngles(EulerAngles<float> angles)
+    \since 6.11
+    \overload
+
+    Equivalent to
+    \code
+    fromEulerAngles(angles.pitch, angles.yaw, angles.roll);
+    \endcode
+
+    \sa eulerAngles(), toEulerAngles(), fromEulerAngles()
+*/
 
 /*!
     \since 5.5
