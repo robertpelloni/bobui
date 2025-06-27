@@ -88,3 +88,14 @@ void QWindowSystemInterface::handleContextMenuEvent(QWindow *window, bool mouseT
 // order sections alphabetically
 
 #endif // QT_GUI_REMOVED_SINCE(6, 8)
+
+#if QT_GUI_REMOVED_SINCE(6, 11)
+
+#include "qquaternion.h" // inlined API
+
+
+// #include "qotherheader.h"
+// // implement removed functions from qotherheader.h
+// order sections alphabetically
+
+#endif // QT_GUI_REMOVED_SINCE(6, 11)

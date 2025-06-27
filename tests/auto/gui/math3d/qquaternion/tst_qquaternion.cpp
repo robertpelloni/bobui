@@ -894,6 +894,13 @@ void tst_QQuaternion::fromAxes()
 
     QQuaternion result = QQuaternion::fromAxisAndAngle(QVector3D(x1, y1, z1), angle);
 
+    {
+        const auto axes = result.toAxes();
+        QVERIFY(myFuzzyCompare(axes.x, xAxis));
+        QVERIFY(myFuzzyCompare(axes.y, yAxis));
+        QVERIFY(myFuzzyCompare(axes.z, zAxis));
+    }
+
     QVector3D axes[3];
     result.getAxes(&axes[0], &axes[1], &axes[2]);
     QVERIFY(myFuzzyCompare(axes[0], xAxis));
@@ -985,8 +992,7 @@ void tst_QQuaternion::fromDirection_data()
 
     // othonormal up and dir
     for (QQuaternion q : orientations) {
-        QVector3D xAxis, yAxis, zAxis;
-        q.getAxes(&xAxis, &yAxis, &zAxis);
+        const auto [xAxis, yAxis, zAxis] = q.toAxes();
 
         QTest::addRow("ortho dirs: (%.1f,%.1f,%.1f), (%.1f,%.1f,%.1f), (%.1f,%.1f,%.1f)",
                       xAxis.x(), xAxis.y(), xAxis.z(),
@@ -1007,8 +1013,7 @@ void tst_QQuaternion::fromDirection_data()
 
     // invalid up
     for (QQuaternion q : orientations) {
-        QVector3D xAxis, yAxis, zAxis;
-        q.getAxes(&xAxis, &yAxis, &zAxis);
+        const auto [xAxis, yAxis, zAxis] = q.toAxes();
 
         QTest::addRow("bad dirs: (%.1f,%.1f,%.1f), (%.1f,%.1f,%.1f), (%.1f,%.1f,%.1f)",
                       xAxis.x(), xAxis.y(), xAxis.z(),
@@ -1029,16 +1034,14 @@ void tst_QQuaternion::fromDirection()
     QQuaternion result = QQuaternion::fromDirection(direction, up);
     QVERIFY(myFuzzyCompare(result, result.normalized()));
 
-    QVector3D xAxis, yAxis, zAxis;
-    result.getAxes(&xAxis, &yAxis, &zAxis);
+    const auto axes = result.toAxes();
 
-    QVERIFY(myFuzzyCompare(zAxis, expectedZ));
-
+    QVERIFY(myFuzzyCompare(axes.z, expectedZ));
 
     const QVector3D expectedX = QVector3D::crossProduct(expectedY, expectedZ);
     if (!qFuzzyIsNull(expectedX.lengthSquared())) {
-        QVERIFY(myFuzzyCompare(xAxis, expectedX));
-        QVERIFY(myFuzzyCompare(yAxis, expectedY));
+        QVERIFY(myFuzzyCompare(axes.x, expectedX));
+        QVERIFY(myFuzzyCompare(axes.y, expectedY));
     }
 }
 

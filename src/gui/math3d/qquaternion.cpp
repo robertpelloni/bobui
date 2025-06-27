@@ -557,7 +557,7 @@ QQuaternion QQuaternion::fromEulerAngles(float pitch, float yaw, float roll)
     \note If this quaternion is not normalized,
     the resulting rotation matrix will contain scaling information.
 
-    \sa fromRotationMatrix(), getAxes()
+    \sa fromRotationMatrix(), toAxes()
 */
 QMatrix3x3 QQuaternion::toRotationMatrix() const
 {
@@ -640,7 +640,62 @@ QQuaternion QQuaternion::fromRotationMatrix(const QMatrix3x3 &rot3x3)
 #ifndef QT_NO_VECTOR3D
 
 /*!
+    \since 6.11
+    \class QQuaternion::Axes
+    \ingroup painting-3D
+    \inmodule QtGui
+
+    A struct containing the three orthonormal axes that define a
+    \l{QQuaternion}{quaternion}.
+
+
+    \sa QQuaternion::toAxes(), QQuaternion::fromAxes(Axes)
+*/
+
+/*!
+    \variable QQuaternion::Axes::x
+
+    The x orthonormal axis that, together with \l{y} and \l{z}, defines a
+    quaternion.
+*/
+
+/*!
+    \variable QQuaternion::Axes::y
+
+    The y orthonormal axis that, together with \l{x} and \l{z}, defines a
+    quaternion.
+*/
+
+/*!
+    \variable QQuaternion::Axes::z
+
+    The z orthonormal axis that, together with \l{x} and \l{y}, defines a
+    quaternion.
+*/
+
+/*!
+    \since 6.11
+
+    Returns the three orthonormal axes that define this quaternion.
+
+    \sa QQuaternion::Axes, fromAxes(QQuaternion::Axes), toRotationMatrix()
+*/
+auto QQuaternion::toAxes() const -> Axes
+{
+    const QMatrix3x3 rot3x3(toRotationMatrix());
+
+    return { {rot3x3(0, 0), rot3x3(1, 0), rot3x3(2, 0)},
+             {rot3x3(0, 1), rot3x3(1, 1), rot3x3(2, 1)},
+             {rot3x3(0, 2), rot3x3(1, 2), rot3x3(2, 2)} };
+}
+
+
+/*!
+    \fn void QQuaternion::getAxes(QVector3D *xAxis, QVector3D *yAxis, QVector3D *zAxis) const
     \since 5.5
+
+    \obsolete
+    Use toAxes() instead.
 
     Returns the 3 orthonormal axes (\a xAxis, \a yAxis, \a zAxis) defining the quaternion.
 
@@ -649,16 +704,6 @@ QQuaternion QQuaternion::fromRotationMatrix(const QMatrix3x3 &rot3x3)
 
     \sa fromAxes(), toRotationMatrix()
 */
-void QQuaternion::getAxes(QVector3D *xAxis, QVector3D *yAxis, QVector3D *zAxis) const
-{
-    Q_ASSERT(xAxis && yAxis && zAxis);
-
-    const QMatrix3x3 rot3x3(toRotationMatrix());
-
-    *xAxis = QVector3D(rot3x3(0, 0), rot3x3(1, 0), rot3x3(2, 0));
-    *yAxis = QVector3D(rot3x3(0, 1), rot3x3(1, 1), rot3x3(2, 1));
-    *zAxis = QVector3D(rot3x3(0, 2), rot3x3(1, 2), rot3x3(2, 2));
-}
 
 /*!
     \since 5.5
@@ -667,7 +712,7 @@ void QQuaternion::getAxes(QVector3D *xAxis, QVector3D *yAxis, QVector3D *zAxis) 
 
     \note The axes are assumed to be orthonormal.
 
-    \sa getAxes(), fromRotationMatrix()
+    \sa toAxes(), fromRotationMatrix()
 */
 QQuaternion QQuaternion::fromAxes(const QVector3D &xAxis, const QVector3D &yAxis, const QVector3D &zAxis)
 {
@@ -683,6 +728,17 @@ QQuaternion QQuaternion::fromAxes(const QVector3D &xAxis, const QVector3D &yAxis
     rot3x3(2, 2) = zAxis.z();
 
     return QQuaternion::fromRotationMatrix(rot3x3);
+}
+
+/*!
+    \since 6.11
+    \overload
+
+    \sa toAxes(), fromRotationMatrix()
+*/
+QQuaternion QQuaternion::fromAxes(Axes axes) // clazy:exclude=function-args-by-ref
+{
+    return fromAxes(axes.x, axes.y, axes.z);
 }
 
 /*!

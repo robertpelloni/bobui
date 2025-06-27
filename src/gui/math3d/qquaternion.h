@@ -118,7 +118,14 @@ QT_WARNING_POP
     QT7_ONLY(Q_GUI_EXPORT) static QQuaternion fromRotationMatrix(const QMatrix3x3 &rot3x3);
 
 #ifndef QT_NO_VECTOR3D
-    QT7_ONLY(Q_GUI_EXPORT) void getAxes(QVector3D *xAxis, QVector3D *yAxis, QVector3D *zAxis) const;
+    struct Axes
+    {
+        QVector3D x, y, z;
+    };
+    QT7_ONLY(Q_GUI_EXPORT) Axes toAxes() const;
+    QT7_ONLY(Q_GUI_EXPORT) static QQuaternion fromAxes(Axes axes); // clazy:exclude=function-args-by-ref
+    QT_GUI_INLINE_SINCE(6, 11)
+    void getAxes(QVector3D *xAxis, QVector3D *yAxis, QVector3D *zAxis) const;
     QT7_ONLY(Q_GUI_EXPORT) static QQuaternion fromAxes(const QVector3D &xAxis,
                                                        const QVector3D &yAxis,
                                                        const QVector3D &zAxis);
@@ -329,6 +336,19 @@ QQuaternion QQuaternion::fromEulerAngles(const QVector3D &angles)
 {
     return QQuaternion::fromEulerAngles(angles.x(), angles.y(), angles.z());
 }
+
+#if QT_GUI_INLINE_IMPL_SINCE(6, 11)
+void QQuaternion::getAxes(QVector3D *xAxis, QVector3D *yAxis, QVector3D *zAxis) const
+{
+    Q_PRE(xAxis);
+    Q_PRE(yAxis);
+    Q_PRE(zAxis);
+    const Axes axes = toAxes();
+    *xAxis = axes.x;
+    *yAxis = axes.y;
+    *zAxis = axes.z;
+}
+#endif // QT_GUI_INLINE_IMPL_SINCE(6, 11)
 
 #endif // QT_NO_VECTOR3D
 
