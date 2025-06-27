@@ -53,19 +53,6 @@ qt_internal_extend_target(corelib_snippets CONDITION QT_FEATURE_gui
         qdebug/qdebugsnippet.cpp
 )
 
-find_package(Qt6 OPTIONAL_COMPONENTS Qml)
-
-if(Qt6Qml_FOUND)
-    qt_internal_extend_target(corelib_snippets
-        LIBRARIES
-            Qt::Qml
-        SOURCES
-            qlogging/qlogging.cpp
-    )
-else()
-    message("Qml was not found")
-endif()
-
 if ("${CMAKE_CXX_COMPILE_FEATURES}" MATCHES "cxx_std_23")
     set_property(TARGET corelib_snippets PROPERTY CXX_STANDARD 23)
 endif()
