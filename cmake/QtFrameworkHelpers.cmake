@@ -54,6 +54,12 @@ function(qt_internal_find_apple_system_framework out_var framework_name)
     # We might revisit this later.
     set(cache_var_name "${out_var}Internal")
 
+    if(QT_USE_VCPKG)
+        # vcpkg.cmake sets CMAKE_FIND_FRAMEWORK to LAST and this setting will find e.g.
+        # libnetwork.tbd instead of Network.framework. Force the default value here.
+        set(CMAKE_FIND_FRAMEWORK FIRST)
+    endif()
+
     find_library(${cache_var_name} "${framework_name}")
 
     if(${cache_var_name} AND ${cache_var_name} MATCHES ".framework$")
