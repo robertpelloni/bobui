@@ -1736,8 +1736,16 @@ void QStyle::drawItemPixmap(QPainter *painter, const QRect &rect, int alignment,
         by pressing Alt, followed by using the arrow keys to select
         the desired item.
 
-    \value SH_ComboBox_ListMouseTracking  Mouse tracking in combobox
-        drop-down lists.
+    \value SH_ComboBox_ListMouseTracking_Current  Mouse tracking in
+        combobox drop-down lists, the item under the cursor is made
+        the current item (QStyle::State_Selected).
+
+    \value SH_ComboBox_ListMouseTracking  same as
+        SH_ComboBox_ListMouseTracking_Current
+
+    \value SH_ComboBox_ListMouseTracking_Active  Mouse tracking in
+        combobox drop-down lists, the item under the cursor is not
+        made the current item, only active (QStyle::State_MouseOver).
 
     \value SH_Menu_MouseTracking  Mouse tracking in popup menus.
 

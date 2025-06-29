@@ -2301,6 +2301,14 @@ int QWindowsVistaStyle::styleHint(StyleHint hint, const QStyleOption *option, co
         ret = 1;
         break;
 
+    case SH_ComboBox_ListMouseTracking_Current:
+        ret = 0;
+        break;
+
+    case SH_ComboBox_ListMouseTracking_Active:
+        ret = 1;
+        break;
+
     default:
         ret = QWindowsStyle::styleHint(hint, option, widget, returnData);
         break;

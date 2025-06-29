@@ -602,6 +602,7 @@ public:
         SH_ScrollView_FrameOnlyAroundContents,
         SH_MenuBar_AltKeyNavigation,
         SH_ComboBox_ListMouseTracking,
+        SH_ComboBox_ListMouseTracking_Current = SH_ComboBox_ListMouseTracking,
         SH_Menu_MouseTracking,
         SH_MenuBar_MouseTracking,
         SH_ItemView_ChangeHighlightOnFocus,
@@ -704,6 +705,7 @@ public:
         SH_TabBar_AllowWheelScrolling,
         SH_Table_AlwaysDrawLeftTopGridLines,
         SH_SpinBox_SelectOnStep,
+        SH_ComboBox_ListMouseTracking_Active,
         // Add new style hint values here
 
         SH_CustomBase = 0xf0000000

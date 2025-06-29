@@ -640,8 +640,10 @@ void QComboBoxPrivateContainer::setItemView(QAbstractItemView *itemView)
     if (usePopup)
         view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 #endif
-    if (combo->style()->styleHint(QStyle::SH_ComboBox_ListMouseTracking, &opt, combo) ||
-        usePopup) {
+    if (usePopup ||
+        combo->style()->styleHint(QStyle::SH_ComboBox_ListMouseTracking_Current, &opt, combo) ||
+        combo->style()->styleHint(QStyle::SH_ComboBox_ListMouseTracking_Active, &opt, combo)
+        ) {
         view->setMouseTracking(true);
     }
     view->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -775,10 +777,12 @@ bool QComboBoxPrivateContainer::eventFilter(QObject *o, QEvent *e)
             QPoint vector = widget->mapToGlobal(m->position().toPoint()) - initialClickPosition;
             if (vector.manhattanLength() > 9 && blockMouseReleaseTimer.isActive())
                 blockMouseReleaseTimer.stop();
-            QModelIndex indexUnderMouse = view->indexAt(m->position().toPoint());
-            if (indexUnderMouse.isValid()
-                     && !QComboBoxDelegate::isSeparator(indexUnderMouse)) {
-                view->setCurrentIndex(indexUnderMouse);
+            if (combo->style()->styleHint(QStyle::SH_ComboBox_ListMouseTracking_Current, nullptr, combo)) {
+                QModelIndex indexUnderMouse = view->indexAt(m->position().toPoint());
+                if (indexUnderMouse.isValid()
+                         && !QComboBoxDelegate::isSeparator(indexUnderMouse)) {
+                    view->setCurrentIndex(indexUnderMouse);
+                }
             }
         }
         break;

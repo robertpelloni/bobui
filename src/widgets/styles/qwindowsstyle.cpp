@@ -461,7 +461,7 @@ int QWindowsStyle::styleHint(StyleHint hint, const QStyleOption *opt, const QWid
     case SH_MenuBar_AltKeyNavigation:
     case SH_MenuBar_MouseTracking:
     case SH_Menu_MouseTracking:
-    case SH_ComboBox_ListMouseTracking:
+    case SH_ComboBox_ListMouseTracking_Current:
     case SH_Slider_StopMouseOverSlider:
     case SH_MainWindow_SpaceBelowMenuBar:
         ret = 1;

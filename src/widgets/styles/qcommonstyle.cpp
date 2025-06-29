@@ -5434,7 +5434,8 @@ int QCommonStyle::styleHint(StyleHint sh, const QStyleOption *opt, const QWidget
     case SH_Menu_AllowActiveAndDisabled:
     case SH_Menu_SpaceActivatesItem:
     case SH_ScrollView_FrameOnlyAroundContents:
-    case SH_ComboBox_ListMouseTracking:
+    case SH_ComboBox_ListMouseTracking_Current:
+    case SH_ComboBox_ListMouseTracking_Active:
     case SH_Menu_MouseTracking:
     case SH_MenuBar_MouseTracking:
     case SH_ItemView_ChangeHighlightOnFocus:
