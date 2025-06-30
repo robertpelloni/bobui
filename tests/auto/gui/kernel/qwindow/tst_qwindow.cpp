@@ -3264,12 +3264,14 @@ void tst_QWindow::windowExposedAfterReparent()
     QVERIFY(QTest::qWaitForWindowExposed(&parent));
     QVERIFY(QTest::qWaitForWindowExposed(&child));
 
+    // Close the child before reparenting it to ensure it is correctly converted
+    // to a toplevel window by the window manager.
+    child.close();
     child.setParent(nullptr);
-    QCoreApplication::processEvents();
+    child.show();
     QVERIFY(QTest::qWaitForWindowExposed(&child));
 
     child.setParent(&parent);
-    QCoreApplication::processEvents();
     QVERIFY(QTest::qWaitForWindowExposed(&child));
 }
 
