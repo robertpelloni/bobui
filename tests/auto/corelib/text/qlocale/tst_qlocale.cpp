@@ -2470,7 +2470,8 @@ void tst_QLocale::formatTimeZone()
         // Time definitely in Standard Time
         const QStringList knownCETus = {
             u"GMT+1"_s, // ICU
-            u"CET"_s // Standard abbreviation
+            u"CET"_s, // Standard abbreviation
+            u"UTC+0100"_s, // used by Emscripten
         };
         const QString cet = enUS.toString(QDate(2013, 1, 1).startOfDay(), u"t");
         QVERIFY2(knownCETus.contains(cet), cet.isEmpty() ? "[empty]" : qPrintable(cet));
@@ -2478,7 +2479,8 @@ void tst_QLocale::formatTimeZone()
         // Time definitely in Daylight Time
         const QStringList knownCESTus = {
             u"GMT+2"_s, // ICU
-            u"CEST"_s // Standard abbreviation
+            u"CEST"_s, // Standard abbreviation
+            u"UTC+0200"_s, // used by Emscripten
         };
         const QString cest = enUS.toString(QDate(2013, 6, 1).startOfDay(), u"t");
         QVERIFY2(knownCESTus.contains(cest), cest.isEmpty() ? "[empty]" : qPrintable(cest));
