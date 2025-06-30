@@ -10,6 +10,7 @@
 # include <UIKit/UIKit.h>
 #endif
 
+#include <QtCore/qurl.h>
 #include <QtGui/private/qcoregraphics_p.h>
 
 QT_BEGIN_NAMESPACE
