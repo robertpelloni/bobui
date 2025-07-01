@@ -70,7 +70,7 @@ bool QTest::qWaitForWindowActive(QWindow *window, QDeadlineTimer timeout)
 */
 bool QTest::qWaitForWindowActive(QWindow *window)
 {
-    return qWaitForWindowActive(window, Internal::defaultTryTimeout);
+    return qWaitForWindowActive(window, defaultTryTimeout.load(std::memory_order_relaxed));
 }
 
 /*!
@@ -102,7 +102,7 @@ Q_GUI_EXPORT bool QTest::qWaitForWindowFocused(QWindow *window, QDeadlineTimer t
 */
 bool QTest::qWaitForWindowFocused(QWindow *window)
 {
-    return qWaitForWindowFocused(window, Internal::defaultTryTimeout);
+    return qWaitForWindowFocused(window, defaultTryTimeout.load(std::memory_order_relaxed));
 }
 
 /*!
@@ -143,7 +143,7 @@ bool QTest::qWaitForWindowExposed(QWindow *window, QDeadlineTimer timeout)
 */
 bool QTest::qWaitForWindowExposed(QWindow *window)
 {
-    return qWaitForWindowExposed(window, Internal::defaultTryTimeout);
+    return qWaitForWindowExposed(window, defaultTryTimeout.load(std::memory_order_relaxed));
 }
 
 namespace QTest {
