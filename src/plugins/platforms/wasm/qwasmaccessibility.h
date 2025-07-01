@@ -48,6 +48,7 @@ private:
     emscripten::val getDocument(const emscripten::val &container);
     emscripten::val getDocument(QAccessibleInterface *iface);
     QWindow *getWindow(QAccessibleInterface *iface);
+    bool isWindowNode(QAccessibleInterface *iface);
 
     emscripten::val createHtmlElement(QAccessibleInterface *iface);
     void destroyHtmlElement(QAccessibleInterface *iface);

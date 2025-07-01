@@ -94,8 +94,7 @@ void QWasmAccessibility::onShowWindowImpl(QWindow *window)
 {
     if (!m_accessibilityEnabled)
         return;
-
-    populateAccessibilityTree(QAccessible::queryAccessibleInterface(window));
+    populateAccessibilityTree(window->accessibleRoot());
 }
 
 void QWasmAccessibility::onRemoveWindowImpl(QWindow *window)
@@ -143,6 +142,11 @@ void QWasmAccessibility::enableAccessibility()
         element["parentElement"].call<void>("removeChild", element);
     }
     m_enableButtons.clear();
+}
+
+bool QWasmAccessibility::isWindowNode(QAccessibleInterface *iface)
+{
+    return (iface && !getWindow(iface->parent()) && getWindow(iface));
 }
 
 emscripten::val QWasmAccessibility::getA11yContainer(QWindow *window)
@@ -205,13 +209,29 @@ emscripten::val QWasmAccessibility::getElementContainer(QWindow *window)
 
 emscripten::val QWasmAccessibility::getElementContainer(QAccessibleInterface *iface)
 {
-    if (!iface)
+    // Here we skip QWindow nodes, as they are already present. Such nodes
+    // has a parent window of null.
+    //
+    // The next node should return the a11y container.
+    // Further nodes should return the element of the parent.
+    if (!getWindow(iface))
         return emscripten::val::undefined();
-    return getElementContainer(getWindow(iface));
+
+    if (isWindowNode(iface))
+        return emscripten::val::undefined();
+
+    if (isWindowNode(iface->parent()))
+        return getElementContainer(getWindow(iface->parent()));
+
+    // Regular node
+    return getHtmlElement(iface->parent());
 }
 
 QWindow *QWasmAccessibility::getWindow(QAccessibleInterface *iface)
 {
+    if (!iface)
+        return nullptr;
+
     QWindow *window = iface->window();
     // this is needed to add tabs as the window is not available
     if (!window && iface->parent())
@@ -340,12 +360,11 @@ emscripten::val QWasmAccessibility::createHtmlElement(QAccessibleInterface *ifac
             element = document.call<emscripten::val>("createElement", std::string("div"));
             setAttribute(element, "role", "tablist");
 
-            for (int i = 0; i < iface->childCount();  ++i) {
-                if (iface->child(i)->role() == QAccessible::PageTab){
-                    emscripten::val elementTab = emscripten::val::undefined();
-                    createHtmlElement(iface->child(i));
-                }
-            }
+            m_elements[iface] = element;
+
+            for (int i = 0; i < iface->childCount(); ++i)
+                createHtmlElement(iface->child(i));
+
         } break;
 
         case QAccessible::PageTab:{
@@ -392,6 +411,8 @@ emscripten::val QWasmAccessibility::createHtmlElement(QAccessibleInterface *ifac
             element = document.call<emscripten::val>("createElement", std::string("div"));
             setAttribute(element, "role", "menubar");
             setAttribute(element, "title", text.toStdString());
+            m_elements[iface] = element;
+
             for (int i = 0; i < iface->childCount(); ++i) {
                 emscripten::val childElement = createHtmlElement(iface->child(i));
                 setAttribute(childElement, "aria-owns", text.toStdString());
@@ -452,7 +473,23 @@ void QWasmAccessibility::linkToParent(QAccessibleInterface *iface)
     emscripten::val container = getElementContainer(iface);
 
     if (!container.isUndefined())
-        container.call<void>("appendChild", element);
+    {
+        emscripten::val next = emscripten::val::undefined();
+        const int thisIndex = iface->parent()->indexOfChild(iface);
+        for (int i = thisIndex + 1; i < iface->parent()->childCount(); ++i) {
+            auto element = getHtmlElement(iface->parent()->child(i));
+            if (!element.isUndefined() &&
+                !element["parentElement"].isUndefined() &&
+                !element["parentElement"].isNull()) {
+                next = element;
+                break;
+            }
+        }
+        if (next.isUndefined())
+            container.call<void>("appendChild", element);
+        else
+            container.call<void>("insertBefore", element, next);
+    }
 }
 
 void QWasmAccessibility::setHtmlElementVisibility(QAccessibleInterface *iface, bool visible)
@@ -467,15 +504,20 @@ void QWasmAccessibility::setHtmlElementGeometry(QAccessibleInterface *iface)
 {
     const emscripten::val element = getHtmlElement(iface);
 
-    // QAccessibleInterface gives us the geometry in global (screen) coordinates. Translate that
-    // to window geometry in order to position elements relative to window origin.
-    QWindow *window = getWindow(iface);
-    if (!window)
-        qCWarning(lcQpaAccessibility) << "Unable to find window for" << iface << "setting null geometry";
-    QRect screenGeometry = iface->rect();
-    QPoint windowPos = window ? window->mapFromGlobal(screenGeometry.topLeft()) : QPoint();
-    QRect windowGeometry(windowPos, screenGeometry.size());
-
+    QRect windowGeometry = iface->rect();
+    if (iface->parent()) {
+        // Both iface and iface->parent returns geometry in screen coordinates
+        // We only want the relative coordinates, so the coordinate system does
+        // not matter as long as it is the same.
+        const QRect parentRect = iface->parent()->rect();
+        const QRect thisRect = iface->rect();
+        const QRect result(thisRect.topLeft() - parentRect.topLeft(), thisRect.size());
+        windowGeometry = result;
+    } else {
+        // Elements without a parent are not a part of the a11y tree, and don't
+        // have meaningful geometry.
+        Q_ASSERT(!getWindow(iface));
+    }
     setHtmlElementGeometry(element, windowGeometry);
 }
 
@@ -557,7 +599,6 @@ void QWasmAccessibility::handleLineEditUpdate(QAccessibleEvent *event)
 
 void QWasmAccessibility::handleEventFromHtmlElement(const emscripten::val event)
 {
-
     QAccessibleInterface *iface = m_elements.key(event["target"]);
 
     if (iface == nullptr) {
@@ -680,8 +721,8 @@ void QWasmAccessibility::populateAccessibilityTree(QAccessibleInterface *iface)
 
     // We ignore toplevel windows which is categorized
     // by getWindow(iface->parent()) != getWindow(iface)
-    QWindow *window1 = getWindow(iface);
-    QWindow *window0 = (iface->parent()) ? getWindow(iface->parent()) : nullptr;
+    const QWindow *window1 = getWindow(iface);
+    const QWindow *window0 = (iface->parent()) ? getWindow(iface->parent()) : nullptr;
 
     if (window1 && window0 == window1) {
         // Create html element for the interface, sync up properties.
@@ -899,7 +940,7 @@ void QWasmAccessibility::notifyAccessibilityUpdate(QAccessibleEvent *event)
 
     QAccessibleInterface *iface = event->accessibleInterface();
     if (!iface) {
-        qWarning() << "notifyAccessibilityUpdate with null a11y interface" ;
+        qWarning() << "notifyAccessibilityUpdate with null a11y interface";
         return;
     }
 
@@ -914,6 +955,10 @@ void QWasmAccessibility::notifyAccessibilityUpdate(QAccessibleEvent *event)
         // but we can look at the pointer,
         removeObject(iface);
         return;
+
+    case QAccessible::ObjectShow: // We do not get ObjectCreated from widgets, we get ObjectShow
+        createObject(iface);
+        break;
 
     default:
         break;
@@ -936,6 +981,9 @@ void QWasmAccessibility::notifyAccessibilityUpdate(QAccessibleEvent *event)
         return;
 
     case QAccessible::Focus:
+        // We do not get all callbacks for the geometry
+        // hence we update here as well.
+        setHtmlElementGeometry(iface);
         setHtmlElementFocus(iface);
         break;
 
