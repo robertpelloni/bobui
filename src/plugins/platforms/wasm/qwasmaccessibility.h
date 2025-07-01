@@ -79,6 +79,7 @@ private:
     void handleEventFromHtmlElement(const emscripten::val event);
 
     void populateAccessibilityTree(QAccessibleInterface *iface);
+    void removeObject(QAccessibleInterface *iface);
     void notifyAccessibilityUpdate(QAccessibleEvent *event) override;
     void setRootObject(QObject *o) override;
     void initialize() override;

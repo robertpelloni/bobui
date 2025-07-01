@@ -824,25 +824,53 @@ void QWasmAccessibility::handleDescriptionChanged(QAccessibleInterface *iface)
     auto element = ensureHtmlElement(iface);
     auto container = getDescribedByContainer(iface);
     if (!container.isUndefined()) {
-        auto document = getDocument(container);
         std::ostringstream oss;
         oss << "dbid_" << (void *)iface;
         auto id = oss.str();
 
+        auto describedBy = container.call<emscripten::val>("querySelector", "#" + std::string(id));
         if (desc.empty()) {
-            auto describedBy = document.call<emscripten::val>("getElementById", id);
             if (!describedBy.isUndefined() && !describedBy.isNull()) {
                 container.call<void>("removeChild", describedBy);
             }
             setAttribute(element, "aria-describedby", "");
         } else {
-            auto describedBy = document.call<emscripten::val>("createElement", std::string("p"));
+            if (describedBy.isUndefined() || describedBy.isNull()) {
+                auto document = getDocument(container);
+                describedBy = document.call<emscripten::val>("createElement", std::string("p"));
+
+                container.call<void>("appendChild", describedBy);
+            }
             setAttribute(describedBy, "id", id);
             setAttribute(describedBy, "aria-hidden", true);
             setAttribute(element, "aria-describedby", id);
-            container.call<void>("appendChild", describedBy);
             setProperty(describedBy, "innerHTML", desc);
         }
+    }
+}
+
+void QWasmAccessibility::removeObject(QAccessibleInterface *iface)
+{
+    // Do not dereference the object pointer. it might be invalid.
+    // Do not dereference the iface either, it refers to the object.
+    // Note: we may remove children, making them have parentElement undefined
+    // so we need to check for parentElement here. We do assume that removeObject
+    // is called on all objects, just not in any predefined order.
+    const auto it = m_elements.find(iface);
+    if (it != m_elements.end()) {
+        auto element = it.value();
+        auto container = getDescribedByContainer(iface);
+        if (!container.isUndefined()) {
+            std::ostringstream oss;
+            oss << "dbid_" << (void *)iface;
+            auto id = oss.str();
+            auto describedBy = container.call<emscripten::val>("querySelector", "#" + std::string(id));
+            if (!describedBy.isUndefined() && !describedBy.isNull() && !describedBy["parentElement"].isUndefined())
+                describedBy["parentElement"].call<void>("removeChild", describedBy);
+        }
+        if (!element["parentElement"].isUndefined())
+            element["parentElement"].call<void>("removeChild", element);
+        m_elements.erase(it);
     }
 }
 
