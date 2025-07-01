@@ -51,7 +51,8 @@ private:
 
     emscripten::val createHtmlElement(QAccessibleInterface *iface);
     void destroyHtmlElement(QAccessibleInterface *iface);
-    emscripten::val ensureHtmlElement(QAccessibleInterface *iface);
+    emscripten::val getHtmlElement(QAccessibleInterface *iface);
+    void linkToParent(QAccessibleInterface *iface);
     void setHtmlElementVisibility(QAccessibleInterface *iface, bool visible);
     void setHtmlElementGeometry(QAccessibleInterface *iface);
     void setHtmlElementGeometry(emscripten::val element, QRect geometry);
@@ -79,6 +80,7 @@ private:
     void handleEventFromHtmlElement(const emscripten::val event);
 
     void populateAccessibilityTree(QAccessibleInterface *iface);
+    void createObject(QAccessibleInterface *iface);
     void removeObject(QAccessibleInterface *iface);
     void notifyAccessibilityUpdate(QAccessibleEvent *event) override;
     void setRootObject(QObject *o) override;
@@ -94,9 +96,6 @@ private:
     void setProperty(emscripten::val element, const std::string &attr, bool val);
 
     void addEventListener(emscripten::val element, const char *eventType);
-
-public: // public for EMSCRIPTEN_BINDINGS
-    static void onHtmlEventReceived(emscripten::val event);
 
 private:
     static QWasmAccessibility *s_instance;
