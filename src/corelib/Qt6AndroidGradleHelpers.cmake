@@ -263,6 +263,21 @@ function(_qt_internal_android_prepare_gradle_build target)
     _qt_internal_create_global_apk_all_target_if_needed()
 endfunction()
 
+# Returns the path to the output package file for the target.
+function(_qt_internal_android_get_output_package_name out_var target)
+    _qt_internal_android_package_path(package_build_dir ${target} ${type})
+    _qt_internal_android_get_deployment_type_option(deployment_type_suffix "release" "debug")
+    if(NOT deployment_type_suffix STREQUAL "release" AND type STREQUAL "apk")
+        set(extra_suffix "-unsigned")
+    else()
+        set(extra_suffix "")
+    endif()
+
+    set(output_dir "${package_build_dir}/${deployment_type_suffix}")
+    set(${out_var} "${output_dir}/app-${deployment_type_suffix}${extra_suffix}.${type}"
+        PARENT_SCOPE)
+endfunction()
+
 # Adds the modern gradle build targets.
 # These targets use the settings.gradle based build directory structure.
 function(_qt_internal_android_add_gradle_build target type)
@@ -280,11 +295,7 @@ function(_qt_internal_android_add_gradle_build target type)
 
     set(package_file_path "${android_build_dir}/${target}.${type}")
 
-    _qt_internal_android_package_path(package_build_dir ${target} ${type})
-    _qt_internal_android_get_deployment_type_option(deployment_type_suffix
-        "release" "debug")
-    set(package_build_file_path
-        "${package_build_dir}/${deployment_type_suffix}/app-${deployment_type_suffix}.${type}")
+    _qt_internal_android_get_output_package_name(package_build_file_path ${target} ${type})
 
     set(extra_deps "")
     if(TARGET ${target}_copy_feature_names)
@@ -314,7 +325,69 @@ function(_qt_internal_android_add_gradle_build target type)
         VERBATIM
     )
 
-    add_custom_target(${target}_make_${type} DEPENDS "${package_file_path}")
+    _qt_internal_android_sign_package(signed_package ${target} ${type})
+
+    add_custom_target(${target}_make_${type} DEPENDS "${package_file_path}" "${signed_package}")
+endfunction()
+
+function(_qt_internal_android_sign_package out_file target type)
+    string(TOUPPER "${type}" type_upper)
+    if(NOT QT_ANDROID_SIGN_${type_upper})
+        set(${out_file} "" PARENT_SCOPE)
+        return()
+    endif()
+
+    if(type STREQUAL "aab")
+        find_program(jarsigner NAMES jarsigner)
+        if(NOT jarsigner)
+            message(FATAL_ERROR "jarsigner is not found. Please install"
+                " a JDK version to sign '${target}'.")
+        endif()
+
+        set(program ${jarsigner})
+        set(extra_args "")
+    elseif(type STREQUAL "apk")
+        _qt_internal_android_get_target_sdk_build_tools_revision(build_tools_version ${target})
+        if(CMAKE_HOST_WIN32)
+            set(suffix ".bat")
+        else()
+            set(suffix "")
+        endif()
+        set(build_tools_base_path "${ANDROID_SDK_ROOT}/build-tools/${build_tools_version}")
+        set(program "${build_tools_base_path}/apksigner${suffix}")
+        set(extra_args "-DZIPALIGN_PATH=${build_tools_base_path}/build-tools/zipalign${suffix}")
+    endif()
+
+    _qt_internal_android_get_output_package_name(package_build_file_path ${target} ${type})
+
+    _qt_internal_android_package_path(package_build_dir ${target} ${type})
+    _qt_internal_android_get_deployment_type_option(deployment_type_suffix
+        "release" "debug")
+    set(base_output_path "${package_build_dir}/${deployment_type_suffix}")
+    set(package_build_file_path_signed
+        "${base_output_path}/app-${deployment_type_suffix}-signed.${type}")
+
+    set(package_file_path "${android_build_dir}/${target}-signed.${type}")
+
+    set(sign_package_script "${_qt_6_config_cmake_dir}/QtAndroidSignPackage.cmake")
+    add_custom_command(OUTPUT "${package_file_path}"
+        BYPRODUCTS "${package_build_file_path_signed}"
+        COMMAND
+            ${CMAKE_COMMAND} "-DPROGRAM=${program}" "-DUNSIGNED_PACKAGE=${package_build_file_path}"
+            "-DSIGNED_PACKAGE=${package_build_file_path_signed}" ${extra_args}
+            -P "${sign_package_script}"
+        COMMAND
+            ${CMAKE_COMMAND} -E copy_if_different
+            "${package_build_file_path_signed}" "${package_file_path}"
+        DEPENDS
+            ${package_build_file_path}
+            ${sign_package_script}
+        WORKING_DIRECTORY
+            "${android_build_dir}"
+        VERBATIM
+    )
+
+    set(${out_file} "${package_file_path}" PARENT_SCOPE)
 endfunction()
 
 # Returns the path to the android executable package either apk or aab.

@@ -45,13 +45,23 @@ target_link_libraries(test_android_signing PRIVATE
 
 _qt_internal_android_get_target_deployment_dir(android_build test_android_signing)
 
-get_filename_component(build_dir_name ${android_build} NAME)
+if(QT_USE_ANDROID_MODERN_BUNDLE)
+    set(output_package_basename "app-release-signed")
+else()
+    get_filename_component(build_dir_name ${android_build} NAME)
+    if(QT_ANDROID_SIGN_AAB)
+        set(output_package_basename "${build_dir_name}-release")
+    else()
+        set(output_package_basename "${build_dir_name}-release-signed")
+    endif()
+endif()
+
 if(QT_ANDROID_SIGN_AAB)
     set(expected_output
-        "${android_build}/build/outputs/bundle/release/${build_dir_name}-release.aab")
+        "${android_build}/build/outputs/bundle/release/${output_package_basename}.aab")
 else()
     set(expected_output
-        "${android_build}/build/outputs/apk/release/${build_dir_name}-release-signed.apk")
+        "${android_build}/build/outputs/apk/release/${output_package_basename}.apk")
 endif()
 
 add_test(NAME test_android_signing_verify_signature

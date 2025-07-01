@@ -320,6 +320,7 @@ endfunction()
 # The files are expected to exist under the qtbase/cmake sub-directory.
 function(qt_internal_get_qt_build_public_files_to_install out_var)
     set(${out_var}
+        QtAndroidSignPackage.cmake
         QtCopyFileIfDifferent.cmake
         QtInitProject.cmake
         QtPublicCMakeEarlyPolicyHelpers.cmake
