@@ -10,6 +10,7 @@
 #include <private/qeglfskmsintegration_p.h>
 
 #include <QtCore/QLoggingCategory>
+#include <QtCore/qtimer.h>
 #include <QtCore/private/qcore_unix_p.h>
 
 #define ARRAY_LENGTH(a) (sizeof (a) / sizeof (a)[0])
