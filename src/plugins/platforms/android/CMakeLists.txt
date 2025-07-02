@@ -51,7 +51,12 @@ qt_internal_add_plugin(QAndroidIntegrationPlugin
         qandroidplatformdialoghelpers.cpp
         # Conflicting JNI classes, and types
         androidcontentfileengine.cpp
+        qandroidplatformforeignwindow.cpp
         qandroidplatformintegration.cpp
+        qandroidplatformscreen.cpp
+        qandroidplatformservices.cpp
+        qandroidplatformwindow.cpp
+        qandroidsystemlocale.cpp
     INCLUDE_DIRECTORIES
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${QtBase_SOURCE_DIR}/src/3rdparty/android
