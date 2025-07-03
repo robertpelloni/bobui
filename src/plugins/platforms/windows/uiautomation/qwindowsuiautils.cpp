@@ -10,6 +10,8 @@
 
 #include <QtGui/qwindow.h>
 #include <QtGui/private/qhighdpiscaling_p.h>
+#include <qpa/qplatforminputcontextfactory_p.h>
+
 #include <cmath>
 
 QT_BEGIN_NAMESPACE
@@ -153,7 +155,19 @@ long roleToControlTypeId(QAccessible::Role role)
         {QAccessible::BlockQuote, UIA_GroupControlTypeId},
     };
 
-    return mapping.value(role, UIA_CustomControlTypeId);
+    long controlType = mapping.value(role, UIA_CustomControlTypeId);
+
+    // The native OSK should be disabled if the Qt OSK is in use,
+    // or if disabled via application attribute.
+    static bool imModuleEmpty = QPlatformInputContextFactory::requested().isEmpty();
+    bool nativeVKDisabled = QCoreApplication::testAttribute(Qt::AA_DisableNativeVirtualKeyboard);
+
+    // If we want to disable the native OSK auto-showing
+    // we have to report text fields as non-editable.
+    if (controlType == UIA_EditControlTypeId && (!imModuleEmpty || nativeVKDisabled))
+        controlType = UIA_TextControlTypeId;
+
+    return controlType;
 }
 
 // True if a character can be a separator for a text unit.

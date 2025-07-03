@@ -27,7 +27,6 @@
 #include <QtGui/qaccessible.h>
 #include <QtGui/qguiapplication.h>
 #include <QtGui/qwindow.h>
-#include <qpa/qplatforminputcontextfactory_p.h>
 #include <QtCore/private/qcomvariant_p.h>
 
 #if !defined(Q_CC_BOR) && !defined (Q_CC_GNU)
@@ -570,19 +569,7 @@ HRESULT QWindowsUiaMainProvider::GetPropertyValue(PROPERTYID idProp, VARIANT *pR
             *pRetVal = QComVariant{ UIA_WindowControlTypeId }.release();
         } else {
             // Control type converted from role.
-            auto controlType = roleToControlTypeId(accessible->role());
-
-            // The native OSK should be disabled if the Qt OSK is in use,
-            // or if disabled via application attribute.
-            static bool imModuleEmpty = QPlatformInputContextFactory::requested().isEmpty();
-            bool nativeVKDisabled = QCoreApplication::testAttribute(Qt::AA_DisableNativeVirtualKeyboard);
-
-            // If we want to disable the native OSK auto-showing
-            // we have to report text fields as non-editable.
-            if (controlType == UIA_EditControlTypeId && (!imModuleEmpty || nativeVKDisabled))
-                controlType = UIA_TextControlTypeId;
-
-            *pRetVal = QComVariant{ controlType }.release();
+            *pRetVal = QComVariant{ roleToControlTypeId(accessible->role()) }.release();
         }
         break;
     case UIA_HelpTextPropertyId:
