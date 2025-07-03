@@ -405,13 +405,16 @@ static int fromOffsetString(QStringView offsetString, bool *valid) noexcept
 
     \section2 Range of Valid Dates
 
-    Dates are stored internally as a Julian Day number, an integer count of
-    every day in a contiguous range, with 24 November 4714 BCE in the Gregorian
-    calendar being Julian Day 0 (1 January 4713 BCE in the Julian calendar).
-    As well as being an efficient and accurate way of storing an absolute date,
-    it is suitable for converting a date into other calendar systems such as
-    Hebrew, Islamic or Chinese. The Julian Day number can be obtained using
-    QDate::toJulianDay() and can be set using QDate::fromJulianDay().
+    Dates are stored internally as a modified Julian Day number, an integer
+    count of every day in a contiguous range, with 24 November 4714 BCE in the
+    Gregorian calendar being Julian Day 0 (1 January 4713 BCE in the Julian
+    calendar). As well as being an efficient and accurate way of storing an
+    absolute date, it is suitable for converting a date into other calendar
+    systems such as Hebrew, Islamic or Chinese. For the purposes of QDate,
+    Julian Days are delimited at midnight and, for those of QDateTime, in the
+    zone used by the datetime. (This departs from the formal definition, which
+    delimits Julian Days at UTC noon.) The Julian Day number can be obtained
+    using QDate::toJulianDay() and can be set using QDate::fromJulianDay().
 
     The range of Julian Day numbers that QDate can represent is, for technical
     reasons, limited to between -784350574879 and 784354017364, which means from
