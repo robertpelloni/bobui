@@ -3788,9 +3788,13 @@ void tst_QAccessibility::dockWidgetTest()
     QAccessibleInterface *dock3Widget = accDock3->child(0);
     QCOMPARE(dock3Widget->text(QAccessible::Name), pb3->text());
 
-    // check role is QAccessible::Window when dock window is floating/undocked
+    // check role is changed to QAccessible::Window when dock window is undocked
+    // and a corresponding event is sent
+    QTestAccessibility::clearEvents();
     dock3->setFloating(true);
     QCOMPARE(accDock3->role(), QAccessible::Window);
+    QAccessibleEvent roleChangedEvent(dock3, QAccessible::RoleChanged);
+    QVERIFY(QTestAccessibility::containsEvent(&roleChangedEvent));
 
     QTestAccessibility::clearEvents();
 #endif // QT_CONFIG(dockwidget)

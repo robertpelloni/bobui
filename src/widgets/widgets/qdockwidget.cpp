@@ -5,6 +5,9 @@
 
 #include <qaction.h>
 #include <qapplication.h>
+#if QT_CONFIG(accessibility)
+#include <qaccessible.h>
+#endif
 #include <qdrawutil.h>
 #include <qevent.h>
 #include <qfontmetrics.h>
@@ -1234,6 +1237,15 @@ void QDockWidgetPrivate::setWindowState(WindowStates states, const QRect &rect)
 
     if (floating != wasFloating) {
         emit q->topLevelChanged(floating);
+#if QT_CONFIG(accessibility)
+        if (QAccessible::isActive()) {
+            // Accessible role depends on whether QDockWidget is a top level or not,
+            // see QAccessibleDockWidget::role
+            QAccessibleEvent roleChangedEvent(q, QAccessible::RoleChanged);
+            QAccessible::updateAccessibility(&roleChangedEvent);
+        }
+#endif
+
         if (!floating && parent) {
             QMainWindowLayout *mwlayout = qt_mainwindow_layout_from_dock(q);
             if (mwlayout)
