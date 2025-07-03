@@ -230,6 +230,7 @@ Q_STATIC_LOGGING_CATEGORY(lcAccessibilityCore, "qt.accessibility.core");
     \value ParentChanged                    An object's parent object changed.
     \value PopupMenuEnd                     A pop-up menu has closed.
     \value PopupMenuStart                   A pop-up menu has opened.
+    \value [since 6.11] RoleChanged         The role of an object has changed.
     \value ScrollingEnd                     A scrollbar scroll operation has ended (the mouse has
                                             released the slider handle).
     \value ScrollingStart                   A scrollbar scroll operation is about to start; this may

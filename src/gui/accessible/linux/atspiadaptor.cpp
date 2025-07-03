@@ -1011,6 +1011,24 @@ void AtSpiAdaptor::notify(QAccessibleEvent *event)
         }
         break;
     }
+    case QAccessible::RoleChanged: {
+        if (sendObject || sendObject_property_change
+            || sendObject_property_change_accessible_role) {
+            QAccessibleInterface *iface = event->accessibleInterface();
+            if (!iface || !iface->isValid()) {
+                qCDebug(lcAccessibilityAtspi, "RoleChanged event from invalid accessible.");
+                return;
+            }
+
+            QString path = pathForInterface(iface);
+            QVariantList args = packDBusSignalArguments(
+                    "accessible-role"_L1, 0, 0,
+                    QVariant::fromValue(QDBusVariant(uint(getRole(iface)))));
+            sendDBusSignal(path, ATSPI_DBUS_INTERFACE_EVENT_OBJECT ""_L1, "PropertyChange"_L1,
+                           args);
+        }
+        break;
+    }
     case QAccessible::DescriptionChanged: {
         if (sendObject || sendObject_property_change || sendObject_property_change_accessible_description) {
             QAccessibleInterface *iface = event->accessibleInterface();

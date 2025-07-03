@@ -172,6 +172,18 @@ void QWindowsUiaMainProvider::notifyNameChange(QAccessibleEvent *event)
     }
 }
 
+void QWindowsUiaMainProvider::notifyRoleChange(QAccessibleEvent *event)
+{
+    if (QAccessibleInterface *accessible = event->accessibleInterface()) {
+        if (auto provider = providerForAccessible(accessible)) {
+            QComVariant oldVal;
+            QComVariant newVal{ roleToControlTypeId(accessible->role()) };
+            UiaRaiseAutomationPropertyChangedEvent(provider.Get(), UIA_ControlTypePropertyId,
+                                                   oldVal.get(), newVal.get());
+        }
+    }
+}
+
 void QWindowsUiaMainProvider::notifySelectionChange(QAccessibleEvent *event)
 {
     if (QAccessibleInterface *accessible = event->accessibleInterface()) {

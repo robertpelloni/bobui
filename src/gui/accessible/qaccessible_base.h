@@ -103,6 +103,7 @@ public:
         AcceleratorChanged   = 0x80C0,
         Announcement         = 0x80D0,
         IdentifierChanged    = 0x80E0,
+        RoleChanged          = 0x80E1,
 
         // was declared after AcceleratorChanged, without explicit value
         InvalidEvent                    = AcceleratorChanged + 1,
