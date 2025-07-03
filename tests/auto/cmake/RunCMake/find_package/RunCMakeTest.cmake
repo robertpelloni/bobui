@@ -1,4 +1,4 @@
-include(RunCMake)
+include(QtRunCMake)
 
 function(run_cmake_and_build case)
     # Set common build directory for configure and build
