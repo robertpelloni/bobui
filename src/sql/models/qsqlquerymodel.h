@@ -79,7 +79,7 @@ protected:
     virtual void queryChange();
 
     virtual QModelIndex indexInQuery(const QModelIndex &item) const;
-    void setLastError(const QSqlError &error) const;
+    void setLastError(const QSqlError &error);
     QSqlQueryModel(QSqlQueryModelPrivate &dd, QObject *parent = nullptr);
 };
 
