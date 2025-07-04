@@ -2080,6 +2080,17 @@ bool QMetaPropertyBuilder::isBindable() const
     else
         return false;
 }
+/*!
+  Returns \c true if the property is required.
+  The default is \c false.
+ */
+bool QMetaPropertyBuilder::isRequired() const
+{
+    if (auto d = d_func())
+        return d->flag(Bindable);
+    else
+        return false;
+}
 
 /*!
     Sets this property to readable if \a value is true.
@@ -2233,6 +2244,15 @@ void QMetaPropertyBuilder::setBindable(bool value)
 {
     if (auto d = d_func())
         d->setFlag(Bindable, value);
+}
+
+/*!
+   Sets the\c REQUIRED flag on this property to \a value
+ */
+void QMetaPropertyBuilder::setRequired(bool value)
+{
+    if (auto d = d_func())
+        d->setFlag(Required, value);
 }
 
 /*!

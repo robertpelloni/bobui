@@ -216,6 +216,7 @@ public:
     bool isFinal() const;
     bool isAlias() const;
     bool isBindable() const;
+    bool isRequired() const;
 
     void setReadable(bool value);
     void setWritable(bool value);
@@ -230,6 +231,7 @@ public:
     void setFinal(bool value);
     void setAlias(bool value);
     void setBindable(bool value);
+    void setRequired(bool value);
 
     int revision() const;
     void setRevision(int revision);

@@ -708,6 +708,8 @@ void tst_QMetaObjectBuilder::property()
             prop2.setEnumOrFlag(false); \
             prop2.setConstant(false); \
             prop2.setFinal(false); \
+            prop2.setBindable(false); \
+            prop2.setRequired(false); \
         } while (0)
 #define COUNT_FLAGS() \
         ((prop2.isReadable() ? 1 : 0) + \
@@ -720,7 +722,9 @@ void tst_QMetaObjectBuilder::property()
          (prop2.hasStdCppSet() ? 1 : 0) + \
          (prop2.isEnumOrFlag() ? 1 : 0) + \
          (prop2.isConstant() ? 1 : 0) + \
-         (prop2.isFinal() ? 1 : 0))
+         (prop2.isFinal() ? 1 : 0) + \
+         (prop2.isBindable() ? 1 : 0) + \
+         (prop2.isRequired() ? 1 : 0))
 #define CHECK_FLAG(setFunc,isFunc) \
         do { \
             CLEAR_FLAGS(); \
