@@ -569,6 +569,26 @@ qt_internal_extend_target(Core CONDITION QT_FEATURE_animation
         animation/qvariantanimation.cpp animation/qvariantanimation.h animation/qvariantanimation_p.h
 )
 
+if(QT_FEATURE_async_io)
+    qt_internal_extend_target(Core
+        SOURCES
+            io/qiooperation.cpp io/qiooperation_p.h io/qiooperation_p_p.h
+            io/qrandomaccessasyncfile.cpp io/qrandomaccessasyncfile_p.h io/qrandomaccessasyncfile_p_p.h
+    )
+
+    # TODO: This should become the last (fallback) condition later.
+    # We migth also want to rewrite it so that it does not depend on
+    # QT_FEATURE_future.
+    if(QT_FEATURE_thread AND QT_FEATURE_future)
+        qt_internal_extend_target(Core
+            SOURCES
+                io/qrandomaccessasyncfile_threadpool.cpp
+            DEFINES
+                QT_RANDOMACCESSASYNCFILE_THREAD
+        )
+    endif()
+endif()
+
 # This needs to be done before one below adds kernel32 because the symbols we use
 # from synchronization also appears in kernel32 in the version of MinGW we use in CI.
 # However, when picking the symbols from libkernel32.a it will try to load the symbols

@@ -1230,6 +1230,11 @@ qt_feature("openssl-hash" PRIVATE
     CONDITION QT_FEATURE_openssl_linked AND QT_FEATURE_opensslv30
     PURPOSE "Uses OpenSSL based implementation of cryptographic hash algorithms."
 )
+qt_feature("async-io" PRIVATE
+    LABEL "Async File I/O"
+    PURPOSE "Provides support for asynchronous file I/O."
+    CONDITION QT_FEATURE_thread AND QT_FEATURE_future
+)
 
 qt_configure_add_summary_section(NAME "Qt Core")
 qt_configure_add_summary_entry(ARGS "backtrace")
