@@ -1,3 +1,5 @@
+set(CMAKE_UNITY_BUILD OFF)
+
 add_library(snippets_qprocess OBJECT
     qprocess-createprocessargumentsmodifier.cpp
     qprocess-simpleexecution.cpp
