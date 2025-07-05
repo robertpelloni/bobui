@@ -274,6 +274,8 @@ QPlatformDialogHelper *QCocoaTheme::createPlatformDialogHelper(DialogType dialog
     case QPlatformTheme::ColorDialog:
         return new QCocoaColorDialogHelper();
     case QPlatformTheme::FontDialog:
+        if (QOperatingSystemVersion::current() >= QOperatingSystemVersion::MacOSTahoe)
+            return nullptr; // NSFontPanel crashes in macOS 26 betas (FB18623588)
         return new QCocoaFontDialogHelper();
     case QPlatformTheme::MessageDialog:
         return new QCocoaMessageDialog;
