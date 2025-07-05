@@ -138,6 +138,29 @@ bool QColumnView::resizeGripsVisible() const
 }
 
 /*!
+    \property QColumnView::previewColumnVisible
+    \brief whether the preview column is visible
+    \since 6.11
+
+    By default, \c visible is set to true
+*/
+void QColumnView::setPreviewColumnVisible(bool visible)
+{
+    Q_D(QColumnView);
+    if (d->showPreviewColumn == visible)
+        return;
+    d->showPreviewColumn = visible;
+    if (d->columns.constLast() == d->previewColumn)
+        d->columns.constLast()->setVisible(d->showPreviewColumn);
+}
+
+bool QColumnView::previewColumnVisible() const
+{
+    Q_D(const QColumnView);
+    return d->showPreviewColumn;
+}
+
+/*!
     \reimp
 */
 void QColumnView::setModel(QAbstractItemModel *model)
@@ -669,9 +692,10 @@ QAbstractItemView *QColumnViewPrivate::createColumn(const QModelIndex &index, bo
                                                     this, &QColumnViewPrivate::clicked);
     } else {
         if (!previewColumn)
-            setPreviewWidget(new QWidget(q));
+            previewColumn = createPreviewColumn();
         view = previewColumn;
-        view->setMinimumWidth(qMax(view->minimumWidth(), previewWidget->minimumWidth()));
+        if (previewWidget)
+            view->setMinimumWidth(qMax(view->minimumWidth(), previewWidget->minimumWidth()));
     }
 
     viewConnections[view] = {
@@ -714,8 +738,10 @@ QAbstractItemView *QColumnViewPrivate::createColumn(const QModelIndex &index, bo
     columns.append(view);
     doLayout();
     updateScrollbars();
-    if (show && view->isHidden())
+    if (show && view->isHidden() && view != previewColumn)
         view->setVisible(true);
+    if (view == previewColumn)
+        view->setVisible(showPreviewColumn);
     return view;
 }
 
@@ -827,6 +853,19 @@ void QColumnView::setPreviewWidget(QWidget *widget)
 */
 void QColumnViewPrivate::setPreviewWidget(QWidget *widget)
 {
+    QColumnViewPreviewColumn *column = createPreviewColumn();
+    previewColumn = column;
+    column->setPreviewWidget(widget);
+    previewWidget = widget;
+    if (previewWidget)
+        previewWidget->setParent(column->viewport());
+}
+
+/*!
+    \internal
+*/
+QColumnViewPreviewColumn *QColumnViewPrivate::createPreviewColumn()
+{
     Q_Q(QColumnView);
     if (previewColumn) {
         if (!columns.isEmpty() && columns.constLast() == previewColumn)
@@ -834,16 +873,14 @@ void QColumnViewPrivate::setPreviewWidget(QWidget *widget)
         previewColumn->deleteLater();
     }
     QColumnViewPreviewColumn *column = new QColumnViewPreviewColumn(q);
-    column->setPreviewWidget(widget);
-    previewColumn = column;
-    previewColumn->hide();
-    previewColumn->setFrameShape(QFrame::NoFrame);
-    previewColumn->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-    previewColumn->setSelectionMode(QAbstractItemView::NoSelection);
-    previewColumn->setMinimumWidth(qMax(previewColumn->verticalScrollBar()->width(),
-                previewColumn->minimumWidth()));
-    previewWidget = widget;
-    previewWidget->setParent(previewColumn->viewport());
+    column->hide();
+    column->setFrameShape(QFrame::NoFrame);
+    column->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    column->setSelectionMode(QAbstractItemView::NoSelection);
+    column->setMinimumWidth(qMax(column->verticalScrollBar()->width(),
+                                 column->minimumWidth()));
+    column->setPreviewWidget(nullptr);
+    return column;
 }
 
 /*!
@@ -998,7 +1035,10 @@ void QColumnViewPrivate::changeCurrentColumn()
     }
 
     if (columns.constLast()->isHidden()) {
-        columns.constLast()->setVisible(true);
+        if (columns.constLast() != previewColumn)
+            columns.constLast()->setVisible(true);
+        else
+            columns.constLast()->setVisible(showPreviewColumn);
     }
     if (columns.constLast()->selectionModel())
         columns.constLast()->selectionModel()->clear();
@@ -1040,6 +1080,7 @@ void QColumnView::selectAll()
 QColumnViewPrivate::QColumnViewPrivate()
 :  QAbstractItemViewPrivate()
 ,showResizeGrips(true)
+,showPreviewColumn(true)
 ,offset(0)
 ,previewWidget(nullptr)
 ,previewColumn(nullptr)

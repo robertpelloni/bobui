@@ -45,7 +45,8 @@ public:
 
     void setPreviewWidget(QWidget *widget) {
         previewWidget = widget;
-        setMinimumWidth(previewWidget->minimumWidth());
+        if (previewWidget)
+            setMinimumWidth(previewWidget->minimumWidth());
     }
 
     void resizeEvent(QResizeEvent * event) override{
@@ -127,6 +128,7 @@ public:
     void disconnectView(QAbstractItemView *view);
     void doLayout();
     void setPreviewWidget(QWidget *widget);
+    QColumnViewPreviewColumn *createPreviewColumn();
     void checkColumnCreation(const QModelIndex &parent);
 
 
@@ -138,6 +140,7 @@ public:
     QList<QAbstractItemView*> columns;
     QList<int> columnSizes; // used during init and corner moving
     bool showResizeGrips;
+    bool showPreviewColumn;
     int offset;
 #if QT_CONFIG(animation)
     QPropertyAnimation currentAnimation;
