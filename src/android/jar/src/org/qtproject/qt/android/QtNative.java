@@ -429,7 +429,6 @@ public class QtNative
 
     // application methods
     static native void startQtNativeApplication(String params);
-    static native void quitQtCoreApplication();
     static native void terminateQtNativeApplication();
     static native boolean updateNativeActivity();
     // application methods

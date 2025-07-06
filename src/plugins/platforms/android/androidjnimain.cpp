@@ -492,12 +492,6 @@ static void startQtNativeApplication(JNIEnv *jenv, jobject object, jstring param
         exit(ret);
 }
 
-static void quitQtCoreApplication(JNIEnv *env, jclass /*clazz*/)
-{
-    Q_UNUSED(env);
-    QCoreApplication::quit();
-}
-
 static void clearJavaReferences(JNIEnv *env)
 {
     if (m_applicationClass) {
@@ -540,8 +534,10 @@ static void clearJavaReferences(JNIEnv *env)
 
 static void terminateQtNativeApplication(JNIEnv *env, jclass /*clazz*/)
 {
-    // QAndroidEventDispatcherStopper is stopped when the user uses the task manager to kill the application
-    if (QAndroidEventDispatcherStopper::instance()->stopped()) {
+    // QAndroidEventDispatcherStopper is stopped when the user uses the task manager
+    // to kill the application. Also, in case of a service ensure to call quit().
+    if (QAndroidEventDispatcherStopper::instance()->stopped()
+        || QtAndroidPrivate::service().isValid()) {
         QAndroidEventDispatcherStopper::instance()->startAll();
         QCoreApplication::quit();
         QAndroidEventDispatcherStopper::instance()->goingToStop(false);
@@ -727,7 +723,6 @@ static jobject onBind(JNIEnv */*env*/, jclass /*cls*/, jobject intent)
 
 static JNINativeMethod methods[] = {
     { "startQtNativeApplication", "(Ljava/lang/String;)V", (void *)startQtNativeApplication },
-    { "quitQtCoreApplication", "()V", (void *)quitQtCoreApplication },
     { "terminateQtNativeApplication", "()V", (void *)terminateQtNativeApplication },
     { "updateApplicationState", "(I)V", (void *)updateApplicationState },
     { "onActivityResult", "(IILandroid/content/Intent;)V", (void *)onActivityResult },

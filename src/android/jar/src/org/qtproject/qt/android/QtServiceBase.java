@@ -49,7 +49,6 @@ public class QtServiceBase extends Service {
     public void onDestroy()
     {
         super.onDestroy();
-        QtNative.quitQtCoreApplication();
         QtNative.terminateQtNativeApplication();
         QtNative.setService(null);
         System.exit(0);
