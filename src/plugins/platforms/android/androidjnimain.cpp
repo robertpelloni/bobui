@@ -487,18 +487,6 @@ static void quitQtCoreApplication(JNIEnv *env, jclass /*clazz*/)
     QCoreApplication::quit();
 }
 
-static void quitQtAndroidPlugin(JNIEnv *env, jclass /*clazz*/)
-{
-    Q_UNUSED(env);
-    m_androidPlatformIntegration = nullptr;
-    delete m_androidAssetsFileEngineHandler;
-    m_androidAssetsFileEngineHandler = nullptr;
-    delete m_androidContentFileEngineHandler;
-    m_androidContentFileEngineHandler = nullptr;
-    delete m_androidApkFileEngineHandler;
-    m_androidApkFileEngineHandler = nullptr;
-}
-
 static void clearJavaReferences(JNIEnv *env)
 {
     if (m_applicationClass) {
@@ -725,7 +713,6 @@ static jobject onBind(JNIEnv */*env*/, jclass /*cls*/, jobject intent)
 
 static JNINativeMethod methods[] = {
     { "startQtNativeApplication", "(Ljava/lang/String;)V", (void *)startQtNativeApplication },
-    { "quitQtAndroidPlugin", "()V", (void *)quitQtAndroidPlugin },
     { "quitQtCoreApplication", "()V", (void *)quitQtCoreApplication },
     { "terminateQt", "()V", (void *)terminateQt },
     { "updateApplicationState", "(I)V", (void *)updateApplicationState },

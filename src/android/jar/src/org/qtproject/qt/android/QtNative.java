@@ -368,7 +368,6 @@ public class QtNative
     static void quitApp()
     {
         runAction(() -> {
-            quitQtAndroidPlugin();
             if (isActivityValid())
                 m_activity.get().finish();
             if (isServiceValid())
@@ -456,7 +455,6 @@ public class QtNative
     // application methods
     static native void startQtNativeApplication(String params);
     static native void quitQtCoreApplication();
-    static native void quitQtAndroidPlugin();
     static native void terminateQt();
     static native boolean updateNativeActivity();
     // application methods
