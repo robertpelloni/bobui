@@ -204,11 +204,11 @@ public class QtNative
     }
 
     static QtThread getQtThread() {
-        if (m_qtThread != null)
+        if (m_qtThread != null && m_qtThread.isAlive())
             return m_qtThread;
 
         synchronized (m_qtThreadLock) {
-            if (m_qtThread == null)
+            if (m_qtThread == null || !m_qtThread.isAlive())
                 m_qtThread = new QtThread();
 
             return m_qtThread;
@@ -365,31 +365,6 @@ public class QtNative
         getQtThread().post(() -> { startQtNativeApplication(qtParams); });
     }
 
-    static void quitApp()
-    {
-        runAction(() -> {
-            if (isActivityValid())
-                m_activity.get().finish();
-            if (isServiceValid())
-                m_service.get().stopSelf();
-            m_stateDetails.isStarted = false;
-            notifyAppStateDetailsChanged(m_stateDetails);
-        });
-    }
-
-    static void quitQt()
-    {
-        runAction(() -> {
-            terminateQt();
-            m_stateDetails.isStarted = false;
-            notifyAppStateDetailsChanged(m_stateDetails);
-            getQtThread().exit();
-            synchronized (m_qtThreadLock) {
-                m_qtThread = null;
-            }
-        });
-    }
-
     @UsedFromNativeCode
     static int checkSelfPermission(String permission)
     {
@@ -455,7 +430,7 @@ public class QtNative
     // application methods
     static native void startQtNativeApplication(String params);
     static native void quitQtCoreApplication();
-    static native void terminateQt();
+    static native void terminateQtNativeApplication();
     static native boolean updateNativeActivity();
     // application methods
 

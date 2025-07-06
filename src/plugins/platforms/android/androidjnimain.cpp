@@ -72,7 +72,7 @@ static jmethodID m_bitmapDrawableConstructorMethodID = nullptr;
 
 extern "C" typedef int (*Main)(int, char **); //use the standard main method to start the application
 static Main m_main = nullptr;
-static sem_t m_exitSemaphore, m_terminateSemaphore;
+static sem_t m_exitSemaphore, m_stopQtSemaphore;
 
 static QAndroidPlatformIntegration *m_androidPlatformIntegration = nullptr;
 
@@ -93,6 +93,8 @@ Q_CONSTINIT static QBasicAtomicInt startQtAndroidPluginCalled = Q_BASIC_ATOMIC_I
 #if QT_CONFIG(accessibility)
 Q_DECLARE_JNI_CLASS(QtAccessibilityInterface, "org/qtproject/qt/android/QtAccessibilityInterface");
 #endif
+
+Q_DECLARE_JNI_CLASS(QtThread, "org/qtproject/qt/android/QtThread");
 
 namespace QtAndroid
 {
@@ -365,7 +367,7 @@ static void initializeBackends()
 static bool initCleanupHandshakeSemaphores()
 {
     return sem_init(&m_exitSemaphore, 0, 0) != -1
-        && sem_init(&m_terminateSemaphore, 0, 0) != -1;
+        && sem_init(&m_stopQtSemaphore, 0, 0) != -1;
 }
 
 static void startQtNativeApplication(JNIEnv *jenv, jobject object, jstring paramsString)
@@ -461,18 +463,27 @@ static void startQtNativeApplication(JNIEnv *jenv, jobject object, jstring param
     const int ret = m_main(argc, argv.data());
     qInfo() << "main() returned" << ret;
 
+    QtNative::callStaticMethod("setStarted", false);
+
     if (mainLibraryHnd) {
         int res = dlclose(mainLibraryHnd);
         if (res < 0)
             qWarning() << "dlclose failed:" << dlerror();
     }
 
-    if (m_applicationClass) {
-        const auto quitMethodName = QtAndroid::isQtApplication() ? "quitApp" : "quitQt";
-        QJniObject::callStaticMethod<void>(m_applicationClass, quitMethodName);
+    if (QtAndroid::isQtApplication()) {
+        // Now, that the Qt application has exited, tear down the Activity and Service
+        QNativeInterface::QAndroidApplication::runOnAndroidMainThread([]() {
+            auto activity = QtAndroidPrivate::activity();
+            if (activity.isValid())
+                activity.callMethod("finish");
+            auto service = QtAndroidPrivate::service();
+            if (service.isValid())
+                service.callMethod("stopSelf()");
+        });
     }
 
-    sem_post(&m_terminateSemaphore);
+    sem_post(&m_stopQtSemaphore);
     sem_wait(&m_exitSemaphore);
     sem_destroy(&m_exitSemaphore);
 
@@ -527,7 +538,7 @@ static void clearJavaReferences(JNIEnv *env)
     }
 }
 
-static void terminateQt(JNIEnv *env, jclass /*clazz*/)
+static void terminateQtNativeApplication(JNIEnv *env, jclass /*clazz*/)
 {
     // QAndroidEventDispatcherStopper is stopped when the user uses the task manager to kill the application
     if (QAndroidEventDispatcherStopper::instance()->stopped()) {
@@ -537,9 +548,9 @@ static void terminateQt(JNIEnv *env, jclass /*clazz*/)
     }
 
     if (startQtAndroidPluginCalled.loadAcquire())
-        sem_wait(&m_terminateSemaphore);
+        sem_wait(&m_stopQtSemaphore);
 
-    sem_destroy(&m_terminateSemaphore);
+    sem_destroy(&m_stopQtSemaphore);
 
     clearJavaReferences(env);
 
@@ -553,6 +564,9 @@ static void terminateQt(JNIEnv *env, jclass /*clazz*/)
     delete m_backendRegister;
     m_backendRegister = nullptr;
     sem_post(&m_exitSemaphore);
+
+    // Terminate the QtThread
+    QtNative::callStaticMethod<QtThread>("getQtThread").callMethod("exit");
 }
 
 static void handleLayoutSizeChanged(JNIEnv * /*env*/, jclass /*clazz*/,
@@ -714,7 +728,7 @@ static jobject onBind(JNIEnv */*env*/, jclass /*cls*/, jobject intent)
 static JNINativeMethod methods[] = {
     { "startQtNativeApplication", "(Ljava/lang/String;)V", (void *)startQtNativeApplication },
     { "quitQtCoreApplication", "()V", (void *)quitQtCoreApplication },
-    { "terminateQt", "()V", (void *)terminateQt },
+    { "terminateQtNativeApplication", "()V", (void *)terminateQtNativeApplication },
     { "updateApplicationState", "(I)V", (void *)updateApplicationState },
     { "onActivityResult", "(IILandroid/content/Intent;)V", (void *)onActivityResult },
     { "onNewIntent", "(Landroid/content/Intent;)V", (void *)onNewIntent },

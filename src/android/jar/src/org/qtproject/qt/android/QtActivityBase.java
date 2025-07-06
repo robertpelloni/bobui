@@ -76,7 +76,9 @@ public class QtActivityBase extends Activity
     private void restartApplication() {
         Intent intent = Intent.makeRestartActivityTask(getComponentName());
         startActivity(intent);
-        QtNative.quitApp();
+        QtNative.setStarted(false);
+        // FIXME: calling exit() right after this gives no time to get onDestroy().
+        finish();
         Runtime.getRuntime().exit(0);
     }
 
@@ -162,9 +164,8 @@ public class QtActivityBase extends Activity
         super.onDestroy();
         if (!m_retainNonConfigurationInstance) {
             QtNative.unregisterAppStateListener(m_delegate);
-            QtNative.terminateQt();
+            QtNative.terminateQtNativeApplication();
             QtNative.setActivity(null);
-            QtNative.getQtThread().exit();
             System.exit(0);
         }
     }
