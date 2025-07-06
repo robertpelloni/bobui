@@ -361,16 +361,8 @@ public class QtNative
         if (m_stateDetails.isStarted)
             return;
 
-        QtThread thread = getQtThread();
-        thread.run(() -> {
-            final String qtParams = mainLib + " " + params;
-            if (!startQtAndroidPlugin(qtParams))
-                Log.e(QtTAG, "An error occurred while starting the Qt Android plugin");
-        });
-        thread.post(QtNative::startQtApplication);
-        waitForServiceSetup();
-        m_stateDetails.isStarted = true;
-        notifyAppStateDetailsChanged(m_stateDetails);
+        final String qtParams = mainLib + " " + params;
+        getQtThread().post(() -> { startQtNativeApplication(qtParams); });
     }
 
     static void quitApp()
@@ -462,9 +454,7 @@ public class QtNative
     }
 
     // application methods
-    static native boolean startQtAndroidPlugin(String params);
-    static native void startQtApplication();
-    static native void waitForServiceSetup();
+    static native void startQtNativeApplication(String params);
     static native void quitQtCoreApplication();
     static native void quitQtAndroidPlugin();
     static native void terminateQt();
