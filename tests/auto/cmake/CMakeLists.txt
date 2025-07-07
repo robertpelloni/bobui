@@ -130,29 +130,42 @@ if(ANDROID)
         return()
     endif()
 
-    set(common_android_vars "-DQT_HOST_PATH=${QT_HOST_PATH}")
+    if(NOT QT_USE_ANDROID_MODERN_BUNDLE)
+        set(QT_USE_ANDROID_MODERN_BUNDLE OFF)
+    endif()
+    if(NOT QT_USE_TARGET_ANDROID_BUILD_DIR)
+        set(QT_USE_TARGET_ANDROID_BUILD_DIR OFF)
+    endif()
+
+    set(common_android_vars "-DQT_HOST_PATH=${QT_HOST_PATH}"
+        "-DQT_USE_ANDROID_MODERN_BUNDLE=${QT_USE_ANDROID_MODERN_BUNDLE}"
+        "-DQT_USE_TARGET_ANDROID_BUILD_DIR=${QT_USE_TARGET_ANDROID_BUILD_DIR}")
 
     set(signing_test_common_environment
         "QT_ANDROID_KEYSTORE_ALIAS=qttest"
         "QT_ANDROID_KEYSTORE_STORE_PASS=qttest"
         "QT_ANDROID_KEYSTORE_KEY_PASS=qttest"
     )
-    foreach(package_type aab apk)
-        string(TOUPPER "${package_type}" package_type_upper)
-        set(test_name "test_android_signing_${package_type}")
-        _qt_internal_test_expect_pass(test_android_signing
-            TESTNAME ${test_name}
-            BUILD_OPTIONS ${common_android_vars} -DQT_ANDROID_SIGN_${package_type_upper}=ON
-            BUILD_DIR ${test_name}
-            BUILD_TARGET test_android_signing_make_${package_type}
-            BINARY ${CMAKE_CTEST_COMMAND}
-            BINARY_ARGS -V
-        )
-        set_property(TEST ${test_name} APPEND PROPERTY
-            ENVIRONMENT ${signing_test_common_environment}
-            "QT_ANDROID_KEYSTORE_PATH=${CMAKE_CURRENT_BINARY_DIR}/${test_name}/qttest.jks"
-        )
-    endforeach()
+
+    # Signing unimplemented for the modern Android bundles
+    if(NOT QT_USE_ANDROID_MODERN_BUNDLE)
+        foreach(package_type aab apk)
+            string(TOUPPER "${package_type}" package_type_upper)
+            set(test_name "test_android_signing_${package_type}")
+            _qt_internal_test_expect_pass(test_android_signing
+                TESTNAME ${test_name}
+                BUILD_OPTIONS ${common_android_vars} -DQT_ANDROID_SIGN_${package_type_upper}=ON
+                BUILD_DIR ${test_name}
+                BUILD_TARGET test_android_signing_make_${package_type}
+                BINARY ${CMAKE_CTEST_COMMAND}
+                BINARY_ARGS -V
+            )
+            set_property(TEST ${test_name} APPEND PROPERTY
+                ENVIRONMENT ${signing_test_common_environment}
+                "QT_ANDROID_KEYSTORE_PATH=${CMAKE_CURRENT_BINARY_DIR}/${test_name}/qttest.jks"
+            )
+        endforeach()
+    endif()
 
     # Test only multi-abi specific functionality when QT_BUILD_MINIMAL_ANDROID_MULTI_ABI_TESTS is
     # ON.
