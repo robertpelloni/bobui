@@ -153,6 +153,7 @@ public:
 
     // This facilitates both fine-tuning of complex animations by slowing them
     // them down, and reducing execution time of auto tests by speeding them up.
+    qreal getSpeedModifier() const { return speedModifier; }
     void setSpeedModifier(qreal speed) { speedModifier = speed; }
 
     void installAnimationDriver(QAnimationDriver *driver);

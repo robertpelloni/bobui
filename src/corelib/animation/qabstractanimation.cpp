@@ -275,7 +275,7 @@ void QUnifiedTimer::updateAnimationTimers()
     // that floating point error can accumulate.
     if (speedModifier != 1) {
         if (speedModifier > 0)
-            delta = qRound(delta / speedModifier);
+            delta = qRound(delta * speedModifier);
         else
             delta = 0;
     }
