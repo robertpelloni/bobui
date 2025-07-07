@@ -1413,6 +1413,13 @@ bool QDBusConnectionPrivate::activateInternalFilters(const ObjectTreeNode &node,
     if (node.obj && (interface.isEmpty() ||
                      interface == QDBusUtil::dbusInterfaceProperties())) {
         //qDebug() << "QDBusConnectionPrivate::activateInternalFilters properties" << msg.d_ptr->msg;
+
+        QDBusContextPrivate context(QDBusConnection(this), msg);
+        QDBusContextPrivate *old = QDBusContextPrivate::set(node.obj, &context);
+        auto guard = qScopeGuard([&node, old]{
+            QDBusContextPrivate::set(node.obj, old);
+        });
+
         if (msg.member() == "Get"_L1 && msg.signature() == "ss"_L1) {
             QDBusMessage reply = qDBusPropertyGet(node, msg);
             send(reply);
