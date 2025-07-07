@@ -2,13 +2,13 @@ if(NOT QT_FEATURE_widgets)
     return()
 endif()
 
-add_library(snippets_qmetaobject-revision OBJECT)
+add_library(corelib_snippets_qmetaobject-revision OBJECT)
 
-target_link_libraries(snippets_qmetaobject-revision PRIVATE
+target_link_libraries(corelib_snippets_qmetaobject-revision PRIVATE
     Qt::Core
 )
 
-qt_internal_extend_target(snippets_qmetaobject-revision CONDITION QT_FEATURE_widgets
+qt_internal_extend_target(corelib_snippets_qmetaobject-revision CONDITION QT_FEATURE_widgets
     LIBRARIES
         Qt::Widgets
     SOURCES
