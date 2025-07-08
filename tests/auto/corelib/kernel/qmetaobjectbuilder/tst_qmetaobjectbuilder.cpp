@@ -711,6 +711,22 @@ void tst_QMetaObjectBuilder::property()
             prop2.setBindable(false); \
             prop2.setRequired(false); \
         } while (0)
+#define SET_ALL_FLAGS() \
+        do { \
+            prop2.setReadable(true); \
+            prop2.setWritable(true); \
+            prop2.setResettable(true); \
+            prop2.setDesignable(true); \
+            prop2.setScriptable(true); \
+            prop2.setStored(true); \
+            prop2.setUser(true); \
+            prop2.setStdCppSet(true); \
+            prop2.setEnumOrFlag(true); \
+            prop2.setConstant(true); \
+            prop2.setFinal(true); \
+            prop2.setBindable(true); \
+            prop2.setRequired(true); \
+        } while (0)
 #define COUNT_FLAGS() \
         ((prop2.isReadable() ? 1 : 0) + \
          (prop2.isWritable() ? 1 : 0) + \
@@ -727,12 +743,14 @@ void tst_QMetaObjectBuilder::property()
          (prop2.isRequired() ? 1 : 0))
 #define CHECK_FLAG(setFunc,isFunc) \
         do { \
+            ++flagCounter; \
             CLEAR_FLAGS(); \
             QCOMPARE(COUNT_FLAGS(), 0); \
             prop2.setFunc(true); \
             QVERIFY(prop2.isFunc()); \
             QCOMPARE(COUNT_FLAGS(), 1); \
         } while (0)
+    int flagCounter = 0;
     CHECK_FLAG(setReadable, isReadable);
     CHECK_FLAG(setWritable, isWritable);
     CHECK_FLAG(setResettable, isResettable);
@@ -743,7 +761,11 @@ void tst_QMetaObjectBuilder::property()
     CHECK_FLAG(setStdCppSet, hasStdCppSet);
     CHECK_FLAG(setEnumOrFlag, isEnumOrFlag);
     CHECK_FLAG(setConstant, isConstant);
+    CHECK_FLAG(setBindable, isBindable);
     CHECK_FLAG(setFinal, isFinal);
+    CHECK_FLAG(setRequired, isRequired);
+    SET_ALL_FLAGS();
+    QCOMPARE(COUNT_FLAGS(), flagCounter);
 
     // Check that nothing else changed.
     QVERIFY(checkForSideEffects(builder, QMetaObjectBuilder::Properties));

@@ -2087,7 +2087,7 @@ bool QMetaPropertyBuilder::isBindable() const
 bool QMetaPropertyBuilder::isRequired() const
 {
     if (auto d = d_func())
-        return d->flag(Bindable);
+        return d->flag(Required);
     else
         return false;
 }
