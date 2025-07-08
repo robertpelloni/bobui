@@ -262,6 +262,11 @@ bool QWindowsIntegration::hasCapability(QPlatformIntegration::Capability cap) co
         return true;
 #ifndef QT_NO_OPENGL
     case OpenGL:
+#if !QT_CONFIG(run_opengl_tests)
+        // Workaround for build configs on WoA that don't have OpenGL installed
+        // FIXME: Detect at runtime
+        return false;
+#endif
         return true;
     case ThreadedOpenGL:
         if (const QWindowsStaticOpenGLContext *glContext = QWindowsIntegration::staticOpenGLContext())
