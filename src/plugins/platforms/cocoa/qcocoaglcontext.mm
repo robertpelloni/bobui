@@ -289,6 +289,9 @@ void QCocoaGLContext::updateSurfaceFormat()
     else
         m_format.setSwapBehavior(QSurfaceFormat::SingleBuffer);
 
+    m_isSoftwareContext = (pixelFormatAttribute(NSOpenGLPFARendererID)
+        & kCGLRendererIDMatchingMask) == kCGLRendererGenericFloatID;
+
     // ------------------- Query the context -------------------
 
     auto glContextParameter = [&](NSOpenGLContextParameter parameter) {
@@ -510,6 +513,11 @@ bool QCocoaGLContext::isValid() const
 bool QCocoaGLContext::isSharing() const
 {
     return m_shareContext != nil;
+}
+
+bool QCocoaGLContext::isSoftwareContext() const
+{
+    return m_isSoftwareContext;
 }
 
 NSOpenGLContext *QCocoaGLContext::nativeContext() const

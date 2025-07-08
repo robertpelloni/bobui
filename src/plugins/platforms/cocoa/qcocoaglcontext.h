@@ -43,6 +43,8 @@ public:
 
     QFunctionPointer getProcAddress(const char *procName) override;
 
+    bool isSoftwareContext() const;
+
 private:
     static NSOpenGLPixelFormat *pixelFormatForSurfaceFormat(const QSurfaceFormat &format);
 
@@ -54,6 +56,7 @@ private:
     QSurfaceFormat m_format;
     QVarLengthArray<QMacNotificationObserver, 3> m_updateObservers;
     QAtomicInt m_needsUpdate = false;
+    bool m_isSoftwareContext = false;
 
 #ifndef QT_NO_DEBUG_STREAM
     friend QDebug operator<<(QDebug debug, const QCocoaGLContext *screen);

@@ -232,6 +232,24 @@ bool QCocoaIntegration::hasCapability(QPlatformIntegration::Capability cap) cons
         // layer-backed.
         return false;
     case OpenGL:
+        if (QOperatingSystemVersion::current() > QOperatingSystemVersion::MacOSSonoma) {
+            // Tahoe has issues with software-backed GL, crashing in common operations
+            static bool isSoftwareContext = []{
+                QOpenGLContext context;
+                context.create();
+                auto *cocoaContext = static_cast<QCocoaGLContext*>(context.handle());
+                if (cocoaContext->isSoftwareContext()) {
+                    qWarning() << "Detected software OpenGL backend,"
+                        << "which is known to be broken on"
+                        << qUtf8Printable(QSysInfo::prettyProductName());
+                    return true;
+                } else {
+                    return false;
+                }
+            }();
+            return !isSoftwareContext;
+        }
+        Q_FALLTHROUGH();
     case BufferQueueingOpenGL:
 #endif
     case ThreadedPixmaps:
