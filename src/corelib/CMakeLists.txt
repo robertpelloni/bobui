@@ -1647,6 +1647,6 @@ function(qt_internal_library_deprecation_level)
 endfunction()
 qt_internal_library_deprecation_level()
 
-if(QT_FEATURE_doc_snippets)
+if(QT_BUILD_DOC_SNIPPETS)
     add_subdirectory(doc/snippets)
 endif()

@@ -180,7 +180,7 @@ qt_internal_add_docs(Test
 
 qt_internal_apply_testlib_coverage_options(Test)
 
-if(QT_FEATURE_doc_snippets)
+if(QT_BUILD_DOC_SNIPPETS)
     add_subdirectory(doc/snippets/code)
 endif()
 

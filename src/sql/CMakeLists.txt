@@ -58,7 +58,7 @@ qt_internal_add_docs(Sql
     doc/qtsql.qdocconf
 )
 
-if(QT_FEATURE_doc_snippets)
+if(QT_BUILD_DOC_SNIPPETS)
     add_subdirectory(doc/snippets/code)
     add_subdirectory(doc/snippets/sqldatabase)
 endif()

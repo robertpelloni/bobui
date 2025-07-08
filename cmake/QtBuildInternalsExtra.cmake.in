@@ -93,6 +93,7 @@ set(QT_BUILD_MINIMAL_STATIC_TESTS @QT_BUILD_MINIMAL_STATIC_TESTS@ CACHE BOOL
     "Build minimal subset of tests for static Qt builds")
 set(QT_BUILD_MINIMAL_ANDROID_MULTI_ABI_TESTS @QT_BUILD_MINIMAL_ANDROID_MULTI_ABI_TESTS@ CACHE BOOL
     "Build minimal subset of tests for Android multi-ABI Qt builds")
+set(QT_BUILD_DOC_SNIPPETS @QT_BUILD_SNIPPETS@ CACHE BOOL "Build Qt documentation snippets")
 
 set(QT_BUILD_TESTS_BATCHED @QT_BUILD_TESTS_BATCHED@ CACHE BOOL
     "Should all tests be batched into a single binary.")

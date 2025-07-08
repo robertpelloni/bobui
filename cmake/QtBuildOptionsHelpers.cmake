@@ -283,6 +283,13 @@ macro(qt_internal_setup_build_tests)
 
     option(QT_BUILD_MINIMAL_STATIC_TESTS "Build minimal subset of tests for static Qt builds" ${_qt_wasm_and_batch_tests})
 
+    if((FEATURE_developer_build AND NOT FEATURE_doc_snippets STREQUAL "OFF") OR FEATURE_doc_snippets)
+        set(_qt_build_doc_snippets ON)
+    else()
+        set(_qt_build_doc_snippets OFF)
+    endif()
+    option(QT_BUILD_DOC_SNIPPETS "Build documentation snippets" ${_qt_build_doc_snippets})
+
     option(QT_BUILD_WASM_BATCHED_TESTS "Build subset of tests for wasm batched tests" ${_qt_wasm_and_batch_tests})
 
     option(QT_BUILD_MINIMAL_ANDROID_MULTI_ABI_TESTS

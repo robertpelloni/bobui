@@ -415,7 +415,7 @@ qt_internal_extend_target(Network CONDITION WIN32
         socket/qnativesocketengine_win.cpp
 )
 
-if(QT_FEATURE_doc_snippets)
+if(QT_BUILD_DOC_SNIPPETS)
     add_subdirectory(doc/snippets/network)
 endif()
 
