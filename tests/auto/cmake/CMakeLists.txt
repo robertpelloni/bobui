@@ -83,6 +83,12 @@ if(WIN32 AND CMAKE_CROSSCOMPILING)
     return()
 endif()
 
+if(TARGET Qt6::Core)
+    # Tests are built as part of the qtbase build tree.
+    # Setup paths so that the Qt packages are found, similar to examples.
+    qt_internal_set_up_build_dir_package_paths()
+endif()
+
 set(required_packages Core Network Xml Sql Test TestInternalsPrivate)
 set(optional_packages DBus Gui Widgets PrintSupport OpenGL Concurrent)
 
