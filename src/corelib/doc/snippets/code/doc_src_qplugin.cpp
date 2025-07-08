@@ -1,10 +1,12 @@
 // Copyright (C) 2016 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
 
+#include <QtPlugin>
+
 //! [0]
 namespace Foo
 {
-    struct MyInterface { ... };
+    struct MyInterface { /*...*/ };
 }
 
 Q_DECLARE_INTERFACE(Foo::MyInterface, "org.examples.MyInterface")
