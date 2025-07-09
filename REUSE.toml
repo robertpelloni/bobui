@@ -82,7 +82,7 @@ SPDX-FileCopyrightText = "Copyright (C) The Qt Company Ltd."
 SPDX-License-Identifier = "LicenseRef-Qt-Commercial OR BSD-3-Clause"
 
 [[annotations]]
-path = ["src/assets/icons/**.png", "src/assets/icons/**.svg", "src/android/**.xml",
+path = ["src/assets/icons/**.png", "src/assets/icons/**.svg",
         "src/gui/**.xml",
         "src/assets/icons/index.theme", "src/gui/rhi/test.hlsl",
         "src/corelib/doc/include/QtCoreDoc",
