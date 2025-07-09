@@ -25,9 +25,6 @@ endif()
 
 find_package(Qt6 COMPONENTS Core Gui REQUIRED)
 
-set(QT_ANDROID_SIGN_AAB ON)
-set(QT_ANDROID_SIGN_APK ON)
-
 execute_process(COMMAND ${keytool}
     -genkey -alias "$ENV{QT_ANDROID_KEYSTORE_ALIAS}" -keyalg RSA
     -keystore "$ENV{QT_ANDROID_KEYSTORE_PATH}"
@@ -46,8 +43,19 @@ target_link_libraries(test_android_signing PRIVATE
     Qt6::Gui
 )
 
+_qt_internal_android_get_target_deployment_dir(android_build test_android_signing)
+
+get_filename_component(build_dir_name ${android_build} NAME)
+if(QT_ANDROID_SIGN_AAB)
+    set(expected_output
+        "${android_build}/build/outputs/bundle/release/${build_dir_name}-release.aab")
+else()
+    set(expected_output
+        "${android_build}/build/outputs/apk/release/${build_dir_name}-release-signed.apk")
+endif()
+
 add_test(NAME test_android_signing_verify_signature
     COMMAND "${CMAKE_COMMAND}" "-DKEYTOOL_PATH=${keytool}"
-    "-DAPK_FILE=${CMAKE_CURRENT_BINARY_DIR}/android-build/test_android_signing.apk"
+    "-DOUTPUT_FILE=${expected_output}"
     -P "${CMAKE_CURRENT_SOURCE_DIR}/verify_signature.cmake"
 )
