@@ -103,6 +103,9 @@ protected:
     // Derived class should make its destructor private to force this behavior.
     virtual ~QComObject() = default;
 
+    // allow derived classes to access the reference count
+    std::atomic<LONG> m_referenceCount = 1;
+
 private:
     template <typename TInterface, typename... TRest>
     HRESULT tryQueryInterface(REFIID riid, void **ppvObject)
@@ -121,8 +124,6 @@ private:
 
         return E_NOINTERFACE;
     }
-
-    std::atomic<LONG> m_referenceCount = 1;
 };
 
 QT_END_NAMESPACE
