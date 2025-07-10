@@ -80,18 +80,21 @@ public:
         return tryQueryInterface<TFirstInterface, TAdditionalInterfaces...>(riid, ppvObject);
     }
 
-    // clang-format off
     STDMETHODIMP_(ULONG) AddRef() override
     {
-        return ++m_referenceCount;
+        return m_referenceCount.fetch_add(1, std::memory_order_relaxed) + 1;
     }
-    // clang-format on
 
     STDMETHODIMP_(ULONG) Release() override
     {
-        const LONG referenceCount = --m_referenceCount;
-        if (referenceCount == 0)
+        const LONG referenceCount = m_referenceCount.fetch_sub(1, std::memory_order_release) - 1;
+        if (referenceCount == 0) {
+            // This acquire fence synchronizes with the release operation in other threads.
+            // It ensures that all memory writes made to this object by other threads
+            // are visible to this thread before we proceed to delete it.
+            std::atomic_thread_fence(std::memory_order_acquire);
             delete this;
+        }
 
         return referenceCount;
     }
