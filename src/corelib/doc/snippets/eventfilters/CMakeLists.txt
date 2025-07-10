@@ -1,5 +1,7 @@
 add_library(corelib_snippets_eventfilters OBJECT)
 
+set_target_properties(corelib_snippets_eventfilters PROPERTIES COMPILE_OPTIONS "-w")
+
 target_link_libraries(corelib_snippets_eventfilters PRIVATE
     Qt::Core
 )

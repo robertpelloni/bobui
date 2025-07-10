@@ -54,6 +54,8 @@ qt_internal_extend_target(corelib_snippets CONDITION QT_FEATURE_gui
         qdebug/qdebugsnippet.cpp
 )
 
+set_target_properties(corelib_snippets PROPERTIES COMPILE_OPTIONS "-w")
+
 if ("${CMAKE_CXX_COMPILE_FEATURES}" MATCHES "cxx_std_23")
     set_property(TARGET corelib_snippets PROPERTY CXX_STANDARD 23)
 endif()
