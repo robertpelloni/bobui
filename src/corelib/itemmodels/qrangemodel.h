@@ -150,6 +150,14 @@ void QRangeModelImplBase::dataChanged(const QModelIndex &from, const QModelIndex
 {
     m_rangeModel->dataChanged(from, to, roles);
 }
+void QRangeModelImplBase::beginResetModel()
+{
+    m_rangeModel->beginResetModel();
+}
+void QRangeModelImplBase::endResetModel()
+{
+    m_rangeModel->endResetModel();
+}
 void QRangeModelImplBase::beginInsertColumns(const QModelIndex &parent, int start, int count)
 {
     m_rangeModel->beginInsertColumns(parent, start, count);

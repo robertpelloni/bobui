@@ -1101,6 +1101,13 @@ void tst_QRangeModel::setData()
     model->setData(first, oldValue, Qt::UserRole + 255);
 }
 
+static constexpr bool fakedRole(int role)
+{
+    return role == Qt::EditRole
+        || role == Qt::RangeModelDataRole
+        || role == Qt::RangeModelDataRole + 1;
+}
+
 void tst_QRangeModel::itemData()
 {
     QFETCH(Factory, factory);
@@ -1111,7 +1118,8 @@ void tst_QRangeModel::itemData()
     const QModelIndex index = model->index(0, 0);
     const QMap<int, QVariant> itemData = model->itemData(index);
     for (int role = 0; role < Qt::UserRole; ++role) {
-        if (role == Qt::EditRole || role == Qt::RangeModelDataRole) // we fake that in data()
+        // we fake those in data()
+        if (fakedRole(role))
             continue;
         QCOMPARE(itemData.value(role), index.data(role));
     }
@@ -1136,7 +1144,7 @@ void tst_QRangeModel::setItemData()
 
     itemData = {};
     for (int role : roles) {
-        if (role == Qt::EditRole || role == Qt::RangeModelDataRole) // faked
+        if (fakedRole(role)) // faked
             continue;
         QVariant data = role != Qt::DecorationRole ? QVariant(QStringLiteral("%1").arg(role))
                                                    : QVariant(QColor(Qt::magenta));
@@ -1162,7 +1170,7 @@ void tst_QRangeModel::setItemData()
     }
 
     for (int role = 0; role < Qt::UserRole; ++role) {
-        if (role == Qt::EditRole || role == Qt::RangeModelDataRole) // faked role
+        if (fakedRole(role))
             continue;
 
         QVariant data = index.data(role);

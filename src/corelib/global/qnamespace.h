@@ -1533,6 +1533,8 @@ namespace Qt {
         WhatsThisPropertyRole = 31,
         // QRangeModel support for QML's required property var modelData
         RangeModelDataRole = 40,
+        // QRangeModelAdapter support for accessing entire multi-role objects
+        RangeModelAdapterRole = 41,
 
         // Reserved
         UserRole = 0x0100,

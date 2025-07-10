@@ -2830,6 +2830,7 @@
     \omitvalue StatusTipPropertyRole
     \omitvalue WhatsThisPropertyRole
     \omitvalue RangeModelDataRole
+    \omitvalue RangeModelAdapterRole
     \omitvalue StandardItemFlagsRole
     \omitvalue FileInfoRole
     \omitvalue RemoteObjectsCacheRole

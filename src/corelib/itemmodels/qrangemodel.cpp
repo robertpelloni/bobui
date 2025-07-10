@@ -216,6 +216,27 @@ bool QRangeModelImplBase::connectPropertiesConst(const QModelIndex &index, QObje
     return connectPropertiesHelper<QRangeModelImplBase::connectPropertyConst>(index, item, context, properties);
 }
 
+namespace QRangeModelDetails
+{
+Q_CORE_EXPORT QVariant qVariantAtIndex(const QModelIndex &index)
+{
+    QModelRoleData result[] = {
+        QModelRoleData{Qt::RangeModelAdapterRole},
+        QModelRoleData{Qt::RangeModelDataRole},
+        QModelRoleData{Qt::DisplayRole},
+    };
+    index.multiData(result);
+    QVariant variant;
+    size_t r = 0;
+    do {
+        variant = result[r].data();
+        ++r;
+    } while (!variant.isValid() && r < std::size(result));
+
+    return variant;
+}
+}
+
 /*!
     \class QRangeModel
     \inmodule QtCore

@@ -197,6 +197,7 @@ class ModelFactory : public QObject
     QList<QString> strings = {u"one"_s, u"two"_s, u"three"_s};
     std::array<int, 1000000> largeArray = {};
     std::array<Object *, 10000> objects = {};
+    std::unique_ptr<QTimer> updater = nullptr;
 
     void updateAllObjects()
     {
@@ -215,6 +216,22 @@ public slots:
         return new QRangeModel(&largeArray);
     }
 
+#if 0 // vector with adapter
+    QRangeModel *makeVectorWithAdapter()
+    {
+        QRangeModelAdapter adapter(std::ref(numbers));
+        QRangeModel &model = *adapter.model();
+        qDebug() << "Data from index" << adapter.index(0).data();
+        qDebug() << "Data from adapter" << adapter.data(0);
+        qDebug() << "Data from operator[]" << adapter[0];
+
+        QTimer::singleShot(5000, &model, [&adapter]{
+            adapter[0] = {};
+        });
+
+        return adapter.model();
+    }
+#endif
 
     QRangeModel *makeStrings()
     {
@@ -239,6 +256,20 @@ public slots:
             { 4, "vier"},
             { 5, "fünf"},
         };
+#if 0
+        QRangeModelAdapter adapter(std::ref(data));
+        QRangeModel &model = *adapter.model();
+        qDebug() << "Tuple from index" << adapter.index(0, 1).data();
+        qDebug() << "Tuple from adapter" << adapter.data(0, 1);
+
+        qDebug() << "Tuple from operator[]" << adapter[0];
+        qDebug() << "Tuple from operator[...]" << adapter[0, 1];
+        QTimer::singleShot(5000, &model, [&adapter]{
+            adapter[0] = { 0, "null" };
+            adapter.insertRow(0, {-1, "negative"});
+            adapter[2, 1] = "two";
+        });
+#endif
         return new QRangeModel(data);
     }
 
@@ -379,12 +410,13 @@ public slots:
 
     QRangeModel *makeTree()
     {
-        static TreeRow root[] = {{"Germany", "Berlin"},
-                                 {"France", "Paris"},
-                                 {"Austria", "Vienna"}
-                                };
+        TreeRow root[] = {{"Germany", "Berlin"},
+                          {"France", "Paris"},
+                          {"Austria", "Vienna"}
+                         };
 
-        static Tree europe{std::make_move_iterator(std::begin(root)), std::make_move_iterator(std::end(root))};
+        Tree europe{std::make_move_iterator(std::begin(root)),
+                    std::make_move_iterator(std::end(root))};
         TreeRow &bavaria = europe[0].addChild("Bavaria", "Munich");
         bavaria.addChild("Upper Bavaria", "München");
         bavaria.addChild("Lower Bavaria", "Landshut");
@@ -415,14 +447,27 @@ public slots:
         europe[2].addChild("Vorarlberg", "Bregenz");
         europe[2].addChild("Burgenland", "Eisenstadt");
 
-        return new QRangeModel(std::ref(europe));
+        QRangeModelAdapter adapter(std::move(europe));
+        const QList<int> path = {1, 0};
+        QRangeModel *model = adapter.model();
+        updater.reset(new QTimer);
+        connect(updater.get(), &QTimer::timeout, model, [adapter] mutable {
+            // adapter[0] = tree_row{"Deutschland", "Berlin"};
+            for (auto row : adapter) {
+                qDebug() << row[0] << row[1];
+            }
+            adapter[{0, 0, 0}, 1] = "Munich";
+        });
+        updater->start(1000);
+
+        return model;
     }
 
     QRangeModel *makeAutoConnectedObjects()
     {
         QRangeModel *model = new QRangeModel(std::ref(objects));
-        QTimer *updater = new QTimer(model);
-        connect(updater, &QTimer::timeout, this, &ModelFactory::updateAllObjects);
+        updater.reset(new QTimer(model));
+        connect(updater.get(), &QTimer::timeout, this, &ModelFactory::updateAllObjects);
 
         for (int i = 0; i < objects.size(); ++i)
             objects[i] = new Object(i, model);
@@ -434,8 +479,8 @@ public slots:
     QRangeModel *makeAutoConnectedConstObjects()
     {
         QRangeModel *model = new QRangeModel(&std::as_const(objects));
-        QTimer *updater = new QTimer(model);
-        connect(updater, &QTimer::timeout, this, &ModelFactory::updateAllObjects);
+        updater.reset(new QTimer(model));
+        connect(updater.get(), &QTimer::timeout, this, &ModelFactory::updateAllObjects);
 
         for (int i = 0; i < objects.size(); ++i)
             objects[i] = new Object(i, model);
@@ -587,12 +632,14 @@ public:
 private:
     void modelChanged(int index)
     {
-        QAbstractItemModel *oldModel = model;
+        auto oldModel = model;
 
+        QRangeModel *newModel = nullptr;
         const QMetaObject &mo = ModelFactory::staticMetaObject;
         const QMetaMethod method = mo.method(index + mo.methodOffset());
-        if (method.invoke(&factory, qReturnArg(model))) {
-            treeview->setModel(model);
+        if (method.invoke(&factory, qReturnArg(newModel))) {
+            model = newModel;
+            treeview->setModel(newModel);
 #ifdef QUICK_UI
             if (!quickWidget->rootObject())
                 statusBar()->showMessage(tr("Failed to load QML"));
@@ -601,15 +648,6 @@ private:
 
             QQmlContext *rootContext = quickWidget->rootContext();
             QQmlContext *UIContext = quickWidget->engine()->contextForObject(quickWidget->rootObject());
-            qDebug() << "context objects" << rootContext->contextObject() << UIContext->contextObject();
-            qDebug() << "context URLs" << rootContext->baseUrl() << UIContext->baseUrl();
-
-            qDebug() << "name" << quickWidget->rootContext()->nameForObject(quickWidget->rootObject());
-            qDebug() << "root object" << quickWidget->rootContext()->objectForName("root");
-            qDebug() << "list object" << quickWidget->rootContext()->objectForName("root");
-
-            qDebug() << "root object in context" << quickWidget->engine()->contextForObject(quickWidget->rootObject())->objectForName("root");
-            qDebug() << "list object in context" << quickWidget->engine()->contextForObject(quickWidget->rootObject())->objectForName("list");
 #endif
             for (auto *action : connectionOptions->actions()) {
                 action->setChecked(action->data().value<QRangeModel::AutoConnectPolicy>()
@@ -688,7 +726,7 @@ private:
     }
 
     ModelFactory factory;
-    QRangeModel *model;
+    QPointer<QRangeModel> model; // might be owned by an adapter
     QTreeView *treeview;
 #ifdef QUICK_UI
     QQuickWidget *quickWidget;

@@ -50,6 +50,14 @@ public:
     void setToolTip(const QString &toolTip) { m_toolTip = toolTip; }
 
 private:
+    friend inline bool comparesEqual(const Item &lhs, const Item &rhs) noexcept
+    {
+        return lhs.m_display == rhs.m_display
+            && lhs.m_decoration == rhs.m_decoration
+            && lhs.m_toolTip == rhs.m_toolTip;
+    }
+    Q_DECLARE_EQUALITY_COMPARABLE(Item);
+
     QString m_display;
     QColor m_decoration;
     QString m_toolTip;
@@ -70,6 +78,17 @@ public:
     QColor m_decoration;
     QVariant m_user;
     int m_number = 0;
+
+private:
+    friend inline bool comparesEqual(const MultiRoleGadget &lhs,
+                                     const MultiRoleGadget &rhs) noexcept
+    {
+        return lhs.m_display == rhs.m_display
+            && lhs.m_decoration == rhs.m_decoration
+            && lhs.m_user == rhs.m_user
+            && lhs.m_number == rhs.m_number;
+    }
+    Q_DECLARE_EQUALITY_COMPARABLE(MultiRoleGadget);
 };
 
 template <>
@@ -116,7 +135,10 @@ class Object : public QObject
     Q_PROPERTY(QString string READ string WRITE setString NOTIFY stringChanged)
     Q_PROPERTY(int number READ number WRITE setNumber NOTIFY numberChanged)
 public:
-    using QObject::QObject;
+    Object() = default;
+    explicit Object(const QString &string, int number)
+        : m_string(string), m_number(number)
+    {}
 
     QString string() const { return m_string; }
     void setString(const QString &string)
