@@ -82,6 +82,15 @@ instructions:
       property: host.compiler
       equals_value: ICC_18
 
+  # Test network integrity on Linux
+  - type: ExecuteCommand
+    command: [ "sh", "-c", "if [ -f /opt/CiNetworkTest/bin/CiNetworkTest ]; then LD_LIBRARY_PATH=/opt/icu/lib64 /opt/CiNetworkTest/bin/CiNetworkTest -d 2; fi " ]
+    resetOnFailure: true
+    userMessageOnFailure: "VM Network inconsistent"
+    enable_if:
+      condition: property
+      property: host.os
+      equals_value: Linux
 
   # Test network integrity on Windows
   - type: ExecuteCommand
