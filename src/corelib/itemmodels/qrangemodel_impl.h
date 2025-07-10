@@ -842,6 +842,11 @@ namespace QRangeModelDetails
     {
         using protocol = wrapped_t<Protocol>;
         using row = typename range_traits<wrapped_t<Range>>::value_type;
+        static constexpr bool is_tree = std::conjunction_v<protocol_parentRow<protocol, row>,
+                                                           protocol_childRows<protocol, row>>;
+        static constexpr bool is_list = static_size_v<row> == 0
+                                     && (!has_metaobject_v<row> || row_category<row>::isMultiRole);
+        static constexpr bool is_table = !is_list && !is_tree;
 
         static constexpr bool has_newRow = protocol_newRow<protocol>();
         static constexpr bool has_deleteRow = protocol_deleteRow<protocol, row>();
@@ -1046,6 +1051,9 @@ public:
         typename C::MultiData
     >;
 
+    static Q_CORE_EXPORT QRangeModelImplBase *getImplementation(QRangeModel *model);
+    static Q_CORE_EXPORT const QRangeModelImplBase *getImplementation(const QRangeModel *model);
+
 private:
     friend class QRangeModelPrivate;
     QRangeModel *m_rangeModel;
@@ -1147,22 +1155,12 @@ protected:
         }
     }
 
-    static constexpr bool isMutable()
-    {
-        return range_features::is_mutable && row_features::is_mutable
-            && std::is_reference_v<row_reference>
-            && Structure::is_mutable_impl;
-    }
-
     static constexpr int static_row_count = QRangeModelDetails::static_size_v<range_type>;
     static constexpr bool rows_are_raw_pointers = std::is_pointer_v<row_type>;
     static constexpr bool rows_are_owning_or_raw_pointers =
             QRangeModelDetails::is_owning_or_raw_pointer<row_type>();
     static constexpr int static_column_count = QRangeModelDetails::static_size_v<row_type>;
     static constexpr bool one_dimensional_range = static_column_count == 0;
-
-    static constexpr bool dynamicRows() { return isMutable() && static_row_count < 0; }
-    static constexpr bool dynamicColumns() { return static_column_count < 0; }
 
     // A row might be a value (or range of values), or a pointer.
     // row_ptr is always a pointer, and const_row_ptr is a pointer to const.
@@ -1205,6 +1203,15 @@ protected:
                   "The range holding a move-only row-type must support insert(pos, start, end)");
 
 public:
+    static constexpr bool isMutable()
+    {
+        return range_features::is_mutable && row_features::is_mutable
+            && std::is_reference_v<row_reference>
+            && Structure::is_mutable_impl;
+    }
+    static constexpr bool dynamicRows() { return isMutable() && static_row_count < 0; }
+    static constexpr bool dynamicColumns() { return static_column_count < 0; }
+
     explicit QRangeModelImpl(Range &&model, Protocol&& protocol, QRangeModel *itemModel)
         : Ancestor(itemModel)
         , ProtocolStorage{std::forward<Protocol>(protocol)}
@@ -1995,11 +2002,14 @@ public:
         }
     }
 
-    QModelIndex parent(const QModelIndex &child) const { return that().parent(child); }
+    const protocol_type& protocol() const { return QRangeModelDetails::refTo(ProtocolStorage::object()); }
+    protocol_type& protocol() { return QRangeModelDetails::refTo(ProtocolStorage::object()); }
 
-    int rowCount(const QModelIndex &parent) const { return that().rowCount(parent); }
+    QModelIndex parent(const QModelIndex &child) const { return that().parentImpl(child); }
 
-    int columnCount(const QModelIndex &parent) const { return that().columnCount(parent); }
+    int rowCount(const QModelIndex &parent) const { return that().rowCountImpl(parent); }
+
+    int columnCount(const QModelIndex &parent) const { return that().columnCountImpl(parent); }
 
     void destroy() { delete std::addressof(that()); }
 
@@ -2034,6 +2044,11 @@ public:
 
 protected:
     ~QRangeModelImpl()
+    {
+        deleteOwnedRows();
+    }
+
+    void deleteOwnedRows()
     {
         // We delete row objects if we are not operating on a reference or pointer
         // to a range, as in that case, the owner of the referenced/pointed to
@@ -2335,9 +2350,6 @@ protected:
     }
 
 
-    const protocol_type& protocol() const { return QRangeModelDetails::refTo(ProtocolStorage::object()); }
-    protocol_type& protocol() { return QRangeModelDetails::refTo(ProtocolStorage::object()); }
-
     ModelData m_data;
 };
 
@@ -2385,7 +2397,7 @@ protected:
         return this->createIndex(row, column, QRangeModelDetails::pointerTo(*it));
     }
 
-    QModelIndex parent(const QModelIndex &child) const
+    QModelIndex parentImpl(const QModelIndex &child) const
     {
         if (!child.isValid())
             return {};
@@ -2410,12 +2422,12 @@ protected:
         return {};
     }
 
-    int rowCount(const QModelIndex &parent) const
+    int rowCountImpl(const QModelIndex &parent) const
     {
         return Base::size(this->childRange(parent));
     }
 
-    int columnCount(const QModelIndex &) const
+    int columnCountImpl(const QModelIndex &) const
     {
         // all levels of a tree have to have the same, static, column count
         if constexpr (Base::one_dimensional_range)
@@ -2662,6 +2674,9 @@ class QGenericTableItemModelImpl
     using Base = QRangeModelImpl<QGenericTableItemModelImpl<Range>, Range>;
     friend class QRangeModelImpl<QGenericTableItemModelImpl<Range>, Range>;
 
+    static constexpr bool is_mutable_impl = true;
+
+public:
     using range_type = typename Base::range_type;
     using range_features = typename Base::range_features;
     using row_type = typename Base::row_type;
@@ -2669,9 +2684,6 @@ class QGenericTableItemModelImpl
     using row_traits = typename Base::row_traits;
     using row_features = typename Base::row_features;
 
-    static constexpr bool is_mutable_impl = true;
-
-public:
     explicit QGenericTableItemModelImpl(Range &&model, QRangeModel *itemModel)
         : Base(std::forward<Range>(model), {}, itemModel)
     {}
@@ -2692,19 +2704,19 @@ protected:
         }
     }
 
-    QModelIndex parent(const QModelIndex &) const
+    QModelIndex parentImpl(const QModelIndex &) const
     {
         return {};
     }
 
-    int rowCount(const QModelIndex &parent) const
+    int rowCountImpl(const QModelIndex &parent) const
     {
         if (parent.isValid())
             return 0;
         return int(Base::size(*this->m_data.model()));
     }
 
-    int columnCount(const QModelIndex &parent) const
+    int columnCountImpl(const QModelIndex &parent) const
     {
         if (parent.isValid())
             return 0;

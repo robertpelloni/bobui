@@ -20,12 +20,24 @@ public:
 
 private:
     std::unique_ptr<QRangeModelImplBase, QRangeModelImplBase::Deleter> impl;
+    friend class QRangeModelImplBase;
+
     mutable QHash<int, QByteArray> m_roleNames;
 };
 
 QRangeModel::QRangeModel(QRangeModelImplBase *impl, QObject *parent)
     : QAbstractItemModel(*new QRangeModelPrivate({impl, {}}), parent)
 {
+}
+
+QRangeModelImplBase *QRangeModelImplBase::getImplementation(QRangeModel *model)
+{
+    return model->d_func()->impl.get();
+}
+
+const QRangeModelImplBase *QRangeModelImplBase::getImplementation(const QRangeModel *model)
+{
+    return model->d_func()->impl.get();
 }
 
 /*!
