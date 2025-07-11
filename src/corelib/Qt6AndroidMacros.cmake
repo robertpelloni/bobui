@@ -344,10 +344,15 @@ function(qt6_android_generate_deployment_settings target)
         ${target} "QT_ANDROID_NO_DEPLOY_QT_LIBS")
 
     # legacy packaging
-    string(APPEND file_contents
-        "   \"android-legacy-packaging\": "
-        "$<IF:$<BOOL:$<TARGET_PROPERTY:${target},QT_ANDROID_LEGACY_PACKAGING>>,true,false>"
-        ",\n")
+    if(QT_FEATURE_sanitize_address)
+        message(STATUS "QT_FEATURE_sanitize_address is set, using legacy packaging by default.")
+        string(APPEND file_contents "   \"android-legacy-packaging\": true,\n")
+    else()
+        string(APPEND file_contents
+            "   \"android-legacy-packaging\": "
+            "$<IF:$<BOOL:$<TARGET_PROPERTY:${target},QT_ANDROID_LEGACY_PACKAGING>>,true,false>"
+            ",\n")
+    endif()
 
     __qt_internal_collect_plugin_targets_from_dependencies_v2("${target}" plugin_targets)
     __qt_internal_collect_plugin_library_files_v2("${target}" "${plugin_targets}" plugin_targets)
