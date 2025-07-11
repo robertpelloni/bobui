@@ -1748,7 +1748,11 @@ endfunction()
 
 function(_qt_internal_android_get_target_deployment_dir out_deploy_dir target)
     _qt_internal_android_get_target_android_build_dir(build_dir ${target})
-    set(${out_deploy_dir} "${build_dir}/app" PARENT_SCOPE)
+    if(QT_USE_ANDROID_MODERN_BUNDLE)
+        set(${out_deploy_dir} "${build_dir}/app" PARENT_SCOPE)
+    else()
+        set(${out_deploy_dir} "${build_dir}" PARENT_SCOPE)
+    endif()
 endfunction()
 
 function(_qt_internal_expose_android_package_source_dir_to_ide target)
