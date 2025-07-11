@@ -484,7 +484,7 @@ QAbstractMetaCallEvent::~QAbstractMetaCallEvent()
 /*!
     \internal
  */
-inline void QMetaCallEvent::allocArgs()
+inline void QQueuedMetaCallEvent::allocArgs()
 {
     if (!d.nargs_)
         return;
@@ -508,8 +508,7 @@ QMetaCallEvent::QMetaCallEvent(ushort method_offset, ushort method_relative,
                                const QObject *sender, int signalId,
                                void **args, QLatch *latch)
     : QAbstractMetaCallEvent(sender, signalId, latch),
-      d({nullptr, args, callFunction, 0, method_offset, method_relative}),
-      prealloc_()
+      d{nullptr, args, callFunction, 0, method_offset, method_relative}
 {
 }
 
@@ -523,8 +522,7 @@ QMetaCallEvent::QMetaCallEvent(QtPrivate::QSlotObjectBase *slotO,
                                const QObject *sender, int signalId,
                                void **args, QLatch *latch)
     : QAbstractMetaCallEvent(sender, signalId, latch),
-      d({QtPrivate::SlotObjUniquePtr{slotO}, args, nullptr, 0, 0, ushort(-1)}),
-      prealloc_()
+      d{QtPrivate::SlotObjUniquePtr{slotO}, args, nullptr, 0, 0, ushort(-1)}
 {
     if (d.slotObj_)
         d.slotObj_->ref();
@@ -540,60 +538,8 @@ QMetaCallEvent::QMetaCallEvent(QtPrivate::SlotObjUniquePtr slotO,
                                const QObject *sender, int signalId,
                                void **args, QLatch *latch)
     : QAbstractMetaCallEvent(sender, signalId, latch),
-      d{std::move(slotO), args, nullptr, 0, 0, ushort(-1)},
-      prealloc_()
+      d{std::move(slotO), args, nullptr, 0, 0, ushort(-1)}
 {
-}
-
-/*!
-    \internal
-
-    Allocates memory for \a nargs; code creating an event needs to initialize
-    the void* and int arrays by accessing \a args() and \a types(), respectively.
- */
-QMetaCallEvent::QMetaCallEvent(ushort method_offset, ushort method_relative,
-                               QObjectPrivate::StaticMetaCallFunction callFunction,
-                               const QObject *sender, int signalId,
-                               int nargs)
-    : QAbstractMetaCallEvent(sender, signalId),
-      d({nullptr, nullptr, callFunction, nargs, method_offset, method_relative}),
-      prealloc_()
-{
-    allocArgs();
-}
-
-/*!
-    \internal
-
-    Allocates memory for \a nargs; code creating an event needs to initialize
-    the void* and int arrays by accessing \a args() and \a types(), respectively.
- */
-QMetaCallEvent::QMetaCallEvent(QtPrivate::QSlotObjectBase *slotO,
-                               const QObject *sender, int signalId,
-                               int nargs)
-    : QAbstractMetaCallEvent(sender, signalId),
-      d({QtPrivate::SlotObjUniquePtr(slotO), nullptr, nullptr, nargs, 0, ushort(-1)}),
-      prealloc_()
-{
-    if (d.slotObj_)
-        d.slotObj_->ref();
-    allocArgs();
-}
-
-/*!
-    \internal
-
-    Allocates memory for \a nargs; code creating an event needs to initialize
-    the void* and int arrays by accessing \a args() and \a types(), respectively.
- */
-QMetaCallEvent::QMetaCallEvent(QtPrivate::SlotObjUniquePtr slotO,
-                               const QObject *sender, int signalId,
-                               int nargs)
-    : QAbstractMetaCallEvent(sender, signalId),
-      d{std::move(slotO), nullptr, nullptr, nargs, 0, ushort(-1)},
-      prealloc_()
-{
-    allocArgs();
 }
 
 /*!
@@ -601,20 +547,8 @@ QMetaCallEvent::QMetaCallEvent(QtPrivate::SlotObjUniquePtr slotO,
  */
 QMetaCallEvent::QMetaCallEvent(const QObject *sender, int signalId, Data &&data)
     : QAbstractMetaCallEvent(sender, signalId),
-      d(std::move(data)),
-      prealloc_()
+      d(std::move(data))
 {
-}
-
-/*!
-    \internal
- */
-QMetaCallEvent::~QMetaCallEvent()
-{
-    if (d.nargs_) {
-        if (reinterpret_cast<void *>(d.args_) != reinterpret_cast<void *>(prealloc_))
-            free(d.args_);
-    }
 }
 
 /*!
@@ -643,7 +577,8 @@ QQueuedMetaCallEvent::QQueuedMetaCallEvent(ushort method_offset, ushort method_r
                                            const QtPrivate::QMetaTypeInterface * const *argTypes,
                                            const void * const *argValues)
     : QMetaCallEvent(sender, signalId, {nullptr, nullptr, callFunction, argCount,
-                     method_offset, method_relative})
+                     method_offset, method_relative}),
+      prealloc_()
 {
     allocArgs();
     copyArgValues(argCount, argTypes, argValues);
@@ -659,7 +594,8 @@ QQueuedMetaCallEvent::QQueuedMetaCallEvent(QtPrivate::QSlotObjectBase *slotObj,
                                            const QtPrivate::QMetaTypeInterface * const *argTypes,
                                            const void * const *argValues)
     : QMetaCallEvent(sender, signalId, {QtPrivate::SlotObjUniquePtr(slotObj), nullptr, nullptr, argCount,
-                     0, ushort(-1)})
+                     0, ushort(-1)}),
+      prealloc_()
 {
     if (d.slotObj_)
         d.slotObj_->ref();
@@ -677,7 +613,8 @@ QQueuedMetaCallEvent::QQueuedMetaCallEvent(QtPrivate::SlotObjUniquePtr slotObj,
                                            const QtPrivate::QMetaTypeInterface * const *argTypes,
                                            const void * const *argValues)
     : QMetaCallEvent(sender, signalId, {std::move(slotObj), nullptr, nullptr, argCount,
-                     0, ushort(-1)})
+                     0, ushort(-1)}),
+      prealloc_()
 {
     allocArgs();
     copyArgValues(argCount, argTypes, argValues);
@@ -688,7 +625,7 @@ QQueuedMetaCallEvent::QQueuedMetaCallEvent(QtPrivate::SlotObjUniquePtr slotObj,
  */
 QQueuedMetaCallEvent::~QQueuedMetaCallEvent()
 {
-    const QMetaType *t = types();
+    const QMetaType *t = reinterpret_cast<QMetaType *>(d.args_ + d.nargs_);
     int inplaceIndex = 0;
     for (int i = 0; i < d.nargs_; ++i) {
         if (t[i].isValid() && d.args_[i]) {
@@ -702,6 +639,10 @@ QQueuedMetaCallEvent::~QQueuedMetaCallEvent()
             }
         }
     }
+    if (d.nargs_) {
+        if (reinterpret_cast<void *>(d.args_) != reinterpret_cast<void *>(prealloc_))
+            free(d.args_);
+    }
 }
 
 /*!
@@ -711,7 +652,7 @@ inline void QQueuedMetaCallEvent::copyArgValues(int argCount, const QtPrivate::Q
                                                 const void * const *argValues)
 {
     void **args = d.args_;
-    QMetaType *types = this->types();
+    QMetaType *types = reinterpret_cast<QMetaType *>(d.args_ + d.nargs_);
     int inplaceIndex = 0;
 
     types[0] = QMetaType(); // return type

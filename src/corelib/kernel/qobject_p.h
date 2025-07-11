@@ -363,36 +363,9 @@ public:
                    const QObject *sender, int signalId,
                    void **args, QLatch *latch);
 
-    // OLD - queued - args allocated by event, copied by caller
-    Q_DECL_DEPRECATED_X("Remove this constructor once the qtdeclarative patch is merged. Arguments are now copied by the QQueuedMetaCallEvent constructor and not the caller.")
-    QMetaCallEvent(ushort method_offset, ushort method_relative,
-                   QObjectPrivate::StaticMetaCallFunction callFunction,
-                   const QObject *sender, int signalId,
-                   int nargs);
-    Q_DECL_DEPRECATED_X("Remove this constructor once the qtdeclarative patch is merged. Arguments are now copied by the QQueuedMetaCallEvent constructor and not the caller.")
-    QMetaCallEvent(QtPrivate::QSlotObjectBase *slotObj,
-                   const QObject *sender, int signalId,
-                   int nargs);
-    Q_DECL_DEPRECATED_X("Remove this constructor once the qtdeclarative patch is merged. Arguments are now copied by the QQueuedMetaCallEvent constructor and not the caller.")
-    QMetaCallEvent(QtPrivate::SlotObjUniquePtr slotObj,
-                   const QObject *sender, int signalId,
-                   int nargs);
-
-    ~QMetaCallEvent() override;
-
-    inline int id() const { return d.method_offset_ + d.method_relative_; }
-    Q_DECL_DEPRECATED_X("Remove this function once the qtdeclarative patch is merged. Arguments are now copied by the QQueuedMetaCallEvent constructor and not the caller.")
-    inline void ** args() { return d.args_; }
-    Q_DECL_DEPRECATED_X("Remove this function once the qtdeclarative patch is merged. Arguments are now copied by the QQueuedMetaCallEvent constructor and not the caller.")
-    inline QMetaType *types() { return reinterpret_cast<QMetaType *>(d.args_ + d.nargs_); }
-
     virtual void placeMetaCall(QObject *object) override;
 
 protected:
-    // Move to QQueuedMetaCallEvent once the qtdeclarative patch is merged.
-    // QMetaCallEvent should not alloc anything anymore.
-    inline void allocArgs();
-
     struct Data {
         QtPrivate::SlotObjUniquePtr slotObj_;
         void **args_;
@@ -403,13 +376,6 @@ protected:
     } d;
 
     inline QMetaCallEvent(const QObject *sender, int signalId, Data &&data);
-    inline void * const *args() const { return d.args_; }
-    inline QMetaType const *types() const { return reinterpret_cast<QMetaType *>(d.args_ + d.nargs_); }
-
-    // Space for 5 argument pointers and types (including 1 return arg).
-    // Contiguous so that we can make one calloc() for both the pointers and the types when necessary.
-    // Move to QQueuedMetaCallEvent once the qtdeclarative patch is merged.
-    alignas(void *) char prealloc_[5 * sizeof(void *) + 5 * sizeof(QMetaType)];
 };
 
 class Q_CORE_EXPORT QQueuedMetaCallEvent : public QMetaCallEvent
@@ -433,10 +399,14 @@ public:
     ~QQueuedMetaCallEvent() override;
 
 private:
+    inline void allocArgs();
     inline void copyArgValues(int argCount, const QtPrivate::QMetaTypeInterface * const *argTypes,
                               const void * const *argValues);
     static inline bool typeFitsInPlace(const QMetaType type);
 
+    // Space for 5 argument pointers and types (including 1 return arg).
+    // Contiguous so that we can make one calloc() for both the pointers and the types when necessary.
+    alignas(void *) char prealloc_[5 * sizeof(void *) + 5 * sizeof(QMetaType)];
     struct ArgValueStorage { // size and alignment matching QString, QList, etc
         static constexpr size_t MaxSize = 3 * sizeof(void *);
         alignas(void *) char storage[MaxSize];
