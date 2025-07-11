@@ -199,6 +199,7 @@ struct Options
     QHash<QString, QStringList> archExtraLibs;
     QStringList extraPlugins;
     QHash<QString, QStringList> archExtraPlugins;
+    bool useLegacyPackaging = false;
 
     // Signing information
     bool releasePackage;
@@ -1409,6 +1410,12 @@ bool readInputFile(Options *options)
         const QJsonValue androidAppIcon = jsonObject.value("android-app-icon"_L1);
         if (!androidAppIcon.isUndefined())
             options->appIcon = androidAppIcon.toString();
+    }
+
+    {
+        const QJsonValue androidlegacyPackaging = jsonObject.value("android-legacy-packaging"_L1);
+        if (!androidlegacyPackaging.isUndefined())
+            options->useLegacyPackaging = androidlegacyPackaging.toBool();
     }
 
     {
@@ -3061,6 +3068,7 @@ bool buildAndroidProject(const Options &options)
     gradleProperties["androidNdkVersion"] = options.ndkVersion.toUtf8();
     if (gradleProperties["androidBuildToolsVersion"].isEmpty())
         gradleProperties["androidBuildToolsVersion"] = options.sdkBuildToolsVersion.toLocal8Bit();
+    gradleProperties["legacyPackaging"] = options.useLegacyPackaging ? "true" : "false";
     QString abiList;
     for (auto it = options.architectures.constBegin(); it != options.architectures.constEnd(); ++it) {
         if (!it->enabled)

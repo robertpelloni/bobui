@@ -83,6 +83,8 @@ void tst_android_deployment_settings::DeploymentSettings_data()
                                           << "org.qtproject.android_deployment_settings_test";
     QTest::newRow("android-app-name") << "android-app-name"
                                           << "Android Deployment Settings Test";
+    QTest::newRow("android-legacy-packaging") << "android-legacy-packaging"
+                                              << "false";
     QTest::newRow("permissions")
             << "permissions"
             << "[{\"maxSdkVersion\":\"34\",\"minSdkVersion\":\"32\",\"name\":\"PERMISSION_WITH_"
@@ -98,6 +100,9 @@ void tst_android_deployment_settings::DeploymentSettings()
     QJsonValue keyValue = jsonDoc[key];
     if (keyValue.type() == QJsonValue::Type::String) {
         QCOMPARE(keyValue.toString(), value);
+    } else if (keyValue.type() == QJsonValue::Type::Bool) {
+        bool valueToBool = value == "true" ? true : false;
+        QCOMPARE(keyValue.toBool(), valueToBool);
     } else if (keyValue.type() == QJsonValue::Type::Array) {
         QJsonParseError parseError;
         // For robustness (field order, whitespaces etc.) make comparison between QJsonDocuments
