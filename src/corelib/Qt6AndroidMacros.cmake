@@ -372,6 +372,12 @@ function(qt6_android_generate_deployment_settings target)
             "   \"android-application-arguments\": \"${QT_ANDROID_APPLICATION_ARGUMENTS}\",\n")
     endif()
 
+    # Create symlinks only for Gradle dir
+    if (QT_ANDROID_CREATE_SYMLINKS_ONLY)
+        string(APPEND file_contents
+            "   \"android-create-symlinks-only\": true,\n")
+    endif()
+
     if(COMMAND _qt_internal_generate_android_qml_deployment_settings)
         _qt_internal_generate_android_qml_deployment_settings(file_contents ${target})
     else()

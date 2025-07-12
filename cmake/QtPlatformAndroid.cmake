@@ -113,6 +113,9 @@ define_property(TARGET
 option(QT_ANDROID_POST_BUILD_GRADLE_CLEANUP
     "Clean Android libs and Gradle's build directories after APK creation." OFF)
 
+option(QT_ANDROID_CREATE_SYMLINKS_ONLY
+    "Only create symlinks instead of copy when preparing the Gradle build directory." OFF)
+
 # Returns test execution arguments for Android targets
 function(qt_internal_android_test_runner_arguments target out_test_runner out_test_arguments)
     qt_internal_get_host_info_var_prefix(host_info_var_prefix)

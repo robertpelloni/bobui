@@ -200,6 +200,7 @@ struct Options
     QStringList extraPlugins;
     QHash<QString, QStringList> archExtraPlugins;
     bool useLegacyPackaging = false;
+    bool createSymlinksOnly = false;
 
     // Signing information
     bool releasePackage;
@@ -725,10 +726,10 @@ bool alwaysOverwritableFile(const QString &fileName)
             || fileName.endsWith("/src/org/qtproject/qt/android/bindings/QtActivity.java"_L1));
 }
 
-
 bool copyFileIfNewer(const QString &sourceFileName,
                      const QString &destinationFileName,
                      const Options &options,
+                     bool createSymlinksOnly = false,
                      bool forceOverwrite = false)
 {
     dependenciesForDepfile << sourceFileName;
@@ -755,7 +756,15 @@ bool copyFileIfNewer(const QString &sourceFileName,
         return false;
     }
 
-    if (!QFile::exists(destinationFileName) && !QFile::copy(sourceFileName, destinationFileName)) {
+    auto copyFunction = [createSymlinksOnly, sourceFileName, destinationFileName]() {
+        if (createSymlinksOnly)
+            return QFile::link(sourceFileName, destinationFileName);
+        else
+            return QFile::copy(sourceFileName, destinationFileName);
+    };
+
+    if (!QFile::exists(destinationFileName) && !copyFunction()) {
+        qWarning() << "symlink creation failed";
         fprintf(stderr, "Failed to copy %s to %s.\n", qPrintable(sourceFileName), qPrintable(destinationFileName));
         return false;
     } else if (options.verbose) {
@@ -1419,6 +1428,12 @@ bool readInputFile(Options *options)
     }
 
     {
+        const QJsonValue createSymlinksOnly = jsonObject.value("android-create-symlinks-only"_L1);
+        if (!createSymlinksOnly.isUndefined())
+            options->createSymlinksOnly = createSymlinksOnly.toBool();
+    }
+
+    {
         using ItFlag = QDirListing::IteratorFlag;
         const QJsonValue deploymentDependencies = jsonObject.value("deployment-dependencies"_L1);
         if (!deploymentDependencies.isUndefined()) {
@@ -1531,8 +1546,10 @@ bool copyFiles(const QDir &sourceDirectory, const QDir &destinationDirectory, co
                 return false;
         } else {
             QString destination = destinationDirectory.absoluteFilePath(entry.fileName());
-            if (!copyFileIfNewer(entry.absoluteFilePath(), destination, options, forceOverwrite))
+            if (!copyFileIfNewer(entry.absoluteFilePath(), destination,
+                options, false, forceOverwrite)) {
                 return false;
+            }
         }
     }
 
@@ -1671,7 +1688,8 @@ bool copyAndroidExtraLibs(Options *options)
                                 + extraLibInfo.fileName());
 
         if (isDeployment(options, Options::Bundled)
-                && !copyFileIfNewer(extraLib, destinationFile, *options)) {
+                && !copyFileIfNewer(extraLib, destinationFile,
+                    *options, options->createSymlinksOnly)) {
             return false;
         }
         options->archExtraLibs[options->currentArchitecture] += extraLib;
@@ -1729,8 +1747,11 @@ bool copyAndroidExtraResources(Options *options)
                 destinationFile = libsDir + resourceFile;
                 options->archExtraPlugins[options->currentArchitecture] += resourceFile;
             }
-            if (!copyFileIfNewer(originFile, destinationFile, *options))
+
+            if (!copyFileIfNewer(originFile, destinationFile,
+                *options, options->createSymlinksOnly)) {
                 return false;
+            }
         }
     }
 
@@ -2846,6 +2867,7 @@ bool copyQtFiles(Options *options)
         QString sourceFileName = qtDependency.absolutePath;
         QString destinationFileName;
         bool isSharedLibrary = qtDependency.relativePath.endsWith(".so"_L1);
+        bool createSymlinksOnly = options->createSymlinksOnly;
         if (isSharedLibrary) {
             QString garbledFileName = qtDependency.relativePath.mid(
                 qtDependency.relativePath.lastIndexOf(u'/') + 1);
@@ -2853,6 +2875,8 @@ bool copyQtFiles(Options *options)
         } else if (QDir::fromNativeSeparators(qtDependency.relativePath).startsWith("jar/"_L1)) {
             destinationFileName = libsDirectory + qtDependency.relativePath.mid(sizeof("jar/") - 1);
         } else {
+            // rcc resouces compilation doesn't support using symlinks
+            createSymlinksOnly = false;
             destinationFileName = assetsDestinationDirectory + qtDependency.relativePath;
         }
 
@@ -2879,7 +2903,7 @@ bool copyQtFiles(Options *options)
         if ((isDeployment(options, Options::Bundled) || !isSharedLibrary)
                 && !copyFileIfNewer(sourceFileName,
                                     options->outputDirectory + u'/' + destinationFileName,
-                                    *options)) {
+                                    *options, createSymlinksOnly)) {
             return false;
         }
         options->bundledFiles[options->currentArchitecture] += std::make_pair(destinationFileName, qtDependency.relativePath);
@@ -3269,7 +3293,7 @@ bool copyStdCpp(Options *options)
     const QString destinationFile = "%1/libs/%2/lib%3.so"_L1.arg(options->outputDirectory,
                                                                  options->currentArchitecture,
                                                                  options->stdCppName);
-    return copyFileIfNewer(stdCppPath, destinationFile, *options);
+    return copyFileIfNewer(stdCppPath, destinationFile, *options, options->createSymlinksOnly);
 }
 
 static QString zipalignPath(const Options &options, bool *ok)
