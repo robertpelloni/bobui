@@ -3638,13 +3638,17 @@ void QFontCache::decreaseCache()
         EngineCache::ConstIterator it = engineCache.constBegin(),
                                   end = engineCache.constEnd();
         for (; it != end; ++it) {
+            const auto useCount = engineCacheCount.value(it.value().data);
+            const auto refCount = it.value().data->ref.loadRelaxed();
+            const auto cacheCost = it.value().data->cache_cost;
+
             FC_DEBUG("    %p: timestamp %4u hits %2u ref %2d/%2d, cost %u bytes",
                      it.value().data, it.value().timestamp, it.value().hits,
-                     it.value().data->ref.loadRelaxed(), engineCacheCount.value(it.value().data),
-                     it.value().data->cache_cost);
+                     refCount, useCount, cacheCost);
 
-            if (it.value().data->ref.loadRelaxed() > engineCacheCount.value(it.value().data))
-                in_use_cost += it.value().data->cache_cost / engineCacheCount.value(it.value().data);
+            Q_ASSERT(useCount > 0);
+            if (useCount > 0 && refCount > useCount)
+                in_use_cost += cacheCost / useCount;
         }
 
         // attempt to make up for rounding errors
