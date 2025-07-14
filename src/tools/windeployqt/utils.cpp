@@ -94,9 +94,9 @@ QStringList findSharedLibraries(const QDir &directory, Platform platform,
         const QString dllPath = dllFi.absoluteFilePath();
         bool matches = true;
         if (debugMatchMode != MatchDebugOrRelease && (platform & WindowsBased)) {
-            bool debugDll;
-            if (readPeExecutable(dllPath, &errorMessage, 0, 0, &debugDll)) {
-                matches = debugDll == (debugMatchMode == MatchDebug);
+            PeHeaderInfoStruct info;
+            if (readPeExecutableInfo(dllPath, &errorMessage, &info)) {
+                matches = info.isDebug == (debugMatchMode == MatchDebug);
             } else {
                 std::wcerr << "Warning: Unable to read " << QDir::toNativeSeparators(dllPath)
                            << ": " << errorMessage;
@@ -510,23 +510,94 @@ inline void determineDebugAndDependentLibs(const ImageNtHeader *nth, const void 
         *isDebugIn = determineDebug(nth, fileMemory, dependentLibrariesIn, errorMessage);
 }
 
-// Read a PE executable and determine dependent libraries, word size
-// and debug flags.
-bool readPeExecutable(const QString &peExecutableFileName, QString *errorMessage,
-                      QStringList *dependentLibrariesIn, unsigned *wordSizeIn,
-                      bool *isDebugIn, unsigned short *machineArchIn)
+// Read a PE executable and determine word size, debug flags, and arch
+bool readPeExecutableInfo(const QString &peExecutableFileName, QString *errorMessage,
+                          PeHeaderInfoStruct *headerInfo)
 {
     bool result = false;
+    if (!headerInfo) {
+        *errorMessage = QString::fromLatin1("Mandatory parameter missing. Please provide headerInfo");
+        return result;
+    }
+
     HANDLE hFile = NULL;
     HANDLE hFileMap = NULL;
     void *fileMemory = 0;
 
-    if (dependentLibrariesIn)
-        dependentLibrariesIn->clear();
-    if (wordSizeIn)
-        *wordSizeIn = 0;
-    if (isDebugIn)
-        *isDebugIn = false;
+    do {
+        // Create a memory mapping of the file
+        hFile = CreateFile(reinterpret_cast<const WCHAR*>(peExecutableFileName.utf16()), GENERIC_READ, FILE_SHARE_READ, NULL,
+                           OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+        if (hFile == INVALID_HANDLE_VALUE || hFile == NULL) {
+            *errorMessage = QString::fromLatin1("Cannot open '%1': %2")
+            .arg(peExecutableFileName, QSystemError::windowsString());
+            break;
+        }
+
+        hFileMap = CreateFileMapping(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
+        if (hFileMap == NULL) {
+            *errorMessage = QString::fromLatin1("Cannot create file mapping of '%1': %2")
+            .arg(peExecutableFileName, QSystemError::windowsString());
+            break;
+        }
+
+        fileMemory = MapViewOfFile(hFileMap, FILE_MAP_READ, 0, 0, 0);
+        if (!fileMemory) {
+            *errorMessage = QString::fromLatin1("Cannot map '%1': %2")
+            .arg(peExecutableFileName, QSystemError::windowsString());
+            break;
+        }
+
+        const IMAGE_NT_HEADERS *ntHeaders = getNtHeader(fileMemory, errorMessage);
+        if (!ntHeaders)
+            break;
+
+        headerInfo->wordSize = ntHeaderWordSize(ntHeaders);
+        if (headerInfo->wordSize == 32) {
+            headerInfo->isDebug = determineDebug(reinterpret_cast<const IMAGE_NT_HEADERS32 *>(ntHeaders),
+                                      fileMemory, nullptr, errorMessage);
+        } else {
+            headerInfo->isDebug = determineDebug(reinterpret_cast<const IMAGE_NT_HEADERS64 *>(ntHeaders),
+                                      fileMemory, nullptr, errorMessage);
+        }
+
+        headerInfo->machineArch = ntHeaders->FileHeader.Machine;
+
+        result = true;
+        if (optVerboseLevel > 1) {
+            std::wcout << __FUNCTION__ << ": " << QDir::toNativeSeparators(peExecutableFileName)
+            << ' ' << headerInfo->wordSize << " bit";
+            std::wcout << (headerInfo->isDebug ? ", debug" : ", release");
+            std::wcout << '\n';
+        }
+    } while (false);
+
+    if (fileMemory)
+        UnmapViewOfFile(fileMemory);
+
+    if (hFileMap != NULL)
+        CloseHandle(hFileMap);
+
+    if (hFile != NULL && hFile != INVALID_HANDLE_VALUE)
+        CloseHandle(hFile);
+
+    return result;
+}
+
+// Read a PE executable and determine dependent libraries.
+bool readPeExecutableDependencies(const QString &peExecutableFileName, QString *errorMessage,
+                      QStringList *dependentLibraries)
+{
+    bool result = false;
+    if (!dependentLibraries) {
+        *errorMessage = QString::fromLatin1("Mandatory parameter missing. Provide dependentLibraries");
+        return result;
+    }
+    HANDLE hFile = NULL;
+    HANDLE hFileMap = NULL;
+    void *fileMemory = 0;
+
+    dependentLibraries->clear();
 
     do {
         // Create a memory mapping of the file
@@ -557,32 +628,24 @@ bool readPeExecutable(const QString &peExecutableFileName, QString *errorMessage
             break;
 
         const unsigned wordSize = ntHeaderWordSize(ntHeaders);
-        if (wordSizeIn)
-            *wordSizeIn = wordSize;
         if (wordSize == 32) {
-            determineDebugAndDependentLibs(reinterpret_cast<const IMAGE_NT_HEADERS32 *>(ntHeaders),
-                                           fileMemory, dependentLibrariesIn, isDebugIn, errorMessage);
+            *dependentLibraries
+                    = determineDependentLibs(reinterpret_cast<const IMAGE_NT_HEADERS32 *>(ntHeaders),
+                                           fileMemory, errorMessage);
         } else {
-            determineDebugAndDependentLibs(reinterpret_cast<const IMAGE_NT_HEADERS64 *>(ntHeaders),
-                                           fileMemory, dependentLibrariesIn, isDebugIn, errorMessage);
+            *dependentLibraries
+                    = determineDependentLibs(reinterpret_cast<const IMAGE_NT_HEADERS64 *>(ntHeaders),
+                                           fileMemory, errorMessage);
         }
-
-        if (machineArchIn)
-            *machineArchIn = ntHeaders->FileHeader.Machine;
 
         result = true;
         if (optVerboseLevel > 1) {
-            std::wcout << __FUNCTION__ << ": " << QDir::toNativeSeparators(peExecutableFileName)
-                << ' ' << wordSize << " bit";
-            if (dependentLibrariesIn) {
-                std::wcout << ", dependent libraries: ";
-                if (optVerboseLevel > 2)
-                    std::wcout << dependentLibrariesIn->join(u' ');
-                else
-                    std::wcout << dependentLibrariesIn->size();
-            }
-            if (isDebugIn)
-                std::wcout << (*isDebugIn ? ", debug" : ", release");
+            std::wcout << __FUNCTION__ << ": " << QDir::toNativeSeparators(peExecutableFileName);
+            std::wcout << ", dependent libraries: ";
+            if (optVerboseLevel > 2)
+                std::wcout << dependentLibraries->join(u' ');
+            else
+                std::wcout << dependentLibraries->size();
             std::wcout << '\n';
         }
     } while (false);
@@ -632,12 +695,12 @@ QString findD3dCompiler(Platform platform, const QString &qtBinDir, unsigned wor
     // Find the latest D3D compiler DLL in path (Windows 8.1 has d3dcompiler_47).
     if (platform.testFlag(IntelBased)) {
         QString errorMessage;
-        unsigned detectedWordSize;
+        PeHeaderInfoStruct info;
         for (const QString &candidate : std::as_const(candidateVersions)) {
             const QString dll = findInPath(candidate);
             if (!dll.isEmpty()
-                && readPeExecutable(dll, &errorMessage, 0, &detectedWordSize, 0)
-                && detectedWordSize == wordSize) {
+                && readPeExecutableInfo(dll, &errorMessage, &info)
+                && info.wordSize == wordSize) {
                 return dll;
             }
         }
@@ -678,11 +741,11 @@ QStringList findDxc(Platform platform, const QString &qtBinDir, unsigned wordSiz
         // Try to find it in the PATH (e.g. the Vulkan SDK ships these, even if Windows itself doesn't).
         if (platform.testFlag(IntelBased)) {
             QString errorMessage;
-            unsigned detectedWordSize;
+            PeHeaderInfoStruct info;
             const QString dll = findInPath(name);
             if (!dll.isEmpty()
-                && readPeExecutable(dll, &errorMessage, 0, &detectedWordSize, 0)
-                && detectedWordSize == wordSize)
+                && readPeExecutableInfo(dll, &errorMessage, &info)
+                && info.wordSize == wordSize)
             {
                 results.append(dll);
                 continue;
@@ -694,8 +757,14 @@ QStringList findDxc(Platform platform, const QString &qtBinDir, unsigned wordSiz
 
 #else // Q_OS_WIN
 
-bool readPeExecutable(const QString &, QString *errorMessage,
-                      QStringList *, unsigned *, bool *, unsigned short *)
+bool readPeExecutableInfo(const QString &, QString *errorMessage,
+                      PeHeaderInfoStruct *)
+{
+    *errorMessage = QStringLiteral("Not implemented.");
+    return false;
+}
+
+bool readPeExecutableDependencies(const QString &, QString *, QStringList *)
 {
     *errorMessage = QStringLiteral("Not implemented.");
     return false;

@@ -802,12 +802,10 @@ static inline bool isQtModule(const QString &libName)
 // Helper for recursively finding all dependent Qt libraries.
 static bool findDependentQtLibraries(const QString &qtBinDir, const QString &binary,
                                      Platform platform, QString *errorMessage,
-                                     QStringList *qtDependencies, QStringList *nonQtDependencies,
-                                     unsigned *wordSize = nullptr, bool *isDebug = nullptr,
-                                     unsigned short *machineArch = nullptr)
+                                     QStringList *qtDependencies, QStringList *nonQtDependencies)
 {
     QStringList dependentLibs;
-    if (!readPeExecutable(binary, errorMessage, &dependentLibs, wordSize, isDebug, machineArch)) {
+    if (!readPeExecutableDependencies(binary, errorMessage, &dependentLibs)) {
         errorMessage->prepend("Unable to find dependent libraries of "_L1 +
                               QDir::toNativeSeparators(binary) + " :"_L1);
         return false;
@@ -826,11 +824,12 @@ static bool findDependentQtLibraries(const QString &qtBinDir, const QString &bin
     }
     const int end = qtDependencies->size();
     // Recurse
-    for (int i = start; i < end; ++i)
+    for (int i = start; i < end; ++i) {
         if (!findDependentQtLibraries(qtBinDir, qtDependencies->at(i), platform, errorMessage,
-                                      qtDependencies, nonQtDependencies,
-                                      nullptr, nullptr, nullptr))
+                                      qtDependencies, nonQtDependencies)) {
             return false;
+        }
+    }
     return true;
 }
 
@@ -1467,18 +1466,17 @@ static DeployResult deploy(const Options &options, const QMap<QString, QString> 
 
     QStringList dependentQtLibs;
     QStringList dependentNonQtLibs;
-    bool detectedDebug;
-    unsigned wordSize;
-    unsigned short machineArch;
+    PeHeaderInfoStruct peHeaderInfo;
+
+    if (!readPeExecutableInfo(options.binaries.first(), errorMessage, &peHeaderInfo))
+        return result;
     if (!findDependentQtLibraries(libraryLocation, options.binaries.first(), options.platform,
-                                  errorMessage, &dependentQtLibs, &dependentNonQtLibs, &wordSize,
-                                  &detectedDebug, &machineArch)) {
+                                  errorMessage, &dependentQtLibs, &dependentNonQtLibs)) {
         return result;
     }
     for (int b = 1; b < options.binaries.size(); ++b) {
         if (!findDependentQtLibraries(libraryLocation, options.binaries.at(b), options.platform,
-                                      errorMessage, &dependentQtLibs, &dependentNonQtLibs,
-                                      nullptr, nullptr, nullptr)) {
+                                      errorMessage, &dependentQtLibs, &dependentNonQtLibs)) {
             return result;
         }
     }
@@ -1497,8 +1495,7 @@ static DeployResult deploy(const Options &options, const QMap<QString, QString> 
             std::wcout << "Adding local dependency" << path << '\n';
 
         if (!findDependentQtLibraries(libraryLocation, path, options.platform,
-                                      errorMessage, &dependentQtLibs, &dependentNonQtLibs,
-                                      nullptr, nullptr, nullptr)) {
+                                      errorMessage, &dependentQtLibs, &dependentNonQtLibs)) {
             return result;
         }
     }
@@ -1511,7 +1508,7 @@ static DeployResult deploy(const Options &options, const QMap<QString, QString> 
         // runtimes and binaries. For anything else, use MatchDebugOrRelease
         // since also debug cannot be reliably detect for MinGW.
         if (options.platform.testFlag(Msvc) || options.platform.testFlag(ClangMsvc)) {
-            result.isDebug = detectedDebug;
+            result.isDebug = peHeaderInfo.isDebug;
             debugMatchMode = result.isDebug ? MatchDebug : MatchRelease;
         }
         break;
@@ -1540,7 +1537,7 @@ static DeployResult deploy(const Options &options, const QMap<QString, QString> 
 
     if (optVerboseLevel) {
         std::wcout << QDir::toNativeSeparators(options.binaries.first()) << ' '
-                   << wordSize << " bit, " << (result.isDebug ? "debug" : "release")
+                   << peHeaderInfo.wordSize << " bit, " << (result.isDebug ? "debug" : "release")
                    << " executable";
         if (usesQml2)
             std::wcout << " [QML]";
@@ -1617,8 +1614,10 @@ static DeployResult deploy(const Options &options, const QMap<QString, QString> 
             qmlScanResult.append(scanResult);
             // Additional dependencies of QML plugins.
             for (const QString &plugin : std::as_const(qmlScanResult.plugins)) {
-                if (!findDependentQtLibraries(libraryLocation, plugin, options.platform, errorMessage, &dependentQtLibs, nullptr, &wordSize, &detectedDebug, &machineArch))
+                if (!findDependentQtLibraries(libraryLocation, plugin, options.platform,
+                                              errorMessage, &dependentQtLibs, nullptr)) {
                     return result;
+                }
             }
             if (optVerboseLevel >= 1) {
                 std::wcout << "QML imports:\n";
@@ -1710,8 +1709,9 @@ static DeployResult deploy(const Options &options, const QMap<QString, QString> 
             if (softwareRasterizer.isFile())
                 deployedQtLibraries.append(softwareRasterizer.absoluteFilePath());
         }
-        if (options.systemD3dCompiler && machineArch != IMAGE_FILE_MACHINE_ARM64) {
-            const QString d3dCompiler = findD3dCompiler(options.platform, qtBinDir, wordSize);
+        if (options.systemD3dCompiler && peHeaderInfo.machineArch != IMAGE_FILE_MACHINE_ARM64) {
+            const QString d3dCompiler = findD3dCompiler(options.platform, qtBinDir,
+                                                        peHeaderInfo.wordSize);
             if (d3dCompiler.isEmpty()) {
                 std::wcerr << "Warning: Cannot find any version of the d3dcompiler DLL.\n";
             } else {
@@ -1719,7 +1719,8 @@ static DeployResult deploy(const Options &options, const QMap<QString, QString> 
             }
         }
         if (options.systemDxc) {
-            const QStringList dxcLibs = findDxc(options.platform, qtBinDir, wordSize);
+            const QStringList dxcLibs = findDxc(options.platform, qtBinDir,
+                                                peHeaderInfo.wordSize);
             if (!dxcLibs.isEmpty())
                 deployedQtLibraries.append(dxcLibs);
             else
@@ -1738,8 +1739,10 @@ static DeployResult deploy(const Options &options, const QMap<QString, QString> 
         const QString targetPath = options.libraryDirectory.isEmpty() ?
             options.directory : options.libraryDirectory;
         QStringList libraries = deployedQtLibraries;
-        if (options.compilerRunTime)
-            libraries.append(compilerRunTimeLibs(qtBinDir, options.platform, result.isDebug, machineArch));
+        if (options.compilerRunTime) {
+            libraries.append(compilerRunTimeLibs(qtBinDir, options.platform, result.isDebug,
+                                                 peHeaderInfo.machineArch));
+        }
         for (const QString &qtLib : std::as_const(libraries)) {
             if (!updateLibrary(qtLib, targetPath, options, errorMessage))
                 return result;
