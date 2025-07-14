@@ -552,7 +552,7 @@ void QSurfaceFormat::setAlphaBufferSize(int size)
     and used choice is the former (16-bit), for example when high dynamic range
     rendering is desired.
 
-    \since 6.10
+    \since 6.11
 
     \sa colorComponentType()
 */
@@ -567,7 +567,7 @@ void QSurfaceFormat::setColorComponentType(ColorComponentType type)
 /*!
     \return the color component type.
 
-    \since 6.10
+    \since 6.11
 
     \sa setColorComponentType()
 */
