@@ -804,12 +804,9 @@ static bool findDependentQtLibraries(const QString &qtBinDir, const QString &bin
                                      Platform platform, QString *errorMessage,
                                      QStringList *qtDependencies, QStringList *nonQtDependencies,
                                      unsigned *wordSize = nullptr, bool *isDebug = nullptr,
-                                     unsigned short *machineArch = nullptr,
-                                     int *directDependencyCount = nullptr, int recursionDepth = 0)
+                                     unsigned short *machineArch = nullptr)
 {
     QStringList dependentLibs;
-    if (directDependencyCount)
-        *directDependencyCount = 0;
     if (!readPeExecutable(binary, errorMessage, &dependentLibs, wordSize, isDebug, machineArch)) {
         errorMessage->prepend("Unable to find dependent libraries of "_L1 +
                               QDir::toNativeSeparators(binary) + " :"_L1);
@@ -828,13 +825,11 @@ static bool findDependentQtLibraries(const QString &qtBinDir, const QString &bin
         }
     }
     const int end = qtDependencies->size();
-    if (directDependencyCount)
-        *directDependencyCount = end - start;
     // Recurse
     for (int i = start; i < end; ++i)
         if (!findDependentQtLibraries(qtBinDir, qtDependencies->at(i), platform, errorMessage,
                                       qtDependencies, nonQtDependencies,
-                                      nullptr, nullptr, nullptr, nullptr, recursionDepth + 1))
+                                      nullptr, nullptr, nullptr))
             return false;
     return true;
 }
@@ -1475,16 +1470,15 @@ static DeployResult deploy(const Options &options, const QMap<QString, QString> 
     bool detectedDebug;
     unsigned wordSize;
     unsigned short machineArch;
-    int directDependencyCount = 0;
     if (!findDependentQtLibraries(libraryLocation, options.binaries.first(), options.platform,
                                   errorMessage, &dependentQtLibs, &dependentNonQtLibs, &wordSize,
-                                  &detectedDebug, &machineArch, &directDependencyCount)) {
+                                  &detectedDebug, &machineArch)) {
         return result;
     }
     for (int b = 1; b < options.binaries.size(); ++b) {
         if (!findDependentQtLibraries(libraryLocation, options.binaries.at(b), options.platform,
                                       errorMessage, &dependentQtLibs, &dependentNonQtLibs,
-                                      nullptr, nullptr, nullptr, nullptr)) {
+                                      nullptr, nullptr, nullptr)) {
             return result;
         }
     }
@@ -1504,7 +1498,7 @@ static DeployResult deploy(const Options &options, const QMap<QString, QString> 
 
         if (!findDependentQtLibraries(libraryLocation, path, options.platform,
                                       errorMessage, &dependentQtLibs, &dependentNonQtLibs,
-                                      nullptr, nullptr, nullptr, nullptr)) {
+                                      nullptr, nullptr, nullptr)) {
             return result;
         }
     }
