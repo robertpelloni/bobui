@@ -95,8 +95,7 @@ QStringList findSharedLibraries(const QDir &directory, Platform platform,
         bool matches = true;
         if (debugMatchMode != MatchDebugOrRelease && (platform & WindowsBased)) {
             bool debugDll;
-            if (readPeExecutable(dllPath, &errorMessage, 0, 0, &debugDll,
-                                 (platform == WindowsDesktopMinGW))) {
+            if (readPeExecutable(dllPath, &errorMessage, 0, 0, &debugDll)) {
                 matches = debugDll == (debugMatchMode == MatchDebug);
             } else {
                 std::wcerr << "Warning: Unable to read " << QDir::toNativeSeparators(dllPath)
@@ -515,7 +514,7 @@ inline void determineDebugAndDependentLibs(const ImageNtHeader *nth, const void 
 // and debug flags.
 bool readPeExecutable(const QString &peExecutableFileName, QString *errorMessage,
                       QStringList *dependentLibrariesIn, unsigned *wordSizeIn,
-                      bool *isDebugIn, bool isMinGW, unsigned short *machineArchIn)
+                      bool *isDebugIn, unsigned short *machineArchIn)
 {
     bool result = false;
     HANDLE hFile = NULL;
@@ -575,8 +574,6 @@ bool readPeExecutable(const QString &peExecutableFileName, QString *errorMessage
         if (optVerboseLevel > 1) {
             std::wcout << __FUNCTION__ << ": " << QDir::toNativeSeparators(peExecutableFileName)
                 << ' ' << wordSize << " bit";
-            if (isMinGW)
-                std::wcout << ", MinGW";
             if (dependentLibrariesIn) {
                 std::wcout << ", dependent libraries: ";
                 if (optVerboseLevel > 2)
@@ -698,7 +695,7 @@ QStringList findDxc(Platform platform, const QString &qtBinDir, unsigned wordSiz
 #else // Q_OS_WIN
 
 bool readPeExecutable(const QString &, QString *errorMessage,
-                      QStringList *, unsigned *, bool *, bool, unsigned short *)
+                      QStringList *, unsigned *, bool *, unsigned short *)
 {
     *errorMessage = QStringLiteral("Not implemented.");
     return false;

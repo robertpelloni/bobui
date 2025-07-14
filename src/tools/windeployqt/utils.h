@@ -168,7 +168,7 @@ bool runProcess(const QString &binary, const QStringList &args,
 
 bool readPeExecutable(const QString &peExecutableFileName, QString *errorMessage,
                       QStringList *dependentLibraries = 0, unsigned *wordSize = 0,
-                      bool *isDebug = 0, bool isMinGW = false, unsigned short *machineArch = nullptr);
+                      bool *isDebug = 0, unsigned short *machineArch = nullptr);
 
 #ifdef Q_OS_WIN
 #  if !defined(IMAGE_FILE_MACHINE_ARM64)

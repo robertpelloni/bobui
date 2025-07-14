@@ -47,8 +47,7 @@ static QStringList findPluginNames(const QDir &pluginDir, const PluginDetection 
 
         if (libraryType == PluginDetection::DebugAndRelease) {
             bool isDebugDll{};
-            if (!readPeExecutable(dllFi.absoluteFilePath(), &errorMessage, 0, 0, &isDebugDll,
-                                  (platform == WindowsDesktopMinGW))) {
+            if (!readPeExecutable(dllFi.absoluteFilePath(), &errorMessage, 0, 0, &isDebugDll)) {
                 std::wcerr << "Warning: Unable to read "
                            << QDir::toNativeSeparators(dllFi.absoluteFilePath()) << ": "
                            << errorMessage;

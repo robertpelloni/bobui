@@ -810,8 +810,7 @@ static bool findDependentQtLibraries(const QString &qtBinDir, const QString &bin
     QStringList dependentLibs;
     if (directDependencyCount)
         *directDependencyCount = 0;
-    if (!readPeExecutable(binary, errorMessage, &dependentLibs, wordSize, isDebug,
-                          platform == WindowsDesktopMinGW, machineArch)) {
+    if (!readPeExecutable(binary, errorMessage, &dependentLibs, wordSize, isDebug, machineArch)) {
         errorMessage->prepend("Unable to find dependent libraries of "_L1 +
                               QDir::toNativeSeparators(binary) + " :"_L1);
         return false;
