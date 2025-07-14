@@ -63,7 +63,9 @@ Q_NORETURN void qAbort()
 
     Example:
 
-    \snippet code/src_corelib_global_qglobal.cpp 17
+    \snippet code/src_corelib_global_qglobal.cpp 17&19_include_open
+    \snippet code/src_corelib_global_qglobal.cpp 17assert
+    \snippet code/src_corelib_global_qglobal.cpp 17&19_return_close
 
     If \c b is zero, the Q_ASSERT statement will output the following
     message using the qFatal() function:
@@ -86,7 +88,9 @@ Q_NORETURN void qAbort()
 
     Example:
 
-    \snippet code/src_corelib_global_qglobal.cpp 19
+    \snippet code/src_corelib_global_qglobal.cpp 17&19_include_open
+    \snippet code/src_corelib_global_qglobal.cpp 19assert
+    \snippet code/src_corelib_global_qglobal.cpp 17&19_return_close
 
     If \c b is zero, the Q_ASSERT_X statement will output the following
     message using the qFatal() function:
