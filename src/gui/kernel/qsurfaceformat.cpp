@@ -202,6 +202,20 @@ public:
  */
 
 /*!
+    \enum QSurfaceFormat::ColorComponentType
+    \since 6.11
+
+    This enum is used to specify the data type used for the surface buffer.
+
+    \value FixedColorComponentType Color components are stored as fixed point
+           fractional values.
+    \value FloatColorComponentType Color components are stored as floating point
+           values.
+
+    \sa colorComponentType(), redBufferSize(), greenBufferSize(), blueBufferSize()
+*/
+
+/*!
     Constructs a default initialized QSurfaceFormat.
 
     \note By default OpenGL 2.0 is requested since this provides the highest
