@@ -16,6 +16,7 @@ qt_internal_add_tool(${target_name}
         qtmoduleinfo.cpp qtmoduleinfo.h
         qtplugininfo.cpp qtplugininfo.h
         utils.cpp utils.h
+        peheaderinfo.cpp peheaderinfo.h
         main.cpp
     DEFINES
         QT_NO_CAST_FROM_ASCII
@@ -25,6 +26,7 @@ qt_internal_add_tool(${target_name}
     LIBRARIES
         Qt::CorePrivate
 )
+
 qt_internal_return_unless_building_tools()
 
 qt_internal_extend_target(${target_name} CONDITION WIN32
