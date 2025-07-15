@@ -191,21 +191,8 @@ function(qt_internal_android_dependencies_content target file_content_out)
     endif()
 
     # Android Permissions
-    if(arg_PERMISSIONS)
-        foreach(permission IN LISTS arg_PERMISSIONS)
-            # Check if the permission has also extra attributes in addition to the permission name
-            list(LENGTH permission permission_len)
-            if(permission_len EQUAL 1)
-                string(APPEND file_contents "<permission name=\"${permission}\" />\n")
-            elseif(permission_len EQUAL 2)
-                list(GET permission 0 name)
-                list(GET permission 1 extras)
-                string(APPEND file_contents "<permission name=\"${name}\" extras=\"${extras}\"/>\n")
-            else()
-                message(FATAL_ERROR "Invalid permission format: ${permission} ${permission_len}")
-            endif()
-        endforeach()
-    endif()
+    _qt_internal_android_convert_permissions(permissions_string ${target} "DEPENDENCIESXML")
+    string(APPEND file_contents "${permissions_string}")
 
     # Android Features
     if(arg_FEATURES)
@@ -482,14 +469,8 @@ function(qt_internal_android_add_interface_permissions target)
         return()
     endif()
 
-    set(postprocessed_permissions "")
-    foreach(permission IN LISTS permissions)
-        # TODO: skip processing extras for now, add them back once internal API
-        # will cover adding extras using internal function.
-        list(APPEND postprocessed_permissions "name\;${permission}")
-    endforeach()
     qt_internal_set_module_transitive_properties(${target} TYPE LINK PROPERTIES
-        INTERFACE_QT_ANDROID_PERMISSIONS "${postprocessed_permissions}")
+        INTERFACE_QT_ANDROID_PERMISSIONS "${permissions}")
 endfunction()
 
 # The function stores Android features that are required by the module target.

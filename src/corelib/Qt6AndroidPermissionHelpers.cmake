@@ -25,7 +25,47 @@
 #
 # `XML`
 #   Generate XML content compatible with AndroidManifest.xml.
+#
+# `DEPENDENCIESXML`
+#   Generate XML content compatible with <module>-android-dependencies.xml.
+#   This format doesn't produce generator expression, so it should be used in
+#   the scope finalizer.
 function(_qt_internal_android_convert_permissions out_var target type)
+    if(type STREQUAL "DEPENDENCIESXML")
+        set(output "")
+        get_target_property(permissions ${target} QT_ANDROID_PERMISSIONS)
+        if(NOT permissions)
+            return()
+        endif()
+        foreach(permission IN LISTS permissions)
+            list(JOIN permission "=\"" permission)
+            list(LENGTH permission permission_length)
+            if(permission_length LESS 1)
+                message(FATAL_ERROR "Invalid QT_ANDROID_PERMISSIONS format for target"
+                    " ${target}: ${arg_PERMISSIONS}")
+            endif()
+
+            list(GET permission 0 permission_name)
+            string(APPEND output "<permission ${permission_name}\"")
+
+            math(EXPR permission_length "${permission_length} - 1")
+            set(extras_string "")
+            if(permission_length GREATER_EQUAL 1)
+                set(attributes "")
+                foreach(i RANGE 1 ${permission_length})
+                    list(GET permission ${i} permission_attribute)
+                    list(APPEND attributes "android:${permission_attribute}'")
+                endforeach()
+                list(JOIN attributes " " attributes)
+                string(REPLACE "\"" "'" attributes "${attributes}")
+                set(extras_string " extras=\"${attributes}\"")
+            endif()
+            string(APPEND output "${extras_string}/>\n")
+        endforeach()
+        set(${out_var} "${output}" PARENT_SCOPE)
+        return()
+    endif()
+
     set(permissions_property "$<TARGET_PROPERTY:${target},QT_ANDROID_PERMISSIONS>")
     set(permissions_genex "$<$<BOOL:${permissions_property}>:")
     if(type STREQUAL "JSON")

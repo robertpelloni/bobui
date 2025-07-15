@@ -491,8 +491,11 @@ if(ANDROID)
     set_property(TARGET Core APPEND PROPERTY QT_ANDROID_LIB_DEPENDENCIES
         ${INSTALL_PLUGINSDIR}/platforms/libplugins_platforms_qtforandroid.so
     )
-    set_property(TARGET Core APPEND PROPERTY QT_ANDROID_PERMISSIONS
-        android.permission.INTERNET android.permission.WRITE_EXTERNAL_STORAGE
+    qt_internal_add_android_permission(Core
+        NAME android.permission.WRITE_EXTERNAL_STORAGE
+    )
+    qt_internal_add_android_permission(Core
+        NAME android.permission.INTERNET
     )
 endif()
 

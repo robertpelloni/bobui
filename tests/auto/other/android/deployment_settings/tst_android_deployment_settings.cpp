@@ -87,7 +87,8 @@ void tst_android_deployment_settings::DeploymentSettings_data()
             << "permissions"
             << "[{\"maxSdkVersion\":\"34\",\"minSdkVersion\":\"32\",\"name\":\"PERMISSION_WITH_"
                "ATTRIBUTES\"},{\"name\":\"PERMISSION_WITHOUT_ATTRIBUTES\"},{\"name\":\"android."
-               "permission.INTERNET\"},{\"name\":\"android.permission.WRITE_EXTERNAL_STORAGE\"}]";
+               "permission.WRITE_EXTERNAL_STORAGE\"},{\"name\":\"android."
+               "permission.INTERNET\"}]";
 }
 
 void tst_android_deployment_settings::DeploymentSettings()

@@ -38,9 +38,6 @@ set_property(
         jar/Qt${QtBase_VERSION_MAJOR}AndroidNetworkInformationBackend.jar
 )
 
-set_property(
-    TARGET
-        QAndroidNetworkInformationPlugin
-    APPEND PROPERTY QT_ANDROID_PERMISSIONS
-        android.permission.ACCESS_NETWORK_STATE
+qt_internal_add_android_permission(QAndroidNetworkInformationPlugin
+    NAME android.permission.ACCESS_NETWORK_STATE
 )
