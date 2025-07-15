@@ -2878,7 +2878,8 @@ auto QMetaMethodInvoker::invokeImpl(QMetaMethod self, void *target,
             return InvokeFailReason::CouldNotQueueParameter;
         }
 
-        QVarLengthArray<const QtPrivate::QMetaTypeInterface *> argTypes;
+        QVarLengthArray<const QtPrivate::QMetaTypeInterface *, 16> argTypes;
+        argTypes.reserve(paramCount);
         argTypes.emplace_back(nullptr); // return type
         // fill in the meta types first
         for (int i = 1; i < paramCount; ++i) {

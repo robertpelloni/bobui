@@ -4191,7 +4191,8 @@ static void queued_activate(QObject *sender, int signal, QObjectPrivate::Connect
     SlotObjectGuard slotObjectGuard { c->isSlotObject ? c->slotObj : nullptr };
     locker.unlock();
 
-    QVarLengthArray<const QtPrivate::QMetaTypeInterface *> argTypes;
+    QVarLengthArray<const QtPrivate::QMetaTypeInterface *, 16> argTypes;
+    argTypes.reserve(nargs);
     argTypes.emplace_back(nullptr); // return type
     for (int n = 1; n < nargs; ++n) {
         argTypes.emplace_back(QMetaType(argumentTypes[n - 1]).iface()); // convert type ids to QMetaTypeInterfaces
