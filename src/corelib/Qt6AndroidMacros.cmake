@@ -83,43 +83,6 @@ function(_qt_internal_add_tool_to_android_deployment_settings out_var tool json_
     set(${out_var} "${${out_var}}" PARENT_SCOPE)
 endfunction()
 
-# Generates a JSON array of permissions that the 'target' may have,
-# returns an empty JSON array if no permissions were found.
-function(_qt_internal_generate_android_permissions_json out_result target)
-
-    set(${out_result} "[]" PARENT_SCOPE)
-
-    if(NOT TARGET ${target})
-        return()
-    endif()
-
-    get_target_property(permissions ${target} QT_ANDROID_PERMISSIONS)
-    if(NOT permissions)
-        return()
-    endif()
-
-    set(result "[")
-    set(json_objects "")
-    foreach(permission IN LISTS permissions)
-        # Check if the permission has also extra attributes in addition to the permission name
-        list(LENGTH permission permission_len)
-        if(permission_len EQUAL 1)
-            list(APPEND json_objects "{ \"name\": \"${permission}\" }")
-        elseif(permission_len EQUAL 2)
-            list(GET permission 0 name)
-            list(GET permission 1 extras)
-            list(APPEND json_objects "{ \"name\": \"${name}\", \"extras\": \"${extras}\" }")
-        else()
-            message(FATAL_ERROR "Invalid permission format: ${permission} ${permission_len}")
-        endif()
-    endforeach()
-
-    # Join all JSON objects with a comma. This also avoids trailing commas JSON doesn't accept
-    string(JOIN ",\n      " joined_json_objects ${json_objects})
-    string(APPEND result "\n      ${joined_json_objects}\n   ]")
-    set(${out_result} "${result}" PARENT_SCOPE)
-endfunction()
-
 # Add the specific dynamic library as the dynamic feature for the Android application target.
 function(qt6_add_android_dynamic_features target)
     cmake_parse_arguments(PARSE_ARGV 1 arg "" "" "FEATURE_TARGETS")
