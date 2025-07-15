@@ -197,7 +197,13 @@ void tst_QSslKey::initTestCase()
 
     QDir dir(testDataDir + "keys");
     const QFileInfoList fileInfoList = dir.entryInfoList(QDir::Files | QDir::Readable);
-    QRegularExpression rx(QLatin1String("^(rsa|dsa|dh|ec)-(pub|pri)-(\\d+)-?[\\w-]*\\.(pem|der)$"));
+#if OPENSSL_VERSION_NUMBER >= 0x3050000fL
+    QRegularExpression rx(QLatin1String(
+            "^(rsa|dsa|dh|ec|mldsa44|mldsa65|mldsa87)-(pub|pri)-(\\d+)-?[\\w-]*\\.(pem|der)$"));
+#else
+    QRegularExpression rx(QLatin1String(
+            "^(rsa|dsa|dh|ec)-(pub|pri)-(\\d+)-?[\\w-]*\\.(pem|der)$"));
+#endif
     for (const QFileInfo &fileInfo : fileInfoList) {
         if (fileContainsUnsupportedEllipticCurve(fileInfo.fileName()))
             continue;
@@ -207,7 +213,8 @@ void tst_QSslKey::initTestCase()
                 fileInfo,
                 match.captured(1) == QLatin1String("rsa") ? QSsl::Rsa :
                 match.captured(1) == QLatin1String("dsa") ? QSsl::Dsa :
-                match.captured(1) == QLatin1String("dh") ? QSsl::Dh : QSsl::Ec,
+                match.captured(1) == QLatin1String("dh") ? QSsl::Dh :
+                match.captured(1) == QLatin1String("ec") ? QSsl::Ec : QSsl::MlDsa,
                 match.captured(2) == QLatin1String("pub") ? QSsl::PublicKey : QSsl::PrivateKey,
                 match.captured(3).toInt(),
                 match.captured(4) == QLatin1String("pem") ? QSsl::Pem : QSsl::Der);
