@@ -13,7 +13,7 @@
 
     Example:
 
-    \snippet code/src_corelib_global_qglobal.cpp qt-version-check
+    \snippet code/src_corelib_global_qglobal_widgets.cpp qt-version-check
 
     \note the parameters are read as integers in the normal way, so should
     normally be written in decimal (so a \c 0x prefix must be used if writing
@@ -40,7 +40,7 @@
 
     Example:
 
-    \snippet code/src_corelib_global_qglobal.cpp 16
+    \snippet code/src_corelib_global_qglobal_widgets.cpp 1
 
     \sa QT_VERSION_STR, QT_VERSION_CHECK(), qVersion()
 */

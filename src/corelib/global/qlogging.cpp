@@ -2272,7 +2272,7 @@ void qErrnoWarning(int code, const char *msg, ...)
     Here is an example of a message handler that logs to a local file
     before calling the default handler:
 
-    \snippet code/src_corelib_global_qglobal.cpp 23
+    \snippet code/src_corelib_global_qglobal_widgets.cpp 2
 
     Note that the C++ standard guarantees that \c{static FILE *f} is
     initialized in a thread-safe way. We can also expect \c{fprintf()}

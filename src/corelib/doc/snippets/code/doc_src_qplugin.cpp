@@ -3,6 +3,8 @@
 
 #include <QtPlugin>
 
+QT_BEGIN_NAMESPACE
+
 //! [0]
 namespace Foo
 {
@@ -24,3 +26,5 @@ class MyInstance : public QObject
 //! [2]
 Q_IMPORT_PLUGIN(qjpeg)
 //! [2]
+
+QT_END_NAMESPACE

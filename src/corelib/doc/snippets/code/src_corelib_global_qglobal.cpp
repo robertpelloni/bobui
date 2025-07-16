@@ -1,19 +1,12 @@
 // Copyright (C) 2016 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
 
-#if __has_include(<QLabel>)
-#include <QLabel>
-void label_example()
-{
-    QLabel *label = new QLabel;
-    //! [0]
-    label->setAlignment(Qt::AlignLeft | Qt::AlignTop);
-    label->setAlignment({ });
-    //! [0]
-}
-#endif
-
 #include <QMetaProperty>
+#include <QtAssert>
+#include <QBrush>
+#include <QFile>
+
+
 //! [1]
 class MyClass_1
 {
@@ -178,27 +171,6 @@ bool examples()
     return true;
 }
 
-#if __has_include(<QStyle>)
-#include <QStyle>
-
-QStyle *style()
-{
-    static QStyle *s = nullptr;
-    return s;
-}
-
-void snippet_16()
-{
-    //! [16]
-    #if QT_VERSION >= QT_VERSION_CHECK(4, 1, 0)
-        QIcon icon = style()->standardIcon(QStyle::SP_TrashIcon);
-    #else
-        QPixmap pixmap = style()->standardPixmap(QStyle::SP_TrashIcon);
-        QIcon icon(pixmap);
-    #endif
-    //! [16]
-}
-#endif
 
 //! [17&19_include_open]
 // File: div.cpp
@@ -232,7 +204,6 @@ ASSERT failure in divide: "division by zero", file div.cpp, line 7
 //! [20]
 #endif
 
-#include <QtAssert>
 
 void pointer_example()
 {
@@ -259,36 +230,6 @@ const TInputType &myMin(const TInputType &value1, const TInputType &value2)
 }
 //! [22]
 
-# if __has_include(<QWidget>)
-//! [23]
-#include <QApplication>
-#include <stdio.h>
-#include <stdlib.h>
-
-QtMessageHandler originalHandler = nullptr;
-
-void logToFile(QtMsgType type, const QMessageLogContext &context, const QString &msg)
-{
-    QString message = qFormatLogMessage(type, context, msg);
-    static FILE *f = fopen("log.txt", "a");
-    fprintf(f, "%s\n", qPrintable(message));
-    fflush(f);
-
-    if (originalHandler)
-        originalHandler(type, context, msg);
-}
-
-int main(int argc, char **argv)
-{
-    originalHandler = qInstallMessageHandler(logToFile);
-    QApplication app(argc, argv);
-    // ...
-    return app.exec();
-}
-//! [23]
-#endif
-
-#include <QBrush>
 
 void debug_info_example()
 {
@@ -331,7 +272,6 @@ void warning_example()
     //! [27]
 }
 
-#include <QFile>
 //! [28]
 void load(const QString &fileName)
 {
@@ -399,79 +339,6 @@ namespace snippet_34
     //! [34]
 }
 
-#if __has_include(<QApplication>)
-namespace snippet_35
-{
-    class FriendlyConversation
-    {
-    public:
-        QString greeting(int type);
-    };
-
-    QString tr(const char *)
-    {
-        return "";
-    }
-
-
-    //! [35]
-    static const char *greeting_strings[] = {
-        QT_TRANSLATE_NOOP("FriendlyConversation", "Hello"),
-        QT_TRANSLATE_NOOP("FriendlyConversation", "Goodbye")
-    };
-
-    QString FriendlyConversation::greeting(int type)
-    {
-        return tr(greeting_strings[type]);
-    }
-
-    QString global_greeting(int type)
-    {
-        return qApp->translate("FriendlyConversation",
-                            greeting_strings[type]);
-    }
-    //! [35]
-}
-
-namespace snippet_36
-{
-    class FriendlyConversation
-    {
-    public:
-        QString greeting(int type);
-    };
-
-    QString tr(const char *text, const char *comment)
-    {
-        return "";
-    }
-
-
-    //! [36]
-
-    static struct { const char *source; const char *comment; } greeting_strings[] =
-    {
-        QT_TRANSLATE_NOOP3("FriendlyConversation", "Hello",
-                        "A really friendly hello"),
-        QT_TRANSLATE_NOOP3("FriendlyConversation", "Goodbye",
-                        "A really friendly goodbye")
-    };
-
-    QString FriendlyConversation::greeting(int type)
-    {
-        return tr(greeting_strings[type].source,
-                greeting_strings[type].comment);
-    }
-
-    QString global_greeting(int type)
-    {
-        return qApp->translate("FriendlyConversation",
-                            greeting_strings[type].source,
-                            greeting_strings[type].comment);
-    }
-    //! [36]
-}
-#endif // __has_include(<QApplication>)
 
 namespace snippet_qttrnnoop
 {
@@ -516,44 +383,6 @@ QString global_greeting(int type, int msgcnt)
 }
 //! [qttranslatennoop]
 
-#if __has_include(<QApplication>)
-namespace snippet_qttranslatennoop3
-{
-    class FriendlyConversation
-    {
-    public:
-        QString greeting(int type, int count);
-    };
-
-    QString tr(const char *text, const char *comment, int n)
-    {
-        return "";
-    }
-
-    //! [qttranslatennoop3]
-    static struct { const char * const source; const char * const comment; } status_strings[] = {
-        QT_TRANSLATE_N_NOOP3("Message Status", "Hello, you have %n message(s)",
-                            "A login message status"),
-        QT_TRANSLATE_N_NOOP3("Message status", "You have %n new message(s)",
-                            "A new message query status")
-    };
-
-    QString FriendlyConversation::greeting(int type, int count)
-    {
-        return tr(status_strings[type].source,
-                status_strings[type].comment, count);
-    }
-
-    QString global_greeting(int type, int count)
-    {
-        return qApp->translate("Message Status",
-                            status_strings[type].source,
-                            status_strings[type].comment,
-                            count);
-    }
-    //! [qttranslatennoop3]
-}
-#endif // __has_include(<QApplication>)
 
 void qttrid_example()
 {
@@ -565,35 +394,6 @@ void qttrid_example()
     //! [qttrid]
 }
 
-#if __has_include(<QWidget>)
-namespace qttrid_noop
-{
-    class TheClass : public QWidget
-    {
-        public:
-            TheClass(QWidget *parent = nullptr) : QWidget(parent) {
-                addLabels();
-            }
-            void addLabels();
-    };
-
-    //! [qttrid_noop]
-    static const char * const ids[] = {
-        //% "This is the first text."
-        QT_TRID_NOOP("qtn_1st_text"),
-        //% "This is the second text."
-        QT_TRID_NOOP("qtn_2nd_text"),
-        0
-    };
-
-    void TheClass::addLabels()
-    {
-        for (int i = 0; ids[i]; ++i)
-            new QLabel(qtTrId(ids[i]), this);
-    }
-    //! [qttrid_noop]
-}
-#endif
 
 namespace qttrid_n_noop
 {
@@ -613,18 +413,18 @@ namespace qttrid_n_noop
     //! [qttrid_n_noop]
 }
 
-namespace for_struct
-{
-    //! [38]
-    struct Point2D
-    {
-        int x;
-        int y;
-    };
+QT_BEGIN_NAMESPACE
 
-    Q_DECLARE_TYPEINFO(Point2D, Q_PRIMITIVE_TYPE);
-    //! [38]
-}
+//! [38]
+struct Point3D
+{
+    int x;
+    int y;
+    int z;
+};
+
+Q_DECLARE_TYPEINFO(Point3D, Q_PRIMITIVE_TYPE);
+//! [38]
 
 //! [39]
 class Point2D
@@ -706,14 +506,6 @@ private:
 };
 //! [44]
 
-#if __has_include(<QWidget>)
-void qwidget_example()
-{
-    //! [45]
-    QWidget w = QWidget();
-    //! [45]
-}
-#endif
 
 void qfuzzycompare_example()
 {
@@ -742,6 +534,8 @@ struct A : public B {
 //! [51]
 template<> class QTypeInfo<A> : public QTypeInfoMerger<A, B, C, D> {};
 //! [51]
+
+QT_END_NAMESPACE
 
 namespace snippet_52
 {
@@ -828,17 +622,6 @@ int qunreachable_example(Shapes shape)
     return -1;
 }
 
-# if __has_include(<QWidget>)
-//! [qt-version-check]
-#include <QtGlobal>
-
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
-#include <QtWidgets>
-#else
-#include <QtGui>
-#endif
-//! [qt-version-check]
-#endif
 
 void qgetenv_examples()
 {
