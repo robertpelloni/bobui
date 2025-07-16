@@ -119,7 +119,9 @@ private:
         QWaylandXdgToplevelDecorationV1 *m_decoration = nullptr;
         QScopedPointer<QWaylandXdgExportedV2> m_exported;
         QScopedPointer<QWaylandXdgDialogV1> m_xdgDialog;
+#ifndef QT_NO_SESSIONMANAGER
         QScopedPointer<QtWayland::xx_toplevel_session_v1> m_session;
+#endif
     };
 
     class Positioner : public QtWayland::xdg_positioner {

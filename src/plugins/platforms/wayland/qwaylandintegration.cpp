@@ -530,11 +530,13 @@ QWaylandShellIntegration *QWaylandIntegration::createShellIntegration(const QStr
     }
 }
 
+#ifndef QT_NO_SESSIONMANAGER
 QPlatformSessionManager *QWaylandIntegration::createPlatformSessionManager(const QString &id, const QString &key) const
 {
     Q_UNUSED(key);
     return new QWaylandSessionManager(mDisplay.data(), id);
 }
+#endif
 
 void QWaylandIntegration::reset()
 {

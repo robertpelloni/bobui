@@ -132,7 +132,9 @@ private:
     void initializeShellIntegration();
     void initializeInputDeviceIntegration();
     QWaylandShellIntegration *createShellIntegration(const QString& interfaceName);
+#ifndef QT_NO_SESSIONMANAGER
     QPlatformSessionManager *createPlatformSessionManager(const QString &id, const QString &key) const override;
+#endif
 
     const QString mPlatformName;
     QScopedPointer<QPlatformFontDatabase> mFontDb;

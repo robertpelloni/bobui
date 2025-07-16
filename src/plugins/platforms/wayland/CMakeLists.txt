@@ -77,7 +77,6 @@ qt_internal_add_module(WaylandClient
         qwaylandplatformservices.cpp qwaylandplatformservices_p.h
         qwaylandpointergestures.cpp qwaylandpointergestures_p.h
         qwaylandscreen.cpp qwaylandscreen_p.h
-        qwaylandsessionmanager.cpp qwaylandsessionmanager_p.h
         qwaylandshellsurface.cpp qwaylandshellsurface_p.h
         qwaylandshm.cpp qwaylandshm_p.h
         qwaylandshmbackingstore.cpp qwaylandshmbackingstore_p.h
@@ -231,6 +230,11 @@ qt_internal_extend_target(WaylandClient CONDITION QT_FEATURE_draganddrop
 qt_internal_extend_target(WaylandClient CONDITION QT_FEATURE_egl AND NOT QT_FEATURE_egl_x11
     DEFINES
         QT_EGL_NO_X11
+)
+
+qt_internal_extend_target(WaylandClient CONDITION QT_FEATURE_sessionmanager
+    SOURCES
+        qwaylandsessionmanager.cpp qwaylandsessionmanager_p.h
 )
 
 qt_internal_add_docs(WaylandClient
