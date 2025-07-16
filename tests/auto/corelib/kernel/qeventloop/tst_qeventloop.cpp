@@ -229,6 +229,9 @@ void tst_QEventLoop::processEvents()
 
 void tst_QEventLoop::exec()
 {
+#if !QT_CONFIG(thread)
+    QSKIP("This test requires QThread");
+#endif
     {
         QEventLoop eventLoop;
         EventLoopExiter exiter(&eventLoop);
@@ -314,6 +317,9 @@ void tst_QEventLoop::execAfterExit()
 
 void tst_QEventLoop::wakeUp()
 {
+#if !QT_CONFIG(thread)
+    QSKIP("This test requires QThread");
+#endif
     EventLoopThread thread;
     QEventLoop eventLoop;
     connect(&thread, SIGNAL(checkPoint()), &eventLoop, SLOT(quit()));
@@ -464,6 +470,12 @@ public:
 
 void tst_QEventLoop::processEventsExcludeSocket()
 {
+#ifdef Q_OS_WASM
+    QSKIP("This test requires TCP sockets");
+#endif
+#if !QT_CONFIG(thread)
+    QSKIP("This test requires QThread");
+#endif
     SocketTestThread thread;
     thread.start();
     QVERIFY(thread.wait());
@@ -564,6 +576,9 @@ namespace DeliverInDefinedOrder {
 
 void tst_QEventLoop::deliverInDefinedOrder()
 {
+#if !QT_CONFIG(thread)
+    QSKIP("This test requires QThread");
+#endif
     using namespace DeliverInDefinedOrder;
     qMetaTypeId<QThread*>();
     QThread threads[NbThread];
@@ -598,6 +613,9 @@ void tst_QEventLoop::deliverInDefinedOrder()
 
 void tst_QEventLoop::canUseQThreadQuitToExitEventLoopInStdThread()
 {
+#if !QT_CONFIG(thread)
+    QSKIP("This test requires QThread");
+#endif
 #ifdef Q_CC_MINGW
     QSKIP("Disabled for MINGW, due to a runtime bug (QTBUG-131892).");
 #endif
