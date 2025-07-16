@@ -158,7 +158,7 @@ void QWasmSuspendResumeControl::suspend()
 }
 
 // Sends any pending events. Returns true if an event was sent, false otherwise.
-bool QWasmSuspendResumeControl::sendPendingEvents()
+int QWasmSuspendResumeControl::sendPendingEvents()
 {
 #if QT_CONFIG(thread)
     Q_ASSERT(emscripten_is_main_runtime_thread());
@@ -176,7 +176,7 @@ bool QWasmSuspendResumeControl::sendPendingEvents()
         it->second(event["arg"]);
         ++count;
     }
-    return true;
+    return count;
 }
 
 void qtSendPendingEvents()
