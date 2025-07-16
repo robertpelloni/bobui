@@ -337,15 +337,15 @@ bool readPeExecutableInfo(const QString &peExecutableFileName, QString *errorMes
         return result;
     }
 
-    PeHeaderInfo peHeaderInfo(peExecutableFileName);
-    if (!peHeaderInfo.isValid()) {
-        *errorMessage = peHeaderInfo.errorMessage();
+    PeHeaderInfo *peHeaderInfo = PeHeaderInfoCache::peHeaderInfo(peExecutableFileName);
+    if (!peHeaderInfo->isValid()) {
+        *errorMessage = peHeaderInfo->errorMessage();
         return result;
     }
 
-    headerInfo->wordSize = peHeaderInfo.wordSize();
-    headerInfo->isDebug = peHeaderInfo.isDebug();
-    headerInfo->machineArch = peHeaderInfo.machineArch();
+    headerInfo->wordSize = peHeaderInfo->wordSize();
+    headerInfo->isDebug = peHeaderInfo->isDebug();
+    headerInfo->machineArch = peHeaderInfo->machineArch();
 
     result = true;
     if (optVerboseLevel > 1) {
@@ -371,13 +371,13 @@ bool readPeExecutableDependencies(const QString &peExecutableFileName, QString *
 
     dependentLibraries->clear();
 
-    PeHeaderInfo peHeaderInfo(peExecutableFileName);
-    if (!peHeaderInfo.isValid()) {
-        *errorMessage = peHeaderInfo.errorMessage();
+    PeHeaderInfo *peHeaderInfo = PeHeaderInfoCache::peHeaderInfo(peExecutableFileName);
+    if (!peHeaderInfo->isValid()) {
+        *errorMessage = peHeaderInfo->errorMessage();
         return result;
     }
 
-    *dependentLibraries = peHeaderInfo.dependentLibs();
+    *dependentLibraries = peHeaderInfo->dependentLibs();
 
     result = true;
     if (optVerboseLevel > 1) {

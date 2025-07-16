@@ -5,6 +5,7 @@
 
 #include <QtCore/private/qsystemerror_p.h>
 #include <QString>
+#include <QMap>
 
 #if defined(Q_OS_WIN)
 #  include <QtCore/qt_windows.h>
@@ -272,6 +273,19 @@ unsigned int PeHeaderInfo::ntHeaderWordSize(const ImageNtHeader *header)
     if (header->OptionalHeader.Magic == imageNtOptionlHeader64Magic)
         return 64;
     return 0;
+}
+
+typedef QMap<QString, PeHeaderInfo *> PeHeaderInfoMap;
+Q_GLOBAL_STATIC(PeHeaderInfoMap, peCache);
+
+PeHeaderInfo *PeHeaderInfoCache::peHeaderInfo(const QString &fileName)
+{
+    if (peCache->contains(fileName))
+        return peCache->value(fileName);
+
+    auto *peHeaderInfo = new PeHeaderInfo(fileName);
+    peCache->insert(fileName, peHeaderInfo);
+    return peHeaderInfo;
 }
 
 QT_END_NAMESPACE

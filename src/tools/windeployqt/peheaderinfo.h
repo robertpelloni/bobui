@@ -70,6 +70,13 @@ private:
     MsvcDebugRuntimeResult checkMsvcDebugRuntime();
 };
 
+class PeHeaderInfoCache {
+public:
+    PeHeaderInfoCache() = delete;
+
+    static PeHeaderInfo *peHeaderInfo(const QString &fileName);
+};
+
 QT_END_NAMESPACE
 
 #endif // PEHEADERINFO_H
