@@ -20,6 +20,8 @@
 #include <QtCore/qmetaobject.h>
 #include <QtCore/qvariant.h>
 #include <QtCore/qmap.h>
+#include <QtCore/qscopedvaluerollback.h>
+#include <QtCore/qset.h>
 
 #include <algorithm>
 #include <functional>
@@ -856,7 +858,7 @@ namespace QRangeModelDetails
         static constexpr bool is_default = is_any_of<protocol, ListProtocol, TableProtocol, DefaultTreeProtocol>();
     };
 
-    template <bool cacheProperties>
+    template <bool cacheProperties, bool itemsAreQObjects>
     struct PropertyData {
         static constexpr bool cachesProperties = false;
 
@@ -864,10 +866,36 @@ namespace QRangeModelDetails
     };
 
     template <>
-    struct PropertyData<true>
+    struct PropertyData<true, false>
     {
         static constexpr bool cachesProperties = true;
         mutable QHash<int, QMetaProperty> properties;
+
+        void invalidateCaches()
+        {
+            properties.clear();
+        }
+    };
+
+    template <>
+    struct PropertyData<true, true> : PropertyData<true, false>
+    {
+        struct Connection {
+            QObject *sender;
+            int role;
+
+            friend bool operator==(const Connection &lhs, const Connection &rhs) noexcept
+            {
+                return lhs.sender == rhs.sender && lhs.role == rhs.role;
+            }
+            friend size_t qHash(const Connection &c, size_t seed) noexcept
+            {
+                return qHashMulti(seed, c.sender, c.role);
+            }
+        };
+
+        QObject *context = nullptr;
+        mutable QSet<Connection> connections;
 
         void invalidateCaches()
         {
@@ -899,7 +927,8 @@ namespace QRangeModelDetails
 
     template <typename ModelStorage, typename ItemType>
     struct ModelData : Storage<ModelStorage>,
-                       PropertyData<has_metaobject_v<ItemType>>
+                       PropertyData<has_metaobject_v<ItemType>,
+                                    std::is_base_of_v<QObject, std::remove_pointer_t<ItemType>>>
     {
         using WrappedStorage = Storage<wrapped_t<ModelStorage>>;
         using iterator = typename WrappedStorage::iterator;
@@ -969,8 +998,14 @@ protected:
     }
 
 public:
-    // overridable prototypes (quasi-pure-virtual methods)
+    // keep in sync with QRangeModel::AutoConnectPolicy
+    enum class AutoConnectPolicy {
+        None,
+        Full,
+        OnRead,
+    };
 
+    // overridable prototypes (quasi-pure-virtual methods)
     void invalidateCaches();
     bool setHeaderData(int section, Qt::Orientation orientation, const QVariant &data, int role);
     bool setData(const QModelIndex &index, const QVariant &data, int role);
@@ -991,10 +1026,11 @@ public:
     QVariant headerData(int section, Qt::Orientation orientation, int role) const;
     QVariant data(const QModelIndex &index, int role) const;
     QMap<int, QVariant> itemData(const QModelIndex &index) const;
-    QHash<int, QByteArray> roleNames() const;
+    inline QHash<int, QByteArray> roleNames() const;
     QModelIndex parent(const QModelIndex &child) const;
 
     void multiData(const QModelIndex &index, QModelRoleDataSpan roleDataSpan) const;
+    void setAutoConnectPolicy();
 
     // bindings for overriding
 
@@ -1023,6 +1059,7 @@ public:
 
     // 6.11
     using MultiData = Method<&Self::multiData>;
+    using SetAutoConnectPolicy = Method<&Self::setAutoConnectPolicy>;
 
     template <typename C>
     using MethodTemplates = std::tuple<
@@ -1048,7 +1085,8 @@ public:
         typename C::Data,
         typename C::ItemData,
         typename C::RoleNames,
-        typename C::MultiData
+        typename C::MultiData,
+        typename C::SetAutoConnectPolicy
     >;
 
     static Q_CORE_EXPORT QRangeModelImplBase *getImplementation(QRangeModel *model);
@@ -1056,6 +1094,8 @@ public:
 
 private:
     friend class QRangeModelPrivate;
+    friend struct PropertyChangedHandler;
+
     QRangeModel *m_rangeModel;
 
 protected:
@@ -1081,6 +1121,7 @@ protected:
     inline bool beginMoveRows(const QModelIndex &sourceParent, int sourceFirst, int sourceLast,
                               const QModelIndex &destParent, int destRow);
     inline void endMoveRows();
+    inline AutoConnectPolicy autoConnectPolicy() const;
     inline QAbstractItemModel &itemModel();
     inline const QAbstractItemModel &itemModel() const;
 
@@ -1088,6 +1129,19 @@ protected:
     Q_CORE_EXPORT static QHash<int, QByteArray> roleNamesForMetaObject(const QAbstractItemModel &model,
                                                                        const QMetaObject &metaObject);
     Q_CORE_EXPORT static QHash<int, QByteArray> roleNamesForSimpleType();
+
+    Q_CORE_EXPORT QScopedValueRollback<bool> blockDataChangedDispatch();
+
+    Q_CORE_EXPORT static QHash<int, QMetaProperty> roleProperties(const QAbstractItemModel &model,
+                                                                  const QMetaObject &metaObject);
+    Q_CORE_EXPORT static bool connectProperty(const QModelIndex &index, QObject *item, QObject *context,
+                                              int role, const QMetaProperty &property);
+    Q_CORE_EXPORT static bool connectPropertyConst(const QModelIndex &index, QObject *item, QObject *context,
+                                                   int role, const QMetaProperty &property);
+    Q_CORE_EXPORT static bool connectProperties(const QModelIndex &index, QObject *item, QObject *context,
+                                                const QHash<int, QMetaProperty> &properties);
+    Q_CORE_EXPORT static bool connectPropertiesConst(const QModelIndex &index, QObject *item, QObject *context,
+                                                     const QHash<int, QMetaProperty> &properties);
 };
 
 template <typename Structure, typename Range,
@@ -1161,6 +1215,16 @@ protected:
             QRangeModelDetails::is_owning_or_raw_pointer<row_type>();
     static constexpr int static_column_count = QRangeModelDetails::static_size_v<row_type>;
     static constexpr bool one_dimensional_range = static_column_count == 0;
+    static constexpr bool itemsAreQObjects = std::is_base_of_v<QObject, std::remove_pointer_t<
+                                                               typename row_traits::item_type>>;
+
+    auto maybeBlockDataChangedDispatch()
+    {
+        if constexpr (itemsAreQObjects)
+            return this->blockDataChangedDispatch();
+        else
+            return false;
+    }
 
     // A row might be a value (or range of values), or a pointer.
     // row_ptr is always a pointer, and const_row_ptr is a pointer to const.
@@ -1201,6 +1265,8 @@ protected:
     static_assert(static_row_count || range_features::has_insert_range
                                    || std::is_copy_constructible_v<row_type>,
                   "The range holding a move-only row-type must support insert(pos, start, end)");
+
+    using AutoConnectPolicy = typename Ancestor::AutoConnectPolicy;
 
 public:
     static constexpr bool isMutable()
@@ -1341,8 +1407,9 @@ public:
     {
         QMap<int, QVariant> result;
         bool tried = false;
-        const auto readItemData = [this, &result, &tried](const auto &value){
+        const auto readItemData = [this, &index, &result, &tried](const auto &value){
             Q_UNUSED(this);
+            Q_UNUSED(index);
             using value_type = q20::remove_cvref_t<decltype(value)>;
             using multi_role = QRangeModelDetails::is_multi_role<value_type>;
             using wrapped_value_type = QRangeModelDetails::wrapped_t<value_type>;
@@ -1392,7 +1459,7 @@ public:
                         const int role = *it;
                         if (role == Qt::RangeModelDataRole)
                             continue;
-                        QVariant data = readRole(role, QRangeModelDetails::pointerTo(value));
+                        QVariant data = readRole(index, role, QRangeModelDetails::pointerTo(value));
                         if (data.isValid())
                             result[role] = std::move(data);
                     }
@@ -1471,7 +1538,7 @@ public:
                             else
                                 roleData.setData(QVariant::fromValue(QRangeModelDetails::pointerTo(value)));
                         } else {
-                            roleData.setData(readRole(roleData.role(),
+                            roleData.setData(readRole(index, roleData.role(),
                                                       QRangeModelDetails::pointerTo(value)));
                         }
                     }
@@ -1518,6 +1585,8 @@ public:
                                             ? QList<int>{} : QList<int>{role});
                 }
             });
+            // we emit dataChanged at the end, block dispatches from auto-connected properties
+            [[maybe_unused]] auto dataChangedBlocker = maybeBlockDataChangedDispatch();
 
             const auto writeData = [this, column = index.column(), &data, role](auto &&target) -> bool {
                 using value_type = q20::remove_cvref_t<decltype(target)>;
@@ -1641,6 +1710,8 @@ public:
                 if (success)
                     Q_EMIT this->dataChanged(index, index, data.keys());
             });
+            // we emit dataChanged at the end, block dispatches from auto-connected properties
+            [[maybe_unused]] auto dataChangedBlocker = maybeBlockDataChangedDispatch();
 
             bool tried = false;
             auto writeItemData = [this, &tried, &data](auto &target) -> bool {
@@ -1789,6 +1860,81 @@ public:
         return this->itemModel().QAbstractItemModel::roleNames();
     }
 
+    template <typename Fn>
+    bool forEachColumn(const row_type &row, int rowIndex, const QModelIndex &parent, Fn &&fn) const
+    {
+        const auto &model = this->itemModel();
+        if constexpr (one_dimensional_range) {
+            return fn(model.index(rowIndex, 0, parent), QRangeModelDetails::pointerTo(row));
+        } else if constexpr (dynamicColumns()) {
+            int columnIndex = -1;
+            return std::all_of(row.begin(), row.end(), [&](const auto &item) {
+                return fn(model.index(rowIndex, ++columnIndex, parent),
+                          QRangeModelDetails::pointerTo(item));
+            });
+        } else { // tuple-like
+            int columnIndex = -1;
+            return std::apply([fn = std::forward<Fn>(fn), &model, rowIndex, &columnIndex, parent]
+                              (const auto &...item) {
+                return (fn(model.index(rowIndex, ++columnIndex, parent),
+                           QRangeModelDetails::pointerTo(item)) && ...);
+            }, row);
+        }
+    }
+
+    bool autoConnectPropertiesInRow(const row_type &row, int rowIndex, const QModelIndex &parent) const
+    {
+        if (!QRangeModelDetails::isValid(row))
+            return false;
+        return forEachColumn(row, rowIndex, parent, [this](const QModelIndex &index, QObject *item) {
+            if constexpr (isMutable())
+                return Self::connectProperties(index, item, m_data.context, m_data.properties);
+            else
+                return Self::connectPropertiesConst(index, item, m_data.context, m_data.properties);
+        });
+    }
+
+    void clearConnectionInRow(const row_type &row, int rowIndex, const QModelIndex &parent) const
+    {
+        if (!QRangeModelDetails::isValid(row))
+            return;
+        forEachColumn(row, rowIndex, parent, [this](const QModelIndex &, QObject *item) {
+            m_data.connections.removeIf([item](const auto &connection) {
+                return connection.sender == item;
+            });
+            return true;
+        });
+    }
+
+    void setAutoConnectPolicy()
+    {
+        // will be 'void' if columns don't all have the same type
+        if constexpr (itemsAreQObjects) {
+            using item_type = std::remove_pointer_t<typename row_traits::item_type>;
+
+            delete m_data.context;
+            m_data.connections = {};
+            switch (this->autoConnectPolicy()) {
+            case AutoConnectPolicy::None:
+                m_data.context = nullptr;
+                break;
+            case AutoConnectPolicy::Full:
+                m_data.context = new QObject(&this->itemModel());
+                m_data.properties = QRangeModelImplBase::roleProperties(this->itemModel(),
+                                                                        item_type::staticMetaObject);
+                if (!m_data.properties.isEmpty())
+                    that().autoConnectPropertiesImpl();
+                break;
+            case AutoConnectPolicy::OnRead:
+                m_data.context = new QObject(&this->itemModel());
+                break;
+            }
+        } else {
+#ifndef QT_NO_DEBUG
+            qWarning("All items in the range must be QObject subclasses");
+#endif
+        }
+    }
 
     template <typename InsertFn>
     bool doInsertColumns(int column, int count, const QModelIndex &parent, InsertFn insertFn)
@@ -1807,6 +1953,23 @@ public:
         }
 
         this->endInsertColumns();
+
+        // endInsertColumns emits columnsInserted, at which point clients might
+        // have populated the new columns with objects (if the columns aren't objects
+        // themselves).
+        if constexpr (itemsAreQObjects) {
+            if (m_data.context && this->autoConnectPolicy() == AutoConnectPolicy::Full) {
+                for (int r = 0; r < that().rowCount(parent); ++r) {
+                    for (int c = column; c < column + count; ++c) {
+                        const QModelIndex index = that().index(r, c, parent);
+                        writeAt(index, [this, &index](QObject *item){
+                            return Self::connectProperties(index, item,
+                                                           m_data.context, m_data.properties);
+                        });
+                    }
+                }
+            }
+        }
 
         return true;
     }
@@ -1832,6 +1995,22 @@ public:
             range_type * const children = childRange(parent);
             if (!children)
                 return false;
+
+            if constexpr (itemsAreQObjects) {
+                if (m_data.context && this->autoConnectPolicy() == AutoConnectPolicy::OnRead) {
+                    for (int r = 0; r < that().rowCount(parent); ++r) {
+                        for (int c = column; c < column + count; ++c) {
+                            const QModelIndex index = that().index(r, c, parent);
+                            writeAt(index, [this](QObject *item){
+                                m_data.connections.removeIf([item](const auto &connection) {
+                                    return connection.sender == item;
+                                });
+                                return true;
+                            });
+                        }
+                    }
+                }
+            }
 
             this->beginRemoveColumns(parent, column, column + count - 1);
             for (auto &child : *children) {
@@ -1896,6 +2075,19 @@ public:
 
         this->endInsertRows();
 
+        // endInsertRows emits rowsInserted, at which point clients might
+        // have populated the new row with objects (if the rows aren't objects
+        // themselves).
+        if constexpr (itemsAreQObjects) {
+            if (m_data.context && this->autoConnectPolicy() == AutoConnectPolicy::Full) {
+                const auto begin = QRangeModelDetails::pos(children, row);
+                const auto end = std::next(begin, count);
+                int rowIndex = row;
+                for (auto it = begin; it != end; ++it, ++rowIndex)
+                    autoConnectPropertiesInRow(*it, rowIndex, parent);
+            }
+        }
+
         return true;
     }
 
@@ -1932,6 +2124,16 @@ public:
             range_type *children = childRange(parent);
             if (!children)
                 return false;
+
+            if constexpr (itemsAreQObjects) {
+                if (m_data.context && this->autoConnectPolicy() == AutoConnectPolicy::OnRead) {
+                    const auto begin = QRangeModelDetails::pos(children, row);
+                    const auto end = std::next(begin, count);
+                    int rowIndex = row;
+                    for (auto it = begin; it != end; ++it, ++rowIndex)
+                        clearConnectionInRow(*it, rowIndex, parent);
+                }
+            }
 
             this->beginRemoveRows(parent, row, row + count - 1);
             [[maybe_unused]] bool callEndRemoveColumns = false;
@@ -2041,6 +2243,8 @@ public:
     using MoveRows = Override<QRangeModelImplBase::MoveRows, &Self::moveRows>;
 
     using MultiData = Override<QRangeModelImplBase::MultiData, &Self::multiData>;
+    using SetAutoConnectPolicy = Override<QRangeModelImplBase::SetAutoConnectPolicy,
+                                          &Self::setAutoConnectPolicy>;
 
 protected:
     ~QRangeModelImpl()
@@ -2211,23 +2415,37 @@ protected:
     }
 
     template <typename ItemType>
-    QVariant readRole(int role, ItemType *gadget) const
+    QVariant readRole(const QModelIndex &index, int role, ItemType *gadget) const
     {
         using item_type = std::remove_pointer_t<ItemType>;
         QVariant result;
         QMetaProperty prop = roleProperty<item_type>(role);
-        if (!prop.isValid() && role == Qt::EditRole)
+        if (!prop.isValid() && role == Qt::EditRole) {
+            role = Qt::DisplayRole;
             prop = roleProperty<item_type>(Qt::DisplayRole);
+        }
 
-        if (prop.isValid())
+        if (prop.isValid()) {
+            if constexpr (itemsAreQObjects) {
+                const typename ModelData::Connection connection = {gadget, role};
+                if (prop.hasNotifySignal() && this->autoConnectPolicy() == AutoConnectPolicy::OnRead
+                                           && !m_data.connections.contains(connection)) {
+                    if constexpr (isMutable())
+                        Self::connectProperty(index, gadget, m_data.context, role, prop);
+                    else
+                        Self::connectPropertyConst(index, gadget, m_data.context, role, prop);
+                    m_data.connections.insert(connection);
+                }
+            }
             result = readProperty(prop, gadget);
+        }
         return result;
     }
 
     template <typename ItemType>
-    QVariant readRole(int role, const ItemType &gadget) const
+    QVariant readRole(const QModelIndex &index, int role, const ItemType &gadget) const
     {
-        return readRole(role, &gadget);
+        return readRole(index, role, &gadget);
     }
 
     template <typename ItemType>
@@ -2608,6 +2826,28 @@ protected:
         }
     }
 
+    bool autoConnectPropertiesRange(const range_type &range, const QModelIndex &parent) const
+    {
+        int rowIndex = 0;
+        for (const auto &row : range) {
+            if (!this->autoConnectPropertiesInRow(row, rowIndex, parent))
+                return false;
+            Q_ASSERT(QRangeModelDetails::isValid(row));
+            const auto &children = this->protocol().childRows(QRangeModelDetails::refTo(row));
+            if (!autoConnectPropertiesRange(children,
+                                            this->itemModel().index(rowIndex, 0, parent))) {
+                return false;
+            }
+            ++rowIndex;
+        }
+        return true;
+    }
+
+    bool autoConnectPropertiesImpl() const
+    {
+        return autoConnectPropertiesRange(*this->m_data.model(), {});
+    }
+
     decltype(auto) rowDataImpl(const QModelIndex &index) const
     {
         const_row_ptr parentRow = static_cast<const_row_ptr>(index.constInternalPointer());
@@ -2817,6 +3057,17 @@ protected:
 
     void resetParentInChildren(range_type *)
     {
+    }
+
+    bool autoConnectPropertiesImpl() const
+    {
+        bool result = true;
+        int rowIndex = 0;
+        for (const auto &row : *this->m_data.model()) {
+            result &= this->autoConnectPropertiesInRow(row, rowIndex, {});
+            ++rowIndex;
+        }
+        return result;
     }
 };
 

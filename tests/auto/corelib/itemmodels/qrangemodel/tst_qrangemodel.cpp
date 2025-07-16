@@ -10,6 +10,8 @@
 #include <QtCore/qstringlistmodel.h>
 #include <QtTest/qsignalspy.h>
 
+#include <QtGui/qcolor.h>
+
 #if QT_CONFIG(itemmodeltester)
 #include <QtTest/qabstractitemmodeltester.h>
 #endif
@@ -34,6 +36,8 @@ private slots:
     void overrideRoleNames();
     void setRoleNames();
     void defaultRoleNames();
+    void autoConnectPolicy_data();
+    void autoConnectPolicy();
 
     void dimensions_data() { createTestData(); }
     void dimensions();
@@ -727,6 +731,232 @@ void tst_QRangeModel::defaultRoleNames()
                  qaimRoleNames);
         QCOMPARE(QRangeModel(QList<int>{}).roleNames(), singleValueRoleNames);
         QCOMPARE(QRangeModel(QList<QList<QString>>{}).roleNames(), singleValueRoleNames);
+    }();
+}
+
+class MultiRoleObject : public Object
+{
+public:
+    template <typename Signal>
+    bool isConnected(Signal &&signal) const
+    {
+        return isSignalConnected(QMetaMethod::fromSignal(signal));
+    }
+};
+
+template <>
+struct QRangeModel::RowOptions<MultiRoleObject>
+{
+    static constexpr auto rowCategory = QRangeModel::RowCategory::MultiRoleItem;
+};
+
+void tst_QRangeModel::autoConnectPolicy_data()
+{
+    QTest::addColumn<QRangeModel::AutoConnectPolicy>("policy");
+
+    QTest::addRow("Full") << QRangeModel::AutoConnectPolicy::Full;
+    QTest::addRow("OnRead") << QRangeModel::AutoConnectPolicy::OnRead;
+}
+
+void tst_QRangeModel::autoConnectPolicy()
+{
+    QFETCH(const QRangeModel::AutoConnectPolicy, policy);
+
+    [policy]{
+        QList<MultiRoleObject *> objectList = {
+            new MultiRoleObject,
+            new MultiRoleObject,
+            new MultiRoleObject,
+        };
+        QRangeModel model(&objectList);
+        model.setAutoConnectPolicy(policy);
+        QSignalSpy dataChangedSpy(&model, &QAbstractItemModel::dataChanged);
+
+        int emissions = 0;
+        objectList[0]->setString("String 0");
+        if (policy == QRangeModel::AutoConnectPolicy::OnRead) {
+            QCOMPARE(dataChangedSpy.size(), emissions);
+        } else {
+            QCOMPARE(dataChangedSpy.size(), ++emissions);
+            QCOMPARE(dataChangedSpy.at(0).at(0), model.index(0, 0));
+            QCOMPARE(dataChangedSpy.at(0).at(1), model.index(0, 0));
+            QCOMPARE(dataChangedSpy.at(0).at(2), QVariant::fromValue(QList<int>{Qt::UserRole}));
+        }
+
+        if (policy == QRangeModel::AutoConnectPolicy::OnRead) {
+            QVERIFY(!objectList.at(1)->isConnected(&Object::stringChanged));
+            QVERIFY(!objectList.at(1)->isConnected(&Object::numberChanged));
+            model.data(model.index(1, 0), Qt::UserRole + 1);
+            QVERIFY(!objectList.at(1)->isConnected(&Object::stringChanged));
+            QVERIFY(objectList.at(1)->isConnected(&Object::numberChanged));
+            model.itemData(model.index(1, 0));
+            QVERIFY(objectList.at(1)->isConnected(&Object::stringChanged));
+        }
+
+        objectList[1]->setNumber(42);
+        QCOMPARE(dataChangedSpy.size(), ++emissions);
+        QCOMPARE(dataChangedSpy.at(emissions - 1).at(0), model.index(1, 0));
+        QCOMPARE(dataChangedSpy.at(emissions - 1).at(1), model.index(1, 0));
+        QCOMPARE(dataChangedSpy.at(emissions - 1).at(2), QVariant::fromValue(QList<int>{Qt::UserRole + 1}));
+
+        QVERIFY(model.insertRow(0));
+        QCOMPARE(objectList.at(1)->isConnected(&Object::numberChanged),
+                 policy == QRangeModel::AutoConnectPolicy::Full);
+        QCOMPARE(objectList.at(1)->isConnected(&Object::stringChanged),
+                 policy == QRangeModel::AutoConnectPolicy::Full);
+    }();
+
+    [policy]{
+        QList<QList<MultiRoleObject *>> objectTable = {
+            {new MultiRoleObject, new MultiRoleObject},
+            {new MultiRoleObject, new MultiRoleObject},
+        };
+        QRangeModel model(&objectTable);
+        connect(&model, &QRangeModel::rowsInserted,
+                &model, [&objectTable](const QModelIndex &, int first, int last){
+            while (first <= last) {
+                objectTable[first][0] = new MultiRoleObject;
+                objectTable[first][1] = new MultiRoleObject;
+                ++first;
+            }
+        });
+        connect(&model, &QRangeModel::columnsInserted,
+                &model, [&objectTable](const QModelIndex &, int first, int last){
+            for (auto &row : objectTable) {
+                for (int column = first; column <= last; ++column)
+                    row[column] = new MultiRoleObject;
+            }
+        });
+        model.setAutoConnectPolicy(policy);
+        QSignalSpy dataChangedSpy(&model, &QAbstractItemModel::dataChanged);
+
+        objectTable[0][1]->setString("String 0/1");
+        QCOMPARE(dataChangedSpy.size(), policy == QRangeModel::AutoConnectPolicy::Full ? 1 : 0);
+
+        model.insertRows(1, 2);
+        for (const auto &row : std::as_const(objectTable)) {
+            for (const auto &object : row) {
+                QCOMPARE(object->isConnected(&Object::numberChanged),
+                         policy == QRangeModel::AutoConnectPolicy::Full);
+                QCOMPARE(object->isConnected(&Object::stringChanged),
+                         policy == QRangeModel::AutoConnectPolicy::Full);
+            }
+        }
+
+        model.insertColumn(0);
+        for (const auto &row : std::as_const(objectTable)) {
+            for (const auto &object : row) {
+                QCOMPARE(object->isConnected(&Object::numberChanged),
+                         policy == QRangeModel::AutoConnectPolicy::Full);
+                QCOMPARE(object->isConnected(&Object::stringChanged),
+                         policy == QRangeModel::AutoConnectPolicy::Full);
+            }
+        }
+    }();
+
+    [policy]{
+        QList<std::tuple<MultiRoleObject *, MultiRoleObject *>> objectTable = {
+            {new MultiRoleObject, new MultiRoleObject},
+            {new MultiRoleObject, new MultiRoleObject},
+        };
+        QRangeModel model(&objectTable);
+        model.setAutoConnectPolicy(policy);
+        QSignalSpy dataChangedSpy(&model, &QAbstractItemModel::dataChanged);
+
+        if (policy == QRangeModel::AutoConnectPolicy::OnRead) {
+            for (int row = 0; row < model.rowCount(); ++row) {
+                for (int column = 0; column < model.columnCount(); ++column)
+                    model.itemData(model.index(row, column));
+            }
+        }
+
+        auto *topRight = get<1>(objectTable[0]);
+        auto *bottomLeft = get<0>(objectTable[1]);
+        topRight->setNumber(52);
+        QCOMPARE(dataChangedSpy.size(), 1);
+
+        QVERIFY(bottomLeft->isConnected(&Object::numberChanged));
+        QVERIFY(bottomLeft->isConnected(&Object::stringChanged));
+        QVERIFY(model.removeRows(1, 1));
+        bottomLeft->setNumber(52); // this will lazily break the connection
+        QVERIFY(!bottomLeft->isConnected(&Object::numberChanged));
+        QVERIFY(bottomLeft->isConnected(&Object::stringChanged));
+        QCOMPARE(dataChangedSpy.size(), 1);
+        bottomLeft->setNumber(53); // this should not crash
+        bottomLeft->setString("No update");
+        QVERIFY(!bottomLeft->isConnected(&Object::stringChanged));
+
+        const QModelIndex index = model.index(0, 0);
+        dataChangedSpy.clear();
+        QVERIFY(model.setData(index, "string", Qt::UserRole));
+        QCOMPARE(dataChangedSpy.count(), 1);
+        QCOMPARE(dataChangedSpy.back().at(2),
+                 QVariant::fromValue(QList<int>{Qt::UserRole}));
+        // this will right now emit dataChanged three times:
+        QVERIFY(model.setItemData(index, QMap<int, QVariant>{
+            {Qt::UserRole, QVariant("string")},
+            {Qt::UserRole + 1, QVariant(42)},
+        }));
+        QCOMPARE(dataChangedSpy.count(), 2);
+        QCOMPARE(dataChangedSpy.back().at(2),
+                 QVariant::fromValue(QList<int>{Qt::UserRole, Qt::UserRole + 1}));
+        QVERIFY(model.setData(index, 42, Qt::UserRole + 1));
+        QCOMPARE(dataChangedSpy.count(), 3);
+        QCOMPARE(dataChangedSpy.back().at(2),
+                 QVariant::fromValue(QList<int>{Qt::UserRole + 1}));
+    }();
+
+    [policy]{
+        using Tree = QList<MultiRoleObject *>;
+        struct ObjectTreeProtocol
+        {
+            const MultiRoleObject *parentRow(const MultiRoleObject &row) const
+            {
+                return static_cast<MultiRoleObject *>(row.parent());
+            }
+            void setParentRow(MultiRoleObject &row, MultiRoleObject *parent)
+            {
+                row.setParent(parent);
+            }
+            const Tree &childRows(const MultiRoleObject &row) const {
+                // don't do that at home...
+                return *reinterpret_cast<const Tree *>(&row.children());
+            }
+            Tree &childRows(const MultiRoleObject &) {
+                empty = {};
+                return empty;
+            }
+            Tree empty;
+        };
+        Tree tree {
+            new MultiRoleObject,
+            new MultiRoleObject,
+            new MultiRoleObject,
+        };
+        tree[0]->setObjectName("root 0");
+        tree[1]->setObjectName("root 1");
+        tree[2]->setObjectName("root 2");
+        auto *child01 = new MultiRoleObject;
+        child01->setObjectName("child 0/1");
+        child01->setParent(tree[0]);
+        (new MultiRoleObject)->setParent(tree[1]);
+        (new MultiRoleObject)->setParent(tree[2]);
+
+        QRangeModel model(std::ref(tree), ObjectTreeProtocol{});
+        QSignalSpy dataChangedSpy(&model, &QAbstractItemModel::dataChanged);
+        model.setAutoConnectPolicy(policy);
+
+        const QModelIndex root0 = model.index(0, 0);
+        const QModelIndex child01Index = model.index(0, 0, root0);
+        if (policy == QRangeModel::AutoConnectPolicy::OnRead)
+            QVERIFY(model.data(child01Index, Qt::UserRole + 1).isValid());
+
+        child01->setNumber(42);
+        QCOMPARE(dataChangedSpy.size(), 1);
+
+        QCOMPARE(dataChangedSpy.at(0).at(0).value<QModelIndex>(), child01Index);
+        QCOMPARE(dataChangedSpy.at(0).at(1).value<QModelIndex>(), child01Index);
+        QCOMPARE(dataChangedSpy.at(0).at(2), QVariant::fromValue(QList{Qt::UserRole + 1}));
     }();
 }
 

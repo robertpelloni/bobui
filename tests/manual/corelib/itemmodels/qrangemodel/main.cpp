@@ -170,7 +170,7 @@ class Object : public QObject
     Q_PROPERTY(QString display READ display WRITE setDisplay NOTIFY displayChanged)
 
 public:
-    Object(int x)
+    Object(int x, QObject *parent = nullptr)
         : m_display(QString::number(x))
     {}
     QString display() const { return m_display; }
@@ -196,6 +196,13 @@ class ModelFactory : public QObject
     std::vector<int> numbers = {1, 2, 3, 4, 5};
     QList<QString> strings = {u"one"_s, u"two"_s, u"three"_s};
     std::array<int, 1000000> largeArray = {};
+    std::array<Object *, 10000> objects = {};
+
+    void updateAllObjects()
+    {
+        for (auto *object : objects)
+            object->setDisplay(QTime::currentTime().toString());
+    }
 
 public slots:
     QRangeModel *makeNumbers()
@@ -357,7 +364,7 @@ public slots:
         //     std::make_unique<QString>("C"),
         // };
         // return new QRangeModel(std::move(data));
-        return nullptr;
+        return new QRangeModel(QList{"Nothing to see here"});
     }
 
     QRangeModel *makeUniqueRows()
@@ -410,7 +417,34 @@ public slots:
 
         return new QRangeModel(std::ref(europe));
     }
+
+    QRangeModel *makeAutoConnectedObjects()
+    {
+        QRangeModel *model = new QRangeModel(std::ref(objects));
+        QTimer *updater = new QTimer(model);
+        connect(updater, &QTimer::timeout, this, &ModelFactory::updateAllObjects);
+
+        for (int i = 0; i < objects.size(); ++i)
+            objects[i] = new Object(i, model);
+        updater->start(1000);
+        model->setAutoConnectPolicy(QRangeModel::AutoConnectPolicy::OnRead);
+        return model;
+    }
+
+    QRangeModel *makeAutoConnectedConstObjects()
+    {
+        QRangeModel *model = new QRangeModel(&std::as_const(objects));
+        QTimer *updater = new QTimer(model);
+        connect(updater, &QTimer::timeout, this, &ModelFactory::updateAllObjects);
+
+        for (int i = 0; i < objects.size(); ++i)
+            objects[i] = new Object(i, model);
+        updater->start(1000);
+        model->setAutoConnectPolicy(QRangeModel::AutoConnectPolicy::Full);
+        return model;
+    }
 };
+
 struct QMetaMethodEnumerator
 {
     struct iterator
@@ -498,13 +532,11 @@ public:
 
         QComboBox *modelPicker = new QComboBox;
         connect(modelPicker, &QComboBox::currentIndexChanged, this, &MainWindow::modelChanged);
-        // this will implicitly run modelChanged()
-        modelPicker->setModel(new QRangeModel(QMetaMethodEnumerator::fromType<ModelFactory>(),
-                                              modelPicker));
-        modelPicker->setModelColumn(1);
 
         QToolBar *toolBar = addToolBar(tr("Model Operations"));
         toolBar->addWidget(modelPicker);
+
+        toolBar->addSeparator();
 
         QAction *addAction = toolBar->addAction(tr("Add"), this, &MainWindow::onAdd);
         addAction->setIcon(QIcon::fromTheme(QIcon::ThemeIcon::ListAdd));
@@ -518,6 +550,38 @@ public:
         indentAction->setIcon(QIcon::fromTheme(QIcon::ThemeIcon::FormatIndentMore));
         QAction *dedentAction = toolBar->addAction(tr("Move out"), this, &MainWindow::onOut);
         dedentAction->setIcon(QIcon::fromTheme(QIcon::ThemeIcon::FormatIndentLess));
+
+        toolBar->addSeparator();
+
+        QAction *fullAutoConnectAction = new QAction(tr("Full"));
+        fullAutoConnectAction->setCheckable(true);
+        fullAutoConnectAction->setData(QVariant::fromValue(QRangeModel::AutoConnectPolicy::Full));
+        QAction *onReadAutoConnectAction = new QAction(tr("On Read"));
+        onReadAutoConnectAction->setCheckable(true);
+        onReadAutoConnectAction->setData(QVariant::fromValue(QRangeModel::AutoConnectPolicy::OnRead));
+
+        connectionOptions = new QActionGroup(this);
+        connectionOptions->setExclusive(true);
+        connectionOptions->setExclusionPolicy(QActionGroup::ExclusionPolicy::ExclusiveOptional);
+        connectionOptions->addAction(fullAutoConnectAction);
+        connectionOptions->addAction(onReadAutoConnectAction);
+
+        toolBar->addAction(fullAutoConnectAction);
+        toolBar->addAction(onReadAutoConnectAction);
+
+        connect(connectionOptions, &QActionGroup::triggered, this, [this](){
+            QAction *checkedAction = connectionOptions->checkedAction();
+            const auto policy = checkedAction ? checkedAction->data().value<QRangeModel::AutoConnectPolicy>()
+                                              : QRangeModel::AutoConnectPolicy::None;
+
+            qDebug() << "Switching to policy" << policy;
+            model->setAutoConnectPolicy(policy);
+        });
+
+        // this will implicitly run modelChanged() and update the UI
+        modelPicker->setModel(new QRangeModel(QMetaMethodEnumerator::fromType<ModelFactory>(),
+                                              modelPicker));
+        modelPicker->setModelColumn(1);
     }
 
 private:
@@ -547,6 +611,10 @@ private:
             qDebug() << "root object in context" << quickWidget->engine()->contextForObject(quickWidget->rootObject())->objectForName("root");
             qDebug() << "list object in context" << quickWidget->engine()->contextForObject(quickWidget->rootObject())->objectForName("list");
 #endif
+            for (auto *action : connectionOptions->actions()) {
+                action->setChecked(action->data().value<QRangeModel::AutoConnectPolicy>()
+                                == model->autoConnectPolicy());
+            }
         }
 
         delete oldModel;
@@ -625,6 +693,7 @@ private:
 #ifdef QUICK_UI
     QQuickWidget *quickWidget;
 #endif
+    QActionGroup *connectionOptions;
 };
 
 int main(int argc, char *argv[])

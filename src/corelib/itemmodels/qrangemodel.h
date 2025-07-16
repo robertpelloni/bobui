@@ -16,8 +16,17 @@ class Q_CORE_EXPORT QRangeModel : public QAbstractItemModel
     Q_OBJECT
     Q_PROPERTY(QHash<int, QByteArray> roleNames READ roleNames WRITE setRoleNames RESET resetRoleNames
                                                 NOTIFY roleNamesChanged FINAL)
+    Q_PROPERTY(AutoConnectPolicy autoConnectPolicy READ autoConnectPolicy WRITE setAutoConnectPolicy
+                                                NOTIFY autoConnectPolicyChanged FINAL)
 
 public:
+    enum class AutoConnectPolicy {
+        None,
+        Full,
+        OnRead,
+    };
+    Q_ENUM(AutoConnectPolicy)
+
     enum class RowCategory {
         Default,
         MultiRoleItem,
@@ -100,8 +109,12 @@ public:
     Qt::DropActions supportedDragActions() const override;
     Qt::DropActions supportedDropActions() const override;
 
+    AutoConnectPolicy autoConnectPolicy() const;
+    void setAutoConnectPolicy(AutoConnectPolicy policy);
+
 Q_SIGNALS:
     void roleNamesChanged();
+    void autoConnectPolicyChanged();
 
 protected Q_SLOTS:
     void resetInternalData() override;
@@ -127,6 +140,10 @@ void QRangeModelImplBase::changePersistentIndexList(const QModelIndexList &from,
                                                           const QModelIndexList &to)
 {
     m_rangeModel->changePersistentIndexList(from, to);
+}
+QHash<int, QByteArray> QRangeModelImplBase::roleNames() const
+{
+    return m_rangeModel->roleNames();
 }
 void QRangeModelImplBase::dataChanged(const QModelIndex &from, const QModelIndex &to,
                                             const QList<int> &roles)
@@ -194,6 +211,11 @@ QAbstractItemModel &QRangeModelImplBase::itemModel()
 const QAbstractItemModel &QRangeModelImplBase::itemModel() const
 {
     return *m_rangeModel;
+}
+
+QRangeModelImplBase::AutoConnectPolicy QRangeModelImplBase::autoConnectPolicy() const
+{
+    return QRangeModelImplBase::AutoConnectPolicy(m_rangeModel->autoConnectPolicy());
 }
 
 // Helper templates that we can forward declare in the _impl header,

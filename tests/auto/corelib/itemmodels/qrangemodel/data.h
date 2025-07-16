@@ -113,20 +113,36 @@ struct QRangeModel::ItemAccess<ItemAccessType>
 class Object : public QObject
 {
     Q_OBJECT
-    Q_PROPERTY(QString string READ string WRITE setString)
-    Q_PROPERTY(int number READ number WRITE setNumber)
+    Q_PROPERTY(QString string READ string WRITE setString NOTIFY stringChanged)
+    Q_PROPERTY(int number READ number WRITE setNumber NOTIFY numberChanged)
 public:
     using QObject::QObject;
 
     QString string() const { return m_string; }
-    void setString(const QString &string) { m_string = string; }
+    void setString(const QString &string)
+    {
+        if (m_string == string)
+            return;
+        m_string = string;
+        Q_EMIT stringChanged();
+    }
     int number() const { return m_number; }
-    void setNumber(int number) { m_number = number; }
+    void setNumber(int number)
+    {
+        if (m_number == number)
+            return;
+        m_number = number;
+        Q_EMIT numberChanged(m_number);
+    }
+
+Q_SIGNALS:
+    void stringChanged();
+    void numberChanged(int number);
 
 private:
     // note: default values need to be convertible to each other
     QString m_string = "1234";
-    int m_number = 42;
+    int m_number = -1;
 };
 
 // a class that can be both and requires disambiguation

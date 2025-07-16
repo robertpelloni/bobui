@@ -7,6 +7,8 @@
 
 #include <QtCore/private/qabstractitemmodel_p.h>
 
+#include <variant>
+
 QT_BEGIN_NAMESPACE
 
 class QRangeModelPrivate : QAbstractItemModelPrivate
@@ -18,11 +20,95 @@ public:
         : impl(std::move(impl))
     {}
 
-private:
     std::unique_ptr<QRangeModelImplBase, QRangeModelImplBase::Deleter> impl;
     friend class QRangeModelImplBase;
 
+    static QRangeModelPrivate *get(QRangeModel *model) { return model->d_func(); }
+    static const QRangeModelPrivate *get(const QRangeModel *model) { return model->d_func(); }
+
     mutable QHash<int, QByteArray> m_roleNames;
+    QRangeModel::AutoConnectPolicy m_autoConnectPolicy = QRangeModel::AutoConnectPolicy::None;
+    bool m_dataChangedDispatchBlocked = false;
+
+    static void emitDataChanged(const QModelIndex &index, int role)
+    {
+        const auto *model = static_cast<const QRangeModel *>(index.model());
+        if (!get(model)->m_dataChangedDispatchBlocked) {
+            const auto *emitter = QRangeModelImplBase::getImplementation(model);
+            const_cast<QRangeModelImplBase *>(emitter)->dataChanged(index, index, {role});
+        }
+    }
+};
+
+struct PropertyChangedHandler
+{
+    PropertyChangedHandler(const QPersistentModelIndex &index, int role)
+        : storage{Data{index, role}}
+    {}
+
+    // move-only
+    ~PropertyChangedHandler() = default;
+    PropertyChangedHandler(PropertyChangedHandler &&other) noexcept
+        : connection(std::move(other.connection)), storage(std::move(other.storage))
+    {
+        Q_ASSERT(std::holds_alternative<Data>(storage));
+        // A moved-from handler is essentially a reference to the moved-to
+        // handler (which lives inside QSlotObject/QCallableObject). This
+        // way we can update the stored handler with the created connection.
+        other.storage = this;
+    }
+    PropertyChangedHandler &operator=(PropertyChangedHandler &&) = delete;
+    PropertyChangedHandler(const PropertyChangedHandler &) = delete;
+    PropertyChangedHandler &operator=(const PropertyChangedHandler &) = delete;
+
+    // we can assign a connection to a moved-from handler to update the
+    // handler stored in the QSlotObject/QCallableObject.
+    PropertyChangedHandler &operator=(const QMetaObject::Connection &connection) noexcept
+    {
+        Q_ASSERT(std::holds_alternative<PropertyChangedHandler *>(storage));
+        std::get<PropertyChangedHandler *>(storage)->connection = connection;
+        return *this;
+    }
+
+    void operator()();
+
+private:
+    QMetaObject::Connection connection;
+    struct Data
+    {
+        QPersistentModelIndex index;
+        int role = -1;
+    };
+    std::variant<PropertyChangedHandler *, Data> storage;
+};
+
+void PropertyChangedHandler::operator()()
+{
+    Q_ASSERT(std::holds_alternative<Data>(storage));
+    const auto &data = std::get<Data>(storage);
+    if (!data.index.isValid()) {
+        if (!QObject::disconnect(connection))
+            qWarning() << "Failed to break connection for" << Qt::ItemDataRole(data.role);
+    } else {
+        QRangeModelPrivate::emitDataChanged(data.index, data.role);
+    }
+}
+
+struct ConstPropertyChangedHandler
+{
+    ConstPropertyChangedHandler(const QModelIndex &index, int role)
+        : index(index), role(role)
+    {}
+
+    // move-only
+    ~ConstPropertyChangedHandler() = default;
+    ConstPropertyChangedHandler(ConstPropertyChangedHandler &&other) noexcept = default;
+
+    void operator()() { QRangeModelPrivate::emitDataChanged(index, role); }
+
+private:
+    QModelIndex index;
+    int role = -1;
 };
 
 QRangeModel::QRangeModel(QRangeModelImplBase *impl, QObject *parent)
@@ -38,6 +124,96 @@ QRangeModelImplBase *QRangeModelImplBase::getImplementation(QRangeModel *model)
 const QRangeModelImplBase *QRangeModelImplBase::getImplementation(const QRangeModel *model)
 {
     return model->d_func()->impl.get();
+}
+
+QScopedValueRollback<bool> QRangeModelImplBase::blockDataChangedDispatch()
+{
+    return QScopedValueRollback(m_rangeModel->d_func()->m_dataChangedDispatchBlocked, true);
+}
+
+/*!
+    \internal
+
+    Using \a metaObject, return a mapping of roles to the matching QMetaProperties.
+*/
+QHash<int, QMetaProperty> QRangeModelImplBase::roleProperties(const QAbstractItemModel &model,
+                                                              const QMetaObject &metaObject)
+{
+    const auto roles = model.roleNames();
+    QHash<int, QMetaProperty> result;
+    for (auto &&[role, roleName] : roles.asKeyValueRange()) {
+        if (role == Qt::RangeModelDataRole)
+            continue;
+        result[role] = metaObject.property(metaObject.indexOfProperty(roleName));
+    }
+    return result;
+}
+
+template <auto Handler>
+static bool connectPropertiesHelper(const QModelIndex &index, QObject *item, QObject *context,
+                                    const QHash<int, QMetaProperty> &properties)
+{
+    if (!item)
+        return false;
+    for (auto &&[role, property] : properties.asKeyValueRange()) {
+        if (property.hasNotifySignal()) {
+            if (!Handler(index, item, context, role, property))
+                return false;
+        } else {
+            qWarning() << "Property" << property.name() << "for" << Qt::ItemDataRole(role)
+                                     << "has no notify signal";
+        }
+    }
+    return true;
+}
+
+bool QRangeModelImplBase::connectProperty(const QModelIndex &index, QObject *item, QObject *context,
+                                          int role, const QMetaProperty &property)
+{
+    if (!item)
+        return false;
+    PropertyChangedHandler handler{index, role};
+    auto connection = property.enclosingMetaObject()->connect(item, property.notifySignal(),
+                                                              context, std::move(handler));
+    if (!connection) {
+        qWarning() << "Failed to connect to" << item << property.name();
+        return false;
+    } else {
+        // handler is now in moved-from state, and acts like a reference to
+        // the handler that is stored in the QSlotObject/QCallableObject.
+        // This assignment updates the stored handler's connection with the
+        // QMetaObject::Connection handle, and should look harmless for
+        // static analyzers.
+        handler = connection;
+    }
+    return true;
+}
+
+bool QRangeModelImplBase::connectProperties(const QModelIndex &index, QObject *item, QObject *context,
+                                            const QHash<int, QMetaProperty> &properties)
+{
+    return connectPropertiesHelper<QRangeModelImplBase::connectProperty>(index, item, context, properties);
+}
+
+bool QRangeModelImplBase::connectPropertyConst(const QModelIndex &index, QObject *item, QObject *context,
+                                               int role, const QMetaProperty &property)
+{
+    if (!item)
+        return false;
+    ConstPropertyChangedHandler handler{index, role};
+    if (!property.enclosingMetaObject()->connect(item, property.notifySignal(),
+                                                 context, std::move(handler))) {
+        qWarning() << "Failed to connect to" << item << property.name();
+        return false;
+    } else {
+        return true;
+    }
+}
+
+bool QRangeModelImplBase::connectPropertiesConst(const QModelIndex &index, QObject *item, QObject *context,
+                                                 const QHash<int, QMetaProperty> &properties)
+{
+    return connectPropertiesHelper<QRangeModelImplBase::connectPropertyConst>(index, item, context, properties);
 }
 
 /*!
@@ -1142,6 +1318,9 @@ void QRangeModel::setRoleNames(const QHash<int, QByteArray> &names)
         return;
     beginResetModel();
     d->impl->call<QRangeModelImplBase::InvalidateCaches>();
+    if (d->m_autoConnectPolicy != AutoConnectPolicy::None)
+        d->impl->call<QRangeModelImplBase::SetAutoConnectPolicy>();
+
     d->m_roleNames = names;
     endResetModel();
     Q_EMIT roleNamesChanged();
@@ -1150,6 +1329,73 @@ void QRangeModel::setRoleNames(const QHash<int, QByteArray> &names)
 void QRangeModel::resetRoleNames()
 {
     setRoleNames({});
+}
+
+/*!
+    \enum QRangeModel::AutoConnectPolicy
+    \since 6.11
+
+    This enum defines if and when QRangeModel auto-connects changed-signals for
+    properties to the \l{QAbstractItemModel::}{dataChanged()} signal of the
+    model. Only properties that match one of the \l{roleNames()}{role names}
+    are connected.
+
+    \value None     No connections are made automatically.
+    \value Full     The signals for all relevant properties are connected
+                    automatically, for all QObject items. This includes QObject
+                    items that are added to newly inserted rows and columns.
+    \value OnRead   Signals for relevant properties are connected the first time
+                    the model reads the property.
+
+    The memory overhead of making automatic connections can be substantial. A
+    Full auto-connection does not require any book-keeping in addition to the
+    connection itself, but each connection takes memory, and connecting all
+    properties of all objects can be very costly, especially if only a few
+    properties of a subset of objects will ever change.
+
+    The OnRead connection policy will not connect to objects or properties that
+    are never read from (for instance, never rendered in a view), but remembering
+    which connections have been made requires some book-keeping overhead, and
+    unpredictable memory growth over time. For instance, scrolling down a long
+    list of items can easily result in thousands of new connections being made.
+
+    \sa autoConnectPolicy, roleNames()
+*/
+
+/*!
+    \property QRangeModel::autoConnectPolicy
+    \brief if and when the model auto-connects to property changed notifications.
+
+    If QRangeModel operates on a data structure that holds the same type of
+    QObject subclass as its item type, then it can automatically connect the
+    properties of the QObjects to the dataChanged() signal. This is done for
+    those properties that match one of the \l{roleNames()}{role names}.
+
+    By default, the value of this property is \l{QRangeModel::AutoConnectPolicy::}
+    {None}, so no such connections are made. Changing the value of this property
+    always breaks all existing connections.
+
+    \note Connections are not broken or created if QObjects in the data
+    structure that QRangeModel operates on are swapped out.
+
+    \sa roleNames()
+*/
+
+QRangeModel::AutoConnectPolicy QRangeModel::autoConnectPolicy() const
+{
+    Q_D(const QRangeModel);
+    return d->m_autoConnectPolicy;
+}
+
+void QRangeModel::setAutoConnectPolicy(QRangeModel::AutoConnectPolicy policy)
+{
+    Q_D(QRangeModel);
+    if (d->m_autoConnectPolicy == policy)
+        return;
+
+    d->m_autoConnectPolicy = policy;
+    d->impl->call<QRangeModelImplBase::SetAutoConnectPolicy>();
+    Q_EMIT autoConnectPolicyChanged();
 }
 
 /*!
