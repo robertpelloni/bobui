@@ -18,6 +18,22 @@ add_library(corelib_snippets_code OBJECT
     src_corelib_global_qnumeric.cpp
     src_corelib_global_qoperatingsystemversion.cpp
     src_corelib_global_qrandom.cpp
+    src_corelib_io_qdatastream.cpp
+    src_corelib_io_qdebug.cpp
+    src_corelib_io_qdir.cpp
+    src_corelib_io_qdiriterator.cpp
+    src_corelib_io_qdirlisting.cpp
+    src_corelib_io_qfile.cpp
+    src_corelib_io_qfileinfo.cpp
+    src_corelib_io_qfileselector.cpp
+    src_corelib_io_qiodevice.cpp
+    src_corelib_io_qprocess.cpp
+    src_corelib_io_qsettings.cpp
+    src_corelib_io_qstorageinfo.cpp
+    src_corelib_io_qtemporarydir.cpp
+    src_corelib_io_qtemporaryfile.cpp
+    src_corelib_io_qtextstream.cpp
+    src_corelib_io_qurl.cpp
 )
 
 target_link_libraries(corelib_snippets_code PRIVATE

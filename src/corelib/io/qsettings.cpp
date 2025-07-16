@@ -2916,7 +2916,7 @@ void QSettings::setAtomicSyncRequired(bool enable)
 
     \list
     \li \c mainwindow/size
-    \li \c mainwindow/fullScreen
+    \li \c mainwindow/active
     \li \c outputpanel/visible
     \endlist
 
