@@ -246,7 +246,8 @@ QWasmTimer::QWasmTimer(QWasmSuspendResumeControl *suspendResume, std::function<v
 {
     auto wrapper = [handler = std::move(handler), this](val argument) {
         Q_UNUSED(argument); // no argument for timers
-        Q_ASSERT(m_timerId);
+        if (!m_timerId)
+            return; // timer was cancelled
         m_timerId = 0;
         handler();
     };
