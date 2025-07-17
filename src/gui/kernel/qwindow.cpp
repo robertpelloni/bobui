@@ -1004,6 +1004,8 @@ void QWindow::setFlags(Qt::WindowFlags flags)
     if (d->platformWindow)
         d->platformWindow->setWindowFlags(flags);
     d->windowFlags = flags;
+
+    emit flagsChanged(this->flags());
 }
 
 Qt::WindowFlags QWindow::flags() const
