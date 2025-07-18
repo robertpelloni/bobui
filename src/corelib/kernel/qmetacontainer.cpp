@@ -831,6 +831,7 @@ void QMetaSequence::valueAtConstIterator(const void *iterator, void *result) con
 
 
 /*!
+    \internal
     Returns the meta type for keys in the container.
  */
 QMetaType QMetaAssociation::keyMetaType() const
@@ -841,6 +842,7 @@ QMetaType QMetaAssociation::keyMetaType() const
 }
 
 /*!
+    \internal
     Returns the meta type for mapped values in the container.
  */
 QMetaType QMetaAssociation::mappedMetaType() const
