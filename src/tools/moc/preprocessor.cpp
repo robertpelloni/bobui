@@ -190,7 +190,7 @@ Symbols Preprocessor::tokenize(const QByteArray& input, int lineNum, Preprocesso
 
                         const QByteArray newString
                                 = '\"'
-                                + symbols.constLast().unquotedLexem()
+                                + symbols.constLast().unquotedLexemView()
                                 + input.mid(lexem - begin + 1, data - lexem - 2)
                                 + '\"';
                         symbols.last() = Symbol(symbols.constLast().lineNum,
@@ -650,7 +650,7 @@ Symbols Preprocessor::macroExpandIdentifier(Preprocessor *that, SymbolStack &sym
                 const Symbols &arg = arguments.at(index);
                 QByteArray stringified;
                 for (const Symbol &sym : arg)
-                    stringified += sym.lexem();
+                    stringified += sym.lexemView();
 
                 stringified.replace('"', "\\\"");
                 stringified.prepend('"');
@@ -967,9 +967,8 @@ int PP_Expression::primary_expression()
         test(PP_RPAREN);
     } else {
         next();
-        const QByteArray &lex = lexem();
-        auto lexView = QByteArrayView(lex);
-        if (lex.endsWith('L'))
+        auto lexView = lexemView();
+        if (lexView.endsWith('L'))
             lexView.chop(1);
         value = lexView.toInt(nullptr, 0);
     }
@@ -1120,7 +1119,7 @@ void Preprocessor::preprocess(const QByteArray &filename, Symbols &preprocessed)
             QByteArray include;
             bool local = false;
             if (test(PP_STRING_LITERAL)) {
-                local = lexem().startsWith('\"');
+                local = lexemView().startsWith('\"');
                 include = unquotedLexem();
             } else
                 continue;
@@ -1322,7 +1321,7 @@ void Preprocessor::parseDefineArguments(Macro *m)
         if (t == PP_RPAREN)
             break;
         if (t != PP_IDENTIFIER) {
-            QByteArray l = lexem();
+            QByteArrayView l = lexemView();
             if (l == "...") {
                 m->isVariadic = true;
                 arguments += Symbol(symbol().lineNum, PP_IDENTIFIER, "__VA_ARGS__");
@@ -1346,7 +1345,7 @@ void Preprocessor::parseDefineArguments(Macro *m)
             break;
         if (t == PP_COMMA)
             continue;
-        if (lexem() == "...") {
+        if (lexemView() == "...") {
             //GCC extension:    #define FOO(x, y...) x(y)
             // The last argument was already parsed. Just mark the macro as variadic.
             m->isVariadic = true;

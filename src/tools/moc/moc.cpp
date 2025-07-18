@@ -65,14 +65,14 @@ bool Moc::parseClassHead(ClassDef *def)
             return false;
         name = lexem();
     } else  if (test(IDENTIFIER)) {
-        const QByteArray lex = lexem();
+        const QByteArrayView lex = lexemView();
         if (lex != "final" && lex != "sealed" && lex != "Q_DECL_FINAL")
-            name = lex;
+            name = lexem();
     }
 
     def->qualified += name;
     while (test(SCOPE)) {
-        def->qualified += lexem();
+        def->qualified += lexemView();
         if (test(IDENTIFIER)) {
             name = lexem();
             def->qualified += name;
@@ -82,7 +82,7 @@ bool Moc::parseClassHead(ClassDef *def)
     def->lineNumber = symbol().lineNum;
 
     if (test(IDENTIFIER)) {
-        const QByteArray lex = lexem();
+        const QByteArrayView lex = lexemView();
         if (lex != "final" && lex != "sealed" && lex != "Q_DECL_FINAL")
             return false;
     }
@@ -138,7 +138,7 @@ Type Moc::parseType()
                 Q_FALLTHROUGH();
             case CONST:
             case VOLATILE:
-                type.name += lexem();
+                type.name += lexemView();
                 type.name += ' ';
                 if (lookup(0) == VOLATILE)
                     type.isVolatile = true;
@@ -150,7 +150,7 @@ Type Moc::parseType()
             case Q_SLOTS_TOKEN:
             case Q_SIGNAL_TOKEN:
             case Q_SLOT_TOKEN:
-                type.name += lexem();
+                type.name += lexemView();
                 return type;
             case NOTOKEN:
                 return type;
@@ -182,7 +182,7 @@ Type Moc::parseType()
         case SHORT:
         case INT:
         case LONG:
-            type.name += lexem();
+            type.name += lexemView();
             // preserve '[unsigned] long long', 'short int', 'long int', 'long double'
             if (test(LONG) || test(INT) || test(DOUBLE)) {
                 type.name += ' ';
@@ -195,7 +195,7 @@ Type Moc::parseType()
         case VOID:
         case BOOL:
         case AUTO:
-            type.name += lexem();
+            type.name += lexemView();
             isVoid |= (lookup(0) == VOID);
             break;
         case NOTOKEN:
@@ -212,7 +212,7 @@ Type Moc::parseType()
             type.name += lexemUntil(RANGLE);
         }
         if (test(SCOPE)) {
-            type.name += lexem();
+            type.name += lexemView();
             type.isScoped = true;
         } else {
             break;
@@ -221,7 +221,7 @@ Type Moc::parseType()
     while (test(CONST) || test(VOLATILE) || test(SIGNED) || test(UNSIGNED)
            || test(STAR) || test(AND) || test(ANDAND)) {
         type.name += ' ';
-        type.name += lexem();
+        type.name += lexemView();
         if (lookup(0) == AND)
             type.referenceType = Type::Reference;
         else if (lookup(0) == ANDAND)
@@ -318,7 +318,7 @@ void Moc::parseFunctionArguments(FunctionDef *def)
         }
         if (test(CONST) || test(VOLATILE)) {
             arg.rightType += ' ';
-            arg.rightType += lexem();
+            arg.rightType += lexemView();
         }
         arg.normalizedType = normalizeType(QByteArray(arg.type.name + ' ' + arg.rightType));
         if (test(EQ))
@@ -993,7 +993,7 @@ void Moc::parse()
                     break;
                 case IDENTIFIER:
                 {
-                    const QByteArray lex = lexem();
+                    const QByteArrayView lex = lexemView();
                     if (lex.startsWith("QML_")) {
                         if (   lex == "QML_ELEMENT" || lex == "QML_NAMED_ELEMENT"
                             || lex == "QML_ANONYMOUS" || lex == "QML_VALUE_TYPE") {
@@ -1417,7 +1417,7 @@ void Moc::parsePropertyAttributes(PropertyDef &propDef)
 
     while (test(IDENTIFIER)) {
         const Symbol &lsym = symbol();
-        const QByteArray l = lsym.lexem();
+        const QByteArrayView l = lsym.lexemView();
         if (l[0] == 'C' && l == "CONSTANT") {
             propDef.constant = true;
             continue;
@@ -1565,7 +1565,7 @@ void Moc::parsePluginData(ClassDef *def)
             def->pluginData.uri = unquotedLexem();
         } else if (l == "FILE") {
             next(STRING_LITERAL);
-            QByteArray metaDataFile = unquotedLexem();
+            QByteArrayView metaDataFile = unquotedLexemView();
             QFileInfo fi(QFileInfo(QString::fromLocal8Bit(currentFilenames.top())).dir(),
                          QString::fromLocal8Bit(metaDataFile));
             for (const IncludePath &p : std::as_const(includes)) {
@@ -1574,7 +1574,7 @@ void Moc::parsePluginData(ClassDef *def)
                 if (p.isFrameworkPath)
                     continue;
 
-                fi.setFile(QString::fromLocal8Bit(p.path.constData()), QString::fromLocal8Bit(metaDataFile.constData()));
+                fi.setFile(QString::fromLocal8Bit(p.path), QString::fromLocal8Bit(metaDataFile));
                 // try again, maybe there's a file later in the include paths with the same name
                 if (fi.isDir()) {
                     fi = QFileInfo();
@@ -1582,14 +1582,14 @@ void Moc::parsePluginData(ClassDef *def)
                 }
             }
             if (!fi.exists()) {
-                const QByteArray msg = "Plugin Metadata file " + lexem()
+                const QByteArray msg = "Plugin Metadata file " + lexemView()
                         + " does not exist. Declaration will be ignored";
                 error(msg.constData());
                 return;
             }
             QFile file(fi.canonicalFilePath());
             if (!file.open(QFile::ReadOnly)) {
-                QByteArray msg = "Plugin Metadata file " + lexem() + " could not be opened: "
+                QByteArray msg = "Plugin Metadata file " + lexemView() + " could not be opened: "
                     + file.errorString().toUtf8();
                 error(msg.constData());
                 return;
@@ -1602,7 +1602,7 @@ void Moc::parsePluginData(ClassDef *def)
     if (!metaData.isEmpty()) {
         def->pluginData.metaData = QJsonDocument::fromJson(metaData);
         if (!def->pluginData.metaData.isObject()) {
-            const QByteArray msg = "Plugin Metadata file " + lexem()
+            const QByteArray msg = "Plugin Metadata file " + lexemView()
                     + " does not contain a valid JSON object. Declaration will be ignored";
             warning(msg.constData());
             def->pluginData.iid = QByteArray();
@@ -1628,7 +1628,7 @@ QByteArray Moc::parsePropertyAccessor()
             ++nesting;
         if (t == RPAREN)
             --nesting;
-        accessor += lexem();
+        accessor += lexemView();
     }
     return accessor;
 }
@@ -1654,7 +1654,7 @@ void Moc::parseEnumOrFlag(BaseDef *def, EnumFlags flags)
         identifier = lexem();
         while (test(SCOPE) && test(IDENTIFIER)) {
             identifier += "::";
-            identifier += lexem();
+            identifier += lexemView();
         }
         def->enumDeclarations[identifier] = flags;
     }
@@ -1669,7 +1669,7 @@ void Moc::parseFlag(BaseDef *def)
         flagName = lexem();
         while (test(SCOPE) && test(IDENTIFIER)) {
             flagName += "::";
-            flagName += lexem();
+            flagName += lexemView();
         }
     }
     next(COMMA);
@@ -1677,7 +1677,7 @@ void Moc::parseFlag(BaseDef *def)
         enumName = lexem();
         while (test(SCOPE) && test(IDENTIFIER)) {
             enumName += "::";
-            enumName += lexem();
+            enumName += lexemView();
         }
     }
 
@@ -1725,17 +1725,17 @@ void Moc::parseInterfaces(ClassDef *def)
         QList<ClassDef::Interface> iface;
         iface += ClassDef::Interface(lexem());
         while (test(SCOPE)) {
-            iface.last().className += lexem();
+            iface.last().className += lexemView();
             next(IDENTIFIER);
-            iface.last().className += lexem();
+            iface.last().className += lexemView();
         }
         while (test(COLON)) {
             next(IDENTIFIER);
             iface += ClassDef::Interface(lexem());
             while (test(SCOPE)) {
-                iface.last().className += lexem();
+                iface.last().className += lexemView();
                 next(IDENTIFIER);
-                iface.last().className += lexem();
+                iface.last().className += lexemView();
             }
         }
         // resolve from classnames to interface ids
@@ -1756,11 +1756,11 @@ void Moc::parseDeclareInterface()
     next(LPAREN);
     QByteArray interface;
     next(IDENTIFIER);
-    interface += lexem();
+    interface += lexemView();
     while (test(SCOPE)) {
-        interface += lexem();
+        interface += lexemView();
         next(IDENTIFIER);
-        interface += lexem();
+        interface += lexemView();
     }
     next(COMMA);
     QByteArray iid;
