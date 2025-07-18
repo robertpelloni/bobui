@@ -34,10 +34,27 @@ add_library(corelib_snippets_code OBJECT
     src_corelib_io_qtemporaryfile.cpp
     src_corelib_io_qtextstream.cpp
     src_corelib_io_qurl.cpp
+    src_corelib_kernel_qabstractitemmodel.cpp
+    src_corelib_kernel_qabstractnativeeventfilter_win.cpp
+    src_corelib_kernel_qabstractnativeeventfilter.cpp
+    src_corelib_kernel_qcoreapplication.cpp
+    src_corelib_kernel_qdeadlinetimer.cpp
+    src_corelib_kernel_qmath.cpp
+    src_corelib_kernel_qmetaobject.cpp
+    src_corelib_kernel_qmetatype.cpp
+    src_corelib_kernel_qmimedata.cpp
+    src_corelib_kernel_qproperty.cpp
+    src_corelib_kernel_qsystemsemaphore.cpp
+    src_corelib_kernel_qvariant.cpp
 )
 
 target_link_libraries(corelib_snippets_code PRIVATE
     Qt::Core
+)
+
+qt_internal_extend_target(corelib_snippets_code CONDITION APPLE
+    SOURCES
+        src_corelib_kernel_qabstractnativeeventfilter.mm
 )
 
 qt_internal_extend_target(corelib_snippets_code CONDITION QT_FEATURE_widgets
@@ -47,6 +64,8 @@ qt_internal_extend_target(corelib_snippets_code CONDITION QT_FEATURE_widgets
         doc_src_objecttrees.cpp
         src_corelib_animation_qpropertyanimation.cpp
         src_corelib_global_qglobal_widgets.cpp
+        src_corelib_kernel_qobject.cpp
+        src_corelib_kernel_qtimer.cpp
 )
 
 qt_internal_extend_target(corelib_snippets_code CONDITION QT_FEATURE_gui

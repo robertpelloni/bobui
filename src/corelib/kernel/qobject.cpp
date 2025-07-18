@@ -4804,7 +4804,18 @@ QDebug operator<<(QDebug dbg, const QObject *o)
     \l{QItemSelectionModel::SelectionFlags}{SelectionFlags} flag is
     declared in the following way:
 
-    \snippet code/src_corelib_kernel_qobject.cpp 39
+    \quotefromfile itemmodels/qitemselectionmodel.h
+
+    \skipto class Q_CORE_EXPORT QItemSelectionModel
+    \printuntil Q_OBJECT
+
+    \dots
+
+    \skipto public:
+    \printuntil Q_FLAG(SelectionFlags)
+
+    \skipuntil Q_DISABLE_COPY
+    \printto Q_DECLARE_OPERATORS_FOR_FLAGS
 
     \note The Q_FLAG macro takes care of registering individual flag values
     with the meta-object system, so it is unnecessary to use Q_ENUM()
@@ -5324,6 +5335,7 @@ QDebug operator<<(QDebug dbg, const QObject *o)
 
     Example:
 
+    \snippet code/src_corelib_kernel_qobject.cpp 50_someFunction
     \snippet code/src_corelib_kernel_qobject.cpp 50
 
     Lambda expressions can also be used:

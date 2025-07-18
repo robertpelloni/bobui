@@ -4427,7 +4427,7 @@ bool QMetaProperty::isBindable() const
     are specified using Q_CLASSINFO() in the source code. The
     information can be retrieved using name() and value(). For example:
 
-    \snippet code/src_corelib_kernel_qmetaobject.cpp 5
+    \snippet code/src_corelib_kernel_qmetaobject.cpp 0
 
     This mechanism is free for you to use in your Qt applications.
 
