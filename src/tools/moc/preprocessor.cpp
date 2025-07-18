@@ -515,7 +515,7 @@ void Preprocessor::macroExpand(Symbols *into, Preprocessor *that, const Symbols 
     sf.symbols = toExpand;
     sf.index = index;
     sf.excludedSymbols = excludeSymbols;
-    symbols.push(sf);
+    symbols.push(std::move(sf));
 
     if (toExpand.isEmpty())
         return;
@@ -534,7 +534,7 @@ void Preprocessor::macroExpand(Symbols *into, Preprocessor *that, const Symbols 
             sf.symbols = newSyms;
             sf.index = 0;
             sf.expandedMacro = macro;
-            symbols.push(sf);
+            symbols.push(std::move(sf));
         }
         if (!symbols.hasNext() || (one && symbols.size() == 1))
                 break;
