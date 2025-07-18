@@ -510,6 +510,7 @@ void Preprocessor::macroExpand(Symbols *into, Preprocessor *that, const Symbols 
                                   int lineNum, bool one, const QSet<QByteArray> &excludeSymbols)
 {
     SymbolStack symbols;
+    symbols.reserve(8);
     SafeSymbols sf;
     sf.symbols = toExpand;
     sf.index = index;
