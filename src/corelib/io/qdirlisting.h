@@ -164,7 +164,6 @@ private:
 
     QDirListingPrivate *d;
     friend class QAbstractFileEngine;
-    friend class QFileInfoGatherer;
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(QDirListing::IteratorFlags)
