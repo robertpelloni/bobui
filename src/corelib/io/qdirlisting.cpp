@@ -91,9 +91,15 @@
 
     \value ResolveSymlinks
         Filter symbolic links based on the type of the target of the link,
-        rather than the symbolic link itself. With this flag, broken symbolic
-        links (where the target doesn't exist) are excluded. This flag is
-        ignored on operating systems that don't support symbolic links.
+        rather than the symbolic link itself. Broken symbolic links (where
+        the target doesn't exist) are excluded, set IncludeBrokenSymlinks
+        to include them.
+        This flag is ignored on operating systems that don't support symbolic links.
+
+    \value IncludeBrokenSymlinks [since 6.11]
+        Lists broken symbolic links, where the target doesn't exist, regardless
+        of the status of the ResolveSymlinks flag.
+        This flag is ignored on operating systems that don't support symbolic links.
 
     \value FilesOnly
         Only regular files will be listed. When combined with ResolveSymlinks,
@@ -511,14 +517,18 @@ bool QDirListingPrivate::matchesFilters(QDirEntryInfo &entryInfo) const
     if (!iteratorFlags.testAnyFlag(F::IncludeHidden) && entryInfo.isHidden())
         return false;
 
-    // With ResolveSymlinks, we look at the type of the link's target,
-    // and exclude broken symlinks (where the target doesn't exist).
-    if (iteratorFlags.testAnyFlag(F::ResolveSymlinks)) {
+    const bool includeBrokenSymlinks = iteratorFlags.testAnyFlags(F::IncludeBrokenSymlinks);
+    if (includeBrokenSymlinks && entryInfo.isSymLink() && !entryInfo.exists())
+        return true;
+
+    if (iteratorFlags.testFlag(F::ResolveSymlinks)) {
         if (entryInfo.isSymLink() && !entryInfo.exists())
+            return false; // Exclude broken symlinks; anything else will be filtered below
+    } else {
+        constexpr auto f = F::ExcludeFiles | F::ExcludeDirs | F::ExcludeOther;
+        const bool filterByTargetType = iteratorFlags.testAnyFlags(f);
+        if (filterByTargetType && entryInfo.isSymLink())
             return false;
-    } else if ((iteratorFlags.testAnyFlags(F::FilesOnly)
-               || iteratorFlags.testAnyFlags(F::DirsOnly)) && entryInfo.isSymLink()) {
-        return false; // symlink is not a file or dir
     }
 
     if (iteratorFlags.testAnyFlag(F::ExcludeOther)

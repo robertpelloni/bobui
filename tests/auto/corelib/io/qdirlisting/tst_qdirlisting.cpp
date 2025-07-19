@@ -298,6 +298,39 @@ void tst_QDirListing::iterateRelativeDirectory_data()
             "entrylist/writable"_L1,
         } + allSymlinks;
 
+    QTest::newRow("IncludeBrokenSymlinks")
+        << QString("entrylist")
+        << QDirListing::IteratorFlags{F::IncludeBrokenSymlinks}
+        << QStringList()
+        << QStringList{
+            "entrylist/file"_L1,
+            "entrylist/directory"_L1,
+            "entrylist/writable"_L1,
+        } + allSymlinks;
+
+    QTest::newRow("IncludeBrokenSymlinks-FilesOnly")
+        << QString("entrylist")
+        << QDirListing::IteratorFlags{F::IncludeBrokenSymlinks | F::FilesOnly}
+        << QStringList()
+        << QStringList{
+            "entrylist/file"_L1,
+            "entrylist/writable"_L1,
+#if !defined(Q_NO_SYMLINKS)
+            brokenLink,
+#endif
+        };
+
+    QTest::newRow("IncludeBrokenSymlinks-DirsOnly")
+        << QString("entrylist")
+        << QDirListing::IteratorFlags{F::IncludeBrokenSymlinks | F::DirsOnly}
+        << QStringList()
+        << QStringList{
+            "entrylist/directory"_L1,
+#if !defined(Q_NO_SYMLINKS)
+            brokenLink,
+#endif
+        };
+
     QTest::newRow("ResolveSymlinks")
         << QString("entrylist")
         << QDirListing::IteratorFlags{F::ResolveSymlinks}
@@ -307,6 +340,41 @@ void tst_QDirListing::iterateRelativeDirectory_data()
             "entrylist/directory"_L1,
             "entrylist/writable"_L1,
         } + nonBrokenSymlinks;
+
+    QTest::newRow("ResolveSymlinks-IncludeBrokenSymlinks")
+        << QString("entrylist")
+        << QDirListing::IteratorFlags{F::ResolveSymlinks | F::IncludeBrokenSymlinks}
+        << QStringList()
+        << QStringList{
+            "entrylist/file"_L1,
+            "entrylist/directory"_L1,
+            "entrylist/writable"_L1,
+        } + allSymlinks;
+
+    QTest::newRow("ResolveSymlinks-IncludeBrokenSymlinks-FilesOnly")
+        << QString("entrylist")
+        << QDirListing::IteratorFlags{F::ResolveSymlinks | F::IncludeBrokenSymlinks | F::FilesOnly}
+        << QStringList()
+        << QStringList{
+            "entrylist/file"_L1,
+            "entrylist/writable"_L1,
+#if !defined(Q_NO_SYMLINKS)
+            linkToFile,
+            brokenLink,
+#endif
+        };
+
+    QTest::newRow("ResolveSymlinks-IncludeBrokenSymlinks-DirsOnly")
+        << QString("entrylist")
+        << QDirListing::IteratorFlags{F::ResolveSymlinks | F::IncludeBrokenSymlinks | F::DirsOnly}
+        << QStringList()
+        << QStringList{
+            "entrylist/directory"_L1,
+#if !defined(Q_NO_SYMLINKS)
+            linkToDir,
+            brokenLink,
+#endif
+        };
 
     QTest::newRow("Recursive-ResolveSymlinks")
         << QString("entrylist")
@@ -318,6 +386,31 @@ void tst_QDirListing::iterateRelativeDirectory_data()
             "entrylist/directory/dummy"_L1,
             "entrylist/writable"_L1,
         } + nonBrokenSymlinks;
+
+    QTest::newRow("Recursive-ResolveSymlinks-IncludeBrokenSymlinks")
+        << QString("entrylist")
+        << QDirListing::IteratorFlags(F::Recursive | F::ResolveSymlinks | F::IncludeBrokenSymlinks)
+        << QStringList()
+        << QStringList{
+            "entrylist/file"_L1,
+            "entrylist/directory"_L1,
+            "entrylist/directory/dummy"_L1,
+            "entrylist/writable"_L1,
+        } + allSymlinks;
+
+    QTest::newRow("Recursive-ResolveSymlinks-IncludeBrokenSymlinks-FilesOnly")
+        << QString("entrylist")
+        << QDirListing::IteratorFlags(F::Recursive | F::ResolveSymlinks | F::IncludeBrokenSymlinks | F::FilesOnly)
+        << QStringList()
+        << QStringList{
+            "entrylist/file"_L1,
+            "entrylist/directory/dummy"_L1,
+            "entrylist/writable"_L1,
+#if !defined(Q_NO_SYMLINKS)
+            linkToFile,
+            brokenLink,
+#endif
+        };
 
     QTest::newRow("Recursive-FilesOnly")
         << QString("entrylist")

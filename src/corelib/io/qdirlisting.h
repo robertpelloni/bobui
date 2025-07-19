@@ -42,6 +42,7 @@ public:
         CaseSensitive =         0x000100,
         Recursive =             0x000400,
         FollowDirSymlinks =     0x000800,
+        IncludeBrokenSymlinks = 0x001000,
     };
     Q_DECLARE_FLAGS(IteratorFlags, IteratorFlag)
 
