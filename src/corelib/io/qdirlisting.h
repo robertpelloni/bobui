@@ -43,6 +43,7 @@ public:
         Recursive =             0x000400,
         FollowDirSymlinks =     0x000800,
         IncludeBrokenSymlinks = 0x001000,
+        NoNameFiltersForDirs  = 0x040000, // used internally
     };
     Q_DECLARE_FLAGS(IteratorFlags, IteratorFlag)
 
@@ -162,8 +163,6 @@ private:
                               uint qdirIteratorFlags = 0); // QDirIterator::NoIteratorFlags == 0x0
 
     QDirListingPrivate *d;
-    friend class QDir;
-    friend class QDirPrivate;
     friend class QDirIteratorPrivate;
     friend class QAbstractFileEngine;
     friend class QFileInfoGatherer;

@@ -129,6 +129,8 @@
         When combined with Recursive, symbolic links to directories will be
         iterated too. Symbolic link loops (e.g., link => . or link => ..) are
         automatically detected and ignored.
+
+    \omitvalue NoNameFiltersForDirs
 */
 
 #include "qdirlisting.h"
@@ -507,8 +509,12 @@ bool QDirListingPrivate::matchesFilters(QDirEntryInfo &entryInfo) const
 
     // name filter
 #if QT_CONFIG(regularexpression)
-    if (!regexMatchesName(fileName))
-        return false;
+    const bool skipNameFilters = iteratorFlags.testAnyFlags(F::NoNameFiltersForDirs)
+                                 && entryInfo.isDir();
+    if (!skipNameFilters) {
+        if (!regexMatchesName(fileName))
+            return false;
+    }
 #endif // QT_CONFIG(regularexpression)
 
     if (isDotOrDotDot(fileName))
