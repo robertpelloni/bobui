@@ -155,15 +155,7 @@ private:
 
     Q_CORE_EXPORT static DirEntry next(DirEntry);
 
-    // Private constructor that is used in deprecated code paths.
-    // `uint` instead of QDir::Filters and QDirIterator::IteratorFlags
-    // because qdir.h can't be included here; qdiriterator.h can't included
-    // either, because it includes qdir.h
-    Q_CORE_EXPORT QDirListing(const QString &path, const QStringList &nameFilters, uint dirFilters,
-                              uint qdirIteratorFlags = 0); // QDirIterator::NoIteratorFlags == 0x0
-
     QDirListingPrivate *d;
-    friend class QAbstractFileEngine;
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(QDirListing::IteratorFlags)

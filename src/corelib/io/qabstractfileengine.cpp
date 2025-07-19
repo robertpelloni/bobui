@@ -600,8 +600,7 @@ QStringList QAbstractFileEngine::entryList(QDir::Filters filters, const QStringL
     Q_UNUSED(filterNames);
     Q_UNREACHABLE_RETURN(ret);
 #else
-    for (const auto &dirEntry : QDirListing(fileName(), filterNames, filters.toInt()))
-        ret.emplace_back(dirEntry.fileName());
+    ret = QDir(fileName()).entryList(filterNames, filters);
     return ret;
 #endif
 }
