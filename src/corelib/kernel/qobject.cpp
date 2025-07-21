@@ -640,7 +640,7 @@ QQueuedMetaCallEvent::~QQueuedMetaCallEvent()
         }
     }
     if (d.nargs_) {
-        if (reinterpret_cast<void *>(d.args_) != reinterpret_cast<void *>(prealloc_))
+        if (static_cast<void *>(d.args_) != prealloc_)
             free(d.args_);
     }
 }
