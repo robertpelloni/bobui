@@ -1314,8 +1314,6 @@ QDir::Filters QDir::filter() const
     \value Executable  List files for which the application has
                        execute access. The Executable value needs to be
                        combined with Dirs or Files.
-    \value Modified  Only list files that have been modified (ignored
-                     on Unix).
     \value Hidden  List hidden files (on Unix, files starting with a ".").
     \value System  List system files (on Unix, FIFOs, sockets and
                    device files are included; on Windows, \c {.lnk}
@@ -1325,6 +1323,7 @@ QDir::Filters QDir::filter() const
     \omitvalue TypeMask
     \omitvalue AccessMask
     \omitvalue PermissionMask
+    \omitvalue Modified
     \omitvalue NoFilter
 
     Functions that use Filter enum values to filter lists of files
@@ -2585,7 +2584,6 @@ QDebug operator<<(QDebug debug, QDir::Filters filters)
         if (filters & QDir::Readable) flags << "Readable"_L1;
         if (filters & QDir::Writable) flags << "Writable"_L1;
         if (filters & QDir::Executable) flags << "Executable"_L1;
-        if (filters & QDir::Modified) flags << "Modified"_L1;
         if (filters & QDir::Hidden) flags << "Hidden"_L1;
         if (filters & QDir::System) flags << "System"_L1;
         if (filters & QDir::CaseSensitive) flags << "CaseSensitive"_L1;
