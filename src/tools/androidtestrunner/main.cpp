@@ -45,6 +45,7 @@ struct Options
     QString makeCommand;
     QString package;
     QString activity;
+    QStringList permissions;
     QStringList testArgsList;
     QString stdoutFileName;
     QHash<QString, QString> outFiles;
@@ -330,6 +331,21 @@ static QString activityFromAndroidManifest(const QString &androidManifestPath)
         }
     }
     return {};
+}
+
+static QStringList permissionsFromAndroidManifest(const QString &androidManifestPath)
+{
+    QStringList permissions;
+    QFile androidManifestXml(androidManifestPath);
+    if (androidManifestXml.open(QIODevice::ReadOnly)) {
+        QXmlStreamReader reader(&androidManifestXml);
+        while (!reader.atEnd()) {
+            reader.readNext();
+            if (reader.isStartElement() && reader.name() == "uses-permission"_L1)
+                permissions.append(reader.attributes().value("android:name"_L1).toString());
+        }
+    }
+    return permissions;
 }
 
 static void setOutputFile(QString file, QString format)
@@ -913,6 +929,8 @@ int main(int argc, char *argv[])
     if (g_options.activity.isEmpty())
         g_options.activity = activityFromAndroidManifest(g_options.manifestPath);
 
+    g_options.permissions = permissionsFromAndroidManifest(g_options.manifestPath);
+
     // parseTestArgs depends on g_options.package
     if (!parseTestArgs())
         return EXIT_ERROR;
@@ -935,6 +953,14 @@ int main(int argc, char *argv[])
 
         if (!execBundletoolCommand({ "install-apks"_L1, "--apks"_L1, apksFilePath }))
             return EXIT_ERROR;
+
+        for (const auto &permission : g_options.permissions) {
+            if (!execAdbCommand({ "shell"_L1, "pm"_L1, "grant"_L1, g_options.package, permission },
+                                nullptr)) {
+                qWarning("Unable to grant '%s' to '%s'. Probably the Android version mismatch.",
+                         qPrintable(permission), qPrintable(g_options.package));
+            }
+        }
     }
     // Call additional adb command if set after installation and before starting the test
     for (const auto &command : g_options.preTestRunAdbCommands) {
