@@ -352,7 +352,7 @@ bool copyPreloadQmlImports(Parameters &params)
     if (!qmlImportPath.exists()) {
         std::cout << "ERROR: Cannot find qml import path: "
                   << qmlImportPath.absolutePath().toStdString() << std::endl;
-        return -1;
+        return false;
     }
 
     QStringList args{ "-rootPath", params.qmlRootPath->absolutePath(), "-importPath",

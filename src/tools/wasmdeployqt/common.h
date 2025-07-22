@@ -18,7 +18,7 @@ struct PreloadEntry
     }
 };
 
-inline uint qHash(const PreloadEntry &key, uint seed = 0)
+inline size_t qHash(const PreloadEntry &key, size_t seed = 0)
 {
     return qHash(key.source, seed) ^ qHash(key.destination, seed);
 }
