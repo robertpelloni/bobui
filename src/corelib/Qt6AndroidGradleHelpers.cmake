@@ -57,13 +57,8 @@ function(_qt_internal_android_generate_bundle_settings_gradle target)
 
     _qt_internal_android_get_template_path(template_file ${target} "${settings_gradle_filename}")
 
-    set(android_app_name "$<TARGET_PROPERTY:${target},QT_ANDROID_APP_NAME>")
-    string(JOIN "" ROOT_PROJECT_NAME
-        "$<IF:$<BOOL:${android_app_name}>,"
-            "${android_app_name},"
-            "${target}"
-        ">"
-    )
+    _qt_internal_android_get_gradle_property(ROOT_PROJECT_NAME ${target}
+        QT_ANDROID_APP_NAME "${target}")
 
     set(target_dynamic_features "$<TARGET_PROPERTY:${target},_qt_android_dynamic_features>")
     set(include_prefix "include(\":")
