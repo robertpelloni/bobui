@@ -305,47 +305,28 @@ static void printHelp()
              qPrintable(QCoreApplication::arguments().at(0)));
 }
 
-static QString packageNameFromAndroidManifest(const QString &androidManifestPath)
+static bool processAndroidManifest()
 {
-    QFile androidManifestXml(androidManifestPath);
-    if (androidManifestXml.open(QIODevice::ReadOnly)) {
-        QXmlStreamReader reader(&androidManifestXml);
-        while (!reader.atEnd()) {
-            reader.readNext();
-            if (reader.isStartElement() && reader.name() == "manifest"_L1)
-                return reader.attributes().value("package"_L1).toString();
-        }
+    QFile androidManifestXml(g_options.manifestPath);
+    if (!androidManifestXml.open(QIODevice::ReadOnly)) {
+        qCritical("Unable to read android manifest '%s'", qPrintable(g_options.manifestPath));
+        return false;
     }
-    return {};
-}
 
-static QString activityFromAndroidManifest(const QString &androidManifestPath)
-{
-    QFile androidManifestXml(androidManifestPath);
-    if (androidManifestXml.open(QIODevice::ReadOnly)) {
-        QXmlStreamReader reader(&androidManifestXml);
-        while (!reader.atEnd()) {
-            reader.readNext();
-            if (reader.isStartElement() && reader.name() == "activity"_L1)
-                return reader.attributes().value("android:name"_L1).toString();
-        }
-    }
-    return {};
-}
+    QXmlStreamReader reader(&androidManifestXml);
+    while (!reader.atEnd()) {
+        reader.readNext();
+        if (!reader.isStartElement())
+            continue;
 
-static QStringList permissionsFromAndroidManifest(const QString &androidManifestPath)
-{
-    QStringList permissions;
-    QFile androidManifestXml(androidManifestPath);
-    if (androidManifestXml.open(QIODevice::ReadOnly)) {
-        QXmlStreamReader reader(&androidManifestXml);
-        while (!reader.atEnd()) {
-            reader.readNext();
-            if (reader.isStartElement() && reader.name() == "uses-permission"_L1)
-                permissions.append(reader.attributes().value("android:name"_L1).toString());
-        }
+        if (reader.name() == "manifest"_L1)
+            g_options.package = reader.attributes().value("package"_L1).toString();
+        else if (reader.name() == "activity"_L1 && g_options.activity.isEmpty())
+            g_options.activity = reader.attributes().value("android:name"_L1).toString();
+        else if (reader.name() == "uses-permission"_L1)
+            g_options.permissions.append(reader.attributes().value("android:name"_L1).toString());
     }
-    return permissions;
+    return true;
 }
 
 static void setOutputFile(QString file, QString format)
@@ -925,11 +906,9 @@ int main(int argc, char *argv[])
         qCritical("Unable to find '%s'.", qPrintable(g_options.manifestPath));
         return EXIT_ERROR;
     }
-    g_options.package = packageNameFromAndroidManifest(g_options.manifestPath);
-    if (g_options.activity.isEmpty())
-        g_options.activity = activityFromAndroidManifest(g_options.manifestPath);
 
-    g_options.permissions = permissionsFromAndroidManifest(g_options.manifestPath);
+    if (!processAndroidManifest())
+        return EXIT_ERROR;
 
     // parseTestArgs depends on g_options.package
     if (!parseTestArgs())
