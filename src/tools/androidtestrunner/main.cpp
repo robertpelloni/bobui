@@ -910,6 +910,11 @@ int main(int argc, char *argv[])
     if (!processAndroidManifest())
         return EXIT_ERROR;
 
+    if (g_options.package.isEmpty()) {
+        qCritical("Unable to get package name for '%s'", qPrintable(g_options.packagePath));
+        return EXIT_ERROR;
+    }
+
     // parseTestArgs depends on g_options.package
     if (!parseTestArgs())
         return EXIT_ERROR;
