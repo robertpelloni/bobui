@@ -939,7 +939,7 @@ int main(int argc, char *argv[])
     testRunnerLock.acquire();
 
     if (g_options.packagePath.endsWith(".apk"_L1)) {
-        const QStringList installArgs = { "install"_L1, "-r"_L1, "-g"_L1, g_options.packagePath };
+        const QStringList installArgs = { "install"_L1, "-r"_L1, g_options.packagePath };
         g_testInfo.isPackageInstalled.store(execAdbCommand(installArgs, nullptr));
         if (!g_testInfo.isPackageInstalled)
             return EXIT_ERROR;
@@ -953,15 +953,16 @@ int main(int argc, char *argv[])
 
         if (!execBundletoolCommand({ "install-apks"_L1, "--apks"_L1, apksFilePath }))
             return EXIT_ERROR;
+    }
 
-        for (const auto &permission : g_options.permissions) {
-            if (!execAdbCommand({ "shell"_L1, "pm"_L1, "grant"_L1, g_options.package, permission },
-                                nullptr)) {
-                qWarning("Unable to grant '%s' to '%s'. Probably the Android version mismatch.",
-                         qPrintable(permission), qPrintable(g_options.package));
-            }
+    for (const auto &permission : g_options.permissions) {
+        if (!execAdbCommand({ "shell"_L1, "pm"_L1, "grant"_L1, g_options.package, permission },
+                            nullptr)) {
+            qWarning("Unable to grant '%s' to '%s'. Probably the Android version mismatch.",
+                        qPrintable(permission), qPrintable(g_options.package));
         }
     }
+
     // Call additional adb command if set after installation and before starting the test
     for (const auto &command : g_options.preTestRunAdbCommands) {
         QByteArray output;
