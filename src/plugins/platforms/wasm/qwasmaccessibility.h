@@ -7,8 +7,6 @@
 #include <QtCore/qtconfigmacros.h>
 #include <QtGui/qtguiglobal.h>
 
-#if QT_CONFIG(accessibility)
-
 #include <QtCore/qhash.h>
 #include <private/qstdweb_p.h>
 #include <qpa/qplatformaccessibility.h>
@@ -21,6 +19,18 @@
 
 Q_DECLARE_LOGGING_CATEGORY(lcQpaAccessibility)
 
+#if !QT_CONFIG(accessibility)
+class QWasmAccessibility
+{
+public:
+    static void addAccessibilityEnableButton(QWindow *window) {}
+    static void onShowWindow(QWindow *) {}
+    static void onRemoveWindow(QWindow *) {}
+    static bool isEnabled() {
+        return false;
+    }
+};
+#else
 class QWasmAccessibility : public QPlatformAccessibility
 {
 public:
@@ -32,6 +42,7 @@ public:
     static void addAccessibilityEnableButton(QWindow *window);
     static void onShowWindow(QWindow *);
     static void onRemoveWindow(QWindow *);
+    static bool isEnabled();
 
 private:
     void addAccessibilityEnableButtonImpl(QWindow *window);

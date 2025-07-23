@@ -73,6 +73,11 @@ void QWasmAccessibility::onRemoveWindow(QWindow *window)
     get()->onRemoveWindowImpl(window);
 }
 
+bool QWasmAccessibility::isEnabled()
+{
+    return get()->m_accessibilityEnabled;
+}
+
 void QWasmAccessibility::addAccessibilityEnableButtonImpl(QWindow *window)
 {
     if (m_accessibilityEnabled)
@@ -138,6 +143,8 @@ void QWasmAccessibility::enableAccessibility()
     for (const auto& [key, value] : m_enableButtons) {
         const auto &[element, callback] = value;
         Q_UNUSED(callback);
+        if (auto wasmWindow = QWasmWindow::fromWindow(key))
+            wasmWindow->onAccessibilityEnable();
         onShowWindowImpl(key);
         element["parentElement"].call<void>("removeChild", element);
     }
@@ -418,7 +425,9 @@ emscripten::val QWasmAccessibility::createHtmlElement(QAccessibleInterface *ifac
         case QAccessible::EditableText: {
             element = document.call<emscripten::val>("createElement", std::string("input"));
             setAttribute(element, "type", "text");
-            addEventListener(element, "input");
+            setAttribute(element, "contenteditable", "true");
+            setAttribute(element, "readonly", iface->state().readOnly);
+            setProperty(element, "inputMode", "text");
         } break;
         default:
             qCDebug(lcQpaAccessibility) << "TODO: createHtmlElement() handle" << iface->role();
@@ -542,9 +551,12 @@ void QWasmAccessibility::setHtmlElementTextName(QAccessibleInterface *iface)
 {
     const emscripten::val element = getHtmlElement(iface);
     const QString name = iface->text(QAccessible::Name);
+    const QString value = iface->text(QAccessible::Value);
 
     if (iface->role() == QAccessible::StaticText)
-        setProperty(element, "innerHTML", name.toStdString());
+        setAttribute(element, "aria-label", name.toStdString());
+    else if (iface->role() == QAccessible::EditableText)
+        setProperty(element, "value", value.toStdString());
     else
         setAttribute(element, "aria-label", name.toStdString());
 }
@@ -552,10 +564,8 @@ void QWasmAccessibility::setHtmlElementTextName(QAccessibleInterface *iface)
 void QWasmAccessibility::setHtmlElementTextNameLE(QAccessibleInterface *iface)
 {
     const emscripten::val element = getHtmlElement(iface);
-    QString text = iface->text(QAccessible::Name);
-    setAttribute(element, "name", text.toStdString());
     QString value = iface->text(QAccessible::Value);
-    setProperty(element, "innerHTML", value.toStdString());
+    setProperty(element, "value", value.toStdString());
 }
 
 void QWasmAccessibility::setHtmlElementFocus(QAccessibleInterface *iface)
@@ -585,10 +595,31 @@ void QWasmAccessibility::handleStaticTextUpdate(QAccessibleEvent *event)
 void QWasmAccessibility::handleLineEditUpdate(QAccessibleEvent *event)
 {
     switch (event->type()) {
+    case QAccessible::StateChanged: {
+        auto iface = event->accessibleInterface();
+        auto element = getHtmlElement(iface);
+        setAttribute(element, "readonly", iface->state().readOnly);
+        if (iface->state().passwordEdit)
+            setProperty(element, "type", "password");
+        else
+            setProperty(element, "type", "text");
+    } break;
     case QAccessible::NameChanged: {
         setHtmlElementTextName(event->accessibleInterface());
     } break;
-    case QAccessible::Focus:
+    case QAccessible::ObjectShow:
+    case QAccessible::Focus: {
+        auto iface = event->accessibleInterface();
+        auto element = getHtmlElement(iface);
+        if (!element.isUndefined()) {
+            setAttribute(element, "readonly", iface->state().readOnly);
+            if (iface->state().passwordEdit)
+                setProperty(element, "type", "password");
+            else
+                setProperty(element, "type", "text");
+        }
+        setHtmlElementTextNameLE(iface);
+    } break;
     case QAccessible::TextRemoved:
     case QAccessible::TextInserted:
     case QAccessible::TextCaretMoved: {
@@ -615,19 +646,8 @@ void QWasmAccessibility::handleEventFromHtmlElement(const emscripten::val event)
                 iface->actionInterface()->doAction(QAccessibleActionInterface::setFocusAction());
         } else if (actionNames.contains(QAccessibleActionInterface::pressAction())) {
             iface->actionInterface()->doAction(QAccessibleActionInterface::pressAction());
-
         } else if (actionNames.contains(QAccessibleActionInterface::toggleAction())) {
             iface->actionInterface()->doAction(QAccessibleActionInterface::toggleAction());
-
-        } else if (eventType == "input") {
-
-            // as EditableTextInterface is not implemented in qml accessibility
-            // so we need to check the role for text to update in the textbox during accessibility
-
-            if (iface->editableTextInterface() || iface->role() == QAccessible::EditableText) {
-                std::string insertText = event["target"]["value"].as<std::string>();
-                iface->setText(QAccessible::Value, QString::fromStdString(insertText));
-            }
         }
     }
 }
@@ -942,14 +962,15 @@ void QWasmAccessibility::notifyAccessibilityUpdate(QAccessibleEvent *event)
 
     QAccessibleInterface *iface = event->accessibleInterface();
     if (!iface) {
-        qWarning() << "notifyAccessibilityUpdate with null a11y interface";
+        qWarning() << "notifyAccessibilityUpdate with null a11y interface" << event->type() << event->object();
         return;
     }
 
     // Handle event types that creates/removes objects.
     switch (event->type()) {
     case QAccessible::ObjectCreated:
-        createObject(iface);
+        // Do nothing, there are too many changes to the interface
+        // before ObjectShow is called
         return;
 
     case QAccessible::ObjectDestroyed:
@@ -1000,7 +1021,7 @@ void QWasmAccessibility::notifyAccessibilityUpdate(QAccessibleEvent *event)
         // Sync up properties on show;
         setHtmlElementGeometry(iface);
         setHtmlElementTextName(iface);
-        return;
+        break;
 
     case QAccessible::ObjectHide:
         linkToParent(iface);
