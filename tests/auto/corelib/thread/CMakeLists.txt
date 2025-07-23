@@ -2,16 +2,18 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 if(QT_BUILD_WASM_BATCHED_TESTS) # not all tests currently work in WebAssembly
-    add_subdirectory(qatomicint)
-    add_subdirectory(qatomicinteger)
-    add_subdirectory(qatomicpointer)
-    if(QT_FEATURE_future)
-        add_subdirectory(qfuturesynchronizer)
-        add_subdirectory(qresultstore)
+    if(QT_FEATURE_thread)
+        add_subdirectory(qatomicint)
+        add_subdirectory(qatomicinteger)
+        add_subdirectory(qatomicpointer)
+        if(QT_FEATURE_future)
+            add_subdirectory(qfuturesynchronizer)
+            add_subdirectory(qresultstore)
+        endif()
+        add_subdirectory(qmutexlocker)
+        add_subdirectory(qreadlocker)
+        add_subdirectory(qwritelocker)
     endif()
-    add_subdirectory(qmutexlocker)
-    add_subdirectory(qreadlocker)
-    add_subdirectory(qwritelocker)
     return()
 endif()
 
