@@ -653,8 +653,10 @@ inline void QQueuedMetaCallEvent::copyArgValues(int argCount, const QtPrivate::Q
     QMetaType *types = reinterpret_cast<QMetaType *>(d.args_ + d.nargs_);
     int inplaceIndex = 0;
 
-    types[0] = QMetaType(); // return type
-    args[0] = nullptr; // return value pointer
+    if (argCount) {
+        types[0] = QMetaType(); // return type
+        args[0] = nullptr; // return value pointer
+    }
     // no return value
 
     for (int n = 1; n < argCount; ++n) {

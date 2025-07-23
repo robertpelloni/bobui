@@ -159,6 +159,7 @@ private slots:
     void asyncCallbackHelper();
     void disconnectQueuedConnection_pendingEventsAreDelivered();
     void timerWithNegativeInterval();
+    void emptyQueuedMetaCallEvent();
 };
 
 struct QObjectCreatedOnShutdown
@@ -9014,6 +9015,16 @@ void tst_QObject::timerWithNegativeInterval()
                          "interval will be set to 1ms.");
     int id = obj.startTimer(-100ms);
     QCOMPARE_NE(Qt::TimerId{id}, Qt::TimerId::Invalid);
+}
+
+void tst_QObject::emptyQueuedMetaCallEvent()
+{
+#ifdef QT_BUILD_INTERNAL
+    // don't crash
+    QQueuedMetaCallEvent event(0, nullptr, 0, 0, nullptr, nullptr);
+#else
+    QSKIP("Needs QT_BUILD_INTERNAL");
+#endif
 }
 
 QTEST_MAIN(tst_QObject)
