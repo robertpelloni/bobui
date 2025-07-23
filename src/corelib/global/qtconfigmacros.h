@@ -228,6 +228,12 @@ namespace QT_NAMESPACE {}
 #  define QT_NO_QSNPRINTF
 # endif
 #endif // 6.9.0
+
+#if QT_ENABLE_STRICT_MODE_UP_TO >= QT_VERSION_CHECK(6, 11, 0)
+# ifndef QT_NO_SINGLE_ARGUMENT_QHASH_OVERLOAD
+#  define QT_NO_SINGLE_ARGUMENT_QHASH_OVERLOAD
+# endif
+#endif // 6.11.0
 #endif // QT_ENABLE_STRICT_MODE_UP_TO
 
 #endif /* QTCONFIGMACROS_H */

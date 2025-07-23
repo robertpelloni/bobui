@@ -1602,7 +1602,9 @@ size_t qHash(long double key, size_t seed) noexcept
     both a one-argument and a two-arguments overload are defined for a
     key type, the latter is used by QHash (note that you can simply
     define a two-arguments version, and use a default value for the
-    seed parameter).
+    seed parameter). In Qt 6 it is possible to disable support for the
+    single argument qHash overload by defining the
+    \c{QT_NO_SINGLE_ARGUMENT_QHASH_OVERLOAD} macro.
 
     The second way to provide a hashing function is by specializing
     the \c{std::hash} class for the key type \c{K}, and providing a
@@ -4085,6 +4087,18 @@ size_t qHash(long double key, size_t seed) noexcept
     \c{std::pair<const Key &, T &>}.
 
     Returns the number of elements removed, if any.
+*/
+
+/*! \macro QT_NO_SINGLE_ARGUMENT_QHASH_OVERLOAD
+    \relates QHash
+    \since 6.11
+
+    Defining this macro disables the support for qHash overloads that only take
+    one argument; in other words, for qHash overloads that do not also accept
+    a seed. Support for the single-argument overloads of qHash is deprecated
+    and will be removed in Qt 7.
+
+    \sa qHash
 */
 
 #ifdef QT_HAS_CONSTEXPR_BITOPS
