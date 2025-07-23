@@ -483,22 +483,6 @@ QAbstractMetaCallEvent::~QAbstractMetaCallEvent()
 
 /*!
     \internal
- */
-inline void QQueuedMetaCallEvent::allocArgs()
-{
-    if (!d.nargs_)
-        return;
-
-    constexpr size_t each = sizeof(void*) + sizeof(QMetaType);
-    void *const memory = d.nargs_ * each > sizeof(prealloc_) ?
-        calloc(d.nargs_, each) : prealloc_;
-
-    Q_CHECK_PTR(memory);
-    d.args_ = static_cast<void **>(memory);
-}
-
-/*!
-    \internal
 
     Used for blocking queued connections, just passes \a args through without
     allocating any memory.
@@ -580,7 +564,6 @@ QQueuedMetaCallEvent::QQueuedMetaCallEvent(ushort method_offset, ushort method_r
                      method_offset, method_relative}),
       prealloc_()
 {
-    allocArgs();
     copyArgValues(argCount, argTypes, argValues);
 }
 
@@ -599,7 +582,6 @@ QQueuedMetaCallEvent::QQueuedMetaCallEvent(QtPrivate::QSlotObjectBase *slotObj,
 {
     if (d.slotObj_)
         d.slotObj_->ref();
-    allocArgs();
     copyArgValues(argCount, argTypes, argValues);
 }
 
@@ -616,7 +598,6 @@ QQueuedMetaCallEvent::QQueuedMetaCallEvent(QtPrivate::SlotObjUniquePtr slotObj,
                      0, ushort(-1)}),
       prealloc_()
 {
-    allocArgs();
     copyArgValues(argCount, argTypes, argValues);
 }
 
@@ -648,9 +629,26 @@ QQueuedMetaCallEvent::~QQueuedMetaCallEvent()
 /*!
     \internal
  */
+inline void QQueuedMetaCallEvent::allocArgs()
+{
+    if (!d.nargs_)
+        return;
+
+    constexpr size_t each = sizeof(void*) + sizeof(QMetaType);
+    void *const memory = d.nargs_ * each > sizeof(prealloc_) ?
+        calloc(d.nargs_, each) : prealloc_;
+
+    Q_CHECK_PTR(memory);
+    d.args_ = static_cast<void **>(memory);
+}
+
+/*!
+    \internal
+ */
 inline void QQueuedMetaCallEvent::copyArgValues(int argCount, const QtPrivate::QMetaTypeInterface * const *argTypes,
                                                 const void * const *argValues)
 {
+    allocArgs();
     void **args = d.args_;
     QMetaType *types = reinterpret_cast<QMetaType *>(d.args_ + d.nargs_);
     int inplaceIndex = 0;
