@@ -494,7 +494,13 @@ void QWasmAccessibility::setHtmlElementVisibility(QAccessibleInterface *iface, b
     emscripten::val element = getHtmlElement(iface);
 
     visible = visible && !iface->state().invisible;
-    setAttribute(element, "aria-hidden", !visible); // aria-hidden mean completely hidden; maybe some sort of soft-hidden should be used.
+    if (visible) {
+        setAttribute(element, "aria-hidden", false);
+        setAttribute(element, "tabindex", "");
+    } else {
+        setAttribute(element, "aria-hidden", true); // aria-hidden mean completely hidden; maybe some sort of soft-hidden should be used.
+        setAttribute(element, "tabindex", "-1");
+    }
 }
 
 void QWasmAccessibility::setHtmlElementGeometry(QAccessibleInterface *iface)
