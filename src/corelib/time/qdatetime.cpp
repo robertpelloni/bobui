@@ -4218,7 +4218,7 @@ QTimeZone QDateTime::timeZone() const
     time-zones ahead of UTC (East of The Prime Meridian), negative for those
     behind UTC (West of The Prime Meridian).
 
-    \sa setOffsetFromUtc()
+    \sa setTimeZone()
 */
 
 int QDateTime::offsetFromUtc() const
@@ -5139,7 +5139,7 @@ QDateTime QDateTime::toTimeSpec(Qt::TimeSpec spec) const
 
     The result represents the same moment in time as, and is equal to, this datetime.
 
-    \sa setOffsetFromUtc(), offsetFromUtc(), toTimeZone()
+    \sa offsetFromUtc(), toTimeZone()
 */
 
 QDateTime QDateTime::toOffsetFromUtc(int offsetSeconds) const
