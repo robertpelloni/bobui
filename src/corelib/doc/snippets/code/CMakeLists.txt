@@ -53,6 +53,18 @@ add_library(corelib_snippets_code OBJECT
     src_corelib_serialization_qcborvalue.cpp
     src_corelib_serialization_qdatastream.cpp
     src_corelib_serialization_qjsonobject.cpp
+    src_corelib_text_qanystringview.cpp
+    src_corelib_text_qbytearray.cpp
+    src_corelib_text_qbytearraymatcher.cpp
+    src_corelib_text_qbytearrayview.cpp
+    src_corelib_text_qcollator.cpp
+    src_corelib_text_qlocale.cpp
+    src_corelib_text_qregularexpression.cpp
+    src_corelib_text_qstaticlatin1stringmatcher.cpp
+    src_corelib_text_qstring.cpp
+    src_corelib_text_qstringconverter.cpp
+    src_corelib_text_qstringview.cpp
+    src_corelib_text_qutf8stringview.cpp
 )
 
 target_link_libraries(corelib_snippets_code PRIVATE
