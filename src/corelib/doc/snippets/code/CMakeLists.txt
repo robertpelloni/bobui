@@ -46,6 +46,9 @@ add_library(corelib_snippets_code OBJECT
     src_corelib_kernel_qproperty.cpp
     src_corelib_kernel_qsystemsemaphore.cpp
     src_corelib_kernel_qvariant.cpp
+    src_corelib_mimetype_qmimedatabase.cpp
+    src_corelib_plugin_qlibrary.cpp
+    src_corelib_plugin_quuid.cpp
 )
 
 target_link_libraries(corelib_snippets_code PRIVATE
