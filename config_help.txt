@@ -69,6 +69,7 @@ Build options:
                          system generator.
   -cmake-file-api ...... Let CMake store build metadata for loading the build
                          into an IDE. [no; yes if -developer-build]
+  -dry-run ............. Only print the CMake command but don't execute it.
   -no-guess-compiler ... Do not guess the compiler from the target mkspec.
   -release ............. Build Qt with optimizations and without debug
                          symbols [yes]
