@@ -49,6 +49,10 @@ add_library(corelib_snippets_code OBJECT
     src_corelib_mimetype_qmimedatabase.cpp
     src_corelib_plugin_qlibrary.cpp
     src_corelib_plugin_quuid.cpp
+    src_corelib_serialization_qcborstream.cpp
+    src_corelib_serialization_qcborvalue.cpp
+    src_corelib_serialization_qdatastream.cpp
+    src_corelib_serialization_qjsonobject.cpp
 )
 
 target_link_libraries(corelib_snippets_code PRIVATE
