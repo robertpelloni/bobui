@@ -406,7 +406,8 @@ private:
 
     // Space for 5 argument pointers and types (including 1 return arg).
     // Contiguous so that we can make one calloc() for both the pointers and the types when necessary.
-    alignas(void *) char prealloc_[5 * sizeof(void *) + 5 * sizeof(QMetaType)];
+    static constexpr size_t PtrAndTypeSize = sizeof(void *) + sizeof(QMetaType);
+    alignas(void *) char prealloc_[5 * PtrAndTypeSize];
     struct ArgValueStorage { // size and alignment matching QString, QList, etc
         static constexpr size_t MaxSize = 3 * sizeof(void *);
         alignas(void *) char storage[MaxSize];

@@ -622,7 +622,7 @@ QQueuedMetaCallEvent::~QQueuedMetaCallEvent()
     }
     if (d.nargs_) {
         if (static_cast<void *>(d.args_) != prealloc_)
-            free(d.args_);
+            QtPrivate::sizedFree(d.args_, d.nargs_, PtrAndTypeSize);
     }
 }
 
@@ -634,9 +634,8 @@ inline void QQueuedMetaCallEvent::allocArgs()
     if (!d.nargs_)
         return;
 
-    constexpr size_t each = sizeof(void*) + sizeof(QMetaType);
-    void *const memory = d.nargs_ * each > sizeof(prealloc_) ?
-        calloc(d.nargs_, each) : prealloc_;
+    void *const memory = d.nargs_ * PtrAndTypeSize > sizeof(prealloc_) ?
+        calloc(d.nargs_, PtrAndTypeSize) : prealloc_;
 
     Q_CHECK_PTR(memory);
     d.args_ = static_cast<void **>(memory);
