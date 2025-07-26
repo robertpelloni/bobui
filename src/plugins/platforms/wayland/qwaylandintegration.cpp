@@ -88,6 +88,8 @@ QWaylandIntegration::QWaylandIntegration(const QString &platformName)
     : mPlatformName(platformName), mFontDb(new QGenericUnixFontDatabase())
 #endif
 {
+    QCoreApplication::setAttribute(Qt::AA_CompressHighFrequencyEvents);
+
     mDisplay.reset(new QWaylandDisplay(this));
     mPlatformServices.reset(new QWaylandPlatformServices(mDisplay.data()));
 

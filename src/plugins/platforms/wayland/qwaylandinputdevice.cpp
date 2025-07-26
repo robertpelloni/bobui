@@ -63,6 +63,34 @@ Q_LOGGING_CATEGORY(lcQpaWaylandInput, "qt.qpa.wayland.input");
 // reasonable number of them. As of 2021 most touchscreen panels support 10 concurrent touchpoints.
 static const int MaxTouchPoints = 10;
 
+QWaylandEventCompressionPrivate::QWaylandEventCompressionPrivate()
+{
+    timeElapsed.start();
+    delayTimer.setSingleShot(true);
+}
+
+bool QWaylandEventCompressionPrivate::compressEvent()
+{
+    using namespace std::chrono_literals;
+
+    if (!QCoreApplication::testAttribute(Qt::AA_CompressHighFrequencyEvents))
+        return false;
+
+    const auto elapsed = timeElapsed.durationElapsed();
+    timeElapsed.start();
+    if (elapsed < 100us || delayTimer.isActive())
+    {
+        // The highest USB HID polling rate is 8 kHz (125 μs). Most mice use lowe polling rate [125 Hz - 1000 Hz].
+        // Reject all events faster than 100 μs, because it definitely means the application main thread is
+        // freezed by long operation and events are delivered one after another from the queue. Since now we rely
+        // on the 0 ms timer to deliver the last pending event when application main thread is no longer freezed.
+        delayTimer.start(0);
+        return true;
+    }
+
+    return false;
+}
+
 QWaylandInputDevice::Keyboard::Keyboard(QWaylandInputDevice *p)
     : mParent(p)
 {
@@ -140,6 +168,8 @@ QWaylandInputDevice::Pointer::Pointer(QWaylandInputDevice *seat)
         cursorTimerCallback();
     });
 #endif
+
+    mEventCompression.delayTimer.callOnTimeout(this, &QWaylandInputDevice::Pointer::flushFrameEvent);
 }
 
 QWaylandInputDevice::Pointer::~Pointer()
@@ -913,6 +943,11 @@ void QWaylandInputDevice::Pointer::pointer_axis(uint32_t time, uint32_t axis, in
 
 void QWaylandInputDevice::Pointer::pointer_frame()
 {
+    if (mEventCompression.compressEvent()) {
+        qCDebug(lcQpaWaylandInput) << "compressed pointer_frame event";
+        return;
+    }
+
     flushFrameEvent();
 }
 
@@ -1042,6 +1077,7 @@ void QWaylandInputDevice::Pointer::setFrameEvent(QWaylandPointerEvent *event)
         flushFrameEvent();
     }
 
+    delete mFrameData.event;
     mFrameData.event = event;
 
     if (version() < WL_POINTER_FRAME_SINCE_VERSION) {
@@ -1161,6 +1197,8 @@ void QWaylandInputDevice::Pointer::flushScrollEvent()
 
 void QWaylandInputDevice::Pointer::flushFrameEvent()
 {
+    mEventCompression.delayTimer.stop();
+
     if (auto *event = mFrameData.event) {
         if (auto window = event->surface) {
             window->handleMouse(mParent, *event);

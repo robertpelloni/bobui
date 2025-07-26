@@ -75,6 +75,16 @@ class CursorSurface;
 
 Q_DECLARE_LOGGING_CATEGORY(lcQpaWaylandInput);
 
+struct QWaylandEventCompressionPrivate
+{
+    QWaylandEventCompressionPrivate();
+
+    bool compressEvent();
+
+    QElapsedTimer timeElapsed;
+    QTimer delayTimer;
+};
+
 class Q_WAYLANDCLIENT_EXPORT QWaylandInputDevice
                             : public QObject
                             , public QtWayland::wl_seat
@@ -378,6 +388,8 @@ public:
 
     bool mScrollBeginSent = false;
     QPointF mScrollDeltaRemainder;
+
+    QWaylandEventCompressionPrivate mEventCompression;
 
     void setFrameEvent(QWaylandPointerEvent *event);
     void flushScrollEvent();
