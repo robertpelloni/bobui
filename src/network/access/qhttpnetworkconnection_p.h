@@ -33,7 +33,6 @@
 #include <private/qhttpnetworkheader_p.h>
 #include <private/qhttpnetworkrequest_p.h>
 #include <private/qhttpnetworkreply_p.h>
-#include <private/qnetconmonitor_p.h>
 #include <private/http2protocol_p.h>
 
 #include <private/qhttpnetworkconnectionchannel_p.h>
@@ -255,14 +254,6 @@ public:
     QHttp2Configuration http2Parameters;
 
     QString peerVerifyName;
-    // If network status monitoring is enabled, we activate connectionMonitor
-    // as soons as one of channels managed to connect to host (and we
-    // have a pair of addresses (us,peer).
-    // NETMONTODO: consider activating a monitor on a change from
-    // HostLookUp state to ConnectingState (means we have both
-    // local/remote addresses known and can start monitoring this
-    // early).
-    QNetworkConnectionMonitor connectionMonitor;
 
     friend class QHttpNetworkConnectionChannel;
 };

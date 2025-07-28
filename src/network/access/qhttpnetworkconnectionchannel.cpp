@@ -21,8 +21,6 @@
 #    include <QtNetwork/qsslcipher.h>
 #endif
 
-#include "private/qnetconmonitor_p.h"
-
 #include <QtNetwork/private/qtnetworkglobal_p.h>
 
 #include <memory>
@@ -917,16 +915,6 @@ void QHttpNetworkConnectionChannel::_q_connected_abstract_socket(QAbstractSocket
     absSocket->setSocketOption(QAbstractSocket::KeepAliveOption, 1);
 
     pipeliningSupported = QHttpNetworkConnectionChannel::PipeliningSupportUnknown;
-
-    if (QNetworkConnectionMonitor::isEnabled()) {
-        auto connectionPrivate = connection->d_func();
-        if (!connectionPrivate->connectionMonitor.isMonitoring()) {
-            // Now that we have a pair of addresses, we can start monitoring the
-            // connection status to handle its loss properly.
-            if (connectionPrivate->connectionMonitor.setTargets(absSocket->localAddress(), absSocket->peerAddress()))
-                connectionPrivate->connectionMonitor.startMonitoring();
-        }
-    }
 
     // ### FIXME: if the server closes the connection unexpectedly, we shouldn't send the same broken request again!
     //channels[i].reconnectAttempts = 2;

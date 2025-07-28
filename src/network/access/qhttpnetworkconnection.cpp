@@ -1386,10 +1386,6 @@ QHttpNetworkConnection::QHttpNetworkConnection(quint16 connectionCount, const QS
 {
     Q_D(QHttpNetworkConnection);
     d->init();
-    if (QNetworkConnectionMonitor::isEnabled()) {
-        connect(&d->connectionMonitor, &QNetworkConnectionMonitor::reachabilityChanged,
-                this, &QHttpNetworkConnection::onlineStateChanged, Qt::QueuedConnection);
-    }
 }
 
 QHttpNetworkConnection::~QHttpNetworkConnection()
@@ -1584,9 +1580,6 @@ void QHttpNetworkConnection::onlineStateChanged(bool isOnline)
         channel.emitFinishedWithError(QNetworkReply::TemporaryNetworkFailureError, "Temporary network failure.");
         channel.close();
     }
-
-    // We don't care, this connection is broken from our POV.
-    d->connectionMonitor.stopMonitoring();
 }
 
 #ifndef QT_NO_NETWORKPROXY
