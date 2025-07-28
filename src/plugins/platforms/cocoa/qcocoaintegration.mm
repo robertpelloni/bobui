@@ -232,7 +232,7 @@ bool QCocoaIntegration::hasCapability(QPlatformIntegration::Capability cap) cons
         // layer-backed.
         return false;
     case OpenGL:
-        if (QOperatingSystemVersion::current() > QOperatingSystemVersion::MacOSSonoma) {
+        if (QOperatingSystemVersion::current() >= QOperatingSystemVersion::MacOSTahoe) {
             // Tahoe has issues with software-backed GL, crashing in common operations
             static bool isSoftwareContext = []{
                 QOpenGLContext context;
