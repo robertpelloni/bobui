@@ -133,7 +133,7 @@ void ammend_example(QCborStreamWriter &writer)
 //! [13]
 void writeFloat(QCborStreamWriter &writer, float f)
 {
-    qfloat16 f16 = f;
+    qfloat16 f16 = qfloat16(f);
     if (qIsNaN(f) || f16 == f)
         writer.append(f16);
     else
@@ -161,7 +161,7 @@ void writeDouble(QCborStreamWriter &writer, double d)
     } else if (qIsInf(d)) {
         writer.append(d < 0 ? -qInf() : qInf());
     } else if ((f = d) == d) {
-        qfloat16 f16 = f;
+        qfloat16 f16 = qfloat16(f);
         if (f16 == f)
             writer.append(f16);
         else
