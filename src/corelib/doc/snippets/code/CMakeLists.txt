@@ -65,6 +65,13 @@ add_library(corelib_snippets_code OBJECT
     src_corelib_text_qstringconverter.cpp
     src_corelib_text_qstringview.cpp
     src_corelib_text_qutf8stringview.cpp
+    src_corelib_thread_qexception.cpp
+    src_corelib_thread_qmutex.cpp
+    src_corelib_thread_qreadwritelock.cpp
+    src_corelib_thread_qsemaphore.cpp
+    src_corelib_thread_qthread.cpp
+    src_corelib_thread_qwaitcondition_unix.cpp
+    src_corelib_time_qdatetime.cpp
 )
 
 target_link_libraries(corelib_snippets_code PRIVATE
@@ -90,6 +97,16 @@ qt_internal_extend_target(corelib_snippets_code CONDITION QT_FEATURE_widgets
 qt_internal_extend_target(corelib_snippets_code CONDITION QT_FEATURE_gui
     LIBRARIES
         Qt::Gui
+)
+
+qt_internal_extend_target(corelib_snippets_code CONDITION QT_FEATURE_concurrent
+    LIBRARIES
+        Qt::Concurrent
+    SOURCES
+        src_corelib_thread_qexception.cpp
+        src_corelib_thread_qfuture.cpp
+        src_corelib_thread_qfuturesynchronizer.cpp
+        src_corelib_thread_qfuturewatcher.cpp
 )
 
 qt_internal_extend_target(corelib_snippets_code CONDITION QT_FEATURE_network

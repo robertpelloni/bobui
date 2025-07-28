@@ -64,6 +64,7 @@ static bool contendedTryLockForWrite(QAtomicPointer<QReadWriteLockPrivate> &d_pt
 
     Example:
 
+    \snippet code/src_corelib_thread_qreadwritelock.cpp lock
     \snippet code/src_corelib_thread_qreadwritelock.cpp 0
 
     To ensure that writers aren't blocked forever by readers, readers
@@ -609,10 +610,12 @@ void QReadWriteLockPrivate::release()
     Here's an example that uses QReadLocker to lock and unlock a
     read-write lock for reading:
 
+    \snippet code/src_corelib_thread_qreadwritelock.cpp lock
     \snippet code/src_corelib_thread_qreadwritelock.cpp 1
 
     It is equivalent to the following code:
 
+    \snippet code/src_corelib_thread_qreadwritelock.cpp lock
     \snippet code/src_corelib_thread_qreadwritelock.cpp 2
 
     The QMutexLocker documentation shows examples where the use of a
@@ -682,10 +685,12 @@ void QReadWriteLockPrivate::release()
     Here's an example that uses QWriteLocker to lock and unlock a
     read-write lock for writing:
 
+    \snippet code/src_corelib_thread_qreadwritelock.cpp lock
     \snippet code/src_corelib_thread_qreadwritelock.cpp 3
 
     It is equivalent to the following code:
 
+    \snippet code/src_corelib_thread_qreadwritelock.cpp lock
     \snippet code/src_corelib_thread_qreadwritelock.cpp 4
 
     The QMutexLocker documentation shows examples where the use of a
