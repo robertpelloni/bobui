@@ -62,8 +62,6 @@
 #include "qhttpmultipart_p.h"
 #endif
 
-#include "qnetconmonitor_p.h"
-
 #include <mutex>
 #include <utility>
 

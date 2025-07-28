@@ -25,7 +25,6 @@
 #include <QtCore/private/qtools_p.h>
 
 #include "qnetworkcookiejar.h"
-#include "qnetconmonitor_p.h"
 
 #include "qnetworkreplyimpl_p.h"
 
