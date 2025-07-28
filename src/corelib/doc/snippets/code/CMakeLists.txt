@@ -72,6 +72,24 @@ add_library(corelib_snippets_code OBJECT
     src_corelib_thread_qthread.cpp
     src_corelib_thread_qwaitcondition_unix.cpp
     src_corelib_time_qdatetime.cpp
+    src_corelib_tools_qbitarray.cpp
+    src_corelib_tools_qcommandlineoption.cpp
+    src_corelib_tools_qcommandlineparser_main.cpp
+    src_corelib_tools_qcommandlineparser.cpp
+    src_corelib_tools_qcontiguouscache.cpp
+    src_corelib_tools_qeasingcurve.cpp
+    src_corelib_tools_qhash.cpp
+    src_corelib_tools_qlist.cpp
+    src_corelib_tools_qmap.cpp
+    src_corelib_tools_qmultimap.cpp
+    src_corelib_tools_qpoint.cpp
+    src_corelib_tools_qqueue.cpp
+    src_corelib_tools_qrect.cpp
+    src_corelib_tools_qscopedpointer.cpp
+    src_corelib_tools_qscopeguard.cpp
+    src_corelib_tools_qshareddata.cpp
+    src_corelib_tools_qsharedpointer.cpp
+    src_corelib_tools_qsize.cpp
 )
 
 target_link_libraries(corelib_snippets_code PRIVATE
@@ -92,6 +110,7 @@ qt_internal_extend_target(corelib_snippets_code CONDITION QT_FEATURE_widgets
         src_corelib_global_qglobal_widgets.cpp
         src_corelib_kernel_qobject.cpp
         src_corelib_kernel_qtimer.cpp
+        src_corelib_tools_qtimeline.cpp
 )
 
 qt_internal_extend_target(corelib_snippets_code CONDITION QT_FEATURE_gui

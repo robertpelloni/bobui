@@ -957,19 +957,12 @@
     function can determine that the pointer has already been deleted, it
     returns \nullptr.
 
-    It is ok to obtain the value of the pointer and using that value itself,
-    like for example in debugging statements:
-
-    \snippet code/src_corelib_tools_qsharedpointer.cpp 10
+    It is ok to obtain the value of the pointer and using that value itself.
 
     However, dereferencing the pointer is only allowed if you can guarantee
     by external means that the pointer does not get deleted. For example,
     if you can be certain that no other thread can delete it, nor the
     functions that you may call.
-
-    If that is the case, then the following code is valid:
-
-    \snippet code/src_corelib_tools_qsharedpointer.cpp 11
 
     Use this function with care.
 
