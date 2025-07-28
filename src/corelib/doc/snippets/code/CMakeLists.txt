@@ -90,6 +90,9 @@ add_library(corelib_snippets_code OBJECT
     src_corelib_tools_qshareddata.cpp
     src_corelib_tools_qsharedpointer.cpp
     src_corelib_tools_qsize.cpp
+    src_corelib_xml_qxmlstream.cpp
+    src_gui_itemviews_qidentityproxymodel.cpp
+    src_gui_itemviews_qitemselectionmodel.cpp
 )
 
 target_link_libraries(corelib_snippets_code PRIVATE
