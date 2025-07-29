@@ -26,8 +26,6 @@ add_library(corelib_snippets_code OBJECT
     src_corelib_io_qfile.cpp
     src_corelib_io_qfileinfo.cpp
     src_corelib_io_qfileselector.cpp
-    src_corelib_io_qiodevice.cpp
-    src_corelib_io_qprocess.cpp
     src_corelib_io_qsettings.cpp
     src_corelib_io_qstorageinfo.cpp
     src_corelib_io_qtemporarydir.cpp
@@ -106,6 +104,12 @@ target_link_libraries(corelib_snippets_code PRIVATE
 qt_internal_extend_target(corelib_snippets_code CONDITION APPLE
     SOURCES
         src_corelib_kernel_qabstractnativeeventfilter.mm
+)
+
+qt_internal_extend_target(corelib_snippets_code CONDITION QT_FEATURE_process
+    SOURCES
+        src_corelib_io_qiodevice.cpp
+        src_corelib_io_qprocess.cpp
 )
 
 qt_internal_extend_target(corelib_snippets_code CONDITION QT_FEATURE_widgets

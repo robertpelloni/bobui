@@ -5,7 +5,6 @@ add_library(corelib_snippets OBJECT
     customtype/customtypeexample.cpp
     file/file.cpp
     jni/src_qjniobject.cpp
-    process/process.cpp
     qbytearraylist/main.cpp
     qdir-listfiles/main.cpp
     qdir-namefilters/main.cpp
@@ -13,7 +12,6 @@ add_library(corelib_snippets OBJECT
     qloggingcategory/main.cpp
     qmessageauthenticationcode/main.cpp
     qmetatype/registerConverters.cpp
-    qprocess-environment/main.cpp
     qrangemodel/main.cpp
     qstack/main.cpp
     qstringlist/main.cpp
@@ -29,6 +27,18 @@ add_library(corelib_snippets OBJECT
 
 target_link_libraries(corelib_snippets PRIVATE
     Qt::Core
+)
+
+qt_internal_extend_target(corelib_snippets CONDITION QT_FEATURE_process
+    SOURCES
+        process/process.cpp
+)
+
+qt_internal_extend_target(corelib_snippets
+    CONDITION
+        QT_FEATURE_process AND QT_FEATURE_processenvironment
+    SOURCES
+        qprocess-environment/main.cpp
 )
 
 qt_internal_extend_target(corelib_snippets CONDITION QT_FEATURE_widgets
@@ -65,5 +75,7 @@ set_target_properties(corelib_snippets PROPERTIES UNITY_BUILD OFF)
 add_subdirectory(eventfilters)
 add_subdirectory(qmetaobject-invokable)
 add_subdirectory(qmetaobject-revision)
-add_subdirectory(qprocess)
+if(QT_FEATURE_process)
+    add_subdirectory(qprocess)
+endif()
 add_subdirectory(code)
