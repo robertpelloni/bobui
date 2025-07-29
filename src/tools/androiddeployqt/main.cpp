@@ -3822,11 +3822,13 @@ int generateJavaQmlComponents(const Options &options)
                << indent << "}\n";
     };
 
+    enum class MethodType { Signal = 0, Function = 1 };
+
     const auto beginSignalBlock = [firstCharToUpper](QTextStream &stream,
                                                      const QJsonObject &methodData,
                                                      int indentWidth = 8) {
         const QString indent(indentWidth, u' ');
-        if (methodData["methodType"_L1] != 0)
+        if (MethodType(methodData["methodType"_L1].toInt()) != MethodType::Signal)
             return;
         const QJsonArray parameters = methodData["parameters"_L1].toArray();
 
@@ -3907,6 +3909,54 @@ int generateJavaQmlComponents(const Options &options)
                               .arg(methodName, javaParamsClassesString)
                    << indent << "}\n\n";
         }
+    };
+
+    const auto writeFunctionBlock = [](QTextStream &stream, const QJsonObject &methodData,
+                                       int indentWidth = 8) {
+        const QString indent(indentWidth, u' ');
+        if (MethodType(methodData["methodType"_L1].toInt()) != MethodType::Function)
+            return;
+
+        const QJsonArray params = methodData["parameters"_L1].toArray();
+        const QString functionName = methodData["name"_L1].toString();
+
+        QList<QString> javaFunctionParams; // e.g. { "Object param", "String thing" }
+        QList<QString> javaParams; // e.g. "param, thing"
+        for (const auto &value : params) {
+            const auto object = value.toObject();
+            if (!object.contains("typeName"_L1)) {
+                qWarning() << "Skipping function" << functionName
+                           << "due to untyped function parameter detected while generating Java "
+                              "code for QML methods.";
+                return;
+            }
+
+            const auto qmlParamType = object["typeName"_L1].toString();
+            if (!qmlToJavaType.contains(qmlParamType)) {
+                qWarning() << "Skipping function" << functionName
+                           << "due to unsupported type detected in parameters:" << qmlParamType;
+                return;
+            }
+
+            const auto javaTypeName{ qmlToJavaType.value(object["typeName"_L1].toString(),
+                                                         "Object"_L1) };
+            const auto javaParamName = object["name"_L1].toString();
+            javaFunctionParams.push_back(
+                    QString{ "%1 %2"_L1 }.arg(javaTypeName).arg(javaParamName));
+            javaParams.append(javaParamName);
+        }
+
+        const auto functionSignature {
+            "public void %1(%2) {\n"_L1.arg(functionName).arg(javaFunctionParams.join(", "_L1))
+        };
+        const auto functionCallParams {
+            javaParams.isEmpty() ? ""_L1 : ", new Object[] { %1 }"_L1.arg(javaParams.join(", "_L1))
+        };
+
+        stream << indent << functionSignature
+               << indent << "   invokeMethod(\"%1\"%2);\n"_L1.arg(functionName)
+                                                             .arg(functionCallParams)
+               << indent << "}\n";
     };
 
     constexpr static auto markerFileName = "qml_java_contents"_L1;
@@ -4001,6 +4051,9 @@ int generateJavaQmlComponents(const Options &options)
             const QJsonArray methods = getMethods(component);
             for (const QJsonValue &m : std::as_const(methods))
                 beginSignalBlock(outputStream, m.toObject(), indentBase);
+
+            for (const QJsonValue &m : std::as_const(methods))
+                writeFunctionBlock(outputStream, m.toObject(), indentBase);
 
             indentBase -= 4;
             endBlock(outputStream, indentBase);
