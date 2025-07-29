@@ -2352,8 +2352,6 @@ public:
     MyEngine(int n) { number = n; }
 
     qint64 size() const override { return 123 + number; }
-    QStringList entryList(QDirListing::IteratorFlags, const QStringList &) const override
-    { return QStringList(); }
     QString fileName(FileName) const override { return name; }
 
 private:
