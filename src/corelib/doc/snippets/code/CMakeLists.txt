@@ -95,6 +95,10 @@ add_library(corelib_snippets_code OBJECT
     src_gui_itemviews_qitemselectionmodel.cpp
 )
 
+set_target_properties(corelib_snippets_code PROPERTIES
+    UNITY_BUILD OFF
+)
+
 target_link_libraries(corelib_snippets_code PRIVATE
     Qt::Core
 )
