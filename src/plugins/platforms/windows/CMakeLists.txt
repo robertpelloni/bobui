@@ -201,7 +201,9 @@ qt_internal_extend_target(QWindowsIntegrationPlugin CONDITION QT_FEATURE_accessi
 )
 
 # This is loaded dynamically when using MINGW as its import library is incomplete
-qt_internal_extend_target(QWindowsIntegrationPlugin CONDITION MSVC AND QT_FEATURE_accessibility
+qt_internal_extend_target(
+    QWindowsIntegrationPlugin
+        CONDITION (MSVC OR CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC") AND QT_FEATURE_accessibility
     LIBRARIES
         uiautomationcore
 )
