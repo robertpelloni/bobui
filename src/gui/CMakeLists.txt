@@ -1129,3 +1129,7 @@ if(IOS)
 endif()
 
 qt_internal_add_optimize_full_flags()
+
+if(QT_FEATURE_doc_snippets)
+    add_subdirectory(doc/snippets)
+endif()
