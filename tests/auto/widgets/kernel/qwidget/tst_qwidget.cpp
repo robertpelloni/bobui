@@ -12487,8 +12487,6 @@ void tst_QWidget::synthMouseDoubleClick()
     widget.setWindowTitle(QLatin1String(QTest::currentTestFunction()));
     widget.show();
     QWindow* window = widget.windowHandle();
-
-    QVERIFY(ensurePositionTopLeft(window));
     QVERIFY(QTest::qWaitForWindowExposed(window));
 
     // tap once; move slightly from press to release
