@@ -273,7 +273,7 @@ bool QWindowsContext::disposeTablet()
 #endif
 }
 
-extern "C" LRESULT QT_WIN_CALLBACK qWindowsPowerWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT QT_WIN_CALLBACK qWindowsPowerWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     if (message != WM_POWERBROADCAST || wParam != PBT_POWERSETTINGCHANGE)
         return DefWindowProc(hwnd, message, wParam, lParam);
@@ -1501,7 +1501,7 @@ static inline bool isTopLevel(HWND hwnd)
 
 */
 
-extern "C" LRESULT QT_WIN_CALLBACK qWindowsWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT QT_WIN_CALLBACK qWindowsWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     LRESULT result;
     const QtWindows::WindowsEventType et = windowsEventType(message, wParam, lParam);
