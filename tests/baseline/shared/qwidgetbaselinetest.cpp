@@ -10,6 +10,7 @@
 #include <QScreen>
 #include <QPainter>
 
+#include <QtCore/private/qabstractanimation_p.h>
 #include <QtWidgets/private/qapplication_p.h>
 
 QT_BEGIN_NAMESPACE
@@ -35,6 +36,7 @@ QWidgetBaselineTest::QWidgetBaselineTest()
     // turn off animations and make the cursor flash time really long to avoid blinking
     QApplication::style()->setProperty("_qt_animation_time", QTime());
     QApplication::style()->setProperty("_q_no_animation", true);
+    QUnifiedTimer::instance()->setSpeedModifier(100000);
     QGuiApplication::styleHints()->setCursorFlashTime(50000);
 
     QByteArray appearanceBytes;
@@ -156,8 +158,9 @@ void QWidgetBaselineTest::makeVisible()
 */
 QImage QWidgetBaselineTest::takeSnapshot()
 {
-    // make sure all effects are done
-    QTest::qWait(250);
+    // Process events for whatever state changes was initiated
+    // prior to the snapshot.
+    QCoreApplication::processEvents();
 
     // Render to QImage instead of going via QWidget::grab(),
     // as the latter will typically use an RGB32 image, and
