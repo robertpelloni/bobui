@@ -218,7 +218,7 @@ void QWidgetBaselineTest::takeStandardSnapshots()
     QWidget otherWindow;
     otherWindow.move(window->geometry().bottomRight() + QPoint(10, 10));
     otherWindow.resize(50, 50);
-    otherWindow.setWindowFlags(Qt::CustomizeWindowHint | Qt::FramelessWindowHint);
+    otherWindow.setWindowFlags(Qt::CustomizeWindowHint | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint);
     otherWindow.show();
     otherWindow.windowHandle()->requestActivate();
     QVERIFY(QTest::qWaitForWindowActive(&otherWindow));
