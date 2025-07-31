@@ -144,7 +144,10 @@ void QWidgetBaselineTest::makeVisible()
     background->showMaximized();
     window->setScreen(preferredScreen);
     window->move(preferredScreenRect.topLeft());
+
     window->show();
+    QVERIFY(QTest::qWaitForWindowExposed(window));
+
     QApplicationPrivate::setActiveWindow(window);
     QVERIFY(QTest::qWaitForWindowActive(window));
     // explicitly set focus on the window so that the test widget doesn't have it
