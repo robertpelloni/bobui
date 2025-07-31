@@ -160,6 +160,11 @@ private:
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(QDirListing::IteratorFlags)
 
+#ifndef QT_NO_DEBUG_STREAM
+class QDebug;
+Q_CORE_EXPORT QDebug operator<<(QDebug debug, QDirListing::IteratorFlags flags);
+#endif
+
 QT_END_NAMESPACE
 
 #endif // QDIRLISTING_H

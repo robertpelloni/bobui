@@ -11,6 +11,7 @@
 #include <QSet>
 #include <QString>
 
+#include <QtCore/private/qdir_p.h>
 #include <QtCore/private/qfsfileengine_p.h>
 
 #if defined(Q_OS_VXWORKS)
@@ -96,7 +97,8 @@ private slots:
 #endif
 
     void withStdAlgorithms();
-
+    void debugStreamOperator_data();
+    void debugStreamOperator();
 private:
     QSharedPointer<QTemporaryDir> m_dataDir;
 };
@@ -940,6 +942,36 @@ void tst_QDirListing::withStdAlgorithms()
     QVERIFY(it != dirList.cend());
     QCOMPARE(it->fileName(), fileName);
 #endif
+}
+
+void tst_QDirListing::debugStreamOperator_data()
+{
+    QTest::addColumn<QDirListing::IteratorFlags>("flags");
+    QTest::addColumn<QString>("expected");
+
+    auto addRow = [](const char *tagName, QDirListing::IteratorFlags f) {
+        QTest::newRow(tagName) << f << QString("QDirListing::IteratorFlags("_ba + tagName + ")");
+    };
+
+    using F = QDirListing::IteratorFlag;
+    addRow("Default", F::Default);
+    addRow("ExcludeFiles|IncludeDotAndDotDot", F::ExcludeFiles | F::IncludeDotAndDotDot);
+    addRow("ResolveSymlinks|IncludeHidden", F::ResolveSymlinks | F::IncludeHidden);
+    addRow("ExcludeFiles|ExcludeOther|Recursive", F::ExcludeFiles | F::ExcludeOther | F::Recursive);
+
+    QTest::newRow("DirsOnly|Recursive")
+        << QDirListing::IteratorFlags(F::ExcludeFiles | F::ExcludeOther | F::Recursive)
+        << u"QDirListing::IteratorFlags(ExcludeFiles|ExcludeOther|Recursive)"_s;
+}
+
+void tst_QDirListing::debugStreamOperator()
+{
+    QFETCH(QDirListing::IteratorFlags, flags);
+    QFETCH(QString, expected);
+    QString buffer;
+    QDebug debug = QDebug(&buffer).noquote();
+    debug.nospace() << flags;
+    QCOMPARE(buffer.trimmed(), expected);
 }
 
 QTEST_MAIN(tst_QDirListing)
