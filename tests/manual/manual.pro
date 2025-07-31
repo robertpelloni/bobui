@@ -24,7 +24,6 @@ qimagereader \
 qlayout \
 qlocale \
 qmimedatabase \
-qnetconmonitor \
 qnetworkaccessmanager/qget \
 qnetworkreply \
 qstorageinfo \

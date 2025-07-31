@@ -4,8 +4,6 @@
 
 #include <QtNetwork/private/qnetworkinformation_p.h>
 
-#include <QtNetwork/private/qnetconmonitor_p.h>
-
 #include <QtCore/qglobal.h>
 #include <QtCore/private/qobject_p.h>
 

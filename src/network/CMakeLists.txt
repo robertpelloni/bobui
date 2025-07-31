@@ -32,7 +32,6 @@ qt_internal_add_module(Network
         kernel/qauthenticator.cpp kernel/qauthenticator.h kernel/qauthenticator_p.h
         kernel/qhostaddress.cpp kernel/qhostaddress.h kernel/qhostaddress_p.h
         kernel/qhostinfo.cpp kernel/qhostinfo.h kernel/qhostinfo_p.h
-        kernel/qnetconmonitor_p.h
         kernel/qnetworkdatagram.cpp kernel/qnetworkdatagram.h kernel/qnetworkdatagram_p.h
         kernel/qnetworkinformation.cpp kernel/qnetworkinformation_p.h kernel/qnetworkinformation.h
         kernel/qnetworkinterface.cpp kernel/qnetworkinterface.h kernel/qnetworkinterface_p.h
@@ -252,20 +251,8 @@ qt_internal_extend_target(Network CONDITION QT_FEATURE_dnslookup AND NOT QT_FEAT
 )
 
 qt_internal_extend_target(Network CONDITION APPLE
-    SOURCES
-        kernel/qnetconmonitor_darwin.mm
     LIBRARIES
         ${FWNetwork}
-)
-
-qt_internal_extend_target(Network CONDITION QT_FEATURE_networklistmanager AND NOT IOS AND NOT MACOS
-    SOURCES
-        kernel/qnetconmonitor_win.cpp
-)
-
-qt_internal_extend_target(Network CONDITION NOT APPLE AND NOT QT_FEATURE_networklistmanager
-    SOURCES
-        kernel/qnetconmonitor_stub.cpp
 )
 
 qt_internal_extend_target(Network CONDITION QT_FEATURE_gssapi
@@ -403,7 +390,6 @@ qt_internal_extend_target(Network CONDITION WIN32
         kernel/qhostaddress.cpp
         kernel/qhostinfo.cpp
         kernel/qhostinfo_win.cpp
-        kernel/qnetconmonitor_win.cpp
         kernel/qnetworkinterface_win.cpp
         kernel/qnetworkproxy_win.cpp
         socket/qabstractsocket.cpp
