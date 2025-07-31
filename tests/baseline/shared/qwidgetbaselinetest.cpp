@@ -8,6 +8,7 @@
 #include <QStyle>
 #include <QStyleHints>
 #include <QScreen>
+#include <QPainter>
 
 #include <QtWidgets/private/qapplication_p.h>
 
@@ -79,7 +80,19 @@ void QWidgetBaselineTest::init()
 {
     QVERIFY(!window);
     background = new QWidget(nullptr, Qt::FramelessWindowHint);
-    window = new QWidget(background, Qt::Window);
+    QPalette pal;
+
+    QImage checkerboard(QSize(16, 16), QImage::Format_Grayscale8);
+    checkerboard.fill(Qt::white);
+    QPainter painter(&checkerboard);
+    painter.fillRect(0, 0, 8, 8, Qt::lightGray);
+    painter.fillRect(8, 8, 8, 8, Qt::lightGray);
+    painter.end();
+
+    pal.setBrush(QPalette::Window, checkerboard);
+    background->setPalette(pal);
+
+    window = new QWidget(background, Qt::Window | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint);
     window->setWindowTitle(QTest::currentDataTag());
     window->setFocusPolicy(Qt::StrongFocus);
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
