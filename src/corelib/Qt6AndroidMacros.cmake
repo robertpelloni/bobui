@@ -323,7 +323,7 @@ function(qt6_android_generate_deployment_settings target)
 
 
     _qt_internal_android_convert_permissions(permissions_genex ${target} JSON)
-    string(APPEND file_contents "   \"permissions\": ${permissions_genex},\n")
+    string(APPEND file_contents "${permissions_genex}")
 
     # App binary
     string(APPEND file_contents

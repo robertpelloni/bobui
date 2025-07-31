@@ -73,7 +73,7 @@ function(_qt_internal_android_convert_permissions out_var target type)
         set(post "\" }")
         set(indent "\n      ")
         string(APPEND permissions_genex
-            "[${indent}$<JOIN:"
+            "  \"permissions\": [${indent}$<JOIN:"
                 "$<JOIN:"
                     "${pref}$<JOIN:"
                         "${permissions_property},"
@@ -82,7 +82,7 @@ function(_qt_internal_android_convert_permissions out_var target type)
                     "\": \""
                 ">,"
                 "\"$<COMMA> \""
-            ">\n    ]"
+            ">\n    ]$<COMMA>\n"
         )
     elseif(type STREQUAL "XML")
         set(pref "<uses-permission\n android:")
