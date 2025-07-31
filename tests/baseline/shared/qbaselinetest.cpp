@@ -27,6 +27,7 @@ static QByteArray curFunction;
 static ImageItemList itemList;
 static bool gotBaselines;
 
+static int pauseOnCompare = 0;
 
 void handleCmdLineArgs(int *argcp, char ***argvp)
 {
@@ -87,6 +88,15 @@ void handleCmdLineArgs(int *argcp, char ***argvp)
                 break;
             }
             customInfo.addOverride(key, value);
+        } else if (arg == "-pause-compare") {
+            i++;
+            bool ok = false;
+            pauseOnCompare = nextArg.toInt(&ok);
+            if (!ok) {
+                qWarning() << "-pause-compare requires integer parameter";
+                showHelp = true;
+                break;
+            }
         } else {
             if ( (arg == "-help") || (arg == "--help") ) {
                 showHelp = true;
@@ -119,6 +129,7 @@ void handleCmdLineArgs(int *argcp, char ***argvp)
         out << " -compareto KEY=VAL  : Force comparison to baselines from a different client,\n";
         out << "                       for example: -compareto QtVersion=4.8.0\n";
         out << "                       Multiple -compareto client specifications may be given.\n";
+        out << " -pause-compare <ms> : Pauses for the given number of ms before each compare\n";
         out << "\n";
         out.flush();
         if (abortOnHelp)
@@ -285,6 +296,11 @@ void modifyImage(QImage *img)
 
 bool compareItem(const ImageItem &baseline, const QImage &img, QByteArray *msg, bool *error)
 {
+    if (pauseOnCompare) {
+        qDebug() << "Pausing for" << pauseOnCompare << "ms...";
+        QTest::qWait(pauseOnCompare);
+    }
+
     *error = false;
     ImageItem item = baseline;
     if (simfail) {
