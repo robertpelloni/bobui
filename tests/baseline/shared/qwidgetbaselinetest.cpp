@@ -145,7 +145,23 @@ QImage QWidgetBaselineTest::takeSnapshot()
 {
     // make sure all effects are done
     QTest::qWait(250);
-    return window->grab().toImage();
+
+    // Render to QImage instead of going via QWidget::grab(),
+    // as the latter will typically use an RGB32 image, and
+    // we want to detect issues in the alpha-channel too.
+    const auto dpr = window->devicePixelRatio();
+    const auto size = window->size();
+    QImage image(size * dpr, QImage::Format_ARGB32_Premultiplied);
+    image.setDevicePixelRatio(dpr);
+    // The widget might claim to be be opaque, but we want to detect if it lies
+    image.fill(Qt::transparent);
+    window->render(&image, {}, QRect({}, size),
+        QWidget::DrawWindowBackground
+      | QWidget::DrawChildren
+      | QWidget::IgnoreMask
+    );
+    return image;
+
 }
 
 /*
