@@ -51,9 +51,10 @@ static std::unique_ptr<MiniHttpServerV2> getServerForCurrentScheme()
     if (scheme.startsWith("unix"_L1) || scheme.startsWith("local"_L1)) {
 #if QT_CONFIG(localserver)
         QLocalServer *localServer = new QLocalServer(server.get());
+        const size_t hash = qHashMulti(0, QByteArrayView(QTest::currentTestFunction()),
+                                       QCoreApplication::applicationPid());
         bool listening = localServer->listen(u"qt_networkreply_test_"_s
-                                             % QLatin1StringView(QTest::currentTestFunction())
-                                             % QString::number(QCoreApplication::applicationPid()));
+                                             % QString::number(hash, 16));
         if (!listening) {
             QFAIL(qPrintable(
                     u"Failed to listen on local server: %1"_s.arg(localServer->errorString())));
