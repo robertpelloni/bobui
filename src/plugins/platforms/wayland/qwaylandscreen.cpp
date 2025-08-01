@@ -357,7 +357,7 @@ void QWaylandScreen::updateOutputProperties()
     QWindowSystemInterface::handleScreenRefreshRateChange(screen(), refreshRate());
 
     if (!zxdg_output_v1::isInitialized())
-        QWindowSystemInterface::handleScreenGeometryChange(screen(), geometry(), geometry());
+        QWindowSystemInterface::handleScreenGeometryChange(screen(), geometry(), availableGeometry());
 }
 
 
@@ -406,7 +406,7 @@ void QWaylandScreen::updateXdgOutputProperties()
 {
     Q_ASSERT(mInitialized);
     Q_ASSERT(zxdg_output_v1::isInitialized());
-    QWindowSystemInterface::handleScreenGeometryChange(screen(), geometry(), geometry());
+    QWindowSystemInterface::handleScreenGeometryChange(screen(), geometry(), availableGeometry());
 }
 
 } // namespace QtWaylandClient
