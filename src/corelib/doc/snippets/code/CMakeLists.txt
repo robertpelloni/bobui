@@ -1,5 +1,6 @@
 add_library(corelib_snippets_code OBJECT
     doc_src_containers.cpp
+    doc_src_groups.cpp
     doc_src_properties.cpp
     doc_src_qalgorithms.cpp
     doc_src_qcache.cpp

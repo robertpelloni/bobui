@@ -1,29 +1,8 @@
 // Copyright (C) 2016 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
 
-#include <QPen>
+#include <QPixmap>
 #include <QPainter>
-
-class QPenPrivate {
-public:
-    int ref = 1;
-    Qt::PenStyle style;
-};
-
-//! [0]
-void QPen::setStyle(Qt::PenStyle style)
-{
-    detach();           // detach from common data
-    d->style = style;   // set the style member
-}
-
-void QPen::detach()
-{
-    if (d->ref != 1) {
-        //...             // perform a deep copy
-    }
-}
-//! [0]
 
 void example()
 {
