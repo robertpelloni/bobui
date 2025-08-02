@@ -161,7 +161,7 @@ using namespace Qt::StringLiterals;
 class QDirListingPrivate
 {
 public:
-    void init(bool resolveEngine);
+    void init();
     void advance();
     void beginIterating();
 
@@ -201,7 +201,7 @@ public:
     QDuplicateTracker<QString> visitedLinks;
 };
 
-void QDirListingPrivate::init(bool resolveEngine = true)
+void QDirListingPrivate::init()
 {
     if (nameFilters.contains("*"_L1))
         nameFilters.clear();
@@ -215,10 +215,8 @@ void QDirListingPrivate::init(bool resolveEngine = true)
         nameRegExps.emplace_back(QRegularExpression::fromWildcard(filter, cs));
 #endif
 
-    if (resolveEngine) {
-        engine = QFileSystemEngine::createLegacyEngine(initialEntryInfo.entry,
-                                                       initialEntryInfo.metaData);
-    }
+    engine = QFileSystemEngine::createLegacyEngine(initialEntryInfo.entry,
+                                                   initialEntryInfo.metaData);
 }
 
 /*!
