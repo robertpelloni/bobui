@@ -387,6 +387,12 @@ static bool checkDotOrDotDot(const QDirListing::DirEntry &dirEntry, QDir::Filter
     return true;
 }
 
+/*! \internal
+
+    Returns \c true if \a dirEntry matches the flags set in \a filters, otherwise
+    returns \c false. Note that this method only checks the flags in \a filters
+    that can't be represented by QDirListing::IteratorFlags, see toDirListingFlags().
+*/
 bool QDirPrivate::checkNonDirListingFlags(const QDirListing::DirEntry &dirEntry,
                                           QDir::Filters filters)
 {
