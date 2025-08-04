@@ -33,10 +33,15 @@ namespace {
     {
     public:
         QAccessibleObjectDestroyedEvent(QAccessibleInterface *iface)
-            :
-            QAccessibleEvent(static_cast<QObject *>(nullptr), QAccessible::ObjectDestroyed)
+            : QAccessibleEvent(static_cast<QObject *>(nullptr), QAccessible::ObjectDestroyed)
         {
+            Q_ASSERT(iface);
             m_uniqueId = QAccessible::uniqueId(iface);
+        }
+        QAccessibleObjectDestroyedEvent(QObject *object)
+            : QAccessibleEvent(object, QAccessible::ObjectDestroyed)
+        {
+            Q_ASSERT(object);
         }
     };
 }
@@ -185,7 +190,10 @@ private:
     {
         QAccessibleEvent *ev;
         if (event->type() == QAccessible::ObjectDestroyed) {
-            ev = new QAccessibleObjectDestroyedEvent(event->accessibleInterface());
+            if (event->object())
+                ev = new QAccessibleObjectDestroyedEvent(event->object());
+            else
+                ev = new QAccessibleObjectDestroyedEvent(event->accessibleInterface());
         } else if (event->type() == QAccessible::StateChanged) {
             if (event->object())
                 ev = new QAccessibleStateChangeEvent(event->object(),

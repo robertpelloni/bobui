@@ -13,9 +13,8 @@ namespace {
     class QAccessibleObjectDestroyedEvent : public QAccessibleEvent
     {
     public:
-        QAccessibleObjectDestroyedEvent(QAccessible::Id ifaceId, QObject *object)
-            :
-            QAccessibleEvent(object, QAccessible::ObjectDestroyed)
+        QAccessibleObjectDestroyedEvent(QAccessible::Id ifaceId)
+            : QAccessibleEvent(static_cast<QObject *>(nullptr), QAccessible::ObjectDestroyed)
         {
             m_uniqueId = ifaceId;
         }
@@ -178,7 +177,7 @@ void QAccessibleCache::sendObjectDestroyedEvent(QObject *obj)
         QAccessible::Id id = pair.first;
         Q_ASSERT_X(idToInterface.contains(id), "", "QObject with accessible interface deleted, where interface not in cache!");
 
-        QAccessibleObjectDestroyedEvent event(id, obj);
+        QAccessibleObjectDestroyedEvent event(id);
         QAccessible::updateAccessibility(&event);
     }
 }

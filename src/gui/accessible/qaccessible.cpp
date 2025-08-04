@@ -1902,7 +1902,7 @@ QAccessibleAnnouncementEvent::~QAccessibleAnnouncementEvent()
 */
 QAccessibleInterface *QAccessibleEvent::accessibleInterface() const
 {
-    if (m_object == nullptr || m_type == QAccessible::ObjectDestroyed)
+    if (m_object == nullptr)
         return QAccessible::accessibleInterface(m_uniqueId);
 
     QAccessibleInterface *iface = QAccessible::queryAccessibleInterface(m_object);
