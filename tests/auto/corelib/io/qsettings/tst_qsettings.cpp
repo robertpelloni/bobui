@@ -208,6 +208,8 @@ private slots:
     void testReadKeys_data();
     void testReadKeys();
 
+    void testIncorrectSection();
+
 private:
     void cleanupTestFiles();
 
@@ -3733,6 +3735,14 @@ void tst_QSettings::testReadKeys()
         readValues.insert(key, settings.value(key));
 
     QCOMPARE(readValues, expectedValues);
+}
+
+void tst_QSettings::testIncorrectSection()
+{
+    QVERIFY(QFile::exists(":/incorrectsection.ini"));
+    QSettings s(":/incorrectsection.ini", QSettings::IniFormat);
+
+    QCOMPARE(s.status(), QSettings::FormatError);
 }
 
 QTEST_MAIN(tst_QSettings)

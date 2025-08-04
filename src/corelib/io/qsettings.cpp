@@ -1425,6 +1425,13 @@ void QConfFileSettingsPrivate::syncConfFile(QConfFile *confFile)
                 }
             }
 
+            for (const auto &section : confFile->unparsedIniSections.keys()) {
+                if (section.count(u'/') > 1) {
+                    setStatus(QSettings::FormatError);
+                    break;
+                }
+            }
+
             if (!ok)
                 setStatus(QSettings::FormatError);
         }
