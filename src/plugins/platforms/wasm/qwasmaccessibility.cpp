@@ -919,10 +919,11 @@ void QWasmAccessibility::removeObject(QAccessibleInterface *iface)
             oss << "dbid_" << (void *)iface;
             auto id = oss.str();
             auto describedBy = container.call<emscripten::val>("querySelector", "#" + std::string(id));
-            if (!describedBy.isUndefined() && !describedBy.isNull() && !describedBy["parentElement"].isUndefined())
+            if (!describedBy.isUndefined() && !describedBy.isNull() &&
+                !describedBy["parentElement"].isUndefined() && !describedBy["parentElement"].isNull())
                 describedBy["parentElement"].call<void>("removeChild", describedBy);
         }
-        if (!element["parentElement"].isUndefined())
+        if (!element["parentElement"].isUndefined() && !element["parentElement"].isNull())
             element["parentElement"].call<void>("removeChild", element);
         m_elements.erase(it);
     }
