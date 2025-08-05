@@ -52,6 +52,8 @@ public:
     void close();
     qint64 size() const;
 
+    [[nodiscard]] QIOOperation *flush();
+
     [[nodiscard]] QIOReadOperation *read(qint64 offset, qint64 maxSize);
     [[nodiscard]] QIOWriteOperation *write(qint64 offset, const QByteArray &data);
     [[nodiscard]] QIOWriteOperation *write(qint64 offset, QByteArray &&data);
@@ -86,6 +88,7 @@ private:
 
     void executeNextOperation();
     void processBufferAt(qsizetype idx);
+    void processFlush();
     void operationComplete();
 #endif
 };

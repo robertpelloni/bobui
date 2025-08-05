@@ -142,6 +142,19 @@ qint64 QRandomAccessAsyncFilePrivate::size() const
     return -1;
 }
 
+QIOOperation *QRandomAccessAsyncFilePrivate::flush()
+{
+    auto *dataStorage = new QtPrivate::QIOOperationDataStorage();
+
+    auto *priv = new QIOOperationPrivate(dataStorage);
+    priv->type = QIOOperation::Type::Flush;
+
+    auto *op = new QIOOperation(*priv, q_ptr);
+    m_operations.append(op);
+    executeNextOperation();
+    return op;
+}
+
 QIOReadOperation *QRandomAccessAsyncFilePrivate::read(qint64 offset, qint64 maxSize)
 {
     QByteArray array;
@@ -301,8 +314,22 @@ void QRandomAccessAsyncFilePrivate::executeNextOperation()
         // start next
         if (!m_operations.isEmpty()) {
             m_currentOperation = m_operations.takeFirst();
-            numProcessedBuffers = 0;
-            processBufferAt(numProcessedBuffers);
+            switch (m_currentOperation->type()) {
+            case QIOOperation::Type::Read:
+            case QIOOperation::Type::Write:
+                numProcessedBuffers = 0;
+                processBufferAt(numProcessedBuffers);
+                break;
+            case QIOOperation::Type::Flush:
+                processFlush();
+                break;
+            case QIOOperation::Type::Unknown:
+                Q_ASSERT_X(false, "executeNextOperation", "Operation of type Unknown!");
+                // For release builds - directly complete the operation
+                m_watcher.setFuture(QtFuture::makeReadyValueFuture(OperationResult{}));
+                operationComplete();
+                break;
+            }
         }
     }
 }
@@ -373,17 +400,49 @@ void QRandomAccessAsyncFilePrivate::processBufferAt(qsizetype idx)
     }
 }
 
+void QRandomAccessAsyncFilePrivate::processFlush()
+{
+    Q_ASSERT(!m_currentOperation.isNull());
+    auto *priv = QIOOperationPrivate::get(m_currentOperation.get());
+    auto &dataStorage = priv->dataStorage;
+    Q_ASSERT(dataStorage->isEmpty());
+
+    QBasicMutex *mutexPtr = &m_engineMutex;
+    auto op = [engine = m_engine.get(), mutexPtr] {
+        QMutexLocker locker(mutexPtr);
+        QRandomAccessAsyncFilePrivate::OperationResult result{0, QIOOperation::Error::None};
+        if (engine) {
+            if (!engine->flush())
+                result.error = QIOOperation::Error::Flush;
+        } else {
+            result.error = QIOOperation::Error::FileNotOpen;
+        }
+        return result;
+    };
+
+    QFuture<OperationResult> f =
+            QtFuture::makeReadyVoidFuture().then(asyncFileThreadPool(), op);
+    m_watcher.setFuture(f);
+}
+
 void QRandomAccessAsyncFilePrivate::operationComplete()
 {
     // TODO: if one of the buffers was read/written with an error,
     // stop processing immediately
+
+    auto scheduleNextOperation = qScopeGuard([this]{
+        m_currentOperation = nullptr;
+        executeNextOperation();
+    });
+
     if (m_currentOperation && !m_watcher.isCanceled()) {
         OperationResult res = m_watcher.future().result();
         auto *priv = QIOOperationPrivate::get(m_currentOperation.get());
         auto &dataStorage = priv->dataStorage;
-        qsizetype expectedBuffersCount = 1;
-        bool needProcessNext = false;
-        if (priv->type == QIOOperation::Type::Read) {
+
+        switch (priv->type) {
+        case QIOOperation::Type::Read: {
+            qsizetype expectedBuffersCount = 1;
             if (dataStorage->containsReadSpans()) {
                 auto &readBuffers = dataStorage->getReadSpans();
                 expectedBuffersCount = readBuffers.size();
@@ -398,27 +457,38 @@ void QRandomAccessAsyncFilePrivate::operationComplete()
                 array.resize(res.bytesProcessed);
             }
             priv->appendBytesProcessed(res.bytesProcessed);
-            needProcessNext = (++numProcessedBuffers < expectedBuffersCount);
-            if (!needProcessNext)
+            if (++numProcessedBuffers < expectedBuffersCount) {
+                // keep executing this command
+                processBufferAt(numProcessedBuffers);
+                scheduleNextOperation.dismiss();
+            } else {
                 priv->operationComplete(res.error);
-        } else if (priv->type == QIOOperation::Type::Write) {
+            }
+            break;
+        }
+        case QIOOperation::Type::Write: {
+            qsizetype expectedBuffersCount = 1;
             if (dataStorage->containsWriteSpans())
                 expectedBuffersCount = dataStorage->getWriteSpans().size();
             Q_ASSERT(numProcessedBuffers < expectedBuffersCount);
-            needProcessNext = (++numProcessedBuffers < expectedBuffersCount);
             priv->appendBytesProcessed(res.bytesProcessed);
-            if (!needProcessNext)
+            if (++numProcessedBuffers < expectedBuffersCount) {
+                // keep executing this command
+                processBufferAt(numProcessedBuffers);
+                scheduleNextOperation.dismiss();
+            } else {
                 priv->operationComplete(res.error);
+            }
+            break;
         }
-        if (needProcessNext) {
-            // keep executing this command
-            processBufferAt(numProcessedBuffers);
-            return;
-        } else {
-            m_currentOperation = nullptr;
+        case QIOOperation::Type::Flush:
+            priv->operationComplete(res.error);
+            break;
+        case QIOOperation::Type::Unknown:
+            priv->setError(QIOOperation::Error::Aborted);
+            break;
         }
     }
-    executeNextOperation();
 }
 
 QT_END_NAMESPACE

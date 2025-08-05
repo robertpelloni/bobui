@@ -39,6 +39,19 @@ qint64 QRandomAccessAsyncFile::size() const
 /*!
     \internal
 
+    Flushes any buffered data to the file.
+
+    \include qrandomaccessasyncfile.cpp returns-qiooperation
+*/
+QIOOperation *QRandomAccessAsyncFile::flush()
+{
+    Q_D(QRandomAccessAsyncFile);
+    return d->flush();
+}
+
+/*!
+    \internal
+
     Reads at maximum \a maxSize bytes, starting from \a offset.
 
     The data is written to the internal buffer managed by the returned

@@ -36,6 +36,7 @@ public:
         IncorrectOffset,
         Read,
         Write,
+        Flush,
         Aborted,
     };
     Q_ENUM(Error)
@@ -45,6 +46,7 @@ public:
         Unknown,
         Read,
         Write,
+        Flush,
     };
     Q_ENUM(Type)
 

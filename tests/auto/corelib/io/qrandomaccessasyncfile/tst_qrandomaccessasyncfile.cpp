@@ -30,6 +30,7 @@ private Q_SLOTS:
     void roundtripNonOwning();
     void roundtripVectored();
     void readLessThanMax();
+    void flushIsBarrier();
     void errorHandling_data();
     void errorHandling();
     void fileClosedInProgress_data();
@@ -45,7 +46,7 @@ private:
         Owning,
         NonOwning,
     };
-    void generateReadWriteOperationColumns();
+    void generateOperationColumns();
 
     // Write 100 Mb of random data to the file.
     // We use such a large amount, because some of the backends will report
@@ -347,6 +348,80 @@ void tst_QRandomAccessAsyncFile::readLessThanMax()
     }
 }
 
+void tst_QRandomAccessAsyncFile::flushIsBarrier()
+{
+    QRandomAccessAsyncFile file;
+    QVERIFY(file.open(m_file.fileName(), QIODevice::ReadWrite));
+
+    // All operations will be deleted together with the file
+
+    // Write some data into the file
+
+    const qsizetype offset = 1024 * 1024;
+    const qsizetype sizeA = 10 * 1024 * 1024;
+    const QByteArray dataToWrite(sizeA, 'a');
+
+    const qsizetype sizeB = 5 * 1024 * 1024;
+    const QByteArray otherDataToWrite(sizeB, 'b');
+
+    // This test tries to verify that flush() acts like a barrier.
+    // The logic is as follows:
+    // 1. submit a write() operation of 10Mb of a's followed by 5Mb of b's.
+    // 2. submit a flush().
+    // 3. submit another write() of 10 c's that overlap a's and b's.
+    // 4. submit another flush().
+    // 5. submit a read() of 20 elements from the overlapping region.
+    // 6. wait until the read() is completed. If flush() works as expected,
+    //    we should get "aaaaaccccccccccbbbbb".
+
+    // First write()
+    QIOVectoredWriteOperation *write1 =
+            file.writeFrom(offset, { as_bytes(QSpan{dataToWrite}),
+                                     as_bytes(QSpan{otherDataToWrite}) });
+
+    // First flush()
+    QIOOperation *flush1 = file.flush();
+
+    // Second write()
+    const qsizetype offset2 = offset + sizeA - 5;
+    const qsizetype sizeC = 10;
+    QIOWriteOperation *write2 = file.write(offset2, QByteArray(sizeC, 'c'));
+
+    // Second flush()
+    QIOOperation *flush2 = file.flush();
+
+    // Read
+    const qsizetype readOffset = offset2 - 5;
+    const qsizetype readSize = 20;
+    QIOReadOperation *read = file.read(readOffset, readSize);
+
+    QSignalSpy readSpy(read, &QIOOperation::finished);
+
+    // Wait until the read() operation completes
+    QTRY_COMPARE_EQ(readSpy.size(), 1);
+
+    // Make sure that all operations have successfully finished.
+    QCOMPARE_EQ(write1->isFinished(), true);
+    QCOMPARE_EQ(write1->error(), QIOOperation::Error::None);
+    QCOMPARE_EQ(write1->numBytesProcessed(), sizeA + sizeB);
+
+    QCOMPARE_EQ(flush1->isFinished(), true);
+    QCOMPARE_EQ(flush1->error(), QIOOperation::Error::None);
+
+    QCOMPARE_EQ(write2->isFinished(), true);
+    QCOMPARE_EQ(write2->error(), QIOOperation::Error::None);
+    QCOMPARE_EQ(write2->numBytesProcessed(), sizeC);
+
+    QCOMPARE_EQ(flush2->isFinished(), true);
+    QCOMPARE_EQ(flush2->error(), QIOOperation::Error::None);
+
+    const QByteArray expectedReadResult = "aaaaaccccccccccbbbbb";
+    QCOMPARE_EQ(read->isFinished(), true);
+    QCOMPARE_EQ(read->error(), QIOOperation::Error::None);
+    QCOMPARE_EQ(read->numBytesProcessed(), expectedReadResult.size());
+    QCOMPARE_EQ(read->data(), expectedReadResult);
+}
+
 void tst_QRandomAccessAsyncFile::errorHandling_data()
 {
     QTest::addColumn<QIOOperation::Type>("operation");
@@ -381,6 +456,10 @@ void tst_QRandomAccessAsyncFile::errorHandling_data()
     // QTest::newRow("write_past_the_end")
     //         << QIOOperationBase::Type::Write << QIODeviceBase::ReadWrite
     //         << qint64(FileSize + 1) << QIOOperationBase::Error::IncorrectOffset;
+
+    QTest::newRow("flush_not_open")
+            << QIOOperation::Type::Flush << QIODeviceBase::ReadWrite
+            << qint64(0) << QIOOperation::Error::FileNotOpen;
 }
 
 void tst_QRandomAccessAsyncFile::errorHandling()
@@ -399,6 +478,8 @@ void tst_QRandomAccessAsyncFile::errorHandling()
         op = file.read(offset, 100);
     else if (operation == QIOOperation::Type::Write)
         op = file.write(offset, QByteArray(100, 'c'));
+    else if (operation == QIOOperation::Type::Flush)
+        op = file.flush();
 
     QVERIFY(op);
 
@@ -415,7 +496,7 @@ void tst_QRandomAccessAsyncFile::errorHandling()
 
 void tst_QRandomAccessAsyncFile::fileClosedInProgress_data()
 {
-    generateReadWriteOperationColumns();
+    generateOperationColumns();
 }
 
 void tst_QRandomAccessAsyncFile::fileClosedInProgress()
@@ -447,6 +528,8 @@ void tst_QRandomAccessAsyncFile::fileClosedInProgress()
                 buffers[i] = QByteArray(OneMb, 'd');
                 op = file.writeFrom(offset, as_bytes(QSpan{buffers[i]}));
             }
+        } else if (operation == QIOOperation::Type::Flush) {
+            op = file.flush();
         }
         QVERIFY(op);
         operations[i] = op;
@@ -465,7 +548,7 @@ void tst_QRandomAccessAsyncFile::fileClosedInProgress()
 
 void tst_QRandomAccessAsyncFile::fileRemovedInProgress_data()
 {
-    generateReadWriteOperationColumns();
+    generateOperationColumns();
 }
 
 void tst_QRandomAccessAsyncFile::fileRemovedInProgress()
@@ -498,6 +581,8 @@ void tst_QRandomAccessAsyncFile::fileRemovedInProgress()
                     buffers[i] = QByteArray(OneMb, 'd');
                     op = file.writeFrom(offset, as_bytes(QSpan{buffers[i]}));
                 }
+            } else if (operation == QIOOperation::Type::Flush) {
+                op = file.flush();
             }
             QVERIFY(op);
             operations[i] = op;
@@ -509,7 +594,7 @@ void tst_QRandomAccessAsyncFile::fileRemovedInProgress()
 
 void tst_QRandomAccessAsyncFile::operationsDeletedInProgress_data()
 {
-    generateReadWriteOperationColumns();
+    generateOperationColumns();
 }
 
 void tst_QRandomAccessAsyncFile::operationsDeletedInProgress()
@@ -541,6 +626,8 @@ void tst_QRandomAccessAsyncFile::operationsDeletedInProgress()
                 buffers[i] = QByteArray(OneMb, 'd');
                 op = file.writeFrom(offset, as_bytes(QSpan{buffers[i]}));
             }
+        } else if (operation == QIOOperation::Type::Flush) {
+            op = file.flush();
         }
         QVERIFY(op);
         operations[i] = op;
@@ -554,7 +641,7 @@ void tst_QRandomAccessAsyncFile::operationsDeletedInProgress()
         delete op;
 }
 
-void tst_QRandomAccessAsyncFile::generateReadWriteOperationColumns()
+void tst_QRandomAccessAsyncFile::generateOperationColumns()
 {
     QTest::addColumn<Ownership>("ownership");
     QTest::addColumn<QIOOperation::Type>("operation");
@@ -571,6 +658,7 @@ void tst_QRandomAccessAsyncFile::generateReadWriteOperationColumns()
         QTest::addRow("read_%s", v.name) << v.own << QIOOperation::Type::Read;
         QTest::addRow("write_%s", v.name) << v.own << QIOOperation::Type::Write;
     }
+    QTest::newRow("flush") << Ownership::NonOwning /* ignored */ << QIOOperation::Type::Flush;
 }
 
 QTEST_MAIN(tst_QRandomAccessAsyncFile)

@@ -36,6 +36,8 @@ public:
     void close();
     qint64 size() const;
 
+    [[nodiscard]] QIOOperation *flush();
+
     // owning APIs: we are responsible for storing the data
     [[nodiscard]] QIOReadOperation *read(qint64 offset, qint64 maxSize);
     [[nodiscard]] QIOWriteOperation *write(qint64 offset, const QByteArray &data);
