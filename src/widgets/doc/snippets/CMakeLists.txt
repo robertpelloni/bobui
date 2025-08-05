@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
 
 add_library(widgets_snippets OBJECT
+    customstyle/customstyle.cpp
+    customstyle/main.cpp
+    customviewstyle/customviewstyle.cpp
     dialogs/dialogs.cpp
     dockwidgets/mainwindow.cpp
     itemselection/main.cpp
@@ -48,6 +51,41 @@ qt_internal_extend_target(widgets_snippets
         Qt::GuiPrivate
     SOURCES
         qrhiwidget/rhiwidgetintro.cpp
+)
+
+qt_internal_extend_target(widgets_snippets CONDITION QT_FEATURE_filedialog
+    SOURCES
+        filedialogurls/filedialogurls.cpp
+)
+
+qt_internal_extend_target(widgets_snippets CONDITION QT_FEATURE_graphicsview
+    SOURCES
+        graphicssceneadditem/graphicssceneadditemsnippet.cpp
+        graphicsview/graphicsview_snippet.cpp
+)
+
+qt_internal_extend_target(widgets_snippets CONDITION QT_FEATURE_opengl AND QT_FEATURE_printsupport
+    LIBRARIES
+        Qt::OpenGL
+        Qt::OpenGLWidgets
+        Qt::PrintSupport
+    SOURCES
+        graphicsview/graphicsview.cpp
+)
+
+qt_internal_extend_target(widgets_snippets CONDITION QT_FEATURE_mdiarea
+    SOURCES
+        mdiarea/mdiareasnippets.cpp
+)
+
+qt_internal_extend_target(widgets_snippets CONDITION QT_FEATURE_scrollarea
+    SOURCES
+        myscrollarea/myscrollarea.cpp
+)
+
+qt_internal_extend_target(widgets_snippets CONDITION QT_FEATURE_spinbox AND QT_FEATURE_itemviews
+    SOURCES
+        qitemdelegate/spinbox-delegate.cpp
 )
 
 set_target_properties(widgets_snippets PROPERTIES COMPILE_OPTIONS "-w")

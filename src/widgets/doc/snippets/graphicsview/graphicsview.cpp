@@ -1,5 +1,12 @@
 // Copyright (C) 2016 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
+
+#include <QtPrintSupport/qtprintsupportglobal.h>
+
+#include <QtPrintSupport/qabstractprintdialog.h>
+
+#if QT_CONFIG(printdialog)
+
 #include <QStandardItem>
 #include <QtCore/qmimedata.h>
 #include <QtGui/qdrag.h>
@@ -101,3 +108,5 @@ gl->setFormat(format);
 view.setViewport(gl);
 //! [6]
 }
+
+#endif // QT_CONFIG(printdialog)
