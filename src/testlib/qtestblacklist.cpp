@@ -242,6 +242,11 @@ static std::set<QByteArray> *ignoredTests = nullptr;
 
 namespace QTestPrivate {
 
+QSet<QByteArray> blacklistKeywords()
+{
+    return activeConditions();
+}
+
 void parseBlackList()
 {
     const QString filename = QTest::qFindTestData(QStringLiteral("BLACKLIST"));
