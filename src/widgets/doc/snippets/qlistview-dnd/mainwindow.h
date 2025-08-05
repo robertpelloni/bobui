@@ -6,6 +6,9 @@
 
 #include <QMainWindow>
 
+QT_BEGIN_NAMESPACE
+
+
 class QListView;
 
 class MainWindow : public QMainWindow
@@ -20,5 +23,7 @@ private:
 
     QListView *listView;
 };
+
+QT_END_NAMESPACE
 
 #endif

@@ -3,7 +3,29 @@
 
 #include <QtWidgets>
 
-#include "mainwindow.h"
+class MainWindow : public QMainWindow
+{
+    Q_OBJECT
+public:
+    MainWindow();
+    void setupTreeItems();
+    void findItems();
+    void insertItem();
+    void removeItem();
+    void sortAscending();
+    void sortDescending();
+    void updateMenus(QTreeWidgetItem *current);
+    void updateSortItems();
+
+private:
+    QAction *insertAction;
+    QAction *removeAction;
+    QAction *ascendingAction;
+    QAction *descendingAction;
+    QAction *autoSortAction;
+    QAction *findItemsAction;
+    QTreeWidget *treeWidget;
+};
 
 MainWindow::MainWindow()
 {
@@ -23,15 +45,16 @@ MainWindow::MainWindow()
     autoSortAction = itemsMenu->addAction(tr("&Automatically Sort Items"));
     autoSortAction->setCheckable(true);
     itemsMenu->addSeparator();
-    QAction *findItemsAction = itemsMenu->addAction(tr("&Find Items"));
+    findItemsAction = itemsMenu->addAction(tr("&Find Items"));
     findItemsAction->setShortcut(tr("Ctrl+F"));
 
     menuBar()->addMenu(fileMenu);
     menuBar()->addMenu(itemsMenu);
 
-/*  For convenient quoting:
-    QTreeWidget *treeWidget = new QTreeWidget(this);
-*/
+    /*  For convenient quoting:
+        QTreeWidget *treeWidget = new QTreeWidget(this);
+    */
+
     treeWidget = new QTreeWidget(this);
     treeWidget->setColumnCount(2);
     QStringList headers;

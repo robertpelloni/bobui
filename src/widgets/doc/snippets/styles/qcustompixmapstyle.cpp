@@ -1,11 +1,19 @@
 // Copyright (C) 2016 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
 
-#include "qcustompixmapstyle.h"
-
 #include <QtGui>
+#include <QPixmapStyle>
+
 
 using namespace Qt::StringLiterals;
+
+class QCustomPixmapStyle : public QPixmapStyle
+{
+    Q_OBJECT
+public:
+    QCustomPixmapStyle();
+    ~QCustomPixmapStyle() override;
+};
 
 //! [0]
 QCustomPixmapStyle::QCustomPixmapStyle() :

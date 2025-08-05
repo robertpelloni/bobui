@@ -23,7 +23,7 @@ void MyWidget::paintEvent(QPaintEvent * /* event */)
 
     QStyleOptionFocusRect option;
     option.initFrom(this);
-    option.backgroundColor = palette().color(QPalette::Background);
+    option.backgroundColor = palette().color(QPalette::Window);
 
 //! [3]
     style()->drawPrimitive(QStyle::PE_FrameFocusRect, &option, &painter, this);
@@ -40,7 +40,7 @@ void MyWidget::paintEvent2(QPaintEvent * /* event */)
 
     QStyleOptionFocusRect option;
     option.initFrom(this);
-    option.backgroundColor = palette().color(QPalette::Background);
+    option.backgroundColor = palette().color(QPalette::Window);
 
 //! [7]
     painter.drawPrimitive(QStyle::PE_FrameFocusRect, option);

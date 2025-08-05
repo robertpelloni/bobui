@@ -9,6 +9,7 @@
 */
 
 #include <QtGui>
+#include <QtWidgets>
 
 //! [0] //! [1]
 int main(int argc, char *argv[])

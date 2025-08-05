@@ -13,7 +13,25 @@
 #include <QItemSelectionModel>
 #include <QTableView>
 
-#include "model.h"
+class TableModel : public QAbstractTableModel
+{
+    Q_OBJECT
+public:
+    TableModel(int rows, int columns, QObject *parent = nullptr)
+        : QAbstractTableModel(parent), rowCount(rows), columnCount(columns) {}
+
+    int rowCount(const QModelIndex &parent = QModelIndex()) const override {
+        return rowCount;
+    }
+
+    int columnCount(const QModelIndex &parent = QModelIndex()) const override {
+        return columnCount;
+    }
+
+    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override {
+        return QVariant();
+    }
+};
 
 int main(int argc, char *argv[])
 {

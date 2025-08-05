@@ -4,7 +4,6 @@
 #include <QtWidgets>
 
 typedef QDialog WordCountDialog;
-typedef QDialog FindDialog;
 
 #define this 0
 #define setWordCount(x) isVisible()
@@ -14,11 +13,23 @@ QString tr(const char *text)
     return QApplication::translate(text, text);
 }
 
+class FindDialog : public QDialog
+{
+    Q_OBJECT
+public:
+    FindDialog(QWidget *parent = nullptr)
+        : QDialog(parent) {}
+
+signals:
+    void findNext();
+};
+
 class EditorWindow : public QMainWindow
 {
 public:
     void find();
     void countWords();
+    void findNext();
 
 private:
     FindDialog *findDialog;
@@ -190,6 +201,7 @@ public:
     Operation(QObject *parent);
     void perform();
     void cancel();
+    void extension();
 
 private:
     int steps;
@@ -227,7 +239,7 @@ void Operation::cancel()
 }
 //! [6]
 
-void extension()
+void Operation::extension()
 {
     using ExtendedControls = QWidget;
     QPushButton *findButton;

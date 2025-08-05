@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
 
 #include <QtGui>
+#include <QtWidgets>
 
 int main(int argc, char *argv[])
 {
@@ -121,10 +122,11 @@ int main(int argc, char *argv[])
     }
 
     {
+    QWidget *formWidget = new QWidget;
 //! [24]
     QVBoxLayout *layout = new QVBoxLayout;
     layout->addWidget(formWidget);
-    setLayout(layout);
+    formWidget->setLayout(layout);
 //! [24]
     }
     return app.exec();

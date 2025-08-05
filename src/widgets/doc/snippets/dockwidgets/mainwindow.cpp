@@ -3,7 +3,21 @@
 
 #include <QtWidgets>
 
-#include "mainwindow.h"
+class MainWindow : public QMainWindow
+{
+    Q_OBJECT
+public:
+    MainWindow(QWidget *parent = nullptr);
+    void setupContents();
+    void setupDockWindow();
+    void setupMenus();
+    void updateText(QListWidgetItem *item);
+
+private:
+    QTextBrowser *textBrowser;
+    QListWidget *headingList;
+    QDockWidget *contentsWindow;
+};
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -40,6 +54,7 @@ void MainWindow::setupContents()
         QString fileName = parts[1];
 
         QFile chapterFile(fileName);
+        headingList = new QListWidget();
 
         chapterFile.open(QFile::ReadOnly);
         QListWidgetItem *item = new QListWidgetItem(chapterTitle, headingList);

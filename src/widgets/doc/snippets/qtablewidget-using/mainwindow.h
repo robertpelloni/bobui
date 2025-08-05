@@ -6,6 +6,8 @@
 
 #include <QMainWindow>
 
+QT_BEGIN_NAMESPACE
+
 class QAction;
 class QTableWidget;
 class QTableWidgetItem;
@@ -29,5 +31,7 @@ private:
     QTableWidget *tableWidget;
 //! [0]
 };
+
+QT_END_NAMESPACE
 
 #endif

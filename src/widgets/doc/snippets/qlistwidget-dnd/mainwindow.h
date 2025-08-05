@@ -6,6 +6,8 @@
 
 #include <QMainWindow>
 
+QT_BEGIN_NAMESPACE
+
 class QListWidget;
 class QListWidgetItem;
 
@@ -21,5 +23,7 @@ private:
 
     QListWidget *listWidget;
 };
+
+QT_END_NAMESPACE
 
 #endif

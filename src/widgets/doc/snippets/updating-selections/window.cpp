@@ -13,8 +13,27 @@
 #include <QItemSelectionModel>
 #include <QStatusBar>
 
-#include "model.h"
 #include "window.h"
+
+class TableModel : public QAbstractTableModel
+{
+    Q_OBJECT
+public:
+    TableModel(int rows, int columns, QObject *parent = nullptr)
+        : QAbstractTableModel(parent) {}
+
+    int rowCount(const QModelIndex &parent = QModelIndex()) const override {
+        return 0;
+    }
+
+    int columnCount(const QModelIndex &parent = QModelIndex()) const override {
+        return 0;
+    }
+
+    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override {
+        return QVariant();
+    }
+};
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -56,6 +75,7 @@ void MainWindow::updateSelection(const QItemSelection &selected,
         model->setData(index, QString());
 }
 //! [2]
+}
 
 //! [3]
 void MainWindow::changeCurrent(const QModelIndex &current,

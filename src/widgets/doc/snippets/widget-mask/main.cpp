@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
 
 #include <QtGui>
+#include <QApplication>
+#include <QLabel>
+#include <QPixmap>
 
 int main(int argc, char *argv[])
 {

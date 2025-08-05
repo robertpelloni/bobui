@@ -3,7 +3,18 @@
 
 #include <QtWidgets>
 
-#include "mainwindow.h"
+class MainWindow : public QMainWindow
+{
+    Q_OBJECT
+public:
+    MainWindow(QWidget *parent = nullptr);
+    void setupListItems();
+    void sortAscending();
+    void sortDescending();
+    void insertItem();
+    void removeItem();
+    void updateMenus(QListWidgetItem *current);
+};
 
 MainWindow::MainWindow()
 {
@@ -22,11 +33,10 @@ MainWindow::MainWindow()
     menuBar()->addMenu(fileMenu);
     menuBar()->addMenu(itemsMenu);
 
-/*  For convenient quoting:
 //! [0]
     QListWidget *listWidget = new QListWidget(this);
 //! [0]
-*/
+
     listWidget = new QListWidget(this);
     listWidget->setSelectionMode(QAbstractItemView::SingleSelection);
 

@@ -2,8 +2,17 @@
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
 
 #include <QtGui>
+#include <QtWidgets>
 
-#include "mainwindow.h"
+class MainWindow : public QMainWindow
+{
+    Q_OBJECT
+public:
+    MainWindow();
+    void createMenus();
+    void createToolBars();
+    void createDockWidgets();
+};
 
 MainWindow::MainWindow()
 {

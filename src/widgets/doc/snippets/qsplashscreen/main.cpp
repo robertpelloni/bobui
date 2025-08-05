@@ -2,9 +2,8 @@
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
 
 #include <QtGui>
+#include <QtWidgets>
 #include <stdlib.h>
-
-#include "mainwindow.h"
 
 //! [0]
 int main(int argc, char *argv[])
@@ -16,7 +15,6 @@ int main(int argc, char *argv[])
     app.processEvents();
 //! [0]
 
-    sleep(5);
 //! [1]
     QMainWindow window;
     window.show();
@@ -25,9 +23,12 @@ int main(int argc, char *argv[])
 }
 //! [1]
 
-//! [2]
-QScreen *screen = QGuiApplication::screens().at(1);
-QPixmap pixmap(":/splash.png");
-QSplashScreen splash(screen, pixmap);
-splash.show();
-//! [2]
+void example()
+{
+    //! [2]
+    QScreen *screen = QGuiApplication::screens().at(1);
+    QPixmap pixmap(":/splash.png");
+    QSplashScreen splash(screen, pixmap);
+    splash.show();
+    //! [2]
+}
