@@ -9,18 +9,6 @@
 
 QT_BEGIN_NAMESPACE
 
-namespace {
-    class QAccessibleObjectDestroyedEvent : public QAccessibleEvent
-    {
-    public:
-        QAccessibleObjectDestroyedEvent(QAccessible::Id ifaceId)
-            : QAccessibleEvent(static_cast<QObject *>(nullptr), QAccessible::ObjectDestroyed)
-        {
-            m_uniqueId = ifaceId;
-        }
-    };
-}
-
 Q_STATIC_LOGGING_CATEGORY(lcAccessibilityCache, "qt.accessibility.cache");
 
 /*!
@@ -35,6 +23,10 @@ static void cleanupAccessibleCache()
 {
     delete accessibleCache;
     accessibleCache = nullptr;
+}
+
+QAccessibleObjectDestroyedEvent::~QAccessibleObjectDestroyedEvent()
+{
 }
 
 QAccessibleCache::~QAccessibleCache()

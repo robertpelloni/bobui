@@ -25,27 +25,6 @@
 
 QT_BEGIN_NAMESPACE
 
-namespace {
-    // If we want to look at the object pointer we should do
-    // so directly in the callback. This event is stored for
-    // later retrieval so nullptr for object makes more sense.
-    class QAccessibleObjectDestroyedEvent : public QAccessibleEvent
-    {
-    public:
-        QAccessibleObjectDestroyedEvent(QAccessibleInterface *iface)
-            : QAccessibleEvent(static_cast<QObject *>(nullptr), QAccessible::ObjectDestroyed)
-        {
-            Q_ASSERT(iface);
-            m_uniqueId = QAccessible::uniqueId(iface);
-        }
-        QAccessibleObjectDestroyedEvent(QObject *object)
-            : QAccessibleEvent(object, QAccessible::ObjectDestroyed)
-        {
-            Q_ASSERT(object);
-        }
-    };
-}
-
 class QObject;
 
 // Use pointers since we subclass QAccessibleEvent
@@ -128,11 +107,20 @@ public:
             qWarning("Timeout waiting for accessibility event.");
             return false;
         }
-        const bool res = *eventList().constFirst() == *ev;
-        if (!res)
-            qWarning("%s", qPrintable(msgAccessibilityEventListMismatch(eventList(), ev)));
-        delete eventList().takeFirst();
-        return res;
+
+        for (int i = 0; i < eventList().size(); ++i) {
+            if (*eventList()[i] == *ev) {
+                if (i != 0) {
+                    qWarning() << " Found event at position " << i;
+                    qWarning("%s", qPrintable(msgAccessibilityEventListMismatch(eventList(), ev)));
+                }
+                delete eventList().takeAt(i);
+                return true;
+            }
+        }
+
+        qWarning("%s", qPrintable(msgAccessibilityEventListMismatch(eventList(), ev)));
+        return false;
     }
     static bool containsEvent(QAccessibleEvent *event) {
         for (const QAccessibleEvent *ev : std::as_const(eventList())) {
@@ -189,12 +177,7 @@ private:
     static QAccessibleEvent *copyEvent(QAccessibleEvent *event)
     {
         QAccessibleEvent *ev;
-        if (event->type() == QAccessible::ObjectDestroyed) {
-            if (event->object())
-                ev = new QAccessibleObjectDestroyedEvent(event->object());
-            else
-                ev = new QAccessibleObjectDestroyedEvent(event->accessibleInterface());
-        } else if (event->type() == QAccessible::StateChanged) {
+        if (event->type() == QAccessible::StateChanged) {
             if (event->object())
                 ev = new QAccessibleStateChangeEvent(event->object(),
                         static_cast<QAccessibleStateChangeEvent*>(event)->changedStates());
@@ -300,10 +283,10 @@ private:
     {
         QString rc;
         QDebug str = QDebug(&rc).nospace();
-        str << "Event " << *needle
-            <<  " not found at head of event list of size " << haystack.size() << " :";
+        str << "Event " << *needle << "\n"
+            <<  " not found at head of event list of size " << haystack.size() << " :\n";
         for (const QAccessibleEvent *e : haystack)
-            str << ' ' << *e;
+            str << ' ' << *e << "\n";
         return rc;
     }
     std::function<void(QAccessibleEvent *event)> m_updateHandler = [](QAccessibleEvent *) { ; };

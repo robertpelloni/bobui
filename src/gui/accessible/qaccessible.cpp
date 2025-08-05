@@ -1455,7 +1455,7 @@ QAccessibleEvent::~QAccessibleEvent()
 */
 QAccessible::Id QAccessibleEvent::uniqueId() const
 {
-    if (!m_object || m_type == QAccessible::ObjectDestroyed)
+    if (!m_object)
         return m_uniqueId;
     QAccessibleInterface *iface = QAccessible::queryAccessibleInterface(m_object);
     if (!iface)
@@ -1510,6 +1510,7 @@ void QAccessibleEvent::setChild(int chld)
 
     Returns the new value of the accessible object of this event.
 */
+
 /*!
     \internal
 */
@@ -1914,7 +1915,7 @@ QAccessibleInterface *QAccessibleEvent::accessibleInterface() const
         if (child) {
             iface = child;
         } else {
-            qCWarning(lcAccessibilityCore) << "Cannot create accessible child interface for object: " << m_object << " index: " << m_child;
+            qCWarning(lcAccessibilityCore) << "Cannot create accessible child interface for object: " << m_object << " index: " << m_child << "type: " << m_type;
         }
     }
     return iface;
