@@ -53,11 +53,11 @@ void MainWindow::createDockWidgets()
     QVBoxLayout *layout = new QVBoxLayout(dockWidgetContents);
     layout->addWidget(new QPushButton("My Button."));
 
-//! [0]
+    //! [0]
     QDockWidget *dockWidget = new QDockWidget(tr("Dock Widget"), this);
     dockWidget->setAllowedAreas(Qt::LeftDockWidgetArea |
                                 Qt::RightDockWidgetArea);
     dockWidget->setWidget(dockWidgetContents);
     addDockWidget(Qt::LeftDockWidgetArea, dockWidget);
-//! [0]
+    //! [0]
 }

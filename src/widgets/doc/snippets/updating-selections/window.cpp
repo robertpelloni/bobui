@@ -73,9 +73,9 @@ void MainWindow::updateSelection(const QItemSelection &selected,
 
     for (const QModelIndex &index : std::as_const(items)) {
         model->setData(index, QString());
+    }
 }
 //! [2]
-}
 
 //! [3]
 void MainWindow::changeCurrent(const QModelIndex &current,

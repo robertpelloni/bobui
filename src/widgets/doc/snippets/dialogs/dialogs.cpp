@@ -163,7 +163,7 @@ inline bool boo()
 
     {
         // hardware failure
-//! [2]
+        //! [2]
         QMessageBox mb("Application Name",
                        "Hardware failure.\n\nDisk error detected\nDo you want to stop?",
                        QMessageBox::Question,
@@ -172,7 +172,7 @@ inline bool boo()
                        QMessageBox::NoButton);
         if (mb.exec() == QMessageBox::No) {
             // try again
-//! [2]
+        //! [2]
         }
     }
 }
@@ -180,7 +180,7 @@ inline bool boo()
 inline void moo()
 {
     int numFiles;
-//! [3]
+    //! [3]
     QProgressDialog progress("Copying files...", "Abort Copy", 0, numFiles, this);
     progress.setWindowModality(Qt::WindowModal);
 
@@ -192,7 +192,7 @@ inline void moo()
         //... copy one file
     }
     progress.setValue(numFiles);
-//! [3]
+    //! [3]
 }
 
 class Operation : public QObject
@@ -247,7 +247,7 @@ void Operation::extension()
     QWidget *extension;
     QVBoxLayout *mainLayout;
 
-//! [extension]
+    //! [extension]
     mainLayout->setSizeConstraint(QLayout::SetFixedSize);
 
     findButton = new QPushButton(tr("&Find"));
@@ -259,13 +259,13 @@ void Operation::extension()
     extension->hide();
 
     connect(moreButton, &QAbstractButton::toggled, extension, &QWidget::setVisible);
-//! [extension]
+    //! [extension]
 
-//! [buttonbox]
+    //! [buttonbox]
     QDialogButtonBox *buttonBox = new QDialogButtonBox(Qt::Vertical);
     buttonBox->addButton(findButton, QDialogButtonBox::ActionRole);
     buttonBox->addButton(moreButton, QDialogButtonBox::ActionRole);
-//! [buttonbox]
+    //! [buttonbox]
 }
 
 int main()

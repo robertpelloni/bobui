@@ -39,15 +39,15 @@ int main(int argc, char *argv[])
 
     TableModel *model = new TableModel(4, 2, &app);
 
-//! [0]
+    //! [0]
     QTableView *firstTableView = new QTableView;
     QTableView *secondTableView = new QTableView;
-//! [0]
+    //! [0]
 
-//! [1]
+    //! [1]
     firstTableView->setModel(model);
     secondTableView->setModel(model);
-//! [1]
+    //! [1]
 
     firstTableView->horizontalHeader()->setModel(model);
 
@@ -58,9 +58,9 @@ int main(int argc, char *argv[])
         }
     }
 
-//! [2]
+    //! [2]
     secondTableView->setSelectionModel(firstTableView->selectionModel());
-//! [2]
+    //! [2]
 
     firstTableView->setWindowTitle("First table view");
     secondTableView->setWindowTitle("Second table view");

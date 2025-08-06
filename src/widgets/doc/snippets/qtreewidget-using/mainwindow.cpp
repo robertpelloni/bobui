@@ -52,9 +52,9 @@ MainWindow::MainWindow()
     menuBar()->addMenu(itemsMenu);
 
 /*  For convenient quoting:
-//! [0]
+    //! [0]
     QTreeWidget *treeWidget = new QTreeWidget(this);
-//! [0]
+    //! [0]
 */
     treeWidget = new QTreeWidget(this);
 //! [1]

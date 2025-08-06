@@ -71,7 +71,7 @@ void MainWindow::setupContents()
 
 void MainWindow::setupDockWindow()
 {
-//! [0]
+    //! [0]
     contentsWindow = new QDockWidget(tr("Table of Contents"), this);
     contentsWindow->setAllowedAreas(Qt::LeftDockWidgetArea
                                   | Qt::RightDockWidgetArea);
@@ -79,7 +79,7 @@ void MainWindow::setupDockWindow()
 
     headingList = new QListWidget(contentsWindow);
     contentsWindow->setWidget(headingList);
-//! [0]
+    //! [0]
 }
 
 void MainWindow::setupMenus()

@@ -105,14 +105,14 @@ void MainWindow::findItems()
     if (itemText.isEmpty())
         return;
 
-//! [0]
+    //! [0]
     QTreeWidgetItemIterator it(treeWidget);
     while (*it) {
         if ((*it)->text(0) == itemText)
             (*it)->setSelected(true);
         ++it;
     }
-//! [0]
+    //! [0]
 }
 
 void MainWindow::insertItem()

@@ -41,27 +41,29 @@ int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
 
-//! [0]
+    //! [0]
     TableModel *model = new TableModel(8, 4, &app);
 
     QTableView *table = new QTableView(0);
     table->setModel(model);
 
     QItemSelectionModel *selectionModel = table->selectionModel();
-//! [0] //! [1]
+    //! [0] 
+
+    //! [1]
     QModelIndex topLeft;
     QModelIndex bottomRight;
 
     topLeft = model->index(0, 0, QModelIndex());
     bottomRight = model->index(5, 2, QModelIndex());
-//! [1]
+    //! [1]
 
-//! [2]
+    //! [2]
     QItemSelection selection(topLeft, bottomRight);
     selectionModel->select(selection, QItemSelectionModel::Select);
-//! [2]
+    //! [2]
 
-//! [3]
+    //! [3]
     QItemSelection toggleSelection;
 
     topLeft = model->index(2, 1, QModelIndex());
@@ -69,9 +71,9 @@ int main(int argc, char *argv[])
     toggleSelection.select(topLeft, bottomRight);
 
     selectionModel->select(toggleSelection, QItemSelectionModel::Toggle);
-//! [3]
+    //! [3]
 
-//! [4]
+    //! [4]
     QItemSelection columnSelection;
 
     topLeft = model->index(0, 1, QModelIndex());
@@ -91,7 +93,7 @@ int main(int argc, char *argv[])
 
     selectionModel->select(rowSelection,
         QItemSelectionModel::Select | QItemSelectionModel::Rows);
-//! [4]
+    //! [4]
 
     table->setWindowTitle("Selected items in a table model");
     table->show();

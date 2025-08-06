@@ -31,9 +31,10 @@ MainWindow::MainWindow()
     menuBar()->addMenu(fileMenu);
     menuBar()->addMenu(tableMenu);
 
-//! [0]
+    //! [0]
     tableWidget = new QTableWidget(this);
-//! [0]
+    //! [0]
+
     tableWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
     connect(quitAction, &QAction::triggered, this, &QWidget::close);
@@ -48,18 +49,18 @@ MainWindow::MainWindow()
 
 void MainWindow::setupTableItems()
 {
-//! [1]
+    //! [1]
     tableWidget->setRowCount(10);
     tableWidget->setColumnCount(5);
-//! [1]
+    //! [1]
 
     for (int row = 0; row < tableWidget->rowCount(); ++row) {
         for (int column = 0; column < tableWidget->columnCount(); ++column) {
-//! [2]
-    QTableWidgetItem *newItem = new QTableWidgetItem(tr("%1").arg(
-        (row+1)*(column+1)));
-    tableWidget->setItem(row, column, newItem);
-//! [2]
+            //! [2]
+            QTableWidgetItem *newItem = new QTableWidgetItem(tr("%1").arg(
+                (row+1)*(column+1)));
+            tableWidget->setItem(row, column, newItem);
+            //! [2]
         }
     }
 }

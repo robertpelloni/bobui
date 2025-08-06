@@ -29,7 +29,7 @@ private:
 Window::Window(QWidget *parent)
     : QMainWindow(parent)
 {
-//! [action_tooltip]
+    //! [action_tooltip]
     QAction *openAction = new QAction(tr("&Open..."));
     openAction->setToolTip(tr("Open an existing file"));
 
@@ -38,12 +38,12 @@ Window::Window(QWidget *parent)
 
     fileMenu->addAction(openAction);
     fileToolBar->addAction(openAction);
-//! [action_tooltip]
+    //! [action_tooltip]
 
-//! [static_tooltip]
+    //! [static_tooltip]
     searchBar = new SearchBar;
     searchBar->setToolTip(tr("Search in the current document"));
-//! [static_tooltip]
+    //! [static_tooltip]
 
     fileToolBar->addWidget(searchBar);
 }
