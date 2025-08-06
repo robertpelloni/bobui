@@ -16,11 +16,25 @@ instructions:
         variableName: COMMON_NON_QTBASE_CMAKE_ARGS
         variableValue: " -DCMAKE_MAKE_PROGRAM={{.Env.NINJA_EXECUTABLE}}"
       - type: AppendToEnvironmentVariable
+        variableName: COMMON_TEST_CMAKE_ARGS
+        variableValue: " -DCMAKE_MAKE_PROGRAM={{.Env.NINJA_EXECUTABLE}}"
+        disable_if:
+          condition: property
+          property: target.osVersion
+          in_values: [IOS_ANY]
+      - type: AppendToEnvironmentVariable
         variableName: COMMON_TARGET_CMAKE_ARGS
         variableValue: " -DCMAKE_MAKE_PROGRAM={{.Env.NINJA_EXECUTABLE}}"
       - type: AppendToEnvironmentVariable
         variableName: COMMON_NON_QTBASE_TARGET_CMAKE_ARGS
         variableValue: " -DCMAKE_MAKE_PROGRAM={{.Env.NINJA_EXECUTABLE}}"
+      - type: AppendToEnvironmentVariable
+        variableName: COMMON_TARGET_TEST_CMAKE_ARGS
+        variableValue: " -DCMAKE_MAKE_PROGRAM={{.Env.NINJA_EXECUTABLE}}"
+        disable_if:
+          condition: property
+          property: target.osVersion
+          in_values: [IOS_ANY]
     enable_if:
       condition: runtime
       env_var: NINJA_EXECUTABLE
