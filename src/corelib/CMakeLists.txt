@@ -908,7 +908,7 @@ qt_internal_extend_target(Core CONDITION WASM
 
 qt_internal_extend_target(Core CONDITION MSVC AND CLANG
     LIBRARIES
-        clang_rt.builtins-x86_64
+        clang_rt.builtins-$<IF:$<STREQUAL:${TEST_architecture_arch},arm64>,aarch64,x86_64>
 )
 
 qt_internal_extend_target(Core CONDITION QT_FEATURE_icu
