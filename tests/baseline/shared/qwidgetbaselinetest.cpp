@@ -21,6 +21,9 @@ QT_BEGIN_NAMESPACE
 
 QWidgetBaselineTest::QWidgetBaselineTest()
 {
+    // Fail by throwing, since we QVERIFY deep in the helper functions
+    QTest::setThrowOnFail(true);
+
     QBaselineTest::setProject("Widgets");
 
     // Set key platform properties that are relevant for the appearance of widgets
