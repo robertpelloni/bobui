@@ -229,8 +229,6 @@ static int unpackControlTypes(QSizePolicy::ControlTypes controls, QSizePolicy::C
     them differently:
 
     \snippet customstyle/customstyle.cpp 2
-    \snippet customstyle/customstyle.cpp 3
-    \snippet customstyle/customstyle.cpp 4
 
     Notice that we don't use the \c widget argument, except to pass it
     on to the QWindowStyle::drawPrimitive() function. As mentioned
@@ -243,8 +241,6 @@ static int unpackControlTypes(QSizePolicy::ControlTypes controls, QSizePolicy::C
     of the correct type before using it. For example:
 
     \snippet customstyle/customstyle.cpp 0
-    \dots
-    \snippet customstyle/customstyle.cpp 1
 
     When implementing a custom style, you cannot assume that the
     widget is a QSpinBox just because the enum value is called
