@@ -370,21 +370,25 @@ public:
         QStringView decimal, group, minus, plus, exponent;
         char32_t zeroUcs = 0;
         qint8 zeroLen = 0;
-        bool isC = false; // C locale sets this and nothing else.
         bool exponentCyrillic = false; // True only for floating-point parsing of Cyrillic.
+        const bool isC; // C locale sets this and nothing else.
+
         void setZero(QStringView zero)
         {
+            Q_PRE(!isC);
             // No known locale has digits that are more than one Unicode
             // code-point, so we can safely deal with digits as plain char32_t.
             switch (zero.size()) {
             case 1:
                 Q_ASSERT(!zero.at(0).isSurrogate());
                 zeroUcs = zero.at(0).unicode();
+                Q_ASSERT(!QChar::requiresSurrogates(zeroUcs + 9));
                 zeroLen = 1;
                 break;
             case 2:
                 Q_ASSERT(zero.at(0).isHighSurrogate());
                 zeroUcs = QChar::surrogateToUcs4(zero.at(0), zero.at(1));
+                Q_ASSERT(QChar::requiresSurrogates(zeroUcs));
                 zeroLen = 2;
                 break;
             default:
@@ -392,6 +396,9 @@ public:
                 break;
             }
         }
+        // All users of this class can see the implementation.
+        inline NumericData(const QLocaleData *data, QLocaleData::NumberMode mode);
+
         [[nodiscard]] bool isValid(NumberMode mode) const // Asserted as a sanity check.
         {
             if (isC)
@@ -405,7 +412,6 @@ public:
                 && (mode != DoubleScientificMode || !exponent.isEmpty());
         }
     };
-    [[nodiscard]] inline NumericData numericData(NumberMode mode) const;
 
     // this function is used in QIntValidator (QtGui)
     [[nodiscard]] Q_CORE_EXPORT ParsingResult

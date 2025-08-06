@@ -4393,49 +4393,45 @@ QString QLocaleData::applyIntegerFormatting(QString &&numStr, bool negative, int
     return result;
 }
 
-inline QLocaleData::NumericData QLocaleData::numericData(QLocaleData::NumberMode mode) const
+inline QLocaleData::NumericData::NumericData(const QLocaleData *data, QLocaleData::NumberMode mode)
+    : isC(data == c())
 {
-    NumericData result;
-    if (this == c()) {
-        result.isC = true;
-        return result;
-    }
-    result.setZero(zero().viewData(single_character_data));
-    result.group = groupDelim().viewData(single_character_data);
+    if (isC)
+        return;
+    setZero(data->zero().viewData(single_character_data));
+    group = data->groupDelim().viewData(single_character_data);
     // Note: minus, plus and exponent might not actually be single characters.
-    result.minus = minus().viewData(single_character_data);
-    result.plus = plus().viewData(single_character_data);
+    minus = data->minus().viewData(single_character_data);
+    plus = data->plus().viewData(single_character_data);
     if (mode != IntegerMode)
-        result.decimal = decimalSeparator().viewData(single_character_data);
+        decimal = data->decimalSeparator().viewData(single_character_data);
     if (mode == DoubleScientificMode) {
-        result.exponent = exponential().viewData(single_character_data);
+        exponent = data->exponential().viewData(single_character_data);
         // exponentCyrillic means "apply the Cyrrilic-specific exponent hack"
-        result.exponentCyrillic = m_script_id == QLocale::CyrillicScript;
+        exponentCyrillic = data->m_script_id == QLocale::CyrillicScript;
     }
 #ifndef QT_NO_SYSTEMLOCALE
-    if (this == &systemLocaleData) {
+    if (data == &systemLocaleData) {
         const auto getString = [sys = systemLocale()](QSystemLocale::QueryType query) {
             return sys->query(query).toString();
         };
         if (mode != IntegerMode) {
-            result.sysDecimal = getString(QSystemLocale::DecimalPoint);
-            if (result.sysDecimal.size())
-                result.decimal = QStringView{result.sysDecimal};
+            sysDecimal = getString(QSystemLocale::DecimalPoint);
+            if (sysDecimal.size())
+                decimal = QStringView{sysDecimal};
         }
-        result.sysGroup = getString(QSystemLocale::GroupSeparator);
-        if (result.sysGroup.size())
-            result.group = QStringView{result.sysGroup};
-        result.sysMinus = getString(QSystemLocale::NegativeSign);
-        if (result.sysMinus.size())
-            result.minus = QStringView{result.sysMinus};
-        result.sysPlus = getString(QSystemLocale::PositiveSign);
-        if (result.sysPlus.size())
-            result.plus = QStringView{result.sysPlus};
-        result.setZero(getString(QSystemLocale::ZeroDigit));
+        sysGroup = getString(QSystemLocale::GroupSeparator);
+        if (sysGroup.size())
+            group = QStringView{sysGroup};
+        sysMinus = getString(QSystemLocale::NegativeSign);
+        if (sysMinus.size())
+            minus = QStringView{sysMinus};
+        sysPlus = getString(QSystemLocale::PositiveSign);
+        if (sysPlus.size())
+            plus = QStringView{sysPlus};
+        setZero(getString(QSystemLocale::ZeroDigit));
     }
 #endif
-
-    return result;
 }
 
 namespace {
@@ -4638,7 +4634,7 @@ bool QLocaleData::numberToCLocale(QStringView s, QLocale::NumberOptions number_o
     s = s.trimmed();
     if (s.size() < 1)
         return false;
-    NumericTokenizer tokens(s, numericData(mode), mode);
+    NumericTokenizer tokens(s, NumericData(this, mode), mode);
 
     // Reflects order constraints on possible parts of a number:
     enum { Whole, Grouped, Fraction, Exponent, Name } stage = Whole;
@@ -4802,7 +4798,7 @@ QLocaleData::validateChars(QStringView str, NumberMode numMode, int decDigits,
 
     enum { Whole, Fractional, Exponent } state = Whole;
     const bool scientific = numMode == DoubleScientificMode;
-    NumericTokenizer tokens(str, numericData(numMode), numMode);
+    NumericTokenizer tokens(str, NumericData(this, numMode), numMode);
     char last = '\0';
 
     while (!tokens.done()) {
