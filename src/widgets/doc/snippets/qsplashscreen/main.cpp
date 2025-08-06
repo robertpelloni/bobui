@@ -13,15 +13,13 @@ int main(int argc, char *argv[])
     QSplashScreen splash(pixmap);
     splash.show();
     app.processEvents();
-//! [0]
-
-//! [1]
+    //...
     QMainWindow window;
     window.show();
     splash.finish(&window);
     return app.exec();
 }
-//! [1]
+//! [0]
 
 void example()
 {
