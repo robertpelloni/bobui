@@ -38,8 +38,8 @@ PlatformInfo PlatformInfo::localHostInfo()
     pi.insert(PI_OSName, QLS("Linux"));
 #elif defined(Q_OS_WIN)
     pi.insert(PI_OSName, QLS("Windows"));
-#elif defined(Q_OS_DARWIN)
-    pi.insert(PI_OSName, QLS("Darwin"));
+#elif defined(Q_OS_MACOS)
+    pi.insert(PI_OSName, QLS("macOS"));
 #else
     pi.insert(PI_OSName, QLS("Other"));
 #endif
