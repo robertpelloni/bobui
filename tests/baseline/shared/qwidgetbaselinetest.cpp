@@ -50,11 +50,6 @@ QWidgetBaselineTest::QWidgetBaselineTest()
     {
         QDataStream appearanceStream(&appearanceBytes, QIODevice::WriteOnly);
         appearanceStream << palette << font;
-        const qreal screenDpr = QApplication::primaryScreen()->devicePixelRatio();
-        if (screenDpr != 1.0) {
-            qWarning() << "DPR is" << screenDpr << "- images will not be compared to 1.0 baseline!";
-            appearanceStream << screenDpr;
-        }
     }
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     const quint16 appearanceId = qChecksum(appearanceBytes, appearanceBytes.size());
@@ -76,6 +71,9 @@ QWidgetBaselineTest::QWidgetBaselineTest()
     QBaselineTest::addClientProperty("LiquidGlass",
         qt_apple_runningWithLiquidGlass() ? "enabled" : "disabled");
 #endif
+
+    QBaselineTest::addClientProperty("DevicePixelRatio",
+        QString::number(QGuiApplication::primaryScreen()->devicePixelRatio()));
 
     // let users know where they can find the results
     qDebug() << "PlatformName computed to be:" << platformName;
@@ -137,18 +135,8 @@ void QWidgetBaselineTest::makeVisible()
 {
     Q_ASSERT(window);
 
-    // prefer a screen with a 1.0 DPR
+    // Always open window on primary screen
     QScreen *preferredScreen = QGuiApplication::primaryScreen();
-    if (!qFuzzyCompare(QGuiApplication::primaryScreen()->devicePixelRatio(), 1.0)) {
-        for (const auto screen : QGuiApplication::screens()) {
-            if (qFuzzyCompare(screen->devicePixelRatio(), 1.0)) {
-                preferredScreen = screen;
-                break;
-            }
-        }
-    }
-
-    Q_ASSERT(preferredScreen);
     const QRect preferredScreenRect = preferredScreen->availableGeometry();
 
     background->setScreen(preferredScreen);
