@@ -1233,7 +1233,7 @@ qt_feature("openssl-hash" PRIVATE
 qt_feature("async-io" PRIVATE
     LABEL "Async File I/O"
     PURPOSE "Provides support for asynchronous file I/O."
-    CONDITION QT_FEATURE_thread AND QT_FEATURE_future
+    CONDITION (QT_FEATURE_thread AND QT_FEATURE_future) OR APPLE
 )
 
 qt_configure_add_summary_section(NAME "Qt Core")

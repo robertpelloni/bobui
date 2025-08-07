@@ -577,10 +577,15 @@ if(QT_FEATURE_async_io)
             io/qrandomaccessasyncfile.cpp io/qrandomaccessasyncfile_p.h io/qrandomaccessasyncfile_p_p.h
     )
 
-    # TODO: This should become the last (fallback) condition later.
-    # We migth also want to rewrite it so that it does not depend on
-    # QT_FEATURE_future.
-    if(QT_FEATURE_thread AND QT_FEATURE_future)
+    if(APPLE)
+        qt_internal_extend_target(Core
+            SOURCES
+                io/qrandomaccessasyncfile_darwin.mm
+        )
+    elseif(QT_FEATURE_thread AND QT_FEATURE_future)
+        # TODO: This should become the last (fallback) condition later.
+        # We migth also want to rewrite it so that it does not depend on
+        # QT_FEATURE_future.
         qt_internal_extend_target(Core
             SOURCES
                 io/qrandomaccessasyncfile_threadpool.cpp

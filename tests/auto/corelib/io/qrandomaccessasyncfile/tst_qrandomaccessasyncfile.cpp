@@ -464,7 +464,12 @@ void tst_QRandomAccessAsyncFile::errorHandling_data()
             << qint64(0) << QIOOperation::Error::FileNotOpen;
     QTest::newRow("read_writeonly")
             << QIOOperation::Type::Read << QIODeviceBase::WriteOnly
-            << qint64(0) << QIOOperation::Error::Read;
+            << qint64(0)
+#ifdef Q_OS_DARWIN
+            << QIOOperation::Error::FileNotOpen;
+#else
+            << QIOOperation::Error::Read;
+#endif
     QTest::newRow("read_negative_offset")
             << QIOOperation::Type::Read << QIODeviceBase::ReadOnly
             << qint64(-1) << QIOOperation::Error::IncorrectOffset;
@@ -478,7 +483,12 @@ void tst_QRandomAccessAsyncFile::errorHandling_data()
             << qint64(0) << QIOOperation::Error::FileNotOpen;
     QTest::newRow("write_readonly")
             << QIOOperation::Type::Write << QIODeviceBase::ReadOnly
-            << qint64(0) << QIOOperation::Error::Write;
+            << qint64(0)
+#ifdef Q_OS_DARWIN
+            << QIOOperation::Error::FileNotOpen;
+#else
+            << QIOOperation::Error::Write;
+#endif
     QTest::newRow("write_negative_offset")
             << QIOOperation::Type::Write << QIODeviceBase::WriteOnly
             << qint64(-1) << QIOOperation::Error::IncorrectOffset;
@@ -545,8 +555,9 @@ void tst_QRandomAccessAsyncFile::fileClosedInProgress()
     }
 
     constexpr qint64 OneMb = 1024 * 1024;
-    std::array<QIOOperation *, 5> operations;
-    std::array<QByteArray, 5> buffers;
+    constexpr size_t NumOps = 5;
+    std::array<QIOOperation *, NumOps> operations;
+    std::array<QByteArray, NumOps> buffers;
 
     for (size_t i = 0; i < operations.size(); ++i) {
         const qint64 offset = i * OneMb;
@@ -596,8 +607,9 @@ void tst_QRandomAccessAsyncFile::fileRemovedInProgress()
     QFETCH(const QIOOperation::Type, operation);
 
     constexpr qint64 OneMb = 1024 * 1024;
-    std::array<QIOOperation *, 5> operations;
-    std::array<QByteArray, 5> buffers;
+    constexpr size_t NumOps = 5;
+    std::array<QIOOperation *, NumOps> operations;
+    std::array<QByteArray, NumOps> buffers;
 
     {
         QRandomAccessAsyncFile file;
@@ -655,8 +667,9 @@ void tst_QRandomAccessAsyncFile::operationsDeletedInProgress()
     }
 
     constexpr qint64 OneMb = 1024 * 1024;
-    std::array<QIOOperation *, 5> operations;
-    std::array<QByteArray, 5> buffers;
+    constexpr size_t NumOps = 5;
+    std::array<QIOOperation *, NumOps> operations;
+    std::array<QByteArray, NumOps> buffers;
 
     for (size_t i = 0; i < operations.size(); ++i) {
         const qint64 offset = i * OneMb;
