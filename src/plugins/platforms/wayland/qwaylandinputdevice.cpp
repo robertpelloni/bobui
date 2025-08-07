@@ -935,10 +935,7 @@ void QWaylandInputDevice::Pointer::pointer_axis(uint32_t time, uint32_t axis, in
 
     mParent->mTime = time;
 
-    if (version() < WL_POINTER_FRAME_SINCE_VERSION) {
-        qCDebug(lcQpaWaylandInput) << "Flushing new event; no frame event in this version";
-        flushFrameEvent();
-    }
+    maybePointerFrame();
 }
 
 void QWaylandInputDevice::Pointer::pointer_frame()
@@ -978,11 +975,9 @@ void QWaylandInputDevice::Pointer::pointer_axis_stop(uint32_t time, uint32_t axi
     switch (axis) {
     case axis_vertical_scroll:
         qCDebug(lcQpaWaylandInput) << "Received vertical wl_pointer.axis_stop";
-        mFrameData.delta.setY(0); //TODO: what's the point of doing this?
         break;
     case axis_horizontal_scroll:
         qCDebug(lcQpaWaylandInput) << "Received horizontal wl_pointer.axis_stop";
-        mFrameData.delta.setX(0);
         break;
     default:
         qCWarning(lcQpaWaylandInput) << "wl_pointer.axis_stop: Unknown axis: " << axis
@@ -990,25 +985,7 @@ void QWaylandInputDevice::Pointer::pointer_axis_stop(uint32_t time, uint32_t axi
         return;
     }
 
-    // May receive axis_stop for events we haven't sent a ScrollBegin for because
-    // most axis_sources do not mandate an axis_stop event to be sent.
-    if (!mScrollBeginSent) {
-        // TODO: For now, we just ignore these events, but we could perhaps take this as an
-        // indication that this compositor will in fact send axis_stop events for these sources
-        // and send a ScrollBegin the next time an axis_source event with this type is encountered.
-        return;
-    }
-
-    QWaylandWindow *target = QWaylandWindow::mouseGrab();
-    if (!target)
-        target = focusWindow();
-    Qt::KeyboardModifiers mods = mParent->modifiers();
-    const bool inverted = mFrameData.verticalAxisInverted || mFrameData.horizontalAxisInverted;
-    WheelEvent wheelEvent(focusWindow(), Qt::ScrollEnd, mParent->mTime, mSurfacePos, mGlobalPos,
-                          QPoint(), QPoint(), Qt::MouseEventNotSynthesized, mods, inverted);
-    target->handleMouse(mParent, wheelEvent);
-    mScrollBeginSent = false;
-    mScrollDeltaRemainder = QPointF();
+    mScrollEnd = true;
 }
 
 void QWaylandInputDevice::Pointer::pointer_axis_discrete(uint32_t axis, int32_t value)
@@ -1069,6 +1046,14 @@ void QWaylandInputDevice::Pointer::pointer_axis_relative_direction(uint32_t axis
     }
 }
 
+inline void QWaylandInputDevice::Pointer::maybePointerFrame()
+{
+    if (version() < WL_POINTER_FRAME_SINCE_VERSION) {
+        qCDebug(lcQpaWaylandInput) << "Flushing new event; no frame event in this version";
+        pointer_frame();
+    }
+}
+
 void QWaylandInputDevice::Pointer::setFrameEvent(QWaylandPointerEvent *event)
 {
     qCDebug(lcQpaWaylandInput) << "Setting frame event " << event->type;
@@ -1077,13 +1062,9 @@ void QWaylandInputDevice::Pointer::setFrameEvent(QWaylandPointerEvent *event)
         flushFrameEvent();
     }
 
-    delete mFrameData.event;
-    mFrameData.event = event;
+    mFrameData.event.reset(event);
 
-    if (version() < WL_POINTER_FRAME_SINCE_VERSION) {
-        qCDebug(lcQpaWaylandInput) << "Flushing new event; no frame event in this version";
-        flushFrameEvent();
-    }
+    maybePointerFrame();
 }
 
 void QWaylandInputDevice::Pointer::FrameData::resetScrollData()
@@ -1163,11 +1144,24 @@ void QWaylandInputDevice::Pointer::flushScrollEvent()
 {
     QPoint angleDelta = mFrameData.angleDelta();
 
+    // The wayland protocol has separate horizontal and vertical axes, Qt has just the one inverted flag
+    // Pragmatically it should't come up
+    const bool inverted = mFrameData.verticalAxisInverted || mFrameData.horizontalAxisInverted;
+
     // Angle delta is required for Qt wheel events, so don't try to send events if it's zero
     if (!angleDelta.isNull()) {
-        QWaylandWindow *target = QWaylandWindow::mouseGrab();
-        if (!target)
-            target = focusWindow();
+        QWaylandWindow *target = mScrollTarget;
+        if (!mScrollBeginSent) {
+            if (!target)
+                target = QWaylandWindow::mouseGrab();
+            if (!target)
+                target = focusWindow();
+        }
+        if (!target) {
+            qCDebug(lcQpaWaylandInput) << "Flushing scroll event aborted - no scroll target";
+            mFrameData.resetScrollData();
+            return;
+        }
 
         if (isDefinitelyTerminated(mFrameData.axisSource) && !mScrollBeginSent) {
             qCDebug(lcQpaWaylandInput) << "Flushing scroll event sending ScrollBegin";
@@ -1177,21 +1171,38 @@ void QWaylandInputDevice::Pointer::flushScrollEvent()
                                                     mParent->modifiers(), false));
             mScrollBeginSent = true;
             mScrollDeltaRemainder = QPointF();
+            mScrollTarget = target;
         }
 
         Qt::ScrollPhase phase = mScrollBeginSent ? Qt::ScrollUpdate : Qt::NoScrollPhase;
         QPoint pixelDelta = mFrameData.pixelDeltaAndError(&mScrollDeltaRemainder);
-        Qt::MouseEventSource source = mFrameData.wheelEventSource();
-
-
-        // The wayland protocol has separate horizontal and vertical axes, Qt has just the one inverted flag
-        // Pragmatically it should't come up
-        const bool inverted = mFrameData.verticalAxisInverted || mFrameData.horizontalAxisInverted;
 
         qCDebug(lcQpaWaylandInput) << "Flushing scroll event" << phase << pixelDelta << angleDelta;
         target->handleMouse(mParent, WheelEvent(focusWindow(), phase, mParent->mTime, mSurfacePos, mGlobalPos,
-                                                pixelDelta, angleDelta, source, mParent->modifiers(), inverted));
+                                                pixelDelta, angleDelta, mFrameData.wheelEventSource(), mParent->modifiers(), inverted));
     }
+
+    if (mScrollEnd) {
+        if (mScrollBeginSent) {
+            if (auto target = mScrollTarget.get()) {
+                qCDebug(lcQpaWaylandInput) << "Flushing scroll end event";
+                target->handleMouse(mParent, WheelEvent(focusWindow(), Qt::ScrollEnd, mParent->mTime, mSurfacePos, mGlobalPos,
+                                                        QPoint(), QPoint(), mFrameData.wheelEventSource(), mParent->modifiers(), inverted));
+            }
+            mScrollBeginSent = false;
+            mScrollDeltaRemainder = QPointF();
+        } else {
+            // May receive axis_stop for events we haven't sent a ScrollBegin for because
+            // most axis_sources do not mandate an axis_stop event to be sent.
+
+            // TODO: For now, we just ignore these events, but we could perhaps take this as an
+            // indication that this compositor will in fact send axis_stop events for these sources
+            // and send a ScrollBegin the next time an axis_source event with this type is encountered.
+        }
+        mScrollEnd = false;
+        mScrollTarget.clear();
+    }
+
     mFrameData.resetScrollData();
 }
 
@@ -1199,7 +1210,7 @@ void QWaylandInputDevice::Pointer::flushFrameEvent()
 {
     mEventCompression.delayTimer.stop();
 
-    if (auto *event = mFrameData.event) {
+    if (auto *event = mFrameData.event.get()) {
         if (auto window = event->surface) {
             window->handleMouse(mParent, *event);
         } else if (mFrameData.event->type == QEvent::MouseButtonRelease) {
@@ -1212,8 +1223,7 @@ void QWaylandInputDevice::Pointer::flushFrameEvent()
                     event->modifiers); // , Qt::MouseEventSource source =
                                        // Qt::MouseEventNotSynthesized);
         }
-        delete mFrameData.event;
-        mFrameData.event = nullptr;
+        mFrameData.event.reset();
     }
 
     //TODO: do modifiers get passed correctly here?

@@ -370,7 +370,7 @@ public:
     Qt::MouseButton mLastButton = Qt::NoButton;
 
     struct FrameData {
-        QWaylandPointerEvent *event = nullptr;
+        QScopedPointer<QWaylandPointerEvent> event;
 
         QPointF delta;
         QPoint delta120;
@@ -387,9 +387,13 @@ public:
     } mFrameData;
 
     bool mScrollBeginSent = false;
+    bool mScrollEnd = false;
     QPointF mScrollDeltaRemainder;
+    QPointer<QWaylandWindow> mScrollTarget;
 
     QWaylandEventCompressionPrivate mEventCompression;
+
+    void maybePointerFrame();
 
     void setFrameEvent(QWaylandPointerEvent *event);
     void flushScrollEvent();
