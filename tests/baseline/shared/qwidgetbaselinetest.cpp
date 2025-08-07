@@ -13,6 +13,10 @@
 #include <QtCore/private/qabstractanimation_p.h>
 #include <QtWidgets/private/qapplication_p.h>
 
+#if defined(Q_OS_APPLE)
+#include <QtCore/private/qcore_mac_p.h>
+#endif
+
 QT_BEGIN_NAMESPACE
 
 QWidgetBaselineTest::QWidgetBaselineTest()
@@ -64,6 +68,11 @@ QWidgetBaselineTest::QWidgetBaselineTest()
                                         ? QString("light-%1-%2") : QString("dark-%1-%2"))
                                        .arg(styleName).arg(appearanceId, 0, 16);
     QBaselineTest::addClientProperty("AppearanceID", appearanceIdString);
+
+#if defined(Q_OS_APPLE)
+    QBaselineTest::addClientProperty("LiquidGlass",
+        qt_apple_runningWithLiquidGlass() ? "enabled" : "disabled");
+#endif
 
     // let users know where they can find the results
     qDebug() << "PlatformName computed to be:" << platformName;
