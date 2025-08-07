@@ -8,10 +8,14 @@
 
 #include <QtTest/private/qemulationdetector_p.h>
 
+#include <fenv.h>
+
 // Test proper handling of floating-point types
 class tst_float: public QObject
 {
     Q_OBJECT
+public:
+    tst_float();
 private slots:
     void doubleComparisons() const;
     void doubleComparisons_data() const;
@@ -36,6 +40,28 @@ template<typename F> F negate(F f)
     return qFromUnaligned<F>(&u);
 }
 
+template<typename F> F makeNan(typename QIntegerForSizeof<F>::Signed i, bool is_quiet = true)
+{
+    using U = typename QIntegerForSizeof<F>::Unsigned;
+    constexpr U MantissaMask = (U(1) << (std::numeric_limits<F>::digits - 1)) - 1;
+    constexpr U SignBit = U(1) << (std::numeric_limits<U>::digits - 1);
+    constexpr U ExponentMask = U(~(MantissaMask | SignBit));
+    Q_ASSERT(i);
+
+    U u = i;
+    if (i < 0) {
+        // transform two's complement into sign-magnitude
+        u = -i;
+        u |= SignBit;
+    }
+    Q_ASSERT((u & ExponentMask) == 0);
+    u |= ExponentMask;
+    // the is_quiet bit is the MSB of the significand
+    u |= U(is_quiet) << (std::numeric_limits<F>::digits - 2);
+
+    return qFromUnaligned<F>(&u);
+}
+
 template<typename F>
 static void nonFinite_data(F zero, F one)
 {
@@ -52,6 +78,39 @@ static void nonFinite_data(F zero, F one)
         QTest::newRow("should FAIL: 1 != NaN") << one << nan;
         QTest::newRow("should FAIL: -NaN != 0") << negate(nan) << zero;
         QTest::newRow("should FAIL: -NaN != -0") << negate(nan) << negate(zero);
+
+        QTest::newRow("should PASS: NaN == NaN(1)") << nan << makeNan<F>(1);
+        QTest::newRow("should PASS: NaN(1) == NaN") << makeNan<F>(1) << nan;
+        QTest::newRow("should PASS: NaN == -NaN(1)") << nan << makeNan<F>(-1);
+        QTest::newRow("should PASS: -NaN(1) == NaN") << makeNan<F>(-1) << nan;
+        QTest::newRow("should FAIL: NaN(1) != 0") << makeNan<F>(1) << zero;
+        QTest::newRow("should FAIL: 0 != NaN(1)") << zero << makeNan<F>(1);
+        QTest::newRow("should FAIL: NaN(1) != 1") << makeNan<F>(1) << one;
+        QTest::newRow("should FAIL: 1 != NaN(1)") << one << makeNan<F>(1);
+
+        if (Bounds::has_signaling_NaN) {
+            // make SNaN with the highest and lowest bits set
+            const F snanMsb = makeNan<F>(Q_INT64_C(1) << (Bounds::digits - 3), false);
+            const F snanLsb = makeNan<F>(1, false);
+            QTest::newRow("should PASS: SNaN == SNaN") << snanMsb << snanMsb;
+            QTest::newRow("should PASS: SNaN == -SNaN") << snanMsb << negate(snanMsb);
+            QTest::newRow("should PASS: SNaN == NaN") << snanMsb << nan;
+            QTest::newRow("should PASS: NaN == SNaN") << nan << snanMsb;
+
+            QTest::newRow("should FAIL: SNaN != 0") << snanMsb << zero;
+            QTest::newRow("should FAIL: 0 != sNaN") << zero << snanMsb;
+            QTest::newRow("should FAIL: SNaN != 1") << snanMsb << one;
+            QTest::newRow("should FAIL: 1 != SNaN") << one << snanMsb;
+            QTest::newRow("should FAIL: -SNaN != 0") << negate(snanMsb) << zero;
+            QTest::newRow("should FAIL: -SNaN != -0") << negate(snanMsb) << negate(zero);
+
+            QTest::newRow("should PASS: SNaN == SNaN(1)") << snanMsb << snanLsb;
+            QTest::newRow("should PASS: SNaN(1) == sNaN") << snanLsb << snanMsb;
+            QTest::newRow("should PASS: SNaN == -SNaN(1)") << snanMsb << negate(snanLsb);
+            QTest::newRow("should PASS: -SNaN(1) == sNaN") << negate(snanLsb) << snanMsb;
+            QTest::newRow("should PASS: NaN(1) == SNaN(1)") << makeNan<F>(1) << snanLsb;
+            QTest::newRow("should PASS: SNaN(1) == NaN(1)") << snanLsb << makeNan<F>(1);
+        }
     }
 
     if (Bounds::has_infinity) {
@@ -88,6 +147,12 @@ static void nonFinite_data(F zero, F one)
         QTest::newRow("should FAIL: max != -inf") << big << -uge;
         QTest::newRow("should FAIL: -max != -inf") << -big << -uge;
     }
+}
+
+tst_float::tst_float()
+{
+    fenv_t env;
+    feholdexcept(&env);     // ensure that we don't consume exceptions
 }
 
 void tst_float::doubleComparisons() const

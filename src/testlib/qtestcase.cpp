@@ -3085,6 +3085,25 @@ TO_STRING_IMPL(bool, %d)
 TO_STRING_IMPL(signed char, %hhd)
 TO_STRING_IMPL(unsigned char, %hhu)
 
+// Merge of ISO C23 getpayload() and issignaling()
+template <typename T> static auto decodeNanPayload(T t)
+{
+    constexpr int Digits = std::numeric_limits<T>::digits;
+    constexpr quint64 MantissaMask = (Q_UINT64_C(1) << (Digits - 1)) - 1;
+    constexpr quint64 IsQuietBit = quint64(QT_CONFIG(signaling_nan)) << (Digits - 2);
+    constexpr quint64 PayloadMask = MantissaMask & ~IsQuietBit;
+
+    struct R {
+        quint64 payload;
+        bool isQuiet;
+    } r;
+    Q_ASSERT(qIsNaN(t));
+    quint64 u = qFromUnaligned<typename QIntegerForSizeof<T>::Unsigned>(&t);
+    r.payload = u & PayloadMask;
+    r.isQuiet = !QT_CONFIG(signaling_nan) || (u & IsQuietBit);
+    return r;
+}
+
 static bool signbit(qfloat16 f) { return f.signBit(); }
 
 // Be consistent about display of infinities and NaNs (snprintf()'s varies,
@@ -3101,7 +3120,13 @@ template <typename T> static char *toStringFp(T t)
         qstrncpy(msg, (negative ? "-inf" : "inf"), 128);
         break;
     case FP_NAN:
-        qstrncpy(msg, (negative ? "-nan" : "nan"), 128);
+        if (auto r = decodeNanPayload(t); r.payload) {
+            std::snprintf(msg, 128, "%s%snan(%#llx)",
+                          negative ? "-" : "", r.isQuiet ? "" : "s", r.payload);
+        } else {
+            Q_ASSERT(r.isQuiet);  // only quiet NaNs can have payload == 0
+            qstrncpy(msg, (negative ? "-nan" : "nan"), 128);
+        }
         break;
     case FP_ZERO:
         qstrncpy(msg, (negative ? "-0 (-0x0p+0)" : "0 (0x0p+0)"), 128);
