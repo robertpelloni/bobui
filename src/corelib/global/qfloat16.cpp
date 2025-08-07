@@ -126,6 +126,17 @@ Q_CORE_EXPORT int qRegisterNormalizedMetaType_qfloat16(const QByteArray &)
 
     Returns a qfloat16 with the sign of \a sign but the rest of its value taken
     from this qfloat16. Serves as qfloat16's equivalent of std::copysign().
+
+    \sa signBit()
+*/
+
+/*!
+    \since 6.11
+    \fn qfloat16 qfloat16::signBit() const noexcept
+
+    Returns a true if this \c qfloat16 is negative, false otherwise. Note this
+    function returns true for negative zero, negative infinity, and negative
+    NaN values.
 */
 
 /*!

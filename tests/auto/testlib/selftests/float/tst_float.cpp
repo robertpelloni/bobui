@@ -24,6 +24,18 @@ private slots:
     void compareQListDouble() const;
 };
 
+template<typename F> F negate(F f)
+{
+    // ISO C says we should just use the unary minus operator to negate any
+    // input, but we do it explicitly here to survive a too-smart compiler in
+    // fast-math mode.
+
+    using U = typename QIntegerForSizeof<F>::Unsigned;
+    auto u = qFromUnaligned<U>(&f);
+    u |= U(1) << (std::numeric_limits<U>::digits - 1);
+    return qFromUnaligned<F>(&u);
+}
+
 template<typename F>
 static void nonFinite_data(F zero, F one)
 {
@@ -33,10 +45,13 @@ static void nonFinite_data(F zero, F one)
     if (Bounds::has_quiet_NaN) {
         const F nan = Bounds::quiet_NaN();
         QTest::newRow("should PASS: NaN == NaN") << nan << nan;
+        QTest::newRow("should PASS: NaN == -NaN") << nan << negate(nan);
         QTest::newRow("should FAIL: NaN != 0") << nan << zero;
         QTest::newRow("should FAIL: 0 != NaN") << zero << nan;
         QTest::newRow("should FAIL: NaN != 1") << nan << one;
         QTest::newRow("should FAIL: 1 != NaN") << one << nan;
+        QTest::newRow("should FAIL: -NaN != 0") << negate(nan) << zero;
+        QTest::newRow("should FAIL: -NaN != -0") << negate(nan) << negate(zero);
     }
 
     if (Bounds::has_infinity) {
@@ -56,6 +71,8 @@ static void nonFinite_data(F zero, F one)
         QTest::newRow("should FAIL: 0 != inf") << zero << uge;
         QTest::newRow("should FAIL: -inf != 0") << -uge << zero;
         QTest::newRow("should FAIL: 0 != -inf") << zero << -uge;
+        QTest::newRow("should FAIL: inf != -0") << uge << negate(zero);
+        QTest::newRow("should FAIL: -0 != inf") << negate(zero) << uge;
         QTest::newRow("should FAIL: inf != 1") << uge << one;
         QTest::newRow("should FAIL: 1 != inf") << one << uge;
         QTest::newRow("should FAIL: -inf != 1") << -uge << one;
@@ -89,6 +106,7 @@ void tst_float::doubleComparisons_data() const
 
     QTest::newRow("should FAIL 1") << one << 3.;
     QTest::newRow("should PASS 1") << zero << zero;
+    QTest::newRow("should PASS: 0 == -0") << zero << negate(zero);
     QTest::newRow("should FAIL 2") << 1.e-7 << 3.e-7;
 
     // QCOMPARE() uses qFuzzyCompare(), which succeeds if doubles differ by no
@@ -125,6 +143,7 @@ void tst_float::floatComparisons_data() const
 
     QTest::newRow("should FAIL 1") << one << 3.f;
     QTest::newRow("should PASS 1") << zero << zero;
+    QTest::newRow("should PASS: 0 == -0") << zero << negate(zero);
     QTest::newRow("should FAIL 2") << 1.e-5f << 3.e-5f;
 
     // QCOMPARE() uses qFuzzyCompare(), which succeeds if the floats differ by
@@ -161,6 +180,7 @@ void tst_float::float16Comparisons_data() const
     const qfloat16 tiny(9.756e-03f);
 
     QTest::newRow("should FAIL 1") << one << qfloat16(3);
+    QTest::newRow("should PASS: 0 == -0") << zero << negate(zero);
     QTest::newRow("should PASS 1") << zero << zero;
 
     // QCOMPARE for uses qFuzzyCompare(), which ignores differences of one part

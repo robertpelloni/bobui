@@ -3085,21 +3085,30 @@ TO_STRING_IMPL(bool, %d)
 TO_STRING_IMPL(signed char, %hhd)
 TO_STRING_IMPL(unsigned char, %hhu)
 
+static bool signbit(qfloat16 f) { return f.signBit(); }
+
 // Be consistent about display of infinities and NaNs (snprintf()'s varies,
 // notably on MinGW, despite POSIX documenting "[-]inf" or "[-]infinity" for %f,
 // %e and %g, uppercasing for their capital versions; similar for "nan"):
-static char *toStringFp(double t, int digits10)
+template <typename T> static char *toStringFp(T t)
 {
+    using std::signbit;
     char *msg = new char[128];
+    bool negative = signbit(t);
+
     switch (qFpClassify(t)) {
     case FP_INFINITE:
-        qstrncpy(msg, (t < 0 ? "-inf" : "inf"), 128);
+        qstrncpy(msg, (negative ? "-inf" : "inf"), 128);
         break;
     case FP_NAN:
-        qstrncpy(msg, "nan", 128);
+        qstrncpy(msg, (negative ? "-nan" : "nan"), 128);
+        break;
+    case FP_ZERO:
+        qstrncpy(msg, (negative ? "-0 (-0x0p+0)" : "0 (0x0p+0)"), 128);
         break;
     default:
-        std::snprintf(msg, 128, "%.*g (%a)", digits10, t, t);
+        std::snprintf(msg, 128, "%.*g (%a)", std::numeric_limits<T>::digits10 + 1, double(t),
+                      double(t));
         break;
     }
     return msg;
@@ -3108,7 +3117,7 @@ static char *toStringFp(double t, int digits10)
 #define TO_STRING_FLOAT(TYPE) \
 template <> Q_TESTLIB_EXPORT char *QTest::toString<TYPE>(const TYPE &t) \
 { \
-    return toStringFp(t, std::numeric_limits<TYPE>::digits10 + 1); \
+    return toStringFp(t); \
 }
 TO_STRING_FLOAT(qfloat16)
 TO_STRING_FLOAT(float)
