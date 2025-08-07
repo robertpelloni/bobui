@@ -213,7 +213,14 @@ void ImageItem::readImageFromStream(QDataStream &in)
 
 QDataStream & operator<< (QDataStream &stream, const ImageItem &ii)
 {
-    stream << ii.testFunction << ii.itemName << ii.itemChecksum << quint8(ii.status) << ii.imageChecksums << ii.misc;
+    stream << ii.testFunction << ii.itemName << ii.itemChecksum << quint8(ii.status) << ii.imageChecksums;
+
+    // This is where we used to stream the `misc` field. We now stream the metadata as QByteArray
+    QByteArray byteArray;
+    QDataStream out(&byteArray, QIODevice::WriteOnly);
+    out << ii.metaData;
+    stream << byteArray;
+
     ii.writeImageToStream(stream);
     return stream;
 }
@@ -221,7 +228,14 @@ QDataStream & operator<< (QDataStream &stream, const ImageItem &ii)
 QDataStream & operator>> (QDataStream &stream, ImageItem &ii)
 {
     quint8 encStatus;
-    stream >> ii.testFunction >> ii.itemName >> ii.itemChecksum >> encStatus >> ii.imageChecksums >> ii.misc;
+    stream >> ii.testFunction >> ii.itemName >> ii.itemChecksum >> encStatus >> ii.imageChecksums;
+
+    // This is where we used to stream the `misc` field. We now stream the metadata as QByteArray
+    QByteArray metaDataBytes;
+    stream >> metaDataBytes;
+    QDataStream metaDataStream(metaDataBytes);
+    metaDataStream >> ii.metaData;
+
     ii.status = ImageItem::ItemStatus(encStatus);
     ii.readImageFromStream(stream);
     return stream;
