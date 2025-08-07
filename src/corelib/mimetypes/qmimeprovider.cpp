@@ -512,8 +512,8 @@ QMimeBinaryProvider::MimeTypeExtraMap::const_iterator
 QMimeBinaryProvider::loadMimeTypeExtra(const QString &mimeName)
 {
 #if QT_CONFIG(xmlstreamreader)
-    auto it = m_mimetypeExtra.find(mimeName);
-    if (it == m_mimetypeExtra.cend()) {
+    auto [it, insertionOccurred] = m_mimetypeExtra.try_emplace(mimeName);
+    if (insertionOccurred) {
         // load comment and globPatterns
 
         // shared-mime-info since 1.3 lowercases the xml files
@@ -523,9 +523,8 @@ QMimeBinaryProvider::loadMimeTypeExtra(const QString &mimeName)
 
         QFile qfile(mimeFile);
         if (!qfile.open(QFile::ReadOnly))
-            return m_mimetypeExtra.cend();
+            return it;
 
-        it = m_mimetypeExtra.try_emplace(mimeName).first;
         MimeTypeExtra &extra = it->second;
         QString mainPattern;
 
