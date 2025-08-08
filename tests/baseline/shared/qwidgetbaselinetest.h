@@ -28,7 +28,7 @@ protected:
     virtual void doInit() {}
     virtual void doCleanup() {}
 
-private slots:
+protected slots:
     void initTestCase();
     void init();
     void cleanup();
