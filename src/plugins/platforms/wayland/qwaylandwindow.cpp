@@ -121,7 +121,7 @@ void QWaylandWindow::initWindow()
         Q_ASSERT(mShellIntegration);
         mTransientParent = guessTransientParent();
         if (mTransientParent) {
-            if (window()->type() == Qt::Popup) {
+            if (window()->type() == Qt::Popup || window()->type() == Qt::Tool) {
                 if (mTopPopup && mTopPopup != mTransientParent) {
                     qCWarning(lcQpaWayland) << "Creating a popup with a parent," << mTransientParent->window()
                                             << "which does not match the current topmost grabbing popup,"
@@ -139,7 +139,7 @@ void QWaylandWindow::initWindow()
         mShellSurface = mShellIntegration->createShellSurface(this);
         if (mShellSurface) {
             if (mTransientParent) {
-                if (window()->type() == Qt::ToolTip || window()->type() == Qt::Popup)
+                if (window()->type() == Qt::ToolTip || window()->type() == Qt::Popup || window()->type() == Qt::Tool)
                     mTransientParent->addChildPopup(this);
             }
 
@@ -346,7 +346,9 @@ void QWaylandWindow::resetSurfaceRole()
     closeChildPopups();
 
     if (mTopPopup == this)
-        mTopPopup = mTransientParent && (mTransientParent->window()->type() == Qt::Popup) ? mTransientParent : nullptr;
+        mTopPopup = mTransientParent &&
+                        (mTransientParent->window()->type() == Qt::Popup || mTransientParent->window()->type() == Qt::Tool)
+                ? mTransientParent : nullptr;
     if (mTransientParent)
         mTransientParent->removeChildPopup(this);
     mTransientParent = nullptr;
@@ -477,8 +479,7 @@ void QWaylandWindow::setGeometry_helper(const QRect &rect)
 void QWaylandWindow::setGeometry(const QRect &r)
 {
     auto rect = r;
-    if (fixedToplevelPositions && !QPlatformWindow::parent() && window()->type() != Qt::Popup
-        && window()->type() != Qt::ToolTip) {
+    if (fixedToplevelPositions && !QPlatformWindow::parent() && !window()->flags().testFlag(Qt::Popup)) {
         rect.moveTo(screen()->geometry().topLeft());
     }
     setGeometry_helper(rect);
@@ -1218,12 +1219,12 @@ QWaylandWindow *QWaylandWindow::guessTransientParent() const
     if (auto transientParent = closestShellSurfaceWindow(window()->transientParent()))
         return transientParent;
 
-    if (window()->type() == Qt::Popup) {
+    if (window()->type() == Qt::Popup || window()->type() == Qt::Tool) {
         if (mTopPopup)
             return mTopPopup;
     }
 
-    if (window()->type() == Qt::ToolTip || window()->type() == Qt::Popup) {
+    if (window()->type() == Qt::ToolTip || window()->type() == Qt::Popup || window()->type() == Qt::Tool) {
         if (auto lastInputWindow = display()->lastInputWindow())
             return closestShellSurfaceWindow(lastInputWindow->window());
     }
@@ -1500,8 +1501,7 @@ void QWaylandWindow::handleScreensChanged()
 
     QWindowSystemInterface::handleWindowScreenChanged<QWindowSystemInterface::SynchronousDelivery>(window(), newScreen->QPlatformScreen::screen());
 
-    if (fixedToplevelPositions && !QPlatformWindow::parent() && window()->type() != Qt::Popup
-        && window()->type() != Qt::ToolTip
+    if (fixedToplevelPositions && !QPlatformWindow::parent() && !window()->flags().testFlag(Qt::Popup)
         && geometry().topLeft() != newScreen->geometry().topLeft()) {
         auto geometry = this->geometry();
         geometry.moveTo(newScreen->geometry().topLeft());
@@ -1650,7 +1650,7 @@ qreal QWaylandWindow::devicePixelRatio() const
 
 bool QWaylandWindow::setMouseGrabEnabled(bool grab)
 {
-    if (window()->type() != Qt::Popup) {
+    if (window()->type() != Qt::Popup && window()->type() != Qt::Tool) {
         qWarning("This plugin supports grabbing the mouse only for popup windows");
         return false;
     }
