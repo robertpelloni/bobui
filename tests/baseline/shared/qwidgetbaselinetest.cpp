@@ -147,6 +147,8 @@ QWidgetBaselineTest::QWidgetBaselineTest()
     QBaselineTest::addClientProperty("DevicePixelRatio",
         QString::number(QGuiApplication::primaryScreen()->devicePixelRatio()));
 
+    QBaselineTest::addClientProperty("Style", qApp->style()->name());
+
     // let users know where they can find the results
     qDebug() << "PlatformName computed to be:" << platformName;
     qDebug() << "Appearance ID computed as:" << appearanceIdString;
