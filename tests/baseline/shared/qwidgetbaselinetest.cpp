@@ -9,6 +9,10 @@
 #include <QStyleHints>
 #include <QScreen>
 #include <QPainter>
+#include <QProxyStyle>
+#include <QStyleOption>
+#include <QJsonObject>
+#include <QJsonArray>
 
 #include <QtCore/private/qabstractanimation_p.h>
 #include <QtWidgets/private/qapplication_p.h>
@@ -19,10 +23,78 @@
 
 QT_BEGIN_NAMESPACE
 
+class DebugStyle : public QProxyStyle
+{
+public:
+    DebugStyle(QStyle *style, QWidgetBaselineTest* baselineTest)
+        : QProxyStyle(style), baselineTest(baselineTest)
+    {
+        setParent(baselineTest);
+    }
+
+    void drawPrimitive(PrimitiveElement element, const QStyleOption *option, QPainter *painter, const QWidget *widget) const override
+    {
+        QProxyStyle::drawPrimitive(element, option, painter, widget);
+        drawDebugRect("QStyle::drawPrimitive", Qt::magenta, element, option, widget, painter);
+    }
+
+    void drawControl(ControlElement element, const QStyleOption *option, QPainter *painter, const QWidget *widget) const override
+    {
+        QProxyStyle::drawControl(element, option, painter, widget);
+        drawDebugRect("QStyle::drawControl", Qt::magenta, element, option, widget, painter);
+    }
+
+    void drawComplexControl(ComplexControl control, const QStyleOptionComplex *option, QPainter *painter, const QWidget *widget) const override
+    {
+        QProxyStyle::drawComplexControl(control, option, painter, widget);
+        drawDebugRect("QStyle::drawComplexControl", Qt::magenta, control, option, widget, painter);
+    }
+
+    QRect subControlRect(ComplexControl control, const QStyleOptionComplex *option, SubControl subControl, const QWidget *widget) const override
+    {
+        auto ret = QProxyStyle::subControlRect(control, option, subControl, widget);
+        drawDebugRect("QStyle::subControlRect", Qt::red, subControl, option, widget);
+        return ret;
+    }
+
+private:
+    template <typename T>
+    void drawDebugRect(const QString &type,  QColor color, T element, const QStyleOption *option, const QWidget *widget, QPainter *painter = nullptr) const
+    {
+        QMetaEnum metaEnum = QMetaEnum::fromType<T>();
+        auto *elementName = metaEnum.valueToKey(element);
+
+        baselineTest->reportDebugRect(type, color,
+            QString::fromLatin1(elementName), option->rect,
+            widget, painter);
+
+        if (widget) {
+            auto *className = widget->metaObject()->className();
+            baselineTest->reportDebugRect("QWidget::rect", Qt::green,
+                QString::fromLatin1(className), widget->rect(),
+                widget, painter);
+
+            baselineTest->reportDebugRect("QWidget::contentsRect", Qt::green,
+                QString::fromLatin1(className), widget->contentsRect(),
+                widget, painter);
+        }
+
+        if (painter) {
+            baselineTest->reportDebugRect("QPainter::clipRegion", Qt::red,
+                QString::fromLatin1(elementName), painter->clipRegion().boundingRect(),
+                widget, painter);
+        }
+    }
+
+    QWidgetBaselineTest *baselineTest = nullptr;
+};
+
 QWidgetBaselineTest::QWidgetBaselineTest()
 {
     // Fail by throwing, since we QVERIFY deep in the helper functions
     QTest::setThrowOnFail(true);
+
+    qApp->setStyle(new DebugStyle(qApp->style(), this));
 
     QBaselineTest::setProject("Widgets");
 
@@ -114,6 +186,8 @@ void QWidgetBaselineTest::init()
     background->move(QGuiApplication::primaryScreen()->availableGeometry().topLeft());
     window->move(QGuiApplication::primaryScreen()->availableGeometry().topLeft());
 
+    debugRects = QJsonObject{};
+
     doInit();
 }
 
@@ -180,6 +254,12 @@ QImage QWidgetBaselineTest::takeSnapshot()
       | QWidget::DrawChildren
       | QWidget::IgnoreMask
     );
+
+    if (!debugRects.isEmpty()) {
+        QJsonDocument doc(debugRects);
+        image.setText("DebugRects", doc.toJson(QJsonDocument::Compact));
+    }
+
     return image;
 
 }
@@ -248,6 +328,37 @@ void QWidgetBaselineTest::takeStandardSnapshots()
     QVERIFY(QTest::qWaitForWindowActive(window));
     if (window->focusWidget())
         window->focusWidget()->clearFocus();
+}
+
+void QWidgetBaselineTest::reportDebugRect(const QString &type, const QColor &color,
+        const QString &label, QRect widgetRect, const QWidget *widget, QPainter *painter)
+{
+    const qreal dpr = widget ? widget->devicePixelRatio()
+        : painter ? painter->device()->devicePixelRatio()
+        : 1.0;
+
+    QRect windowRect = widget ? widgetRect.translated(widget->mapTo(widget->window(), QPoint())) : widgetRect;
+    QRect rect(windowRect.topLeft() * dpr, windowRect.size() * dpr);
+
+    auto typeObject = debugRects[type].toObject();
+
+    if (typeObject.isEmpty()) {
+        typeObject["color"] = color.name();
+        typeObject["rects"] = QJsonArray();
+    }
+
+    auto rects = typeObject["rects"].toArray();
+
+    rects.append(QJsonObject{
+        { "x", rect.x() },
+        { "y", rect.y() },
+        { "width", rect.width() },
+        { "height", rect.height() },
+        { "label", label },
+    });
+
+    typeObject["rects"] = rects;
+    debugRects[type] = typeObject;
 }
 
 QT_END_NAMESPACE

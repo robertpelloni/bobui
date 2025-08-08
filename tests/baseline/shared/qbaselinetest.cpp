@@ -387,6 +387,10 @@ bool checkImage(const QImage &img, const char *name, quint16 checksum, QByteArra
     item.itemName = QString::fromLatin1(itemName);
     item.itemChecksum = checksum;
     item.testFunction = QString::fromLatin1(QTest::currentTestFunction());
+
+    for (auto key: img.textKeys())
+        item.metaData[key] = img.text(key);
+
     ImageItemList list;
     list.append(item);
     if (!proto.requestBaselineChecksums(QLatin1String(QTest::currentTestFunction()), &list) || list.isEmpty()) {
