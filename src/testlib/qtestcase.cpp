@@ -2695,6 +2695,17 @@ const char *QTest::currentDataTag()
 }
 
 /*!
+    Returns the name of the current global test data. If the test doesn't
+    have any assigned global testdata, the function returns \nullptr.
+
+    \since 6.11
+*/
+const char *QTest::currentGlobalDataTag()
+{
+    return QTestResult::currentGlobalDataTag();
+}
+
+/*!
     Returns \c true if the current test function has failed, otherwise false.
 
     \sa QTest::currentTestResolved()

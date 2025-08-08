@@ -501,6 +501,7 @@ namespace QTest
 
     Q_TESTLIB_EXPORT const char *currentTestFunction();
     Q_TESTLIB_EXPORT const char *currentDataTag();
+    Q_TESTLIB_EXPORT const char *currentGlobalDataTag();
     Q_TESTLIB_EXPORT bool currentTestFailed();
     Q_TESTLIB_EXPORT bool currentTestResolved();
     Q_TESTLIB_EXPORT bool runningTest(); // Internal, for use by macros and QTestEventLoop.
