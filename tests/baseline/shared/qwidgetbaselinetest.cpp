@@ -142,9 +142,10 @@ void QWidgetBaselineTest::makeVisible()
     background->setScreen(preferredScreen);
     background->move(preferredScreenRect.topLeft());
     background->showMaximized();
+    QVERIFY(QTest::qWaitForWindowExposed(background));
+
     window->setScreen(preferredScreen);
     window->move(preferredScreenRect.topLeft());
-
     window->show();
     QVERIFY(QTest::qWaitForWindowExposed(window));
 
