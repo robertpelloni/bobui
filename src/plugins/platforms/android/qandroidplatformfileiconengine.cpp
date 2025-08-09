@@ -90,6 +90,10 @@ QPixmap QAndroidPlatformFileIconEngine::filePixmap(const QSize &size, QIcon::Mod
     // createBitmap doesn't support ARGB32, but it doesn't matter here
     Bitmap bitmap = QtAndroid::createBitmap(size.width(), size.height(),
                                             QImage::Format_RGBA8888, jniEnv);
+    if (!bitmap.isValid()) {
+        qCWarning(lcAndroidFileIconEngine) << "Failed to create bitmap";
+        return QPixmap();
+    }
     Canvas canvas(bitmap);
     m_drawable->callMethod("setBounds", 0, 0, size.width(), size.height());
     m_drawable->callMethod("draw", canvas);
