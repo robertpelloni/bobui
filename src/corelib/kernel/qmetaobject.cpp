@@ -798,14 +798,10 @@ int QMetaObject::indexOfConstructor(const char *constructor) const
 
 static int indexOfMethod_helper(const QMetaObject *m, const char *method)
 {
-    int i;
     Q_ASSERT(priv(m->d.data)->revision >= 7);
     QArgumentTypeArray types;
     QByteArrayView name = QMetaObjectPrivate::decodeMethodSignature(method, types);
-    i = QMetaObjectPrivate::indexOfMethodRelative<0>(&m, name, types);
-    if (i >= 0)
-        i += m->methodOffset();
-    return i;
+    return QMetaObjectPrivate::indexOfMethod(m, name, types);
 }
 
 int QMetaObject::indexOfMethod(const char *method) const
@@ -849,14 +845,10 @@ QByteArrayView QMetaObjectPrivate::decodeMethodSignature(
 
 static int indexOfSignal_helper(const QMetaObject *m, const char *signal)
 {
-    int i;
     Q_ASSERT(priv(m->d.data)->revision >= 7);
     QArgumentTypeArray types;
     QByteArrayView name = QMetaObjectPrivate::decodeMethodSignature(signal, types);
-    i = QMetaObjectPrivate::indexOfSignalRelative(&m, name, types);
-    if (i >= 0)
-        i += m->methodOffset();
-    return i;
+    return QMetaObjectPrivate::indexOfSignal(m, name, types);
 }
 
 int QMetaObject::indexOfSignal(const char *signal) const
@@ -905,14 +897,10 @@ int QMetaObjectPrivate::indexOfSignalRelative(const QMetaObject **baseObject,
 
 static int indexOfSlot_helper(const QMetaObject *m, const char *slot)
 {
-    int i;
     Q_ASSERT(priv(m->d.data)->revision >= 7);
     QArgumentTypeArray types;
     QByteArrayView name = QMetaObjectPrivate::decodeMethodSignature(slot, types);
-    i = QMetaObjectPrivate::indexOfSlotRelative(&m, name, types);
-    if (i >= 0)
-        i += m->methodOffset();
-    return i;
+    return QMetaObjectPrivate::indexOfSlot(m, name, types);
 }
 
 int QMetaObject::indexOfSlot(const char *slot) const
