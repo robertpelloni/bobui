@@ -3338,19 +3338,26 @@ bool QObject::disconnect(const QObject *sender, const char *signal,
     }
 
     QByteArray pinnedSignal;
-    bool signal_found = false;
     const QMetaObject *smeta = sender->metaObject();
     Q_ASSERT(QMetaObjectPrivate::get(smeta)->revision >= 7);
+    int signal_index = -1;
     QByteArrayView signalName;
     QArgumentTypeArray signalTypes;
     if (signal) {
-        QT_TRY {
+        signalName = QMetaObjectPrivate::decodeMethodSignature(signal, signalTypes);
+        signal_index = QMetaObjectPrivate::indexOfSignalRelative(&smeta, signalName, signalTypes);
+        if (signal_index == -1) {
             pinnedSignal = QMetaObject::normalizedSignature(signal);
             signal = pinnedSignal.constData();
-        } QT_CATCH (const std::bad_alloc &) {
-            // if the signal is already normalized, we can continue.
-            if (smeta->indexOfSignal(signal) == -1)
-                QT_RETHROW;
+            signalTypes.clear();
+            signalName = QMetaObjectPrivate::decodeMethodSignature(signal, signalTypes);
+            signal_index = QMetaObjectPrivate::indexOfSignalRelative(&smeta, signalName,
+                                                                     signalTypes);
+        }
+        if (signal_index == -1) {
+            err_method_notfound(sender, signal_arg, "disconnect");
+            err_info_about_objects("disconnect", sender, receiver);
+            return false;
         }
     }
 
@@ -3366,19 +3373,25 @@ bool QObject::disconnect(const QObject *sender, const char *signal,
     };
 
     QByteArray pinnedMethod;
-    bool method_found = false;
     const QMetaObject *rmeta = receiver ? receiver->metaObject() : nullptr;
     Q_ASSERT(!rmeta || QMetaObjectPrivate::get(rmeta)->revision >= 7);
+    int method_index = -1;
     QByteArrayView methodName;
     QArgumentTypeArray methodTypes;
     if (method) {
-        QT_TRY {
+        methodName = QMetaObjectPrivate::decodeMethodSignature(method, methodTypes);
+        method_index = getMethodIndex(membcode, rmeta, methodName, methodTypes);
+        if (method_index == -1) {
             pinnedMethod = QMetaObject::normalizedSignature(method);
             method = pinnedMethod.constData();
-        } QT_CATCH(const std::bad_alloc &) {
-            // if the method is already normalized, we can continue.
-            if (rmeta->indexOfMethod(method) == -1)
-                QT_RETHROW;
+            methodTypes.clear();
+            methodName = QMetaObjectPrivate::decodeMethodSignature(method, methodTypes);
+            method_index = getMethodIndex(membcode, rmeta, methodName, methodTypes);
+        }
+        if (method_index == -1) {
+            err_method_notfound(receiver, method_arg, "disconnect");
+            err_info_about_objects("disconnect", sender, receiver);
+            return false;
         }
     }
 
@@ -3387,45 +3400,36 @@ bool QObject::disconnect(const QObject *sender, const char *signal,
      * and slots with the same signature.
     */
     bool res = false;
-    if (signal)
-        signalName = QMetaObjectPrivate::decodeMethodSignature(signal, signalTypes);
-    if (method)
-        methodName = QMetaObjectPrivate::decodeMethodSignature(method, methodTypes);
     do {
-        int signal_index = -1;
         if (signal) {
-            signal_index = QMetaObjectPrivate::indexOfSignalRelative(
-                        &smeta, signalName, signalTypes);
+            // Already computed the signal_index for `smeta` above
+            if (smeta != sender->metaObject()) {
+                signal_index = QMetaObjectPrivate::indexOfSignalRelative(&smeta, signalName,
+                                                                         signalTypes);
+            }
             if (signal_index < 0)
                 break;
             signal_index = QMetaObjectPrivate::originalClone(smeta, signal_index);
             signal_index += QMetaObjectPrivate::signalOffset(smeta);
-            signal_found = true;
         }
 
         if (!method) {
             res |= QMetaObjectPrivate::disconnect(sender, signal_index, smeta, receiver, -1, nullptr);
         } else {
             do {
-                int method_index = getMethodIndex(membcode, rmeta, methodName, methodTypes);
+                // Already computed the method_index for receiver->metaObject() above
+                if (rmeta != receiver->metaObject())
+                    method_index = getMethodIndex(membcode, rmeta, methodName, methodTypes);
                 if (method_index >= 0)
                     while (method_index < rmeta->methodOffset())
                             rmeta = rmeta->superClass();
                 if (method_index < 0)
                     break;
                 res |= QMetaObjectPrivate::disconnect(sender, signal_index, smeta, receiver, method_index, nullptr);
-                method_found = true;
             } while ((rmeta = rmeta->superClass()));
         }
     } while (signal && (smeta = smeta->superClass()));
 
-    if (signal && !signal_found) {
-        err_method_notfound(sender, signal_arg, "disconnect");
-        err_info_about_objects("disconnect", sender, receiver);
-    } else if (method && !method_found) {
-        err_method_notfound(receiver, method_arg, "disconnect");
-        err_info_about_objects("disconnect", sender, receiver);
-    }
     if (res) {
         if (!signal)
             const_cast<QObject *>(sender)->disconnectNotify(QMetaMethod());
