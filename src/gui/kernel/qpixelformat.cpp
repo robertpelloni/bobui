@@ -546,4 +546,40 @@ namespace QtPrivate {
     }
 }
 
+#ifndef QT_NO_DEBUG_STREAM
+QDebug operator<<(QDebug dbg, const QPixelFormat &f)
+{
+    QDebugStateSaver saver(dbg);
+    dbg.nospace();
+    dbg.noquote();
+    dbg.verbosity(0);
+
+    dbg << "QPixelFormat(" << f.colorModel();
+    if (f.colorModel() == QPixelFormat::YUV)
+        dbg << "," << f.yuvLayout();
+
+    dbg << ",bpp=" << f.bitsPerPixel()
+        << "," << f.typeInterpretation();
+
+    if (f.typeInterpretation() != QPixelFormat::UnsignedByte || f.bitsPerPixel() > 8)
+        dbg << "," << f.byteOrder();
+
+    if (f.colorModel() != QPixelFormat::YUV)
+        dbg << ",ch=" << f.channelCount();
+
+    if (f.alphaSize() > 0) {
+        dbg << "," << f.alphaUsage()
+            << "=" << f.alphaSize()
+            << "," << f.alphaPosition();
+        if (f.alphaUsage() == QPixelFormat::UsesAlpha)
+            dbg << "," << f.premultiplied();
+    } else {
+        dbg << ",NoAlpha";
+    }
+
+    dbg << ')';
+    return dbg;
+}
+#endif
+
 QT_END_NAMESPACE
