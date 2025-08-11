@@ -2,23 +2,22 @@
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 // Qt-Security score:critical reason:data-parser
 
-#include "qplatformdefs.h"
 #include "private/qdatetimeparser_p.h"
 
 #include "qdatastream.h"
 #include "qdatetime.h"
 #include "qdebug.h"
 #include "qlocale.h"
-#include "qset.h"
-#include "qtimezone.h"
-#include "qvarlengtharray.h"
 #include "private/qlocale_p.h"
+#include "qset.h"
+#include "private/qstringiterator_p.h"
+#include "private/qtenvironmentvariables_p.h"
+#include "qtimezone.h"
 #if QT_CONFIG(timezone)
 #include "private/qtimezoneprivate_p.h"
 #endif
+#include "qvarlengtharray.h"
 
-#include "private/qstringiterator_p.h"
-#include "private/qtenvironmentvariables_p.h"
 
 //#define QDATETIMEPARSER_DEBUG
 #if defined (QDATETIMEPARSER_DEBUG) && !defined(QT_NO_DEBUG_STREAM)
