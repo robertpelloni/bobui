@@ -45,6 +45,8 @@ private slots:
     void headerData();
     void data_data() { createTestData(); }
     void data();
+    void multiData_data() { createTestData(); }
+    void multiData();
     void setData_data() { createTestData(); }
     void setData();
     void itemData_data() { createTestData(); }
@@ -797,6 +799,19 @@ void tst_QRangeModel::data()
 
     QVERIFY(first.data().isValid());
     QVERIFY(last.data().isValid());
+}
+
+void tst_QRangeModel::multiData()
+{
+    QFETCH(Factory, factory);
+    auto model = factory();
+
+    const QModelIndex index = model->index(0, 0);
+    QVERIFY(index.isValid());
+    QModelRoleData displayData(Qt::DisplayRole);
+    model->multiData(index, displayData);
+
+    QCOMPARE(displayData.data(), model->data(index, Qt::DisplayRole));
 }
 
 void tst_QRangeModel::setData()

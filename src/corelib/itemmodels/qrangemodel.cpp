@@ -1018,7 +1018,8 @@ QModelIndexList QRangeModel::match(const QModelIndex &start, int role, const QVa
 */
 void QRangeModel::multiData(const QModelIndex &index, QModelRoleDataSpan roleDataSpan) const
 {
-    QAbstractItemModel::multiData(index, roleDataSpan);
+    Q_D(const QRangeModel);
+    d->impl->call<QRangeModelImplBase::MultiData>(index, roleDataSpan);
 }
 
 

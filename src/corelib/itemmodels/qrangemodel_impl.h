@@ -922,6 +922,8 @@ public:
     QHash<int, QByteArray> roleNames() const;
     QModelIndex parent(const QModelIndex &child) const;
 
+    void multiData(const QModelIndex &index, QModelRoleDataSpan roleDataSpan) const;
+
     // bindings for overriding
 
     using InvalidateCaches = Method<&Self::invalidateCaches>;
@@ -947,6 +949,9 @@ public:
     using RoleNames = Method<&Self::roleNames>;
     using Parent = Method<&Self::parent>;
 
+    // 6.11
+    using MultiData = Method<&Self::multiData>;
+
     template <typename C>
     using MethodTemplates = std::tuple<
         typename C::Destroy,
@@ -970,7 +975,8 @@ public:
         typename C::HeaderData,
         typename C::Data,
         typename C::ItemData,
-        typename C::RoleNames
+        typename C::RoleNames,
+        typename C::MultiData
     >;
 
 private:
@@ -1246,49 +1252,12 @@ public:
 
     QVariant data(const QModelIndex &index, int role) const
     {
-        QVariant result;
-        const auto readData = [this, column = index.column(), &result, role](const auto &value) {
-            Q_UNUSED(this);
-            using value_type = q20::remove_cvref_t<decltype(value)>;
-            using multi_role = QRangeModelDetails::is_multi_role<value_type>;
-            if constexpr (has_metaobject<value_type>) {
-                if (row_traits::fixed_size() <= 1) {
-                    if (role == Qt::RangeModelDataRole) {
-                        using wrapped_value_type = QRangeModelDetails::wrapped_t<value_type>;
-                        // Qt QML support: "modelData" role returns the entire multi-role item.
-                        // QML can only use raw pointers to QObject (so we unwrap), and gadgets
-                        // only by value (so we take the reference).
-                        if constexpr (std::is_copy_assignable_v<wrapped_value_type>)
-                            result = QVariant::fromValue(QRangeModelDetails::refTo(value));
-                        else
-                            result = QVariant::fromValue(QRangeModelDetails::pointerTo(value));
-                    } else {
-                        result = readRole(role, QRangeModelDetails::pointerTo(value));
-                    }
-                } else if (column <= row_traits::fixed_size()
-                        && (role == Qt::DisplayRole || role == Qt::EditRole)) {
-                    result = readProperty(column, QRangeModelDetails::pointerTo(value));
-                }
-            } else if constexpr (multi_role::value) {
-                const auto it = [this, &value, role]{
-                    Q_UNUSED(this);
-                    if constexpr (multi_role::int_key)
-                        return std::as_const(value).find(Qt::ItemDataRole(role));
-                    else
-                        return std::as_const(value).find(this->itemModel().roleNames().value(role));
-                }();
-                if (it != QRangeModelDetails::end(value))
-                    result = QRangeModelDetails::value(it);
-            } else if (role == Qt::DisplayRole || role == Qt::EditRole
-                    || role == Qt::RangeModelDataRole) {
-                result = read(value);
-            }
-        };
+        if (!index.isValid())
+            return {};
 
-        if (index.isValid())
-            readAt(index, readData);
-
-        return result;
+        QModelRoleData result(role);
+        multiData(index, result);
+        return std::move(result.data());
     }
 
     QMap<int, QVariant> itemData(const QModelIndex &index) const
@@ -1348,6 +1317,84 @@ public:
                 result = this->itemModel().QAbstractItemModel::itemData(index);
         }
         return result;
+    }
+
+    void multiData(const QModelIndex &index, QModelRoleDataSpan roleDataSpan) const
+    {
+        bool tried = false;
+        readAt(index, [this, &index, roleDataSpan, &tried](const auto &value) {
+            Q_UNUSED(this);
+            Q_UNUSED(index);
+            using value_type = q20::remove_cvref_t<decltype(value)>;
+            using multi_role = QRangeModelDetails::is_multi_role<value_type>;
+            if constexpr (multi_role()) {
+                tried = true;
+                const auto roleNames = [this]() -> QHash<int, QByteArray> {
+                    Q_UNUSED(this);
+                    if constexpr (!multi_role::int_key)
+                        return this->itemModel().roleNames();
+                    else
+                        return {};
+                }();
+                using key_type = typename value_type::key_type;
+                for (auto &roleData : roleDataSpan) {
+                    const auto &it = [&roleNames, &value, role = roleData.role()]{
+                        Q_UNUSED(roleNames);
+                        if constexpr (multi_role::int_key)
+                            return value.find(key_type(role));
+                        else
+                            return value.find(roleNames.value(role));
+                    }();
+                    if (it != QRangeModelDetails::end(value))
+                        roleData.setData(QRangeModelDetails::value(it));
+                    else
+                        roleData.clearData();
+                }
+            } else if constexpr (has_metaobject<value_type>) {
+                if (row_traits::fixed_size() <= 1) {
+                    tried = true;
+                    for (auto &roleData : roleDataSpan) {
+                        if (roleData.role() == Qt::RangeModelDataRole) {
+                            using wrapped_value_type = QRangeModelDetails::wrapped_t<value_type>;
+                            // Qt QML support: "modelData" role returns the entire multi-role item.
+                            // QML can only use raw pointers to QObject (so we unwrap), and gadgets
+                            // only by value (so we take the reference).
+                            if constexpr (std::is_copy_assignable_v<wrapped_value_type>)
+                                roleData.setData(QVariant::fromValue(QRangeModelDetails::refTo(value)));
+                            else
+                                roleData.setData(QVariant::fromValue(QRangeModelDetails::pointerTo(value)));
+                        } else {
+                            roleData.setData(readRole(roleData.role(),
+                                                      QRangeModelDetails::pointerTo(value)));
+                        }
+                    }
+                } else if (index.column() <= row_traits::fixed_size()) {
+                    tried = true;
+                    for (auto &roleData : roleDataSpan) {
+                        const int role = roleData.role();
+                        if (role == Qt::DisplayRole || role == Qt::EditRole) {
+                            roleData.setData(readProperty(index.column(),
+                                                          QRangeModelDetails::pointerTo(value)));
+                        } else {
+                            roleData.clearData();
+                        }
+                    }
+                }
+            } else {
+                tried = true;
+                for (auto &roleData : roleDataSpan) {
+                    const int role = roleData.role();
+                    if (role == Qt::DisplayRole || role == Qt::EditRole
+                     || role == Qt::RangeModelDataRole) {
+                        roleData.setData(read(value));
+                    } else {
+                        roleData.clearData();
+                    }
+                }
+            }
+        });
+
+        Q_ASSERT(tried);
     }
 
     bool setData(const QModelIndex &index, const QVariant &data, int role)
@@ -1828,6 +1875,8 @@ public:
     using InsertRows = Override<QRangeModelImplBase::InsertRows, &Self::insertRows>;
     using RemoveRows = Override<QRangeModelImplBase::RemoveRows, &Self::removeRows>;
     using MoveRows = Override<QRangeModelImplBase::MoveRows, &Self::moveRows>;
+
+    using MultiData = Override<QRangeModelImplBase::MultiData, &Self::multiData>;
 
 protected:
     ~QRangeModelImpl()
