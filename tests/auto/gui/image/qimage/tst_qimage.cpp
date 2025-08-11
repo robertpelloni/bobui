@@ -4370,7 +4370,7 @@ void tst_QImage::toCGImage_data()
         { QImage::Format_ARGB32, QImage::Format_RGB32, QImage::Format_RGBA8888_Premultiplied,
           QImage::Format_RGBA8888, QImage::Format_RGBX8888, QImage::Format_ARGB32_Premultiplied };
 
-    for (int i = QImage::Format_Invalid; i < QImage::Format_Grayscale8; ++i) {
+    for (int i = QImage::Format_Invalid; i < QImage::NImageFormats; ++i) {
         QTest::addRow("%s", formatToString(QImage::Format(i)).data())
             << QImage::Format(i) << supported.contains(QImage::Format(i));
     }
@@ -4386,7 +4386,11 @@ void tst_QImage::toCGImage()
     qimage.fill(Qt::red);
 
     CGImageRef cgimage = qimage.toCGImage();
-    QCOMPARE(cgimage != nullptr, supported);
+
+    if (!supported)
+        QEXPECT_FAIL("", "Conversion is not supported (yet)", Abort);
+
+    QVERIFY(cgimage);
 
     CGImageRelease(cgimage);
 }
