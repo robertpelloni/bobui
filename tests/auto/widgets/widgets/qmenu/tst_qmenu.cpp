@@ -2264,7 +2264,6 @@ void tst_QMenu::dontSelectDisabledActionByShortcut()
     QMainWindow w;
     auto mb = w.menuBar();
     auto m = mb->addMenu("me&nu");
-    auto zero = m->addAction("placeholder");
     auto first = m->addAction("disabled &o");
     auto second = m->addAction(QStringLiteral("enabled &o"));
 
