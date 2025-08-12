@@ -823,6 +823,7 @@ int QMetaObject::indexOfMethod(const char *method) const
 QByteArrayView QMetaObjectPrivate::decodeMethodSignature(
         const char *signature, QArgumentTypeArray &types)
 {
+    Q_ASSERT(types.isEmpty());
     QVarLengthArray<QByteArrayView, 10> typeNames;
     QByteArrayView name = parameterTypeNamesFromSignature(signature, typeNames);
     for (auto type : typeNames)
