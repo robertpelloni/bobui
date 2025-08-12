@@ -682,6 +682,12 @@ bool QRhiVulkan::create(QRhi::Flags flags)
     if (devExts.contains("VK_KHR_fragment_shading_rate"))
         addToChain(&physDevFeaturesChainable, &fragmentShadingRateFeatures);
 #endif
+#ifdef VK_EXT_device_fault
+    VkPhysicalDeviceFaultFeaturesEXT deviceFaultFeatures = {};
+    deviceFaultFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FAULT_FEATURES_EXT;
+    if (devExts.contains(VK_EXT_DEVICE_FAULT_EXTENSION_NAME))
+        addToChain(&physDevFeaturesChainable, &deviceFaultFeatures);
+#endif
 #endif
 
     // Vulkan >=1.2 headers at build time, >=1.2 implementation at run time
@@ -825,6 +831,13 @@ bool QRhiVulkan::create(QRhi::Flags flags)
             requestedDevExts.append(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
 #endif
 
+#ifdef VK_EXT_device_fault
+        if (devExts.contains(VK_EXT_DEVICE_FAULT_EXTENSION_NAME)) {
+            requestedDevExts.append(VK_EXT_DEVICE_FAULT_EXTENSION_NAME);
+            caps.deviceFault = true;
+        }
+#endif
+
         for (const QByteArray &ext : requestedDeviceExtensions) {
             if (!ext.isEmpty() && !requestedDevExts.contains(ext)) {
                 if (devExts.contains(ext)) {
@@ -910,6 +923,7 @@ bool QRhiVulkan::create(QRhi::Flags flags)
         // Here we have no way to tell if the extensions got enabled or not.
         // Pretend it's all there and supported. If getProcAddress fails, we'll
         // handle that gracefully.
+        caps.deviceFault = true;
         caps.vertexAttribDivisor = true;
         caps.renderPass2KHR = true;
         caps.depthStencilResolveKHR = true;
@@ -1123,6 +1137,12 @@ bool QRhiVulkan::create(QRhi::Flags flags)
         vkCmdBeginDebugUtilsLabelEXT = reinterpret_cast<PFN_vkCmdBeginDebugUtilsLabelEXT>(f->vkGetDeviceProcAddr(dev, "vkCmdBeginDebugUtilsLabelEXT"));
         vkCmdEndDebugUtilsLabelEXT = reinterpret_cast<PFN_vkCmdEndDebugUtilsLabelEXT>(f->vkGetDeviceProcAddr(dev, "vkCmdEndDebugUtilsLabelEXT"));
         vkCmdInsertDebugUtilsLabelEXT = reinterpret_cast<PFN_vkCmdInsertDebugUtilsLabelEXT>(f->vkGetDeviceProcAddr(dev, "vkCmdInsertDebugUtilsLabelEXT"));
+    }
+#endif
+
+#ifdef VK_EXT_device_fault
+    if (caps.deviceFault) {
+        vkGetDeviceFaultInfoEXT = reinterpret_cast<PFN_vkGetDeviceFaultInfoEXT>(f->vkGetDeviceProcAddr(dev, "vkGetDeviceFaultInfoEXT"));
     }
 #endif
 
@@ -2643,6 +2663,7 @@ QRhi::FrameOpResult QRhiVulkan::beginFrame(QRhiSwapChain *swapChain, QRhi::Begin
         } else {
             if (err == VK_ERROR_DEVICE_LOST) {
                 qWarning("Device loss detected in vkAcquireNextImageKHR()");
+                printExtraErrorInfo(err);
                 deviceLost = true;
                 return QRhi::FrameOpDeviceLost;
             }
@@ -2803,6 +2824,7 @@ QRhi::FrameOpResult QRhiVulkan::endFrame(QRhiSwapChain *swapChain, QRhi::EndFram
             } else if (err != VK_SUBOPTIMAL_KHR) {
                 if (err == VK_ERROR_DEVICE_LOST) {
                     qWarning("Device loss detected in vkQueuePresentKHR()");
+                    printExtraErrorInfo(err);
                     deviceLost = true;
                     return QRhi::FrameOpDeviceLost;
                 }
@@ -2862,6 +2884,7 @@ QRhi::FrameOpResult QRhiVulkan::startPrimaryCommandBuffer(VkCommandBuffer *cb)
         if (err != VK_SUCCESS) {
             if (err == VK_ERROR_DEVICE_LOST) {
                 qWarning("Device loss detected in vkAllocateCommandBuffers()");
+                printExtraErrorInfo(err);
                 deviceLost = true;
                 return QRhi::FrameOpDeviceLost;
             }
@@ -2877,6 +2900,7 @@ QRhi::FrameOpResult QRhiVulkan::startPrimaryCommandBuffer(VkCommandBuffer *cb)
     if (err != VK_SUCCESS) {
         if (err == VK_ERROR_DEVICE_LOST) {
             qWarning("Device loss detected in vkBeginCommandBuffer()");
+            printExtraErrorInfo(err);
             deviceLost = true;
             return QRhi::FrameOpDeviceLost;
         }
@@ -2894,6 +2918,7 @@ QRhi::FrameOpResult QRhiVulkan::endAndSubmitPrimaryCommandBuffer(VkCommandBuffer
     if (err != VK_SUCCESS) {
         if (err == VK_ERROR_DEVICE_LOST) {
             qWarning("Device loss detected in vkEndCommandBuffer()");
+            printExtraErrorInfo(err);
             deviceLost = true;
             return QRhi::FrameOpDeviceLost;
         }
@@ -2930,6 +2955,7 @@ QRhi::FrameOpResult QRhiVulkan::endAndSubmitPrimaryCommandBuffer(VkCommandBuffer
     if (err != VK_SUCCESS) {
         if (err == VK_ERROR_DEVICE_LOST) {
             qWarning("Device loss detected in vkQueueSubmit()");
+            printExtraErrorInfo(err);
             deviceLost = true;
             return QRhi::FrameOpDeviceLost;
         }
@@ -2951,6 +2977,7 @@ QRhi::FrameOpResult QRhiVulkan::waitCommandCompletion(int frameSlot)
             if (err != VK_SUCCESS) {
                 if (err == VK_ERROR_DEVICE_LOST) {
                     qWarning("Device loss detected in vkWaitForFences()");
+                    printExtraErrorInfo(err);
                     deviceLost = true;
                     return QRhi::FrameOpDeviceLost;
                 }
@@ -4079,8 +4106,85 @@ void QRhiVulkan::prepareUploadSubres(QVkTexture *texD, int layer, int level,
 
 void QRhiVulkan::printExtraErrorInfo(VkResult err)
 {
+    if (err == VK_ERROR_DEVICE_LOST)
+        printDeviceLossErrorInfo();
     if (err == VK_ERROR_OUT_OF_DEVICE_MEMORY)
         qWarning() << "Out of device memory, current allocator statistics are" << statistics();
+}
+
+void QRhiVulkan::printDeviceLossErrorInfo() const
+{
+#ifdef VK_EXT_device_fault
+    if (!dev || !caps.deviceFault || !vkGetDeviceFaultInfoEXT)
+        return;
+
+    VkDeviceFaultCountsEXT faultCounts{};
+    faultCounts.sType = VK_STRUCTURE_TYPE_DEVICE_FAULT_COUNTS_EXT;
+    faultCounts.pNext = nullptr;
+
+    VkResult result = vkGetDeviceFaultInfoEXT(dev, &faultCounts, nullptr);
+    if (result != VK_SUCCESS && result != VK_INCOMPLETE) {
+        qWarning("vkGetDeviceFaultInfoEXT failed with %d", result);
+        return;
+    }
+    faultCounts.vendorBinarySize = 0;
+
+    QVarLengthArray<VkDeviceFaultAddressInfoEXT> addressInfos;
+    addressInfos.resize(faultCounts.addressInfoCount);
+
+    QVarLengthArray<VkDeviceFaultVendorInfoEXT> vendorInfos;
+    vendorInfos.resize(faultCounts.vendorInfoCount);
+
+    VkDeviceFaultInfoEXT info{};
+    info.sType             = VK_STRUCTURE_TYPE_DEVICE_FAULT_INFO_EXT;
+    info.pNext             = nullptr;
+    info.pAddressInfos     = addressInfos.isEmpty() ? nullptr : addressInfos.data();
+    info.pVendorInfos      = vendorInfos.isEmpty()  ? nullptr : vendorInfos.data();
+    info.pVendorBinaryData = nullptr;
+
+    result = vkGetDeviceFaultInfoEXT(dev, &faultCounts, &info);
+    if (result != VK_SUCCESS && result != VK_INCOMPLETE) {
+        qWarning("vkGetDeviceFaultInfoEXT failed with %d", result);
+        return;
+    }
+
+    const char *desc = info.description[0] ? info.description : "n/a";
+    qWarning("VK_ERROR_DEVICE_LOST (VK_EXT_device_fault): %u address infos, %u vendor infos, %llu bytes vendor binary: %s",
+             faultCounts.addressInfoCount,
+             faultCounts.vendorInfoCount,
+             (unsigned long long)faultCounts.vendorBinarySize,
+             desc);
+
+    for (uint32_t i = 0; i < faultCounts.addressInfoCount; ++i) {
+        const auto &a = addressInfos[i];
+        auto addressTypeString = [](const VkDeviceFaultAddressTypeEXT type) {
+            switch (type) {
+            case VK_DEVICE_FAULT_ADDRESS_TYPE_NONE_EXT: return "NONE";
+            case VK_DEVICE_FAULT_ADDRESS_TYPE_READ_INVALID_EXT: return "READ_INVALID";
+            case VK_DEVICE_FAULT_ADDRESS_TYPE_WRITE_INVALID_EXT: return "WRITE_INVALID";
+            case VK_DEVICE_FAULT_ADDRESS_TYPE_EXECUTE_INVALID_EXT: return "EXECUTE_INVALID";
+            case VK_DEVICE_FAULT_ADDRESS_TYPE_INSTRUCTION_POINTER_UNKNOWN_EXT: return "INSTRUCTION_POINTER_UNKNOWN";
+            case VK_DEVICE_FAULT_ADDRESS_TYPE_INSTRUCTION_POINTER_INVALID_EXT: return "INSTRUCTION_POINTER_INVALID";
+            case VK_DEVICE_FAULT_ADDRESS_TYPE_INSTRUCTION_POINTER_FAULT_EXT: return "INSTRUCTION_POINTER_FAULT";
+            default: return "UNKNOWN";
+            };
+        };
+        qWarning("  AddressInfo[%02u]: type=%s addr=0x%llx precision=%llu",
+                 i,
+                 addressTypeString(a.addressType),
+                 (unsigned long long)a.reportedAddress,
+                 (unsigned long long)a.addressPrecision);
+    }
+
+    for (uint32_t i = 0; i < faultCounts.vendorInfoCount; ++i) {
+        const auto &v = vendorInfos[i];
+        qWarning("  VendorInfo[%02u]: code=%llu data=%llu desc=%s",
+                 i,
+                 (unsigned long long)v.vendorFaultCode,
+                 (unsigned long long)v.vendorFaultData,
+                 v.description);
+    }
+#endif // VK_EXT_device_fault
 }
 
 void QRhiVulkan::enqueueResourceUpdates(QVkCommandBuffer *cbD, QRhiResourceUpdateBatch *resourceUpdates)

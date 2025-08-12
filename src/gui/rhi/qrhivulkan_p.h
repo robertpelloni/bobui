@@ -882,6 +882,7 @@ public:
     void ensureCommandPoolForNewFrame();
     double elapsedSecondsFromTimestamp(quint64 timestamp[2], bool *ok);
     void printExtraErrorInfo(VkResult err);
+    void printDeviceLossErrorInfo() const;
 
     QVulkanInstance *inst = nullptr;
     QWindow *maybeWindow = nullptr;
@@ -942,11 +943,16 @@ public:
     PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR = nullptr;
 #endif
 
+#ifdef VK_EXT_device_fault
+    PFN_vkGetDeviceFaultInfoEXT vkGetDeviceFaultInfoEXT = nullptr;
+#endif
+
     struct {
         bool compute = false;
         bool depthClamp = false;
         bool wideLines = false;
         bool debugUtils = false;
+        bool deviceFault = false;
         bool vertexAttribDivisor = false;
         bool texture3DSliceAs2D = false;
         bool tessellation = false;
