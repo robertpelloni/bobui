@@ -190,8 +190,9 @@ public:
     constexpr inline uchar subEnum() const noexcept { return get(SubEnumField, SubEnumFieldWidth); }
 
 private:
-    constexpr static inline ByteOrder resolveByteOrder(ByteOrder bo)
-    { return bo == CurrentSystemEndian ? Q_BYTE_ORDER == Q_LITTLE_ENDIAN ? LittleEndian : BigEndian : bo ; }
+    constexpr static inline ByteOrder resolveByteOrder(ByteOrder bo) { return resolveByteOrder(bo, UnsignedInteger ); }
+    constexpr static inline ByteOrder resolveByteOrder(ByteOrder bo, TypeInterpretation ti)
+    { return bo == CurrentSystemEndian ? ti == UnsignedByte || Q_BYTE_ORDER == Q_BIG_ENDIAN ? BigEndian : LittleEndian : bo ; }
 
 private:
     quint64 data;
@@ -244,7 +245,7 @@ constexpr QPixelFormat::QPixelFormat(ColorModel mdl,
            set(AlphaPositionField, AlphaPositionFieldWidth, uchar(position)) |
            set(PremulField, PremulFieldWidth, uchar(premult)) |
            set(TypeInterpretationField, TypeInterpretationFieldWidth, uchar(typeInterp)) |
-           set(ByteOrderField, ByteOrderFieldWidth, uchar(resolveByteOrder(b_order))) |
+           set(ByteOrderField, ByteOrderFieldWidth, uchar(resolveByteOrder(b_order, typeInterp))) |
            set(SubEnumField, SubEnumFieldWidth, s_enum) |
            set(UnusedField, UnusedFieldWidth, 0))
 {
@@ -367,7 +368,7 @@ inline QPixelFormat qPixelFormatYuv(QPixelFormat::YUVLayout layout,
                                     QPixelFormat::AlphaPosition position=QPixelFormat::AtBeginning,
                                     QPixelFormat::AlphaPremultiplied p_mul=QPixelFormat::NotPremultiplied,
                                     QPixelFormat::TypeInterpretation typeInt=QPixelFormat::UnsignedByte,
-                                    QPixelFormat::ByteOrder b_order=QPixelFormat::LittleEndian)
+                                    QPixelFormat::ByteOrder b_order=QPixelFormat::BigEndian)
 {
     return QtPrivate::QPixelFormat_createYUV(layout,
                                              alfa,

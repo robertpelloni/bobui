@@ -258,6 +258,9 @@ private slots:
     void tofromPremultipliedFormat_data();
     void tofromPremultipliedFormat();
 
+    void pixelFormatByteOrder_data();
+    void pixelFormatByteOrder();
+
 private:
     const QString m_prefix;
 };
@@ -4679,6 +4682,29 @@ void tst_QImage::tofromPremultipliedFormat()
 
     QCOMPARE(qt_toPremultipliedFormat(unpremul), premul);
     QCOMPARE(qt_toUnpremultipliedFormat(premul), unpremul);
+}
+
+void tst_QImage::pixelFormatByteOrder_data()
+{
+    QTest::addColumn<QImage::Format>("format");
+
+    for (int i = QImage::Format_Invalid; i < QImage::NImageFormats; ++i)
+        QTest::addRow("%s", formatToString(QImage::Format(i)).data()) << QImage::Format(i);
+}
+
+void tst_QImage::pixelFormatByteOrder()
+{
+    QFETCH(QImage::Format, format);
+
+    QPixelFormat pixelFormat = QImage::toPixelFormat(format);
+
+    static const auto hostByteOrder = Q_BYTE_ORDER == Q_LITTLE_ENDIAN ?
+        QPixelFormat::LittleEndian : QPixelFormat::BigEndian;
+
+    // Byte order pixel formats are effectively BigEndian,
+    // while all other formats are host dependent.
+    QCOMPARE(pixelFormat.byteOrder(), pixelFormat.typeInterpretation() == QPixelFormat::UnsignedByte
+        ? QPixelFormat::BigEndian : hostByteOrder);
 }
 
 QTEST_GUILESS_MAIN(tst_QImage)

@@ -718,10 +718,6 @@ bool QImageData::checkForAlphaPixels() const
                              This is the same as the Format_RGBA8888 except alpha must always be 255.
     \value [since 5.2]
            Format_RGBA8888   The image is stored using a 32-bit byte-ordered RGBA format (8-8-8-8).
-                             Unlike ARGB32 this is a byte-ordered format, which means the 32bit
-                             encoding differs between big endian and little endian architectures,
-                             being respectively (0xRRGGBBAA) and (0xAABBGGRR). The order of the colors
-                             is the same on any architecture if read as bytes 0xRR,0xGG,0xBB,0xAA.
     \value [since 5.2]
            Format_RGBA8888_Premultiplied    The image is stored using a
                             premultiplied 32-bit byte-ordered RGBA format (8-8-8-8).
@@ -767,6 +763,13 @@ bool QImageData::checkForAlphaPixels() const
                              RGBA format (32FP-32FP-32FP-32FP).
     \value [since 6.8]
            Format_CMYK8888   The image is stored using a 32-bit byte-ordered CMYK format.
+
+    Byte-ordered formats have a QPixelFormat::typeInterpretation() of
+    QPixelFormat::UnsignedByte, meaning the individual color components
+    are stored in memory in a fixed order, e.g 0xRR, 0xGG, 0xBB, 0xAA,
+    regardless of the endianness of the platform. These formats should be
+    read as individual bytes, or interpreted as QPixelFormat::BigEndian
+    if read in larger chunks.
 
     \note Drawing into a QImage with format QImage::Format_Indexed8 or QImage::Format_CMYK8888 is not
     supported.
@@ -5986,7 +5989,7 @@ static constexpr QPixelFormat pixelformats[] = {
                         /*ALPHA POSITION*/ QPixelFormat::AtBeginning,
                         /*PREMULTIPLIED*/  QPixelFormat::NotPremultiplied,
                         /*INTERPRETATION*/ QPixelFormat::UnsignedByte,
-                        /*BYTE ORDER*/     QPixelFormat::CurrentSystemEndian),
+                        /*BYTE ORDER*/     QPixelFormat::BigEndian),
         //QImage::Format_MonoLSB:
         QPixelFormat(QPixelFormat::Indexed,
                         /*RED*/            1,
@@ -5999,7 +6002,7 @@ static constexpr QPixelFormat pixelformats[] = {
                         /*ALPHA POSITION*/ QPixelFormat::AtBeginning,
                         /*PREMULTIPLIED*/  QPixelFormat::NotPremultiplied,
                         /*INTERPRETATION*/ QPixelFormat::UnsignedByte,
-                        /*BYTE ORDER*/     QPixelFormat::CurrentSystemEndian),
+                        /*BYTE ORDER*/     QPixelFormat::BigEndian),
         //QImage::Format_Indexed8:
          QPixelFormat(QPixelFormat::Indexed,
                         /*RED*/            8,
@@ -6012,7 +6015,7 @@ static constexpr QPixelFormat pixelformats[] = {
                         /*ALPHA POSITION*/ QPixelFormat::AtBeginning,
                         /*PREMULTIPLIED*/  QPixelFormat::NotPremultiplied,
                         /*INTERPRETATION*/ QPixelFormat::UnsignedByte,
-                        /*BYTE ORDER*/     QPixelFormat::CurrentSystemEndian),
+                        /*BYTE ORDER*/     QPixelFormat::BigEndian),
         //QImage::Format_RGB32:
          QPixelFormat(QPixelFormat::RGB,
                      /*RED*/                8,
@@ -6142,7 +6145,7 @@ static constexpr QPixelFormat pixelformats[] = {
                      /*ALPHA POSITION*/    QPixelFormat::AtBeginning,
                      /*PREMULTIPLIED*/     QPixelFormat::NotPremultiplied,
                      /*INTERPRETATION*/    QPixelFormat::UnsignedByte,
-                     /*BYTE ORDER*/        QPixelFormat::CurrentSystemEndian),
+                     /*BYTE ORDER*/        QPixelFormat::BigEndian),
         //QImage::Format_RGB444:
          QPixelFormat(QPixelFormat::RGB,
                      /*RED*/                4,
@@ -6181,7 +6184,7 @@ static constexpr QPixelFormat pixelformats[] = {
                      /*ALPHA POSITION*/    QPixelFormat::AtEnd,
                      /*PREMULTIPLIED*/     QPixelFormat::NotPremultiplied,
                      /*INTERPRETATION*/    QPixelFormat::UnsignedByte,
-                     /*BYTE ORDER*/        QPixelFormat::CurrentSystemEndian),
+                     /*BYTE ORDER*/        QPixelFormat::BigEndian),
         //QImage::Format_RGBA8888:
          QPixelFormat(QPixelFormat::RGB,
                      /*RED*/                8,
@@ -6194,7 +6197,7 @@ static constexpr QPixelFormat pixelformats[] = {
                      /*ALPHA POSITION*/    QPixelFormat::AtEnd,
                      /*PREMULTIPLIED*/     QPixelFormat::NotPremultiplied,
                      /*INTERPRETATION*/    QPixelFormat::UnsignedByte,
-                     /*BYTE ORDER*/        QPixelFormat::CurrentSystemEndian),
+                     /*BYTE ORDER*/        QPixelFormat::BigEndian),
         //QImage::Format_RGBA8888_Premultiplied:
          QPixelFormat(QPixelFormat::RGB,
                      /*RED*/                8,
@@ -6207,7 +6210,7 @@ static constexpr QPixelFormat pixelformats[] = {
                      /*ALPHA POSITION*/    QPixelFormat::AtEnd,
                      /*PREMULTIPLIED*/     QPixelFormat::Premultiplied,
                      /*INTERPRETATION*/    QPixelFormat::UnsignedByte,
-                     /*BYTE ORDER*/        QPixelFormat::CurrentSystemEndian),
+                     /*BYTE ORDER*/        QPixelFormat::BigEndian),
         //QImage::Format_BGR30:
          QPixelFormat(QPixelFormat::BGR,
                      /*RED*/                10,
@@ -6272,7 +6275,7 @@ static constexpr QPixelFormat pixelformats[] = {
                     /*ALPHA POSITION*/    QPixelFormat::AtBeginning,
                     /*PREMULTIPLIED*/     QPixelFormat::Premultiplied,
                     /*INTERPRETATION*/    QPixelFormat::UnsignedByte,
-                    /*BYTE ORDER*/        QPixelFormat::CurrentSystemEndian),
+                    /*BYTE ORDER*/        QPixelFormat::BigEndian),
         //QImage::Format_Grayscale8:
         QPixelFormat(QPixelFormat::Grayscale,
                     /*GRAY*/               8,
@@ -6285,7 +6288,7 @@ static constexpr QPixelFormat pixelformats[] = {
                     /*ALPHA POSITION*/    QPixelFormat::AtBeginning,
                     /*PREMULTIPLIED*/     QPixelFormat::NotPremultiplied,
                     /*INTERPRETATION*/    QPixelFormat::UnsignedByte,
-                    /*BYTE ORDER*/        QPixelFormat::CurrentSystemEndian),
+                    /*BYTE ORDER*/        QPixelFormat::BigEndian),
         //QImage::Format_RGBX64:
         QPixelFormat(QPixelFormat::RGB,
                      /*RED*/                16,
@@ -6350,7 +6353,7 @@ static constexpr QPixelFormat pixelformats[] = {
                     /*ALPHA POSITION*/    QPixelFormat::AtBeginning,
                     /*PREMULTIPLIED*/     QPixelFormat::NotPremultiplied,
                     /*INTERPRETATION*/    QPixelFormat::UnsignedByte,
-                    /*BYTE ORDER*/        QPixelFormat::CurrentSystemEndian),
+                    /*BYTE ORDER*/        QPixelFormat::BigEndian),
         //QImage::Format_RGBX16FPx4:
         QPixelFormat(QPixelFormat::RGB,
                      /*RED*/                16,

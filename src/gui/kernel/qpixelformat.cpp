@@ -211,7 +211,8 @@ QT_BEGIN_NAMESPACE
     \a typeInterpretation is how the pixel is interpreted.
 
     \a byteOrder represents the endianness of the pixelformat. This defaults to
-    CurrentSystemEndian.
+    CurrentSystemEndian, which will be resolve to the system's endianness for
+    non-byte-ordered formats, and QPixelFormat::BigEndian for QPixelFormat::UnsignedByte.
 
     \a subEnum is used for colorModels that have to store some extra
     information with supplying an extra enum. This is used by YUV to store the
@@ -328,7 +329,7 @@ QT_BEGIN_NAMESPACE
                                      QPixelFormat::AlphaPosition alphaPosition = QPixelFormat::AtBeginning,
                                      QPixelFormat::AlphaPremultiplied premultiplied = QPixelFormat::NotPremultiplied,
                                      QPixelFormat::TypeInterpretation typeInterpretation = QPixelFormat::UnsignedByte,
-                                     QPixelFormat::ByteOrder byteOrder = QPixelFormat::LittleEndian)
+                                     QPixelFormat::ByteOrder byteOrder = QPixelFormat::BigEndian)
     \relates QPixelFormat
 
     Constructor function for creating a QPixelFormat describing a YUV format with
@@ -449,10 +450,14 @@ QT_BEGIN_NAMESPACE
 /*!
     \fn ByteOrder QPixelFormat::byteOrder() const
 
-    The byte order is almost always set the byte order of the current
-    system. However, it can be useful to describe some YUV formats. This
-    function should never return QPixelFormat::CurrentSystemEndian as this
-    value is translated to a endian value in the constructor.
+    The byte order to use when not reading reading pixels as individual bytes.
+
+    For pixel formats with typeInterpreation() QPixelFormat::UnsignedByte this
+    will typically be QPixelFormat::BigEndian, while other type interpretations
+    will typically reflect the endianness of the current system.
+
+    This function will never return QPixelFormat::CurrentSystemEndian as this
+    value is translated to the system's endian value in the constructor.
 */
 
 /*!
