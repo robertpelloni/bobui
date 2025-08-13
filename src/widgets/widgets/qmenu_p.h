@@ -363,10 +363,16 @@ public:
         SelectedFromKeyboard,
         SelectedFromElsewhere
     };
+    enum class SelectionDirection {
+        Up,
+        Down,
+    };
     QWidget *topCausedWidget() const;
     QAction *actionAt(QPoint p) const;
     void setFirstActionActive();
-    void setCurrentAction(QAction *, int popup = -1, SelectionReason reason = SelectedFromElsewhere, bool activateFirst = false);
+    void setCurrentAction(QAction *, int popup = -1, SelectionReason reason = SelectedFromElsewhere,
+                          SelectionDirection direction = SelectionDirection::Down,
+                          bool activateFirst = false);
     void popupAction(QAction *, int, bool);
     void setSyncAction();
 
