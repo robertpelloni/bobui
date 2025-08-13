@@ -654,122 +654,121 @@ void tst_QWidgetRepaintManager::evaluateRhi()
     }
 
 #if QT_CONFIG(opengl)
+    if (!QGuiApplicationPrivate::platformIntegration()->hasCapability(QPlatformIntegration::OpenGL))
+        return;
 
-    if (QGuiApplicationPrivate::platformIntegration()->hasCapability(QPlatformIntegration::OpenGL)) {
+    {
+        // Non-native child RHI widget enables RHI for top level regular widget
+        QWidget topLevel;
+        RhiWidget rhiWidget(QPlatformBackingStoreRhiConfig::OpenGL, &topLevel);
+        topLevel.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&topLevel));
+        QCOMPARE(topLevel.windowHandle()->surfaceType(), QSurface::OpenGLSurface);
+        QVERIFY(QWidgetPrivate::get(&topLevel)->usesRhiFlush);
+        QVERIFY(QWidgetPrivate::get(&topLevel)->rhi());
+        // Only the native widget that actually flushes will report usesRhiFlush
+        QVERIFY(!QWidgetPrivate::get(&rhiWidget)->usesRhiFlush);
+        // But it should have an RHI it can use
+        QVERIFY(QWidgetPrivate::get(&rhiWidget)->rhi());
+    }
 
-        {
-            // Non-native child RHI widget enables RHI for top level regular widget
-            QWidget topLevel;
-            RhiWidget rhiWidget(QPlatformBackingStoreRhiConfig::OpenGL, &topLevel);
-            topLevel.show();
-            QVERIFY(QTest::qWaitForWindowExposed(&topLevel));
-            QCOMPARE(topLevel.windowHandle()->surfaceType(), QSurface::OpenGLSurface);
-            QVERIFY(QWidgetPrivate::get(&topLevel)->usesRhiFlush);
-            QVERIFY(QWidgetPrivate::get(&topLevel)->rhi());
-            // Only the native widget that actually flushes will report usesRhiFlush
-            QVERIFY(!QWidgetPrivate::get(&rhiWidget)->usesRhiFlush);
-            // But it should have an RHI it can use
-            QVERIFY(QWidgetPrivate::get(&rhiWidget)->rhi());
-        }
+    {
+        // Native child RHI widget does not enable RHI for top level
+        QWidget topLevel;
+        RhiWidget nativeRhiWidget(QPlatformBackingStoreRhiConfig::OpenGL, &topLevel);
+        nativeRhiWidget.setAttribute(Qt::WA_NativeWindow);
+        topLevel.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&topLevel));
+        QCOMPARE(nativeRhiWidget.windowHandle()->surfaceType(), QSurface::OpenGLSurface);
+        QVERIFY(QWidgetPrivate::get(&nativeRhiWidget)->usesRhiFlush);
+        QVERIFY(QWidgetPrivate::get(&nativeRhiWidget)->rhi());
+        QCOMPARE(topLevel.windowHandle()->surfaceType(), defaultSurfaceType);
+        QVERIFY(!QWidgetPrivate::get(&topLevel)->usesRhiFlush);
 
-        {
-            // Native child RHI widget does not enable RHI for top level
-            QWidget topLevel;
-            RhiWidget nativeRhiWidget(QPlatformBackingStoreRhiConfig::OpenGL, &topLevel);
-            nativeRhiWidget.setAttribute(Qt::WA_NativeWindow);
-            topLevel.show();
-            QVERIFY(QTest::qWaitForWindowExposed(&topLevel));
-            QCOMPARE(nativeRhiWidget.windowHandle()->surfaceType(), QSurface::OpenGLSurface);
-            QVERIFY(QWidgetPrivate::get(&nativeRhiWidget)->usesRhiFlush);
-            QVERIFY(QWidgetPrivate::get(&nativeRhiWidget)->rhi());
-            QCOMPARE(topLevel.windowHandle()->surfaceType(), defaultSurfaceType);
-            QVERIFY(!QWidgetPrivate::get(&topLevel)->usesRhiFlush);
+        if (!usesRhiBackingStore)
+            QVERIFY(!QWidgetPrivate::get(&topLevel)->rhi());
+    }
 
-            if (!usesRhiBackingStore)
-                QVERIFY(!QWidgetPrivate::get(&topLevel)->rhi());
-        }
+    {
+        // Non-native RHI child of native child enables RHI for native child,
+        // but not top level.
+        QWidget topLevel;
+        QWidget nativeChild(&topLevel);
+        nativeChild.setAttribute(Qt::WA_NativeWindow);
+        RhiWidget rhiWidget(QPlatformBackingStoreRhiConfig::OpenGL, &nativeChild);
+        topLevel.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&topLevel));
 
-        {
-            // Non-native RHI child of native child enables RHI for native child,
-            // but not top level.
-            QWidget topLevel;
-            QWidget nativeChild(&topLevel);
-            nativeChild.setAttribute(Qt::WA_NativeWindow);
-            RhiWidget rhiWidget(QPlatformBackingStoreRhiConfig::OpenGL, &nativeChild);
-            topLevel.show();
-            QVERIFY(QTest::qWaitForWindowExposed(&topLevel));
+        QCOMPARE(nativeChild.windowHandle()->surfaceType(), QSurface::OpenGLSurface);
+        QVERIFY(QWidgetPrivate::get(&nativeChild)->usesRhiFlush);
+        QVERIFY(QWidgetPrivate::get(&nativeChild)->rhi());
+        QVERIFY(!QWidgetPrivate::get(&rhiWidget)->usesRhiFlush);
+        QVERIFY(QWidgetPrivate::get(&rhiWidget)->rhi());
+        QCOMPARE(topLevel.windowHandle()->surfaceType(), defaultSurfaceType);
+        QVERIFY(!QWidgetPrivate::get(&topLevel)->usesRhiFlush);
+        if (!usesRhiBackingStore)
+            QVERIFY(!QWidgetPrivate::get(&topLevel)->rhi());
+    }
 
-            QCOMPARE(nativeChild.windowHandle()->surfaceType(), QSurface::OpenGLSurface);
-            QVERIFY(QWidgetPrivate::get(&nativeChild)->usesRhiFlush);
-            QVERIFY(QWidgetPrivate::get(&nativeChild)->rhi());
-            QVERIFY(!QWidgetPrivate::get(&rhiWidget)->usesRhiFlush);
-            QVERIFY(QWidgetPrivate::get(&rhiWidget)->rhi());
-            QCOMPARE(topLevel.windowHandle()->surfaceType(), defaultSurfaceType);
-            QVERIFY(!QWidgetPrivate::get(&topLevel)->usesRhiFlush);
-            if (!usesRhiBackingStore)
-                QVERIFY(!QWidgetPrivate::get(&topLevel)->rhi());
-        }
+    {
+        // Native child RHI widget does not prevent RHI for top level
+        // if non-native RHI child widget is also present.
+        QWidget topLevel;
+        RhiWidget rhiWidget(QPlatformBackingStoreRhiConfig::OpenGL, &topLevel);
+        RhiWidget nativeRhiWidget(QPlatformBackingStoreRhiConfig::OpenGL, &topLevel);
+        nativeRhiWidget.setAttribute(Qt::WA_NativeWindow);
+        topLevel.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&topLevel));
 
-        {
-            // Native child RHI widget does not prevent RHI for top level
-            // if non-native RHI child widget is also present.
-            QWidget topLevel;
-            RhiWidget rhiWidget(QPlatformBackingStoreRhiConfig::OpenGL, &topLevel);
-            RhiWidget nativeRhiWidget(QPlatformBackingStoreRhiConfig::OpenGL, &topLevel);
-            nativeRhiWidget.setAttribute(Qt::WA_NativeWindow);
-            topLevel.show();
-            QVERIFY(QTest::qWaitForWindowExposed(&topLevel));
+        QCOMPARE(nativeRhiWidget.windowHandle()->surfaceType(), QSurface::OpenGLSurface);
+        QVERIFY(QWidgetPrivate::get(&nativeRhiWidget)->usesRhiFlush);
+        QVERIFY(QWidgetPrivate::get(&nativeRhiWidget)->rhi());
+        QVERIFY(!QWidgetPrivate::get(&rhiWidget)->usesRhiFlush);
+        QVERIFY(QWidgetPrivate::get(&rhiWidget)->rhi());
+        QCOMPARE(topLevel.windowHandle()->surfaceType(), QSurface::OpenGLSurface);
+        QVERIFY(QWidgetPrivate::get(&topLevel)->usesRhiFlush);
+        QVERIFY(QWidgetPrivate::get(&topLevel)->rhi());
+    }
 
-            QCOMPARE(nativeRhiWidget.windowHandle()->surfaceType(), QSurface::OpenGLSurface);
-            QVERIFY(QWidgetPrivate::get(&nativeRhiWidget)->usesRhiFlush);
-            QVERIFY(QWidgetPrivate::get(&nativeRhiWidget)->rhi());
-            QVERIFY(!QWidgetPrivate::get(&rhiWidget)->usesRhiFlush);
-            QVERIFY(QWidgetPrivate::get(&rhiWidget)->rhi());
-            QCOMPARE(topLevel.windowHandle()->surfaceType(), QSurface::OpenGLSurface);
-            QVERIFY(QWidgetPrivate::get(&topLevel)->usesRhiFlush);
-            QVERIFY(QWidgetPrivate::get(&topLevel)->rhi());
-        }
+    {
+        // Reparenting into a window that already matches the required
+        // surface type should still mark the parent as flushing with RHI.
+        QWidget topLevel;
 
-        {
-            // Reparenting into a window that already matches the required
-            // surface type should still mark the parent as flushing with RHI.
-            QWidget topLevel;
+        RhiWidget rhiWidget(QPlatformBackingStoreRhiConfig::Null);
+        rhiWidget.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&rhiWidget));
+        QVERIFY(QWidgetPrivate::get(&rhiWidget)->usesRhiFlush);
+        QVERIFY(QWidgetPrivate::get(&rhiWidget)->rhi());
 
-            RhiWidget rhiWidget(QPlatformBackingStoreRhiConfig::Null);
-            rhiWidget.show();
-            QVERIFY(QTest::qWaitForWindowExposed(&rhiWidget));
-            QVERIFY(QWidgetPrivate::get(&rhiWidget)->usesRhiFlush);
-            QVERIFY(QWidgetPrivate::get(&rhiWidget)->rhi());
+        topLevel.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&topLevel));
+        rhiWidget.setParent(&topLevel);
+        QVERIFY(QWidgetPrivate::get(&topLevel)->usesRhiFlush);
+        QVERIFY(QWidgetPrivate::get(&topLevel)->rhi());
+    }
 
-            topLevel.show();
-            QVERIFY(QTest::qWaitForWindowExposed(&topLevel));
-            rhiWidget.setParent(&topLevel);
-            QVERIFY(QWidgetPrivate::get(&topLevel)->usesRhiFlush);
-            QVERIFY(QWidgetPrivate::get(&topLevel)->rhi());
-        }
+    {
+        // Non-native RHI child of native child enables RHI for native child,
+        // but does not prevent top level from flushing with RHI.
+        QWidget topLevel;
+        QWidget nativeChild(&topLevel);
+        nativeChild.setAttribute(Qt::WA_NativeWindow);
+        RhiWidget rhiGranchild(QPlatformBackingStoreRhiConfig::OpenGL, &nativeChild);
+        RhiWidget rhiChild(QPlatformBackingStoreRhiConfig::OpenGL, &topLevel);
+        topLevel.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&topLevel));
 
-        {
-            // Non-native RHI child of native child enables RHI for native child,
-            // but does not prevent top level from flushing with RHI.
-            QWidget topLevel;
-            QWidget nativeChild(&topLevel);
-            nativeChild.setAttribute(Qt::WA_NativeWindow);
-            RhiWidget rhiGranchild(QPlatformBackingStoreRhiConfig::OpenGL, &nativeChild);
-            RhiWidget rhiChild(QPlatformBackingStoreRhiConfig::OpenGL, &topLevel);
-            topLevel.show();
-            QVERIFY(QTest::qWaitForWindowExposed(&topLevel));
-
-            QCOMPARE(nativeChild.windowHandle()->surfaceType(), QSurface::OpenGLSurface);
-            QVERIFY(QWidgetPrivate::get(&nativeChild)->usesRhiFlush);
-            QVERIFY(QWidgetPrivate::get(&nativeChild)->rhi());
-            QVERIFY(!QWidgetPrivate::get(&rhiGranchild)->usesRhiFlush);
-            QVERIFY(QWidgetPrivate::get(&rhiGranchild)->rhi());
-            QCOMPARE(topLevel.windowHandle()->surfaceType(), QSurface::OpenGLSurface);
-            QVERIFY(QWidgetPrivate::get(&topLevel)->usesRhiFlush);
-            QVERIFY(QWidgetPrivate::get(&topLevel)->rhi());
-            QVERIFY(!QWidgetPrivate::get(&rhiChild)->usesRhiFlush);
-            QVERIFY(QWidgetPrivate::get(&rhiChild)->rhi());
-        }
+        QCOMPARE(nativeChild.windowHandle()->surfaceType(), QSurface::OpenGLSurface);
+        QVERIFY(QWidgetPrivate::get(&nativeChild)->usesRhiFlush);
+        QVERIFY(QWidgetPrivate::get(&nativeChild)->rhi());
+        QVERIFY(!QWidgetPrivate::get(&rhiGranchild)->usesRhiFlush);
+        QVERIFY(QWidgetPrivate::get(&rhiGranchild)->rhi());
+        QCOMPARE(topLevel.windowHandle()->surfaceType(), QSurface::OpenGLSurface);
+        QVERIFY(QWidgetPrivate::get(&topLevel)->usesRhiFlush);
+        QVERIFY(QWidgetPrivate::get(&topLevel)->rhi());
+        QVERIFY(!QWidgetPrivate::get(&rhiChild)->usesRhiFlush);
+        QVERIFY(QWidgetPrivate::get(&rhiChild)->rhi());
     }
 
 #if QT_CONFIG(metal)
