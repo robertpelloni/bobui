@@ -294,7 +294,7 @@ public:
     QByteArray lexemUntil(Token);
     bool until(Token);
 
-    // test for Q_INVOCABLE, Q_SCRIPTABLE, etc. and set the flags
+    // test for Q_INVOKABLE, Q_SCRIPTABLE, etc. and set the flags
     // in FunctionDef accordingly
     bool testFunctionAttribute(FunctionDef *def);
     bool testFunctionAttribute(Token tok, FunctionDef *def);
