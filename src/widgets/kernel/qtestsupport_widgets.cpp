@@ -23,11 +23,12 @@ static bool qWaitForWidgetWindow(QWidget *w, Predicate predicate, QDeadlineTimer
         return false;
 
     return QTest::qWaitFor([&, wp = QPointer(w)]() {
+        using QTest::Internal::WaitForResult;
         if (QWidget *widget = wp.data(); !widget)
-            return false;
-        else if (QWindow *window = widget->window()->windowHandle())
-            return predicate(window);
-        return false;
+            return WaitForResult::Failed;
+        else if (QWindow *window = widget->window()->windowHandle(); window && predicate(window))
+            return WaitForResult::Done;
+        return WaitForResult::NotYet;
     }, timeout);
 }
 

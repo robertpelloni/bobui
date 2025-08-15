@@ -51,6 +51,7 @@ bool QTest::qWaitForWindowActive(QWindow *window, int timeout)
 */
 bool QTest::qWaitForWindowActive(QWindow *window, QDeadlineTimer timeout)
 {
+    using Internal::WaitForResult;
     if (Q_UNLIKELY(!QGuiApplicationPrivate::platformIntegration()->hasCapability(QPlatformIntegration::WindowActivation))) {
         qWarning() << "qWaitForWindowActive was called on a platform that doesn't support window"
                    << "activation. This means there is an error in the test and it should either"
@@ -61,9 +62,9 @@ bool QTest::qWaitForWindowActive(QWindow *window, QDeadlineTimer timeout)
     }
     return QTest::qWaitFor([wp = QPointer(window)]() {
         if (QWindow *w = wp.data(); !w)
-            return false;
+            return WaitForResult::Failed;
         else
-            return w->isActive();
+            return w->isActive() ? WaitForResult::Done : WaitForResult::NotYet;
     }, timeout);
 }
 
@@ -96,11 +97,12 @@ bool QTest::qWaitForWindowActive(QWindow *window)
 */
 Q_GUI_EXPORT bool QTest::qWaitForWindowFocused(QWindow *window, QDeadlineTimer timeout)
 {
+    using Internal::WaitForResult;
     return QTest::qWaitFor([wp = QPointer(window)]() {
         if (QWindow *w = wp.data(); !w)
-            return false;
+            return WaitForResult::Failed;
         else
-            return qGuiApp->focusWindow() == w;
+            return qGuiApp->focusWindow() == w ? WaitForResult::Done : WaitForResult::NotYet;
     }, timeout);
 }
 
@@ -142,11 +144,12 @@ bool QTest::qWaitForWindowExposed(QWindow *window, int timeout)
 */
 bool QTest::qWaitForWindowExposed(QWindow *window, QDeadlineTimer timeout)
 {
+    using Internal::WaitForResult;
     return QTest::qWaitFor([wp = QPointer(window)]() {
         if (QWindow *w = wp.data(); !w)
-            return false;
+            return WaitForResult::Failed;
         else
-            return w->isExposed();
+            return w->isExposed() ? WaitForResult::Done : WaitForResult::NotYet;
     }, timeout);
 }
 
