@@ -357,6 +357,8 @@ private:
     qsizetype m_size;
     const char *m_data;
 #endif
+
+    friend class QStringView;
 };
 #ifdef Q_L1S_VIEW_IS_PRIMARY
 Q_DECLARE_TYPEINFO(QLatin1StringView, Q_RELOCATABLE_TYPE);
