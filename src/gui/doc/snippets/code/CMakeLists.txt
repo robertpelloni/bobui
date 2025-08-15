@@ -36,10 +36,11 @@ target_link_libraries(gui_snippets_code PRIVATE
     Qt::Gui
 )
 
-qt_internal_extend_target(gui_snippets_code CONDITION QT_FEATURE_widgets
-    LIBRARIES
+if(QT_FEATURE_widgets)
+    target_link_libraries(gui_snippets_code PRIVATE
         Qt::Widgets
-    SOURCES
+    )
+    target_sources(gui_snippets_code PRIVATE
         doc_src_coordsys.cpp
         doc_src_richtext.cpp
         src_gui_image_qicon.cpp
@@ -53,19 +54,22 @@ qt_internal_extend_target(gui_snippets_code CONDITION QT_FEATURE_widgets
         src_gui_painting_qpainter.cpp
         src_gui_text_qsyntaxhighlighter.cpp
         src_gui_util_qvalidator.cpp
-)
+    )
+endif()
 
-qt_internal_extend_target(gui_snippets_code CONDITION QT_FEATURE_vulkan
-    SOURCES
+if(QT_FEATURE_vulkan)
+    target_sources(gui_snippets_code PRIVATE
         src_gui_vulkan_qvulkanfunctions.cpp
         src_gui_vulkan_qvulkaninstance.cpp
         src_gui_vulkan_qvulkanwindow.cpp
-)
+    )
+endif()
 
-qt_internal_extend_target(gui_snippets_code CONDITION QT_FEATURE_clipboard
-    SOURCES
+if(QT_FEATURE_clipboard)
+    target_sources(gui_snippets_code PRIVATE
         src_gui_kernel_qclipboard.cpp
-)
+    )
+endif()
 
 set_target_properties(gui_snippets_code PROPERTIES COMPILE_OPTIONS "-w")
 

@@ -12,6 +12,7 @@ add_library(widgets_snippets OBJECT
     qlistview-dnd/mainwindow.cpp
     qlistview-dnd/model.cpp
     qlistwidget-dnd/mainwindow.cpp
+    qrhiwidget/rhiwidgetintro.cpp
     qsortfilterproxymodel/main.cpp
     qsplashscreen/main.cpp
     qstackedlayout/main.cpp
@@ -43,50 +44,51 @@ add_library(widgets_snippets OBJECT
 target_link_libraries(widgets_snippets PRIVATE
     Qt::Core
     Qt::Gui
+    Qt::GuiPrivate
     Qt::Widgets
 )
 
-qt_internal_extend_target(widgets_snippets
-    LIBRARIES
-        Qt::GuiPrivate
-    SOURCES
-        qrhiwidget/rhiwidgetintro.cpp
-)
-
-qt_internal_extend_target(widgets_snippets CONDITION QT_FEATURE_filedialog
-    SOURCES
+if(QT_FEATURE_filedialog)
+    target_sources(widgets_snippets PRIVATE
         filedialogurls/filedialogurls.cpp
-)
+    )
+endif()
 
-qt_internal_extend_target(widgets_snippets CONDITION QT_FEATURE_graphicsview
-    SOURCES
+if(QT_FEATURE_graphicsview)
+    target_sources(widgets_snippets PRIVATE
         graphicssceneadditem/graphicssceneadditemsnippet.cpp
         graphicsview/graphicsview_snippet.cpp
-)
+    )
+endif()
 
-qt_internal_extend_target(widgets_snippets CONDITION QT_FEATURE_opengl AND QT_FEATURE_printsupport
-    LIBRARIES
+if(QT_FEATURE_opengl AND QT_FEATURE_printsupport)
+    target_link_libraries(widgets_snippets PRIVATE
         Qt::OpenGL
         Qt::OpenGLWidgets
         Qt::PrintSupport
-    SOURCES
+    )
+    target_sources(widgets_snippets PRIVATE
         graphicsview/graphicsview.cpp
-)
+    )
+endif()
 
-qt_internal_extend_target(widgets_snippets CONDITION QT_FEATURE_mdiarea
-    SOURCES
+if(QT_FEATURE_mdiarea)
+    target_sources(widgets_snippets PRIVATE
         mdiarea/mdiareasnippets.cpp
-)
+    )
+endif()
 
-qt_internal_extend_target(widgets_snippets CONDITION QT_FEATURE_scrollarea
-    SOURCES
+if(QT_FEATURE_scrollarea)
+    target_sources(widgets_snippets PRIVATE
         myscrollarea/myscrollarea.cpp
-)
+    )
+endif()
 
-qt_internal_extend_target(widgets_snippets CONDITION QT_FEATURE_spinbox AND QT_FEATURE_itemviews
-    SOURCES
+if(QT_FEATURE_spinbox AND QT_FEATURE_itemviews)
+    target_sources(widgets_snippets PRIVATE
         qitemdelegate/spinbox-delegate.cpp
-)
+    )
+endif()
 
 set_target_properties(widgets_snippets PROPERTIES COMPILE_OPTIONS "-w")
 

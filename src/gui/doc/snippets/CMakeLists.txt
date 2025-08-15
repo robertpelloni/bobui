@@ -10,18 +10,21 @@ qt_add_library(gui_snippets OBJECT
     polygon/polygon.cpp
     qimagewriter/main.cpp
     qtextobject/textobjectinterface.h
+    rhioffscreen/main.cpp
     textdocument-end/textdocumentendsnippet.cpp
 )
 
 target_link_libraries(gui_snippets PRIVATE
     Qt::Core
     Qt::Gui
+    Qt::GuiPrivate
 )
 
-qt_internal_extend_target(gui_snippets CONDITION QT_FEATURE_widgets
-    LIBRARIES
+if(QT_FEATURE_widgets)
+    target_link_libraries(gui_snippets PRIVATE
         Qt::Widgets
-    SOURCES
+    )
+    target_sources(gui_snippets PRIVATE
         draganddrop/dragwidget.cpp
         dragging/mainwindow.cpp
         droparea/droparea.cpp
@@ -50,33 +53,33 @@ qt_internal_extend_target(gui_snippets CONDITION QT_FEATURE_widgets
         textdocument-tables/mainwindow.cpp
         textdocument-tables/mainwindow.cpp
         transform/main.cpp
-)
+    )
+endif()
 
-qt_internal_extend_target(gui_snippets
-    LIBRARIES
-        Qt::GuiPrivate
-    SOURCES
-        rhioffscreen/main.cpp
-)
 
-qt_internal_extend_target(gui_snippets CONDITION QT_FEATURE_xml
-    LIBRARIES
+if(QT_FEATURE_xml)
+    target_link_libraries(gui_snippets PRIVATE
         Qt::Xml
-    SOURCES
+    )
+    target_sources(gui_snippets PRIVATE
         textblock-fragments/xmlwriter.cpp
-)
+    )
+endif()
 
-qt_internal_extend_target(gui_snippets CONDITION QT_FEATURE_printsupport
-    LIBRARIES
+if(QT_FEATURE_printsupport)
+    target_link_libraries(gui_snippets PRIVATE
         Qt::PrintSupport
-    SOURCES
+    )
+    target_sources(gui_snippets PRIVATE
         textdocument-printing/mainwindow.cpp
-)
+    )
+endif()
 
-qt_internal_extend_target(gui_snippets CONDITION QT_FEATURE_widgets AND QT_FEATURE_clipboard
-    SOURCES
+if(QT_FEATURE_widgets AND QT_FEATURE_clipboard)
+    target_sources(gui_snippets PRIVATE
         clipboard/clipwindow.cpp
-)
+    )
+endif()
 
 set_target_properties(gui_snippets PROPERTIES COMPILE_OPTIONS "-w")
 

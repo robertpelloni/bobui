@@ -6,16 +6,20 @@ target_link_libraries(corelib_snippets_eventfilters PRIVATE
     Qt::Core
 )
 
-qt_internal_extend_target(corelib_snippets_eventfilters CONDITION QT_FEATURE_widgets
-    LIBRARIES
+if(QT_FEATURE_widgets)
+    target_link_libraries(corelib_snippets_eventfilters PRIVATE
         Qt::Widgets
-    SOURCE
+    )
+    target_sources(corelib_snippets_eventfilters PRIVATE
         main.cpp
-)
+    )
+endif()
 
-qt_internal_extend_target(corelib_snippets_eventfilters CONDITION QT_FEATURE_gui
-    LIBRARIES
+if(QT_FEATURE_gui)
+    target_link_libraries(corelib_snippets_eventfilters PRIVATE
         Qt::Gui
-    SOURCES
+    )
+    target_sources(corelib_snippets_eventfilters PRIVATE
         filterobject.cpp
-)
+    )
+endif()

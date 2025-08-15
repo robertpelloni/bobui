@@ -29,22 +29,23 @@ target_link_libraries(corelib_snippets PRIVATE
     Qt::Core
 )
 
-qt_internal_extend_target(corelib_snippets CONDITION QT_FEATURE_process
-    SOURCES
+if(QT_FEATURE_process)
+    target_sources(corelib_snippets PRIVATE
         process/process.cpp
-)
+    )
+endif()
 
-qt_internal_extend_target(corelib_snippets
-    CONDITION
-        QT_FEATURE_process AND QT_FEATURE_processenvironment
-    SOURCES
+if(QT_FEATURE_process AND QT_FEATURE_processenvironment)
+    target_sources(corelib_snippets PRIVATE
         qprocess-environment/main.cpp
-)
+    )
+endif()
 
-qt_internal_extend_target(corelib_snippets CONDITION QT_FEATURE_widgets
-    LIBRARIES
+if(QT_FEATURE_widgets)
+    target_link_libraries(corelib_snippets PRIVATE
         Qt::Widgets
-    SOURCES
+    )
+    target_sources(corelib_snippets PRIVATE
         events/events.cpp
         hellotrmain.cpp
         fileinfo/main.cpp
@@ -54,15 +55,18 @@ qt_internal_extend_target(corelib_snippets CONDITION QT_FEATURE_widgets
         qstring/main.cpp
         qtcast/qtcast.cpp
         settings/settings.cpp
-)
+    )
+endif()
 
-qt_internal_extend_target(corelib_snippets CONDITION QT_FEATURE_gui
-    LIBRARIES
+if(QT_FEATURE_gui)
+    target_link_libraries(corelib_snippets PRIVATE
         Qt::Gui
-    SOURCES
+    )
+    target_sources(corelib_snippets PRIVATE
         buffer/buffer.cpp
         qdebug/qdebugsnippet.cpp
-)
+    )
+endif()
 
 set_target_properties(corelib_snippets PROPERTIES COMPILE_OPTIONS "-w")
 

@@ -10,10 +10,12 @@ target_link_libraries(corelib_snippets_qmetaobject-revision PRIVATE
     Qt::Core
 )
 
-qt_internal_extend_target(corelib_snippets_qmetaobject-revision CONDITION QT_FEATURE_widgets
-    LIBRARIES
+if(QT_FEATURE_widgets)
+    target_link_libraries(corelib_snippets_qmetaobject-revision PRIVATE
         Qt::Widgets
-    SOURCES
+    )
+    target_sources(corelib_snippets_qmetaobject-revision PRIVATE
         main.cpp
         window.cpp
-)
+    )
+endif()

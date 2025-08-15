@@ -102,47 +102,55 @@ target_link_libraries(corelib_snippets_code PRIVATE
     Qt::Core
 )
 
-qt_internal_extend_target(corelib_snippets_code CONDITION APPLE
-    SOURCES
+if(APPLE)
+    target_sources(corelib_snippets_code PRIVATE
         src_corelib_kernel_qabstractnativeeventfilter.mm
-)
+    )
+endif()
 
-qt_internal_extend_target(corelib_snippets_code CONDITION QT_FEATURE_process
-    SOURCES
+if(QT_FEATURE_process)
+    target_sources(corelib_snippets_code PRIVATE
         src_corelib_io_qiodevice.cpp
         src_corelib_io_qprocess.cpp
-)
+    )
+endif()
 
-qt_internal_extend_target(corelib_snippets_code CONDITION QT_FEATURE_widgets
-    LIBRARIES
+if(QT_FEATURE_widgets)
+    target_link_libraries(corelib_snippets_code PRIVATE
         Qt::Widgets
-    SOURCES
+    )
+    target_sources(corelib_snippets_code PRIVATE
         doc_src_objecttrees.cpp
         src_corelib_animation_qpropertyanimation.cpp
         src_corelib_global_qglobal_widgets.cpp
         src_corelib_kernel_qobject.cpp
         src_corelib_kernel_qtimer.cpp
         src_corelib_tools_qtimeline.cpp
-)
+    )
+endif()
 
-qt_internal_extend_target(corelib_snippets_code CONDITION QT_FEATURE_gui
-    LIBRARIES
+if(QT_FEATURE_gui)
+    target_link_libraries(corelib_snippets_code PRIVATE
         Qt::Gui
-)
+    )
+endif()
 
-qt_internal_extend_target(corelib_snippets_code CONDITION QT_FEATURE_concurrent
-    LIBRARIES
+if(QT_FEATURE_concurrent)
+    target_link_libraries(corelib_snippets_code PRIVATE
         Qt::Concurrent
-    SOURCES
+    )
+    target_sources(corelib_snippets_code PRIVATE
         src_corelib_thread_qexception.cpp
         src_corelib_thread_qfuture.cpp
         src_corelib_thread_qfuturesynchronizer.cpp
         src_corelib_thread_qfuturewatcher.cpp
-)
+    )
+endif()
 
-qt_internal_extend_target(corelib_snippets_code CONDITION QT_FEATURE_network
-    LIBRARIES
+if(QT_FEATURE_network)
+    target_link_libraries(corelib_snippets_code PRIVATE
         Qt::Network
-)
+    )
+endif()
 
 set_target_properties(corelib_snippets_code PROPERTIES COMPILE_OPTIONS "-w")
