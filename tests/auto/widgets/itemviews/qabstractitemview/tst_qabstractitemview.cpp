@@ -2301,16 +2301,6 @@ void tst_QAbstractItemView::testDialogAsEditor()
 {
     DialogItemDelegate delegate;
 
-    bool canBeDestroyed = true;
-    connect(&delegate, &QAbstractItemDelegate::closeEditor,
-        this, [&](QWidget *editor, QAbstractItemDelegate::EndEditHint) {
-                // if we get here but we are not yet in the state to
-                // get destroyed, abort to trigger backtrace so we see
-                // why we get here
-                if (!canBeDestroyed)
-                    qFatal("Please report the following backtrace on QTBUG-136653");
-        });
-
     QStandardItemModel model;
     model.appendRow(new QStandardItem(QStringLiteral("editme")));
 
@@ -2329,10 +2319,8 @@ void tst_QAbstractItemView::testDialogAsEditor()
 
     QCOMPARE(delegate.result, QDialog::Rejected);
 
-    canBeDestroyed = false;
     view.edit(model.index(0,0));
 
-    canBeDestroyed = true;
     QVERIFY(QTest::qWaitForWindowExposed(delegate.openedEditor));
 
     delegate.openedEditor->accept();
