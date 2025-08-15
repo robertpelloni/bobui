@@ -196,7 +196,10 @@ private slots:
 
     void availableCodesAreAvailable();
 
-    void finalize();
+    void finalizeEncoder_data();
+    void finalizeEncoder();
+    void finalizeDecoder_data();
+    void finalizeDecoder();
     void finalizeStateful();
 
 #ifdef Q_OS_WIN
@@ -2494,48 +2497,82 @@ void tst_QStringConverter::availableCodesAreAvailable()
         QVERIFY(QStringEncoder(codecName.toLatin1()).isValid());
 }
 
-void tst_QStringConverter::finalize()
+void tst_QStringConverter::finalizeEncoder_data()
 {
-    // encoder
-    {
-        auto fromUtf16 = QStringEncoder(QStringEncoder::Utf8);
-        QString incompleteInput(QChar(0xd800));
-        QByteArray buffer("cdcdcdcd");
-        fromUtf16.appendToBuffer(buffer.data(), incompleteInput);
-        QVERIFY(!fromUtf16.hasError());
-        QCOMPARE(buffer, "cdcdcdcd");
-        QStringEncoder::FinalizeResult r = fromUtf16.finalize(buffer.data(), buffer.size());
-        QCOMPARE_GT(r.next, buffer.constData());
-        QCOMPARE(r.error, QStringEncoder::FinalizeResult::Error::InvalidCharacters);
-        QCOMPARE_GT(r.invalidChars, 0);
-        QVERIFY(!fromUtf16.hasError());
-        QVERIFY(buffer.startsWith(QString(QChar(QChar::ReplacementCharacter)).toUtf8()));
-        // Try calling finalize again, no new bytes should be output
-        std::array<char, 3> extraBytes;
-        r = fromUtf16.finalize(extraBytes.data(), extraBytes.size());
-        // Ugly-cast to void to circumvent smart testlib
-        QCOMPARE((void *)r.next, (void *)extraBytes.data());
-        QCOMPARE(r.invalidChars, 0);
-        QCOMPARE(r.error, QStringEncoder::FinalizeResult::Error::NoError);
-    }
-    // decoder
-    {
-        auto toUtf16 = QStringDecoder(QStringConverter::Utf8);
-        QByteArray incompleteInput("\xf0", 1);
-        QString buffer = u"cdcdcdcd"_s;
-        toUtf16.appendToBuffer(buffer.data(), incompleteInput);
-        QVERIFY(!toUtf16.hasError());
-        QCOMPARE(buffer, u"cdcdcdcd"_s);
-        auto result = toUtf16.finalize(buffer.data(), buffer.size());
-        QCOMPARE_GT(result.next, buffer.constData());
-        QCOMPARE(result.error, QStringDecoder::FinalizeResult::Error::InvalidCharacters);
-        QVERIFY(buffer.startsWith(QChar(QChar::ReplacementCharacter)));
-        // Try calling finalize again, no new bytes should be output
-        std::array<QChar, 3> extraBytes;
-        result = toUtf16.finalize(extraBytes.data(), extraBytes.size());
-        // Ugly-cast to void to circumvent smart testlib
-        QCOMPARE((void *)result.next, (void *)extraBytes.data());
-    }
+    QTest::addColumn<QString>("incompleteInput");
+    QTest::addColumn<QByteArray>("incompleteOutput");
+
+    QTest::newRow("no-prefix") << QString(QChar(0xd800)) << QByteArray();
+    QTest::newRow("with-prefix") << "a" + QString(QChar(0xd800)) << "a"_ba;
+}
+
+// explicitly cast to void to ensure that QCOMPARE doesn't treat char*
+// as strings: we want to compare actual pointer values
+#define COMPARE_PTR(p,q)    QCOMPARE(static_cast<const void *>(p), static_cast<const void *>(q))
+
+void tst_QStringConverter::finalizeEncoder()
+{
+    QFETCH(QString, incompleteInput);
+    QFETCH(QByteArray, incompleteOutput);
+
+    auto fromUtf16 = QStringEncoder(QStringEncoder::Utf8);
+    QByteArray buffer("cdcdcdcd");
+    char *ptr = fromUtf16.appendToBuffer(buffer.data(), incompleteInput);
+    QVERIFY(!fromUtf16.hasError());
+
+    COMPARE_PTR(ptr, buffer.data() + incompleteOutput.size());
+    QCOMPARE(buffer.first(incompleteOutput.size()), incompleteOutput);
+
+    // now finalize
+    QStringEncoder::FinalizeResult r = fromUtf16.finalize(ptr, buffer.size() - incompleteOutput.size());
+    QCOMPARE_GT(r.next, ptr);
+    QCOMPARE(r.error, QStringEncoder::FinalizeResult::Error::InvalidCharacters);
+    QCOMPARE_GT(r.invalidChars, 0);
+    QVERIFY(!fromUtf16.hasError());
+    QByteArray expectedStart = incompleteOutput + "\ufffd";
+    QCOMPARE(buffer.first(expectedStart.size()), expectedStart);
+
+    // Try calling finalize again, no new bytes should be output
+    std::array<char, 3> extraBytes;
+    r = fromUtf16.finalize(extraBytes.data(), extraBytes.size());
+    COMPARE_PTR(r.next, extraBytes.data());
+    QCOMPARE(r.invalidChars, 0);
+    QCOMPARE(r.error, QStringEncoder::FinalizeResult::Error::NoError);
+}
+
+void tst_QStringConverter::finalizeDecoder_data()
+{
+    QTest::addColumn<QByteArray>("incompleteInput");
+    QTest::addColumn<QString>("incompleteOutput");
+
+    QTest::newRow("no-prefix") << QByteArray("\xf0") << QString();
+    QTest::newRow("with-prefix") << "a\xf0"_ba << "a";
+}
+
+void tst_QStringConverter::finalizeDecoder()
+{
+    QFETCH(QByteArray, incompleteInput);
+    QFETCH(QString, incompleteOutput);
+
+    auto toUtf16 = QStringDecoder(QStringConverter::Utf8);
+    QString buffer = u"cdcdcdcd"_s;
+    QChar *ptr = toUtf16.appendToBuffer(buffer.data(), incompleteInput);
+    QVERIFY(!toUtf16.hasError());
+
+    // Ugly-cast to void to circumvent smart testlib
+    COMPARE_PTR(ptr, buffer.data() + incompleteOutput.size());
+    QCOMPARE(buffer.first(incompleteOutput.size()), incompleteOutput);
+
+    auto result = toUtf16.finalize(ptr, buffer.size() - incompleteOutput.size());
+    QCOMPARE_GT(result.next, ptr);
+    QCOMPARE(result.error, QStringDecoder::FinalizeResult::Error::InvalidCharacters);
+    QString expectedStart = incompleteOutput + u"\ufffd";
+    QCOMPARE(buffer.first(expectedStart.size()), expectedStart);
+
+    // Try calling finalize again, no new bytes should be output
+    std::array<QChar, 3> extraBytes;
+    result = toUtf16.finalize(extraBytes.data(), extraBytes.size());
+    COMPARE_PTR(result.next, extraBytes.data());
 }
 
 void tst_QStringConverter::finalizeStateful()
