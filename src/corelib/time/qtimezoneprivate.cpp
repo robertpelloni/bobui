@@ -953,9 +953,42 @@ QTimeZonePrivate::findLongNamePrefix(QStringView text, const QLocale &locale,
     // at least produce one with the same offsets as the most natural choice.
     return best;
 }
+
+QTimeZonePrivate::NamePrefixMatch
+QTimeZonePrivate::findNarrowOffsetPrefix(QStringView, const QLocale &, QLocale::FormatType)
+{
+    // Seemingly only needed in the timezonelocale case.
+    return {};
+}
 #else
 // Implemented in qtimezonelocale.cpp
 #endif // icu || !timezone_locale
+
+QTimeZonePrivate::NamePrefixMatch
+QTimeZonePrivate::findLongUtcPrefix(QStringView text)
+{
+    if (text.startsWith(u"UTC")) {
+        if (text.size() > 4 && (text[3] == u'+' || text[3] == u'-')) {
+            // Compare QUtcTimeZonePrivate::offsetFromUtcString()
+            using QtMiscUtils::isAsciiDigit;
+            qsizetype length = 3;
+            int groups = 0; // Number of groups of digits seen (allow up to three).
+            do {
+                // text[length] is sign or the colon after last digit-group.
+                Q_ASSERT(length < text.size());
+                if (length + 1 >= text.size() || !isAsciiDigit(text[length + 1].unicode()))
+                    break;
+                length +=
+                    (length + 2 < text.size() && isAsciiDigit(text[length + 2].unicode())) ? 3 : 2;
+            } while (++groups < 3 && length < text.size() && text[length] == u':');
+            if (length > 4)
+                return { text.sliced(length).toLatin1(), length, QTimeZone::GenericTime };
+        }
+        return { utcQByteArray(), 3, QTimeZone::GenericTime };
+    }
+
+    return {};
+}
 
 QByteArray QTimeZonePrivate::aliasToIana(QByteArrayView alias)
 {

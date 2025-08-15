@@ -383,7 +383,7 @@ struct OffsetFormatMatch
 {
     qsizetype size = 0;
     int offset = 0;
-    operator bool() { return size != 0; }
+    operator bool() { return size > 0; }
 };
 
 OffsetFormatMatch matchOffsetText(QStringView text, QStringView format, const QLocale &locale,
@@ -834,7 +834,8 @@ QTimeZonePrivate::findLongNamePrefix(QStringView text, const QLocale &locale,
                 if (range.size > best.nameLength) {
                     QStringView name = range.viewData(longMetaZoneNameTable);
                     if (text.startsWith(name)) {
-                        best = { static_cast<qsizetype>(range.size), type, invalidIanaId, row.metaIdIndex };
+                        best = { static_cast<qsizetype>(range.size), type,
+                                 invalidIanaId, row.metaIdIndex };
                         if (best.nameLength >= text.size())
                             break;
                     }
@@ -975,9 +976,14 @@ QTimeZonePrivate::findLongNamePrefix(QStringView text, const QLocale &locale,
         return { QByteArray(ianaIdData + best.ianaIdIndex), best.nameLength, best.timeType };
 #undef localeRows
 
-    // (We don't want offset format to match 'tttt', so do need to limit this.)
-    // The final fall-back for localeName() is a zoneOffsetFormat(,,NarrowFormat,,):
-    if (auto match = matchOffsetFormat(text, locale, locale.d->m_index, QLocale::NarrowFormat)) {
+    return {}; // No match found.
+}
+
+QTimeZonePrivate::NamePrefixMatch
+QTimeZonePrivate::findNarrowOffsetPrefix(QStringView text, const QLocale &locale,
+                                         QLocale::FormatType scale)
+{
+    if (auto match = matchOffsetFormat(text, locale, locale.d->m_index, scale)) {
         // Check offset is sane:
         if (QTimeZone::MinUtcOffsetSecs <= match.offset
             && match.offset <= QTimeZone::MaxUtcOffsetSecs) {
@@ -989,29 +995,7 @@ QTimeZonePrivate::findLongNamePrefix(QStringView text, const QLocale &locale,
                      match.size, QTimeZone::GenericTime };
         }
     }
-
-    // Match the unlocalized long form of QUtcTimeZonePrivate:
-    if (text.startsWith(u"UTC")) {
-        if (text.size() > 4 && (text[3] == u'+' || text[3] == u'-')) {
-            // Compare QUtcTimeZonePrivate::offsetFromUtcString()
-            using QtMiscUtils::isAsciiDigit;
-            qsizetype length = 3;
-            int groups = 0; // Number of groups of digits seen (allow up to three).
-            do {
-                // text[length] is sign or the colon after last digit-group.
-                Q_ASSERT(length < text.size());
-                if (length + 1 >= text.size() || !isAsciiDigit(text[length + 1].unicode()))
-                    break;
-                length +=
-                    (length + 2 < text.size() && isAsciiDigit(text[length + 2].unicode())) ? 3 : 2;
-            } while (++groups < 3 && length < text.size() && text[length] == u':');
-            if (length > 4)
-                return { text.sliced(length).toLatin1(), length, QTimeZone::GenericTime };
-        }
-        return { utcQByteArray(), 3, QTimeZone::GenericTime };
-    }
-
-    return {}; // No match found.
+    return {};
 }
 #endif // ICU or not
 

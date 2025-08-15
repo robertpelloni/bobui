@@ -1240,9 +1240,15 @@ static auto findZoneByLongName(QStringView str, const QLocale &locale, const QDa
         bool isValid() const { return nameLength > 0 && zone.isValid(); }
     } result;
     auto pfx = QTimeZonePrivate::findLongNamePrefix(str, locale, when.toMSecsSinceEpoch());
-    if (!pfx.nameLength) // Incomplete data in when: try without time-point.
+    if (!pfx) // Incomplete data in when: try without time-point.
         pfx = QTimeZonePrivate::findLongNamePrefix(str, locale);
-    if (pfx.nameLength > 0) {
+    // (We don't want offset format to match 'tttt', so do need to limit this.)
+    // The final fall-back for QTZL's localeName() is a zoneOffsetFormat(,,NarrowFormat,,):
+    if (!pfx)
+        pfx = QTimeZonePrivate::findNarrowOffsetPrefix(str, locale, QLocale::NarrowFormat);
+    if (!pfx)
+        pfx = QTimeZonePrivate::findLongUtcPrefix(str);
+    if (pfx) {
         result = R{ QTimeZone(pfx.ianaId), pfx.nameLength };
         Q_ASSERT(result.zone.isValid());
         // TODO: we should be able to take pfx.timeType into account.

@@ -1942,8 +1942,12 @@ void tst_QTimeZone::roundtripDisplayNames()
         const QString extended = name + "some spurious cruft"_L1;
         auto match =
             QTimeZonePrivate::findLongNamePrefix(extended, locale, when);
-        if (!match.nameLength)
+        if (!match)
             match = QTimeZonePrivate::findLongNamePrefix(extended, locale);
+        if (!match)
+            match = QTimeZonePrivate::findNarrowOffsetPrefix(extended, locale, QLocale::NarrowFormat);
+        if (!match)
+            match = QTimeZonePrivate::findLongUtcPrefix(extended);
         auto report = qScopeGuard([=]() {
             qDebug() << "At" << QDateTime::fromMSecsSinceEpoch(when, QTimeZone::UTC)
                      << "via" << name;
