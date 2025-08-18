@@ -569,8 +569,26 @@ QDebug operator<<(QDebug dbg, const QPixelFormat &f)
     if (f.typeInterpretation() != QPixelFormat::UnsignedByte || f.bitsPerPixel() > 8)
         dbg << "," << f.byteOrder();
 
-    if (f.colorModel() != QPixelFormat::YUV)
-        dbg << ",ch=" << f.channelCount();
+    if (f.colorModel() != QPixelFormat::YUV) {
+        dbg << ",ch=" << f.channelCount() << "[";
+        const int alphaSize = f.alphaSize();
+        const int colorChannels = f.channelCount() - (f.alphaSize() ? 1 : 0);
+        if (alphaSize && f.alphaPosition() == QPixelFormat::AtBeginning)
+            dbg << alphaSize << "-";
+        if (colorChannels >= 1)
+            dbg << f.get(QPixelFormat::FirstField, QPixelFormat::FirstFieldWidth);
+        if (colorChannels >= 2)
+            dbg << "-" << f.get(QPixelFormat::SecondField, QPixelFormat::SecondFieldWidth);
+        if (colorChannels >= 3)
+            dbg << "-" << f.get(QPixelFormat::ThirdField, QPixelFormat::ThirdFieldWidth);
+        if (colorChannels >= 4)
+            dbg << "-" << f.get(QPixelFormat::FourthField, QPixelFormat::FourthFieldWidth);
+        if (colorChannels >= 5)
+            dbg << "-" << f.get(QPixelFormat::FifthField, QPixelFormat::FifthFieldWidth);
+        if (alphaSize && f.alphaPosition() == QPixelFormat::AtEnd)
+            dbg << "-" << alphaSize;
+        dbg << "]";
+    }
 
     if (f.alphaSize() > 0) {
         dbg << "," << f.alphaUsage()
