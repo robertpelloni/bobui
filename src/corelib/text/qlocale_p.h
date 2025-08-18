@@ -413,6 +413,27 @@ public:
                 && !minus.isEmpty() && !plus.isEmpty()
                 && (mode != DoubleScientificMode || !exponent.isEmpty());
         }
+
+        [[nodiscard]] qint8 digitValue(char32_t digit) const
+        {
+            // Compute locale-appropriate digit value (or -1)
+            if (!isC && zeroUcs != U'0') {
+                // Must match qlocale_tools_p.h's unicodeForDigit().
+                if (digit == zeroUcs || zeroUcs != U'\u3007') {
+                    if (qint32 ans = digit - zeroUcs; 0 <= ans && ans <= 9)
+                        return qint8(ans);
+                } else if (digit > U'\u3020') {
+                    if (qint32 ans = digit - U'\u3020'; 0 <= ans && ans <= 9)
+                        return qint8(ans);
+                }
+                // Accepting ASCII with zeroLen != 1 would mess up code that
+                // assumes consistent digit width.
+                if (zeroLen != 1)
+                    return -1;
+            }
+            qint32 ans = digit - U'0';
+            return qint8(0 <= ans && ans <= 9 ? ans : -1);
+        }
     };
 
     // this function is used in QIntValidator (QtGui)

@@ -4449,16 +4449,7 @@ public:
 
 int NumericTokenizer::asBmpDigit(char16_t digit) const
 {
-    // If digit *is* a digit, result will be in range 0 through 9; otherwise not.
-    // Must match qlocale_tools.h's unicodeForDigit()
-    if (m_guide.zeroUcs != u'\u3007' || digit == m_guide.zeroUcs)
-        return digit - m_guide.zeroUcs;
-
-    // QTBUG-85409: Suzhou's digits aren't contiguous !
-    if (digit == u'\u3020') // U+3020 POSTAL MARK FACE is not a digit.
-        return -1;
-    // ... but is followed by digits 1 through 9.
-    return digit - u'\u3020';
+    return m_guide.digitValue(digit);
 }
 
 char NumericTokenizer::nextToken()
@@ -4534,7 +4525,7 @@ char NumericTokenizer::nextToken()
     if (m_guide.zeroLen == 1) {
         if (!ch.isSurrogate()) {
             const int gap = asBmpDigit(ch.unicode());
-            if (gap >= 0 && gap < 10) {
+            if (gap >= 0) {
                 ++m_index;
                 return '0' + gap;
             }
