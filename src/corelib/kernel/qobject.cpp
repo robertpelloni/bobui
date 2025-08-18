@@ -3350,6 +3350,17 @@ bool QObject::disconnect(const QObject *sender, const char *signal,
         }
     }
 
+    auto getMethodIndex = [](int code, const QMetaObject *mo, QByteArrayView name,
+                             const QArgumentTypeArray &types) {
+        switch (code) {
+        case QSLOT_CODE:
+            return QMetaObjectPrivate::indexOfSlot(mo, name, types);
+        case QSIGNAL_CODE:
+            return QMetaObjectPrivate::indexOfSignal(mo, name, types);
+        }
+        return -1;
+    };
+
     QByteArray pinnedMethod;
     bool method_found = false;
     if (method) {
@@ -3396,8 +3407,7 @@ bool QObject::disconnect(const QObject *sender, const char *signal,
         } else {
             const QMetaObject *rmeta = receiver->metaObject();
             do {
-                int method_index = QMetaObjectPrivate::indexOfMethod(
-                            rmeta, methodName, methodTypes);
+                int method_index = getMethodIndex(membcode, rmeta, methodName, methodTypes);
                 if (method_index >= 0)
                     while (method_index < rmeta->methodOffset())
                             rmeta = rmeta->superClass();
