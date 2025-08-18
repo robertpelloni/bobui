@@ -73,7 +73,7 @@ qt_internal_extend_target(gui_snippets CONDITION QT_FEATURE_printsupport
         textdocument-printing/mainwindow.cpp
 )
 
-qt_internal_extend_target(gui_snippets CONDITION QT_FEATURE_clipboard
+qt_internal_extend_target(gui_snippets CONDITION QT_FEATURE_widgets AND QT_FEATURE_clipboard
     SOURCES
         clipboard/clipwindow.cpp
 )
