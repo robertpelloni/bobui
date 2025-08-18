@@ -4,15 +4,7 @@
 #include <QtGui>
 #include <QtWidgets>
 
-class MainWindow : public QMainWindow
-{
-    Q_OBJECT
-public:
-    MainWindow();
-    void createMenus();
-    void createToolBars();
-    void createDockWidgets();
-};
+#include "include/mainwindow.h"
 
 MainWindow::MainWindow()
 {

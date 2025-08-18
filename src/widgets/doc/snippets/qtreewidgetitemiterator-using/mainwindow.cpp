@@ -3,29 +3,7 @@
 
 #include <QtWidgets>
 
-class MainWindow : public QMainWindow
-{
-    Q_OBJECT
-public:
-    MainWindow();
-    void setupTreeItems();
-    void findItems();
-    void insertItem();
-    void removeItem();
-    void sortAscending();
-    void sortDescending();
-    void updateMenus(QTreeWidgetItem *current);
-    void updateSortItems();
-
-private:
-    QAction *insertAction;
-    QAction *removeAction;
-    QAction *ascendingAction;
-    QAction *descendingAction;
-    QAction *autoSortAction;
-    QAction *findItemsAction;
-    QTreeWidget *treeWidget;
-};
+#include "../include/mainwindow.h"
 
 MainWindow::MainWindow()
 {

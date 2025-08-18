@@ -4,7 +4,7 @@
 #include <QtWidgets>
 #include <math.h>
 
-#include "mainwindow.h"
+#include "../include/mainwindow.h"
 
 MainWindow::MainWindow()
 {

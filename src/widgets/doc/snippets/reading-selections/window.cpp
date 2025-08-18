@@ -14,8 +14,9 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QStatusBar>
+#include <QTableView>
 
-#include "window.h"
+#include "../include/mainwindow.h"
 
 class TableModel : public QAbstractTableModel
 {

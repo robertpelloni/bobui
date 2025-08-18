@@ -3,7 +3,7 @@
 
 #include <QtWidgets>
 
-#include "mainwindow.h"
+#include "../include/mainwindow.h"
 #include "model.h"
 
 MainWindow::MainWindow()

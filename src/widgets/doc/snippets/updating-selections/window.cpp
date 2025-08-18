@@ -12,8 +12,9 @@
 #include <QItemSelection>
 #include <QItemSelectionModel>
 #include <QStatusBar>
+#include <QTableView>
 
-#include "window.h"
+#include "../include/mainwindow.h"
 
 class TableModel : public QAbstractTableModel
 {

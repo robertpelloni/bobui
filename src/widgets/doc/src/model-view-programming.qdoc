@@ -1497,7 +1497,7 @@
     Tables can be created with a set number of rows and columns, or these
     can be added to an unsized table as they are needed.
 
-    \snippet qtablewidget-using/mainwindow.h 0
+    \snippet include/mainwindow.h 0
     \snippet qtablewidget-using/mainwindow.cpp 0
 
     Items are constructed outside the table before being added to the table

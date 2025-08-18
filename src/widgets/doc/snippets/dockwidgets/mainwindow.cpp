@@ -3,21 +3,7 @@
 
 #include <QtWidgets>
 
-class MainWindow : public QMainWindow
-{
-    Q_OBJECT
-public:
-    MainWindow(QWidget *parent = nullptr);
-    void setupContents();
-    void setupDockWindow();
-    void setupMenus();
-    void updateText(QListWidgetItem *item);
-
-private:
-    QTextBrowser *textBrowser;
-    QListWidget *headingList;
-    QDockWidget *contentsWindow;
-};
+#include "../include/mainwindow.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)

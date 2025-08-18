@@ -3,18 +3,7 @@
 
 #include <QtWidgets>
 
-class MainWindow : public QMainWindow
-{
-    Q_OBJECT
-public:
-    MainWindow(QWidget *parent = nullptr);
-    void setupListItems();
-    void sortAscending();
-    void sortDescending();
-    void insertItem();
-    void removeItem();
-    void updateMenus(QListWidgetItem *current);
-};
+#include "../include/mainwindow.h"
 
 MainWindow::MainWindow()
 {

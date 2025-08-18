@@ -3,18 +3,7 @@
 
 #include <QtWidgets>
 
-class MainWindow : public QMainWindow
-{
-    Q_OBJECT
-public:
-    MainWindow();
-    void setupTableItems();
-    void changeWidth();
-    void changeHeight();
-
-private:
-    QTableWidget *tableWidget;
-};
+#include "../include/mainwindow.h"
 
 MainWindow::MainWindow()
 {
