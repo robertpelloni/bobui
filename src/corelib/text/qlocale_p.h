@@ -368,6 +368,7 @@ public:
         QString sysDecimal, sysGroup, sysMinus, sysPlus;
 #endif
         QStringView decimal, group, minus, plus, exponent;
+        const GroupSizes grouping;
         char32_t zeroUcs = 0;
         qint8 zeroLen = 0;
         bool exponentCyrillic = false; // True only for floating-point parsing of Cyrillic.
@@ -398,6 +399,7 @@ public:
         }
         // All users of this class can see the implementation.
         inline NumericData(const QLocaleData *data, QLocaleData::NumberMode mode);
+        const GroupSizes &groupSizes() const { return grouping; }
 
         [[nodiscard]] bool isValid(NumberMode mode) const // Asserted as a sanity check.
         {

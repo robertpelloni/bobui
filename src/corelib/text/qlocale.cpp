@@ -4369,7 +4369,7 @@ QString QLocaleData::applyIntegerFormatting(QString &&numStr, bool negative, int
 }
 
 inline QLocaleData::NumericData::NumericData(const QLocaleData *data, QLocaleData::NumberMode mode)
-    : isC(data == c())
+    : grouping(data->groupSizes()), isC(data == c())
 {
     if (isC)
         return;
