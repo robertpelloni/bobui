@@ -1174,6 +1174,20 @@ void tst_QQuaternion::fromEulerAngles()
         QVERIFY(myFuzzyCompareDegrees(quaternionYaw, yaw));
         QVERIFY(myFuzzyCompareDegrees(quaternionRoll, roll));
     }
+
+    {
+        const QQuaternion::EulerAngles angles = answer.eulerAngles(); // CTAD
+        QVERIFY(myFuzzyCompareDegrees(angles.pitch, pitch));
+        QVERIFY(myFuzzyCompareDegrees(angles.yaw, yaw));
+        QVERIFY(myFuzzyCompareDegrees(angles.roll, roll));
+    }
+
+    {
+        const QQuaternion::EulerAngles angles = quaternion.eulerAngles(); // CTAD
+        QVERIFY(myFuzzyCompareDegrees(angles.pitch, pitch));
+        QVERIFY(myFuzzyCompareDegrees(angles.yaw, yaw));
+        QVERIFY(myFuzzyCompareDegrees(angles.roll, roll));
+    }
 }
 
 // Test spherical interpolation of quaternions.
