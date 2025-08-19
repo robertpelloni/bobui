@@ -1480,7 +1480,6 @@
     regardless of its location:
 
     \snippet qtreewidget-using/mainwindow.cpp 10
-    \snippet qtreewidget-using/mainwindow.cpp 11
 
     Inserting the item somewhere else in the tree widget follows the same
     pattern:
