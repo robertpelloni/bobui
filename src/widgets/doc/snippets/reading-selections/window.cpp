@@ -17,25 +17,7 @@
 #include <QTableView>
 
 #include "../include/mainwindow.h"
-
-class TableModel : public QAbstractTableModel
-{
-    Q_OBJECT
-public:
-    TableModel(int rows, int columns, QObject *parent = nullptr) {}
-
-    int rowCount(const QModelIndex &parent = QModelIndex()) const override {
-        return 0;
-    }
-
-    int columnCount(const QModelIndex &parent = QModelIndex()) const override {
-        return 0;
-    }
-
-    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override {
-        return QVariant();
-    }
-};
+#include "../common-table-model/model.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
