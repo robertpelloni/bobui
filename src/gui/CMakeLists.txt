@@ -433,6 +433,7 @@ qt_internal_extend_target(Gui CONDITION APPLE
         ${FWCoreGraphics}
         ${FWCoreText}
         ${FWFoundation}
+        ${FWAccelerate}
     PUBLIC_LIBRARIES
         ${FWImageIO}
 )

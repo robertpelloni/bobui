@@ -4292,9 +4292,29 @@ void tst_QImage::toCGImage_data()
     QTest::addColumn<bool>("supported");
 
     // Populate test data with supported status for all QImage formats.
-    QSet<QImage::Format> supported =
-        { QImage::Format_ARGB32, QImage::Format_RGB32, QImage::Format_RGBA8888_Premultiplied,
-          QImage::Format_RGBA8888, QImage::Format_RGBX8888, QImage::Format_ARGB32_Premultiplied };
+    QSet<QImage::Format> supported = {
+        QImage::Format_Invalid,
+        QImage::Format_ARGB32,
+        QImage::Format_ARGB32_Premultiplied,
+        QImage::Format_RGB32,
+        QImage::Format_RGB888,
+        QImage::Format_RGBA8888,
+        QImage::Format_RGBX8888,
+        QImage::Format_RGBA8888_Premultiplied,
+        QImage::Format_ARGB4444_Premultiplied,
+        QImage::Format_RGB16,
+        QImage::Format_RGB30,
+        QImage::Format_A2RGB30_Premultiplied,
+        QImage::Format_RGBX64,
+        QImage::Format_RGBA64,
+        QImage::Format_RGBA64_Premultiplied,
+        QImage::Format_RGBX16FPx4,
+        QImage::Format_RGBA16FPx4,
+        QImage::Format_RGBA16FPx4_Premultiplied,
+        QImage::Format_RGBX32FPx4,
+        QImage::Format_RGBA32FPx4,
+        QImage::Format_RGBA32FPx4_Premultiplied
+    };
 
     for (int i = QImage::Format_Invalid; i < QImage::NImageFormats; ++i) {
         QTest::addRow("%s", formatToString(QImage::Format(i)).data())
@@ -4316,7 +4336,7 @@ void tst_QImage::toCGImage()
     if (!supported)
         QEXPECT_FAIL("", "Conversion is not supported (yet)", Abort);
 
-    QVERIFY(cgimage);
+    QVERIFY(bool(cgimage) == (format != QImage::Format_Invalid));
 
     CGImageRelease(cgimage);
 }
