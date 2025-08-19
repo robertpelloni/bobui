@@ -109,7 +109,12 @@ QT_WARNING_POP
 
 #ifndef QT_NO_VECTOR3D
     inline QVector3D toEulerAngles() const;
-    static inline QQuaternion fromEulerAngles(const QVector3D &angles);
+# if !QT_CORE_REMOVED_SINCE(6, 11)
+    Q_WEAK_OVERLOAD
+# endif
+    static QQuaternion fromEulerAngles(const QVector3D &angles)
+    { return fromEulerAngles(angles.x(), angles.y(), angles.z()); }
+
 #endif
     template <typename T>
     struct EulerAngles
@@ -352,11 +357,6 @@ QVector3D QQuaternion::toEulerAngles() const
 {
     const auto angles = eulerAngles();
     return QVector3D{angles.pitch, angles.yaw, angles.roll};
-}
-
-QQuaternion QQuaternion::fromEulerAngles(const QVector3D &angles)
-{
-    return QQuaternion::fromEulerAngles(angles.x(), angles.y(), angles.z());
 }
 
 #if QT_GUI_INLINE_IMPL_SINCE(6, 11)

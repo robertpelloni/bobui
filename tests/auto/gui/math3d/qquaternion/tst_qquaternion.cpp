@@ -1188,6 +1188,13 @@ void tst_QQuaternion::fromEulerAngles()
         QVERIFY(myFuzzyCompareDegrees(angles.yaw, yaw));
         QVERIFY(myFuzzyCompareDegrees(angles.roll, roll));
     }
+
+    // ensure braced initialization continues to work (was: QVector3D; now; EulerAngles)
+    answer = QQuaternion::fromEulerAngles({pitch, yaw, roll});
+    QVERIFY(myFuzzyCompare(answer.x(), result.x()));
+    QVERIFY(myFuzzyCompare(answer.y(), result.y()));
+    QVERIFY(myFuzzyCompare(answer.z(), result.z()));
+    QVERIFY(myFuzzyCompare(answer.scalar(), result.scalar()));
 }
 
 // Test spherical interpolation of quaternions.

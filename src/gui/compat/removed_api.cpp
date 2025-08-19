@@ -93,7 +93,7 @@ void QWindowSystemInterface::handleContextMenuEvent(QWindow *window, bool mouseT
 
 #include "qpainter.h" // inlined API
 
-#include "qquaternion.h" // inlined API
+#include "qquaternion.h" // inlined API (also one added Q_WEAK_OVERLOAD)
 
 
 // #include "qotherheader.h"
