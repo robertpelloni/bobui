@@ -569,6 +569,17 @@ void QtGuiTest::setEventPointEllipseDiameters(QEventPoint &p, QSizeF arg)
     QMutableEventPoint::setEllipseDiameters(p, arg);
 }
 
+/*!
+   \internal
+   Returns \c true, if the platform supports multiple windows,
+   otherwise \c false;
+*/
+bool QtGuiTest::platformSupportsMultipleWindows()
+{
+    const auto *platformIntegration = QGuiApplicationPrivate::platformIntegration();
+    return platformIntegration->hasCapability(QPlatformIntegration::Capability::MultipleWindows);
+}
+
 #undef deb
 #endif // #if QT_CONFIG(test_gui)
 QT_END_NAMESPACE
