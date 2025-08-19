@@ -10,12 +10,39 @@
 # - Or remove the <builddir>/CMakeCache.txt file and configure from scratch
 # - Or remove the QT_INTERNAL_PREVIOUSLY_FOUND_PACKAGES cache variable (by
 #   editing CMakeCache.txt) and reconfigure.
+#
+# It's possible to annotate the qt_find_package with information on how to
+# generate a vcpkg manifest to satisfy this qt_find_package call.
+#
+#   VCPKG_PORT <name>
+#     Name of the vcpkg port (package) to install.
+#
+#   VCPKG_PLATFORM <expression>
+#     vcpkg platform expression, e.g. "!windows".
+#     See https://learn.microsoft.com/en-us/vcpkg/reference/vcpkg-json#platform-expression
+#
+#   VCPKG_VERSION <version>
+#     The minimum version of the vcpkg port to install
+#     See https://learn.microsoft.com/en-us/vcpkg/reference/vcpkg-json#version
+#
+#   VCPKG_ADD_TO_FEATURE <name>
+#     Add this port to the vcpkg feature with the given name. Create the feature if non-existent.
+#
+#   VCPKG_DEFAULT_FEATURES <ON/OFF>
+#     ON by default. Set this to OFF to avoid that the vcpkg feature is added to
+#     vcpkg.json's default features. Only useful if VCPKG_ADD_TO_FEATURE is set.
 macro(qt_find_package)
     # Get the target names we expect to be provided by the package.
     set(find_package_options CONFIG NO_MODULE MODULE REQUIRED)
     set(options ${find_package_options} MARK_OPTIONAL)
-    set(oneValueArgs MODULE_NAME QMAKE_LIB)
-    set(multiValueArgs PROVIDED_TARGETS COMPONENTS OPTIONAL_COMPONENTS)
+    set(oneValueArgs MODULE_NAME QMAKE_LIB
+        VCPKG_ADD_TO_FEATURE
+        VCPKG_DEFAULT_FEATURES
+        VCPKG_PLATFORM
+        VCPKG_PORT
+        VCPKG_VERSION
+    )
+    set(multiValueArgs PROVIDED_TARGETS COMPONENTS OPTIONAL_COMPONENTS VCPKG_FEATURES)
     cmake_parse_arguments(arg "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
     # If some Qt internal project calls qt_find_package(WrapFreeType), but WrapFreeType was already

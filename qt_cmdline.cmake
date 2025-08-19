@@ -55,7 +55,6 @@ qt_commandline_option(unity-build-batch-size
     CMAKE_VARIABLE QT_UNITY_BUILD_BATCH_SIZE
 )
 qt_commandline_option(ccache TYPE boolean NAME ccache CMAKE_VARIABLE QT_USE_CCACHE)
-qt_commandline_option(vcpkg TYPE boolean CMAKE_VARIABLE QT_USE_VCPKG)
 qt_commandline_option(commercial TYPE void)
 qt_commandline_option(confirm-license TYPE void)
 qt_commandline_option(dbus TYPE optionalString VALUES no yes linked runtime)

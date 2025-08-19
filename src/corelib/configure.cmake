@@ -31,7 +31,10 @@ qt_find_package_extend_sbom(TARGETS GLIB2::GLIB2
     LICENSE_EXPRESSION "LGPL-2.1-or-later"
 )
 qt_find_package(ICU 50.1 COMPONENTS i18n uc data PROVIDED_TARGETS ICU::i18n ICU::uc ICU::data
-    MODULE_NAME core QMAKE_LIB icu)
+    MODULE_NAME core QMAKE_LIB icu
+    VCPKG_PORT icu
+    VCPKG_PLATFORM !windows
+)
 
 if(QT_FEATURE_dlopen)
     qt_add_qmake_lib_dependency(icu libdl)
@@ -49,7 +52,9 @@ qt_find_package_extend_sbom(TARGETS Libb2::Libb2
 qt_find_package(WrapRt MODULE
     PROVIDED_TARGETS WrapRt::WrapRt MODULE_NAME core QMAKE_LIB librt)
 qt_find_package(WrapSystemPCRE2 10.20 MODULE
-    PROVIDED_TARGETS WrapSystemPCRE2::WrapSystemPCRE2 MODULE_NAME core QMAKE_LIB pcre2)
+    PROVIDED_TARGETS WrapSystemPCRE2::WrapSystemPCRE2 MODULE_NAME core QMAKE_LIB pcre2
+    VCPKG_PORT pcre2
+)
 set_package_properties(WrapPCRE2 PROPERTIES TYPE REQUIRED)
 if((QNX) OR QT_FIND_ALL_PACKAGES_ALWAYS)
     qt_find_package(PPS MODULE PROVIDED_TARGETS PPS::PPS MODULE_NAME core QMAKE_LIB pps)

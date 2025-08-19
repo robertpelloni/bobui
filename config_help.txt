@@ -194,7 +194,10 @@ Build environment:
 
   -pkg-config .......... Use pkg-config [auto] (Unix only)
 
-  -vcpkg ............... Use vcpkg [no]
+  -vcpkg ............... Use vcpkg for downloading and finding 3rd-party
+                         dependencies [no]
+  -generate-vcpkg-manifest ... Generate a vcpkg.json file in the build directory
+                         [no; yes if -vcpkg]
 
   -D <string> .......... Pass additional preprocessor define
   -I <string> .......... Pass additional include path

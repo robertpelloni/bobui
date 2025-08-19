@@ -8,7 +8,9 @@
 #### Libraries
 
 qt_find_package(WrapSystemZLIB 1.0.8 MODULE
-    PROVIDED_TARGETS WrapSystemZLIB::WrapSystemZLIB MODULE_NAME global QMAKE_LIB zlib)
+    PROVIDED_TARGETS WrapSystemZLIB::WrapSystemZLIB MODULE_NAME global QMAKE_LIB zlib
+    VCPKG_PORT zlib
+)
 # Work around global target promotion failure when WrapZLIB is used on APPLE platforms.
 # What ends up happening is that the ZLIB::ZLIB target is not promoted to global by qt_find_package,
 # then qt_find_package(WrapSystemPNG) tries to find its dependency ZLIB::ZLIB, sees it's not global
@@ -24,7 +26,10 @@ endif()
 # directory scope.
 qt_find_package(Threads MODULE PROVIDED_TARGETS Threads::Threads)
 qt_find_package(WrapOpenSSLHeaders MODULE
-    PROVIDED_TARGETS WrapOpenSSLHeaders::WrapOpenSSLHeaders MODULE_NAME core)
+    PROVIDED_TARGETS WrapOpenSSLHeaders::WrapOpenSSLHeaders MODULE_NAME core
+    VCPKG_PORT openssl
+    VCPKG_ADD_TO_FEATURE openssl
+)
 # openssl_headers
 # OPENSSL_VERSION_MAJOR is not defined for OpenSSL 1.1.1
 qt_config_compile_test(opensslv11_headers
@@ -1125,6 +1130,7 @@ elseif(QT_COORD_TYPE STREQUAL "float")
 endif()
 qt_feature("gui" PRIVATE
     LABEL "Qt Gui"
+    VCPKG_DEFAULT
 )
 qt_feature_config("gui" QMAKE_PUBLIC_QT_CONFIG
     NEGATE)
@@ -1132,6 +1138,7 @@ qt_feature("network" PRIVATE
     LABEL "Qt Network"
     SECTION "Module"
     PURPOSE "Provides the Qt Network module."
+    VCPKG_DEFAULT
 )
 qt_feature("printsupport" PRIVATE
     LABEL "Qt PrintSupport"
@@ -1143,6 +1150,7 @@ qt_feature("sql" PRIVATE
     LABEL "Qt Sql"
     SECTION "Module"
     PURPOSE "Provides the Sql module."
+    VCPKG_OPTIONAL
 )
 qt_feature("testlib" PRIVATE
     LABEL "Qt Testlib"
@@ -1170,6 +1178,7 @@ qt_feature("openssl" PRIVATE
     LABEL "OpenSSL"
     CONDITION QT_FEATURE_openssl_runtime OR QT_FEATURE_openssl_linked
     ENABLE false
+    VCPKG_DEFAULT
 )
 qt_feature_definition("openssl" "QT_NO_OPENSSL" NEGATE)
 qt_feature_config("openssl" QMAKE_PUBLIC_QT_CONFIG)
