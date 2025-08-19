@@ -2481,9 +2481,13 @@ bool QMetaMethod::isConst() const
 */
 QMetaMethod::Access QMetaMethod::access() const
 {
+    constexpr int AccessShift = QtPrivate::qConstexprCountTrailingZeroBits(AccessMask);
+    static_assert(AccessPrivate >> AccessShift == Private);
+    static_assert(AccessProtected >> AccessShift == Protected);
+    static_assert(AccessPublic >> AccessShift == Public);
     if (!mobj)
         return Private;
-    return (QMetaMethod::Access)(data.flags() & AccessMask);
+    return Access((data.flags() & AccessMask) >> AccessShift);
 }
 
 /*!
