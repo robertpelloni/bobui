@@ -59,8 +59,13 @@ enum MethodFlags : uint {
     AccessMask = 0x03, // mask
 
     MethodMethod = 0x00,
+#if QT_VERSION >= QT_VERSION_CHECK(7, 0, 0)
+    MethodSlot = 0x04,
+    MethodSignal = 0x08,
+#else
     MethodSignal = 0x04,
     MethodSlot = 0x08,
+#endif
     MethodConstructor = 0x0c,
     MethodTypeMask = 0x0c,
 

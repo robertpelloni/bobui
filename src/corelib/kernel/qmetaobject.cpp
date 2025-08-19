@@ -2493,9 +2493,14 @@ QMetaMethod::Access QMetaMethod::access() const
 */
 QMetaMethod::MethodType QMetaMethod::methodType() const
 {
+    constexpr int MethodShift = QtPrivate::qConstexprCountTrailingZeroBits(MethodTypeMask);
+    static_assert(MethodMethod >> MethodShift == Method);
+    static_assert(MethodSignal >> MethodShift == Signal);
+    static_assert(MethodSlot >> MethodShift == Slot);
+    static_assert(MethodConstructor >> MethodShift == Constructor);
     if (!mobj)
         return QMetaMethod::Method;
-    return (QMetaMethod::MethodType)((data.flags() & MethodTypeMask)>>2);
+    return MethodType((data.flags() & MethodTypeMask) >> MethodShift);
 }
 
 /*!
