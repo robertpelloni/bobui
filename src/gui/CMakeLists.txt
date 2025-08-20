@@ -572,6 +572,7 @@ qt_internal_extend_target(Gui CONDITION atspi_accessibility
         accessible/linux/qspiaccessiblebridge.cpp accessible/linux/qspiaccessiblebridge_p.h
         accessible/linux/qspiapplicationadaptor.cpp accessible/linux/qspiapplicationadaptor_p.h
         accessible/linux/qspidbuscache.cpp accessible/linux/qspidbuscache_p.h
+        accessible/linux/qspimatchrulematcher.cpp accessible/linux/qspimatchrulematcher_p.h
     DBUS_ADAPTOR_SOURCES
         accessible/linux/dbusxml/Cache.xml
         accessible/linux/dbusxml/DeviceEventController.xml

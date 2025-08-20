@@ -24,6 +24,7 @@
 
 #include "dbusconnection_p.h"
 #include "qspi_struct_marshallers_p.h"
+#include "qspimatchrulematcher_p.h"
 
 QT_REQUIRE_CONFIG(accessibility);
 
@@ -45,6 +46,10 @@ public:
     QString introspect(const QString &path) const override;
     bool handleMessage(const QDBusMessage &message, const QDBusConnection &connection) override;
     void notify(QAccessibleEvent *event);
+
+    static QSpiAttributeSet getAttributes(QAccessibleInterface *);
+    static QStringList accessibleInterfaces(QAccessibleInterface *interface);
+    static AtspiRole getRole(QAccessibleInterface *interface);
 
 public Q_SLOTS:
     void eventListenerRegistered(const QString &bus, const QString &path);
@@ -68,6 +73,8 @@ private:
     // handlers for the different accessible interfaces
     bool applicationInterface(QAccessibleInterface *interface, const QString &function, const QDBusMessage &message, const QDBusConnection &connection);
     bool accessibleInterface(QAccessibleInterface *interface, const QString &function, const QDBusMessage &message, const QDBusConnection &connection);
+    bool collectionInterface(QAccessibleInterface *interface, const QString &function,
+                             const QDBusMessage &message, const QDBusConnection &connection);
     bool componentInterface(QAccessibleInterface *interface, const QString &function, const QDBusMessage &message, const QDBusConnection &connection);
     bool actionInterface(QAccessibleInterface *interface, const QString &function, const QDBusMessage &message, const QDBusConnection &connection);
     bool textInterface(QAccessibleInterface *interface, const QString &function, const QDBusMessage &message, const QDBusConnection &connection);
@@ -87,12 +94,9 @@ private:
 
     void sendAnnouncement(QAccessibleAnnouncementEvent *event);
 
-    // accessible helper functions
-    static AtspiRole getRole(QAccessibleInterface *interface);
-    static QSpiAttributeSet getAttributes(QAccessibleInterface *);
+    // accessible helper function
     static QSpiRelationArray relationSet(QAccessibleInterface *interface,
                                          const QDBusConnection &connection);
-    static QStringList accessibleInterfaces(QAccessibleInterface *interface);
 
     // component helper functions
     static QRect getExtents(QAccessibleInterface *interface, uint coordType);
@@ -114,6 +118,12 @@ private:
     static bool isValidAtspiTextGranularity(uint coordType);
     static QAccessible::TextBoundaryType qAccessibleBoundaryTypeFromAtspiTextGranularity(uint atspiTextGranularity);
     static bool inheritsQAction(QObject *object);
+
+    // collection helper function
+    static void addMatchingDescendants(QList<QAccessibleInterface *> &matches,
+                                       QAccessibleInterface *accessible,
+                                       const QSpiMatchRuleMatcher &matcher, bool invert, int count,
+                                       bool traverse);
 
     // private vars
     QSpiObjectReference m_accessibilityRegistry;

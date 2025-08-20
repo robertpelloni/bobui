@@ -225,6 +225,49 @@ QString AtSpiAdaptor::introspect(const QString &path) const
                 "  </interface>\n"
                 );
 
+    static const QLatin1StringView collectionIntrospection(
+                "  <interface name=\"org.a11y.atspi.Collection\">\n"
+                "    <method name=\"GetMatches\">\n"
+                "      <arg direction=\"in\" name=\"rule\" type=\"(aiia{ss}iaiiasib)\"/>\n"
+                "      <annotation name=\"org.qtproject.QtDBus.QtTypeName.In0\" value=\"QSpiMatchRule\"/>\n"
+                "      <arg direction=\"in\" name=\"sortby\" type=\"u\"/>\n"
+                "      <arg direction=\"in\" name=\"count\" type=\"i\"/>\n"
+                "      <arg direction=\"in\" name=\"traverse\" type=\"b\"/>\n"
+                "      <arg direction=\"out\" type=\"a(so)\"/>\n"
+                "      <annotation name=\"org.qtproject.QtDBus.QtTypeName.Out0\" value=\"QSpiReferenceSet\"/>\n"
+                "    </method>\n"
+                "    <method name=\"GetMatchesTo\">\n"
+                "      <arg direction=\"in\" name=\"current_object\" type=\"o\"/>\n"
+                "      <annotation name=\"org.qtproject.QtDBus.QtTypeName.In0\" value=\"QSpiObjectReference\"/>\n"
+                "      <arg direction=\"in\" name=\"rule\" type=\"(aiia{ss}iaiiasib)\"/>\n"
+                "      <annotation name=\"org.qtproject.QtDBus.QtTypeName.In1\" value=\"QSpiMatchRule\"/>\n"
+                "      <arg direction=\"in\" name=\"sortby\" type=\"u\"/>\n"
+                "      <arg direction=\"in\" name=\"tree\" type=\"u\"/>\n"
+                "      <arg direction=\"in\" name=\"limit_scope\" type=\"b\"/>\n"
+                "      <arg direction=\"in\" name=\"count\" type=\"i\"/>\n"
+                "      <arg direction=\"in\" name=\"traverse\" type=\"b\"/>\n"
+                "      <arg direction=\"out\" type=\"a(so)\"/>\n"
+                "      <annotation name=\"org.qtproject.QtDBus.QtTypeName.Out0\" value=\"QSpiReferenceSet\"/>\n"
+                "    </method>\n"
+                "    <method name=\"GetMatchesFrom\">\n"
+                "      <arg direction=\"in\" name=\"current_object\" type=\"o\"/>\n"
+                "      <annotation name=\"org.qtproject.QtDBus.QtTypeName.In0\" value=\"QSpiObjectReference\"/>\n"
+                "      <arg direction=\"in\" name=\"rule\" type=\"(aiia{ss}iaiiasib)\"/>\n"
+                "      <annotation name=\"org.qtproject.QtDBus.QtTypeName.In1\" value=\"QSpiMatchRule\"/>\n"
+                "      <arg direction=\"in\" name=\"sortby\" type=\"u\"/>\n"
+                "      <arg direction=\"in\" name=\"tree\" type=\"u\"/>\n"
+                "      <arg direction=\"in\" name=\"count\" type=\"i\"/>\n"
+                "      <arg direction=\"in\" name=\"traverse\" type=\"b\"/>\n"
+                "      <arg direction=\"out\" type=\"a(so)\"/>\n"
+                "      <annotation name=\"org.qtproject.QtDBus.QtTypeName.Out0\" value=\"QSpiReferenceSet\"/>\n"
+                "    </method>\n"
+                "    <method name=\"GetActiveDescendant\">\n"
+                "      <arg direction=\"out\" type=\"(so)\"/>\n"
+                "      <annotation name=\"org.qtproject.QtDBus.QtTypeName.Out0\" value=\"QSpiReferenceSet\"/>\n"
+                "    </method>\n"
+                "  </interface>\n"
+            );
+
     static const QLatin1StringView componentIntrospection(
                 "  <interface name=\"org.a11y.atspi.Component\">\n"
                 "    <method name=\"Contains\">\n"
@@ -651,6 +694,7 @@ QString AtSpiAdaptor::introspect(const QString &path) const
 
     QString xml;
     xml.append(accessibleIntrospection);
+    xml.append(collectionIntrospection);
 
     if (interfaces.contains(ATSPI_DBUS_INTERFACE_COMPONENT ""_L1))
         xml.append(componentIntrospection);
@@ -1493,6 +1537,8 @@ bool AtSpiAdaptor::handleMessage(const QDBusMessage &message, const QDBusConnect
         return accessibleInterface(accessible, function, message, connection);
     if (interface == ATSPI_DBUS_INTERFACE_APPLICATION ""_L1)
         return applicationInterface(accessible, function, message, connection);
+    if (interface == ATSPI_DBUS_INTERFACE_COLLECTION ""_L1)
+        return collectionInterface(accessible, function, message, connection);
     if (interface == ATSPI_DBUS_INTERFACE_COMPONENT ""_L1)
         return componentInterface(accessible, function, message, connection);
     if (interface == ATSPI_DBUS_INTERFACE_ACTION ""_L1)
@@ -1709,6 +1755,8 @@ QStringList AtSpiAdaptor::accessibleInterfaces(QAccessibleInterface *interface)
     qCDebug(lcAccessibilityAtspiCreation) << "AtSpiAdaptor::accessibleInterfaces create: " << interface->object();
     ifaces << u"" ATSPI_DBUS_INTERFACE_ACCESSIBLE ""_s;
 
+    ifaces << u"" ATSPI_DBUS_INTERFACE_COLLECTION ""_s;
+
     if (    (!interface->rect().isEmpty()) ||
             (interface->object() && interface->object()->isWidgetType()) ||
             (interface->role() == QAccessible::ListItem) ||
@@ -1822,6 +1870,64 @@ static QAccessibleInterface * getWindow(QAccessibleInterface * interface)
         interface = interface->parent();
 
     return interface;
+}
+
+void AtSpiAdaptor::addMatchingDescendants(QList<QAccessibleInterface *> &matches,
+                                          QAccessibleInterface *accessible,
+                                          const QSpiMatchRuleMatcher &matcher, bool invert,
+                                          int count, bool traverse)
+{
+    if (!accessible || matches.size() >= count)
+        return;
+
+    const int childCount = accessible->childCount();
+    for (int i = 0; i < childCount; ++i) {
+        if (QAccessibleInterface *child = accessible->child(i)) {
+            if (matcher.match(*child) != invert)
+                matches.append(child);
+
+            if (traverse)
+                addMatchingDescendants(matches, child, matcher, invert, count, traverse);
+
+            if (matches.size() >= count)
+                return;
+        }
+    }
+}
+
+bool AtSpiAdaptor::collectionInterface(QAccessibleInterface *interface, const QString &function,
+                                       const QDBusMessage &message,
+                                       const QDBusConnection &connection)
+{
+    if (function == "GetMatches"_L1) {
+        if (message.signature() != u"(aiia{ss}iaiiasib)uib") {
+            qCWarning(lcAccessibilityAtspi)
+                    << "AtSpiAdaptor::collectionInterface: Invalid signature for " << function
+                    << ": " << message.path();
+            return false;
+        }
+
+        const QSpiMatchRule matchRule = qdbus_cast<QSpiMatchRule>(message.arguments().at(0));
+        const int count = message.arguments().at(2).toInt();
+        const bool traverse = message.arguments().at(3).toBool();
+
+        QList<QAccessibleInterface *> matchedAccessibles;
+        addMatchingDescendants(matchedAccessibles, interface, QSpiMatchRuleMatcher(matchRule),
+                               matchRule.invert, count, traverse);
+
+        QSpiObjectReferenceArray result;
+        result.reserve(matchedAccessibles.size());
+        for (QAccessibleInterface *iface : std::as_const(matchedAccessibles)) {
+            QSpiObjectReference ref(connection, QDBusObjectPath(pathForInterface(iface)));
+            result << ref;
+        }
+        connection.send(message.createReply(QVariant::fromValue(result)));
+        return true;
+    }
+
+    qCWarning(lcAccessibilityAtspi)
+            << "AtSpiAdaptor::collectionInterface does not implement" << function << message.path();
+    return false;
 }
 
 bool AtSpiAdaptor::componentInterface(QAccessibleInterface *interface, const QString &function, const QDBusMessage &message, const QDBusConnection &connection)

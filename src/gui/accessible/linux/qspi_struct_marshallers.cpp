@@ -30,6 +30,7 @@ QT_IMPL_METATYPE_EXTERN(QSpiTextRangeList)
 QT_IMPL_METATYPE_EXTERN(QSpiAttributeSet)
 QT_IMPL_METATYPE_EXTERN(QSpiAppUpdate)
 QT_IMPL_METATYPE_EXTERN(QSpiDeviceEvent)
+QT_IMPL_METATYPE_EXTERN(QSpiMatchRule)
 
 QSpiObjectReference::QSpiObjectReference()
     : path(QDBusObjectPath(ATSPI_DBUS_PATH_NULL))
@@ -196,6 +197,39 @@ const QDBusArgument &operator>>(const QDBusArgument &argument, QSpiDeviceEvent &
     return argument;
 }
 
+/* QSpiMatchRule */
+/*---------------------------------------------------------------------------*/
+
+QDBusArgument &operator<<(QDBusArgument &argument, const QSpiMatchRule &matchRule) {
+    argument.beginStructure();
+    argument << matchRule.states
+             << matchRule.stateMatchType
+             << matchRule.attributes
+             << matchRule.attributeMatchType
+             << matchRule.interfaces
+             << matchRule.interfaceMatchType
+             << matchRule.roles
+             << matchRule.roleMatchType
+             << matchRule.invert;
+    argument.endStructure();
+    return argument;
+}
+
+const QDBusArgument &operator>>(const QDBusArgument &argument, QSpiMatchRule &matchRule) {
+    argument.beginStructure();
+    argument >> matchRule.states
+            >> matchRule.stateMatchType
+            >> matchRule.attributes
+            >> matchRule.attributeMatchType
+            >> matchRule.roles
+            >> matchRule.roleMatchType
+            >> matchRule.interfaces
+            >> matchRule.interfaceMatchType
+            >> matchRule.invert;
+    argument.endStructure();
+    return argument;
+}
+
 void qSpiInitializeStructTypes()
 {
     qDBusRegisterMetaType<QSpiIntList>();
@@ -210,6 +244,7 @@ void qSpiInitializeStructTypes()
     qDBusRegisterMetaType<QSpiEventListener>();
     qDBusRegisterMetaType<QSpiEventListenerArray>();
     qDBusRegisterMetaType<QSpiDeviceEvent>();
+    qDBusRegisterMetaType<QSpiMatchRule>();
     qDBusRegisterMetaType<QSpiAppUpdate>();
     qDBusRegisterMetaType<QSpiRelationArrayEntry>();
     qDBusRegisterMetaType<QSpiRelationArray>();
