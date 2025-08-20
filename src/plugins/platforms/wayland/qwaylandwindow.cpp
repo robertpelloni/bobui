@@ -34,7 +34,6 @@
 
 #include <QtCore/QDebug>
 #include <QtCore/QThread>
-#include <QtCore/private/qthread_p.h>
 
 #include <QtWaylandClient/private/qwayland-fractional-scale-v1.h>
 
@@ -713,7 +712,7 @@ void QWaylandWindow::applyConfigure()
     if (!mWaitingToApplyConfigure)
         return;
 
-    Q_ASSERT_X(QThread::currentThreadId() == QThreadData::get2(thread())->threadId.loadRelaxed(),
+    Q_ASSERT_X(QThread::isMainThread(),
                "QWaylandWindow::applyConfigure", "not called from main thread");
 
     // If we're mid paint, use an exposeEvent to flush the current frame.
@@ -1081,7 +1080,7 @@ Qt::WindowFlags QWaylandWindow::windowFlags() const
 
 bool QWaylandWindow::createDecoration()
 {
-    Q_ASSERT_X(QThread::currentThreadId() == QThreadData::get2(thread())->threadId.loadRelaxed(),
+    Q_ASSERT_X(QThread::isMainThread(),
                "QWaylandWindow::createDecoration", "not called from main thread");
     // TODO: client side decorations do not work with Vulkan backend.
     if (window()->surfaceType() == QSurface::VulkanSurface)
