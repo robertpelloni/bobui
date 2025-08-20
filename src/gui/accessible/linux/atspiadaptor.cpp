@@ -912,7 +912,7 @@ bool AtSpiAdaptor::sendDBusSignal(const QString &path, const QString &interface,
     return m_dbus->connection().send(message);
 }
 
-QAccessibleInterface *AtSpiAdaptor::interfaceFromPath(const QString& dbusPath) const
+QAccessibleInterface *AtSpiAdaptor::interfaceFromPath(const QString &dbusPath)
 {
     if (dbusPath == ATSPI_DBUS_PATH_ROOT ""_L1)
         return QAccessible::queryAccessibleInterface(qApp);
@@ -1696,14 +1696,14 @@ bool AtSpiAdaptor::accessibleInterface(QAccessibleInterface *interface, const QS
     return true;
 }
 
-AtspiRole AtSpiAdaptor::getRole(QAccessibleInterface *interface) const
+AtspiRole AtSpiAdaptor::getRole(QAccessibleInterface *interface)
 {
     if ((interface->role() == QAccessible::EditableText) && interface->state().passwordEdit)
         return ATSPI_ROLE_PASSWORD_TEXT;
     return QSpiAccessibleBridge::namesForRole(interface->role()).spiRole();
 }
 
-QStringList AtSpiAdaptor::accessibleInterfaces(QAccessibleInterface *interface) const
+QStringList AtSpiAdaptor::accessibleInterfaces(QAccessibleInterface *interface)
 {
     QStringList ifaces;
     qCDebug(lcAccessibilityAtspiCreation) << "AtSpiAdaptor::accessibleInterfaces create: " << interface->object();
@@ -1748,7 +1748,8 @@ QStringList AtSpiAdaptor::accessibleInterfaces(QAccessibleInterface *interface) 
     return ifaces;
 }
 
-QSpiRelationArray AtSpiAdaptor::relationSet(QAccessibleInterface *interface, const QDBusConnection &connection) const
+QSpiRelationArray AtSpiAdaptor::relationSet(QAccessibleInterface *interface,
+                                            const QDBusConnection &connection)
 {
     typedef std::pair<QAccessibleInterface*, QAccessible::Relation> RelationPair;
     const QList<RelationPair> relationInterfaces = interface->relations();
@@ -1774,8 +1775,7 @@ void AtSpiAdaptor::sendReply(const QDBusConnection &connection, const QDBusMessa
     connection.send(reply);
 }
 
-
-QString AtSpiAdaptor::pathForObject(QObject *object) const
+QString AtSpiAdaptor::pathForObject(QObject *object)
 {
     Q_ASSERT(object);
 
@@ -1787,7 +1787,7 @@ QString AtSpiAdaptor::pathForObject(QObject *object) const
     return pathForInterface(iface);
 }
 
-QString AtSpiAdaptor::pathForInterface(QAccessibleInterface *interface) const
+QString AtSpiAdaptor::pathForInterface(QAccessibleInterface *interface)
 {
     if (!interface || !interface->isValid())
         return u"" ATSPI_DBUS_PATH_NULL ""_s;
@@ -2328,7 +2328,7 @@ namespace
     }
 }
 
-QSpiAttributeSet AtSpiAdaptor::getAttributes(QAccessibleInterface *interface) const
+QSpiAttributeSet AtSpiAdaptor::getAttributes(QAccessibleInterface *interface)
 {
     QSpiAttributeSet set;
     QAccessibleAttributesInterface *attributesIface = interface->attributesInterface();
@@ -2361,7 +2361,8 @@ QSpiAttributeSet AtSpiAdaptor::getAttributes(QAccessibleInterface *interface) co
 }
 
 // FIXME all attribute methods below should share code
-QVariantList AtSpiAdaptor::getAttributes(QAccessibleInterface *interface, int offset, bool includeDefaults) const
+QVariantList AtSpiAdaptor::getAttributes(QAccessibleInterface *interface, int offset,
+                                         bool includeDefaults)
 {
     Q_UNUSED(includeDefaults);
 
@@ -2387,7 +2388,8 @@ QVariantList AtSpiAdaptor::getAttributes(QAccessibleInterface *interface, int of
     return list;
 }
 
-QString AtSpiAdaptor::getAttributeValue(QAccessibleInterface *interface, int offset, const QString &attributeName) const
+QString AtSpiAdaptor::getAttributeValue(QAccessibleInterface *interface, int offset,
+                                        const QString &attributeName)
 {
     QString joined;
     QSpiAttributeSet map;
@@ -2406,15 +2408,16 @@ QString AtSpiAdaptor::getAttributeValue(QAccessibleInterface *interface, int off
     return map[attributeName];
 }
 
-QList<QVariant> AtSpiAdaptor::getCharacterExtents(QAccessibleInterface *interface, int offset, uint coordType) const
+QList<QVariant> AtSpiAdaptor::getCharacterExtents(QAccessibleInterface *interface, int offset,
+                                                  uint coordType)
 {
     QRect rect = interface->textInterface()->characterRect(offset);
     rect = translateFromScreenCoordinates(interface, rect, coordType);
     return QList<QVariant>() << rect.x() << rect.y() << rect.width() << rect.height();
 }
 
-QList<QVariant> AtSpiAdaptor::getRangeExtents(QAccessibleInterface *interface,
-                                            int startOffset, int endOffset, uint coordType) const
+QList<QVariant> AtSpiAdaptor::getRangeExtents(QAccessibleInterface *interface, int startOffset,
+                                              int endOffset, uint coordType)
 {
     if (endOffset == -1)
         endOffset = interface->textInterface()->characterCount();
