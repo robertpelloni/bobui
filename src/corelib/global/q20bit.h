@@ -270,6 +270,34 @@ QT_WARNING_POP
     return c;
 }
 #endif // __cpp_lib_bitops
+
+#if defined(__cpp_lib_int_pow2)
+using std::bit_ceil;
+using std::bit_floor;
+using std::bit_width;
+#else
+template <typename T> constexpr std::enable_if_t<std::is_unsigned_v<T>, T>
+bit_ceil(T v) noexcept
+{
+    // Difference from standard: we do not enforce UB
+    constexpr int Digits = std::numeric_limits<T>::digits;
+    if (v <= 1)
+        return 1;
+    return T(1) << (Digits - countl_zero(T(v - 1)));
+}
+
+template <typename T> constexpr std::enable_if_t<std::is_unsigned_v<T>, T>
+bit_width(T v) noexcept
+{
+    return std::numeric_limits<T>::digits - countl_zero(v);
+}
+
+template <typename T> constexpr std::enable_if_t<std::is_unsigned_v<T>, T>
+bit_floor(T v) noexcept
+{
+    return v ? T(1) << (bit_width(v) - 1) : 0;
+}
+#endif // __cpp_lib_int_pow2
 } // namespace q20
 
 QT_END_NAMESPACE
