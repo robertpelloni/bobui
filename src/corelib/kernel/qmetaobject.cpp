@@ -2481,7 +2481,7 @@ bool QMetaMethod::isConst() const
 */
 QMetaMethod::Access QMetaMethod::access() const
 {
-    constexpr int AccessShift = QtPrivate::qConstexprCountTrailingZeroBits(AccessMask);
+    constexpr int AccessShift = qCountTrailingZeroBits(AccessMask);
     static_assert(AccessPrivate >> AccessShift == Private);
     static_assert(AccessProtected >> AccessShift == Protected);
     static_assert(AccessPublic >> AccessShift == Public);
@@ -2497,7 +2497,7 @@ QMetaMethod::Access QMetaMethod::access() const
 */
 QMetaMethod::MethodType QMetaMethod::methodType() const
 {
-    constexpr int MethodShift = QtPrivate::qConstexprCountTrailingZeroBits(MethodTypeMask);
+    constexpr int MethodShift = qCountTrailingZeroBits(MethodTypeMask);
     static_assert(MethodMethod >> MethodShift == Method);
     static_assert(MethodSignal >> MethodShift == Signal);
     static_assert(MethodSlot >> MethodShift == Slot);
