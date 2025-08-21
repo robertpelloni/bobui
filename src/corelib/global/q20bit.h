@@ -45,6 +45,8 @@ namespace q20 {
 using std::countl_zero;
 using std::countr_zero;
 using std::popcount;
+using std::rotl;
+using std::rotr;
 #else
 namespace detail {
 template <typename T> /*non-constexpr*/ inline auto hw_popcount(T v) noexcept
@@ -270,6 +272,22 @@ QT_WARNING_POP
         if (v & 0x00000055) c -= 1;
     }
     return c;
+}
+
+template <typename T> constexpr std::enable_if_t<std::is_unsigned_v<T>, T>
+rotl(T v, int s) noexcept
+{
+    constexpr int Digits = std::numeric_limits<T>::digits;
+    unsigned n = unsigned(s) % Digits;
+    return (v << n) | (v >> (Digits - n));
+}
+
+template <typename T> constexpr std::enable_if_t<std::is_unsigned_v<T>, T>
+rotr(T v, int s) noexcept
+{
+    constexpr int Digits = std::numeric_limits<T>::digits;
+    unsigned n = unsigned(s) % Digits;
+    return (v >> n) | (v << (Digits - n));
 }
 #endif // __cpp_lib_bitops
 
