@@ -133,6 +133,7 @@ public:
     inline bool isWidgetType() const { return d_ptr->isWidget; }
     inline bool isWindowType() const { return d_ptr->isWindow; }
     inline bool isQuickItemType() const { return d_ptr->isQuickItem; }
+    bool isQmlObjectType() const;
 
     inline bool signalsBlocked() const noexcept { return d_ptr->blockSig; }
     bool blockSignals(bool b) noexcept;
