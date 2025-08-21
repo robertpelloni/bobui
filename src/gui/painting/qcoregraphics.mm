@@ -158,21 +158,149 @@ void qt_mac_drawCGImage(CGContextRef inContext, const CGRect *inBounds, CGImageR
     CGContextRestoreGState(inContext);
 }
 
-QImage qt_mac_toQImage(CGImageRef image)
+QImage::Format qt_mac_imageFormatForCGImage(CGImageRef image)
 {
-    const size_t w = CGImageGetWidth(image),
-                 h = CGImageGetHeight(image);
-    QImage ret(w, h, QImage::Format_ARGB32_Premultiplied);
-    ret.fill(Qt::transparent);
-    CGRect rect = CGRectMake(0, 0, w, h);
-    QMacCGContext ctx(&ret);
-    qt_mac_drawCGImage(ctx, &rect, image);
+    if (!image)
+        return QImage::Format_Invalid;
 
-    CGColorSpaceRef colorSpace = CGImageGetColorSpace(image);
-    QCFType<CFDataRef> iccData = CGColorSpaceCopyICCData(colorSpace);
-    ret.setColorSpace(QColorSpace::fromIccProfile(QByteArray::fromRawCFData(iccData)));
+    const CGColorSpaceRef colorSpace = CGImageGetColorSpace(image);
+    if (CGColorSpaceGetModel(colorSpace) != kCGColorSpaceModelRGB)
+        return QImage::Format_Invalid;
 
-    return ret;
+    const CGBitmapInfo bitmapInfo = CGImageGetBitmapInfo(image);
+    const auto byteOrder = CGImageByteOrderInfo(bitmapInfo & kCGBitmapByteOrderMask);
+
+    auto qtByteOrder = [&]() -> std::optional<QPixelFormat::ByteOrder> {
+        switch (byteOrder) {
+        case kCGImageByteOrder16Big:
+        case kCGImageByteOrder32Big:
+        case kCGImageByteOrderDefault:
+            return QPixelFormat::BigEndian;
+        case kCGImageByteOrder16Little:
+        case kCGImageByteOrder32Little:
+            return QPixelFormat::LittleEndian;
+        default:
+            return {};
+        }
+    }();
+    if (!qtByteOrder)
+        return QImage::Format_Invalid;
+
+    auto typeInterpretation = [&]() -> std::optional<QPixelFormat::TypeInterpretation> {
+        if (bitmapInfo & kCGBitmapFloatComponents)
+            return QPixelFormat::FloatingPoint;
+        else if (qtByteOrder == QPixelFormat::BigEndian)
+            // Qt always uses UnsignedByte for BigEndian formats, instead of
+            // representing e.g. Format_RGBX8888 as UnsignedInteger+BigEndian.
+            return QPixelFormat::UnsignedByte;
+        else if (byteOrder == kCGImageByteOrder16Little)
+            return QPixelFormat::UnsignedShort;
+        else if (byteOrder == kCGImageByteOrder32Little)
+            return QPixelFormat::UnsignedInteger;
+        else
+            return {};
+    }();
+    if (!typeInterpretation)
+        return QImage::Format_Invalid;
+
+    const auto alphaInfo = CGImageAlphaInfo(bitmapInfo & kCGBitmapAlphaInfoMask);
+
+    QPixelFormat::AlphaPosition alphaPosition = [&]{
+        switch (alphaInfo) {
+        case kCGImageAlphaNone:
+        case kCGImageAlphaFirst:
+        case kCGImageAlphaNoneSkipFirst:
+        case kCGImageAlphaPremultipliedFirst:
+            return QPixelFormat::AtBeginning;
+        default:
+            return QPixelFormat::AtEnd;
+        }
+    }();
+
+    QPixelFormat::AlphaUsage alphaUsage = [&]{
+        switch (alphaInfo) {
+        case kCGImageAlphaNone:
+        case kCGImageAlphaNoneSkipLast:
+        case kCGImageAlphaNoneSkipFirst:
+            return QPixelFormat::IgnoresAlpha;
+        default:
+            return QPixelFormat::UsesAlpha;
+        }
+    }();
+
+    QPixelFormat::AlphaPremultiplied alphaPremultiplied = [&]{
+        switch (alphaInfo) {
+        case kCGImageAlphaPremultipliedFirst:
+        case kCGImageAlphaPremultipliedLast:
+            return QPixelFormat::Premultiplied;
+        default:
+            return QPixelFormat::NotPremultiplied;
+        }
+    }();
+
+    auto [redSize, greenSize, blueSize, alphaSize] = [&]() -> std::tuple<uchar,uchar,uchar,uchar> {
+        const auto pixelFormat = CGImagePixelFormatInfo(bitmapInfo & kCGImagePixelFormatMask);
+        const size_t bpc = CGImageGetBitsPerComponent(image);
+        if (pixelFormat == kCGImagePixelFormatPacked)
+            return {bpc, bpc, bpc, alphaInfo != kCGImageAlphaNone ? bpc : 0};
+        else if (pixelFormat == kCGImagePixelFormatRGB555)
+            return {5, 5, 5, 1};
+        else if (pixelFormat == kCGImagePixelFormatRGB565)
+            return {5, 6, 5, 0};
+        else if (pixelFormat == kCGImagePixelFormatRGB101010)
+            return {10, 10, 10, 2};
+        else
+            return {0, 0, 0, 0};
+    }();
+
+    QPixelFormat pixelFormat(QPixelFormat::RGB, redSize, greenSize, blueSize, 0, 0,
+        alphaSize, alphaUsage, alphaPosition, alphaPremultiplied,
+        *typeInterpretation, *qtByteOrder);
+
+    return QImage::toImageFormat(pixelFormat);
+}
+
+QImage qt_mac_toQImage(CGImageRef cgImage)
+{
+    const size_t width = CGImageGetWidth(cgImage);
+    const size_t height = CGImageGetHeight(cgImage);
+
+    QImage image = [&]() -> QImage {
+        QImage::Format imageFormat = qt_mac_imageFormatForCGImage(cgImage);
+        if (imageFormat == QImage::Format_Invalid)
+            return {};
+
+        CGDataProviderRef dataProvider = CGImageGetDataProvider(cgImage);
+        if (!dataProvider)
+            return {};
+
+        // Despite its name, this should not copy the actual image data
+        CFDataRef data = CGDataProviderCopyData(dataProvider);
+        if (!data)
+            return {};
+
+        // Adopt data for the lifetime of the QImage
+        return QImage(CFDataGetBytePtr(data), width, height,
+            CGImageGetBytesPerRow(cgImage), imageFormat,
+            QImageCleanupFunction(CFRelease), (void*)data);
+    }();
+
+    if (image.isNull()) {
+        // Fall back to drawing to a know good format
+        image = QImage(width, height, QImage::Format_ARGB32_Premultiplied);
+        image.fill(Qt::transparent);
+        QMacCGContext context(&image);
+        CGRect rect = CGRectMake(0, 0, width, height);
+        qt_mac_drawCGImage(context, &rect, cgImage);
+    }
+
+    if (!image.isNull()) {
+        CGColorSpaceRef colorSpace = CGImageGetColorSpace(cgImage);
+        QCFType<CFDataRef> iccData = CGColorSpaceCopyICCData(colorSpace);
+        image.setColorSpace(QColorSpace::fromIccProfile(QByteArray::fromRawCFData(iccData)));
+    }
+
+    return image;
 }
 
 #ifdef Q_OS_MACOS

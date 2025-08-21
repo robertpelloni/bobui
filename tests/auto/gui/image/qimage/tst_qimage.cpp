@@ -233,8 +233,8 @@ private slots:
     void complexTransform8bit();
 
 #ifdef Q_OS_DARWIN
-    void toCGImage_data();
-    void toCGImage();
+    void toFromCGImage_data();
+    void toFromCGImage();
 
     void toFromCGImageColorSpace_data();
     void toFromCGImageColorSpace();
@@ -4286,7 +4286,7 @@ void tst_QImage::complexTransform8bit()
 
 #ifdef Q_OS_DARWIN
 
-void tst_QImage::toCGImage_data()
+void tst_QImage::toFromCGImage_data()
 {
     QTest::addColumn<QImage::Format>("format");
     QTest::addColumn<bool>("supported");
@@ -4322,23 +4322,29 @@ void tst_QImage::toCGImage_data()
     }
 }
 
-// Verify that toCGImage() returns a valid CGImageRef for supported image formats.
-void tst_QImage::toCGImage()
+// Verify that toCGImage() returns a valid CGImageRef for supported image formats,
+// and can read the same image back from the CGImageRef.
+void tst_QImage::toFromCGImage()
 {
     QFETCH(QImage::Format, format);
     QFETCH(bool, supported);
 
-    QImage qimage(64, 64, format);
-    qimage.fill(Qt::red);
+    QImage original(64, 64, format);
+    original.fill(Qt::red);
+    original.setColorSpace(QColorSpace::DisplayP3);
 
-    CGImageRef cgimage = qimage.toCGImage();
+    QCFType<CGImageRef> cgImage = original.toCGImage();
 
     if (!supported)
         QEXPECT_FAIL("", "Conversion is not supported (yet)", Abort);
 
-    QVERIFY(bool(cgimage) == (format != QImage::Format_Invalid));
+    QVERIFY(bool(cgImage) == (format != QImage::Format_Invalid));
 
-    CGImageRelease(cgimage);
+    QImage converted = qt_mac_toQImage(cgImage);
+
+    QCOMPARE(converted.pixelFormat(), original.pixelFormat());
+    QCOMPARE(converted.colorSpace(), original.colorSpace());
+    QCOMPARE(converted, original);
 }
 
 void tst_QImage::toFromCGImageColorSpace_data()
