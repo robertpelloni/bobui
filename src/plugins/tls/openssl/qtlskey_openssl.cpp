@@ -397,7 +397,7 @@ bool TlsKeyOpenSSL::fromEVP_PKEY(EVP_PKEY *pkey)
 
 #if defined(OPENSSL_VERSION_MAJOR) && OPENSSL_VERSION_MAJOR >= 3
     // ML-DSA don't have NIDs
-    const QString keyTypeName = q_EVP_PKEY_type_name(pkey);
+    const auto keyTypeName = QLatin1StringView(q_EVP_PKEY_type_name(pkey));
     if (keyTypeName.contains(QLatin1String("ML-DSA")) ||
         keyTypeName.contains(QLatin1String("mldsa"))) {
         keyAlgorithm = QSsl::MlDsa;
@@ -549,7 +549,7 @@ TlsKeyOpenSSL *TlsKeyOpenSSL::publicKeyFromX509(X509 *x)
 
 #if defined(OPENSSL_VERSION_MAJOR) && OPENSSL_VERSION_MAJOR >= 3
     // ML-DSA don't have NIDs
-    const QString keyTypeName = q_EVP_PKEY_type_name(pkey);
+    const auto keyTypeName = QLatin1StringView(q_EVP_PKEY_type_name(pkey));
 #endif
 
     if (keyType == EVP_PKEY_RSA) {
