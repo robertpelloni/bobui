@@ -41,6 +41,7 @@ QT_BEGIN_NAMESPACE
 namespace q20 {
 #if defined(__cpp_lib_bitops)
 using std::countl_zero;
+using std::countr_zero;
 using std::popcount;
 #else
 namespace detail {
@@ -87,6 +88,21 @@ template <typename T> /*non-constexpr*/ inline auto hw_countl_zero(T v) noexcept
     // starts there), and the lsb index is 31.
     result ^= sizeof(T) * 8 - 1;
     return int(result);
+#else
+    Q_UNUSED(v);
+#endif
+}
+
+template <typename T> /*non-constexpr*/ inline auto hw_countr_zero(T v) noexcept
+{
+#if defined(Q_CC_MSVC) && defined(Q_PROCESSOR_X86)
+    constexpr int Digits = std::numeric_limits<T>::digits;
+    unsigned long result;
+    if constexpr (sizeof(T) <= sizeof(quint32))
+        return _BitScanForward(&result, v) ? int(result) : Digits;
+#  ifdef Q_PROCESSOR_X86_64
+    return _BitScanForward64(&result, v) ? int(result) : Digits;
+#  endif
 #else
     Q_UNUSED(v);
 #endif
@@ -162,6 +178,62 @@ countl_zero(T v) noexcept
     if constexpr (sizeof(T) > sizeof(quint32))
         v = v | (v >> 32);
     return popcount(T(~v));
+}
+
+template <typename T> constexpr std::enable_if_t<std::is_unsigned_v<T>, int>
+countr_zero(T v) noexcept
+{
+#if __has_builtin(__builtin_ctz)
+    // These GCC/Clang intrinsics are constexpr and use the HW instructions
+    // where available.
+    if (!v)
+        return std::numeric_limits<T>::digits;
+    if constexpr (sizeof(T) == sizeof(quint64))
+        return __builtin_ctzll(v);
+#  if __has_builtin(__builtin_ctzs)
+    if constexpr (sizeof(T) == sizeof(quint16))
+        return __builtin_ctzs(v);
+#  endif
+    return __builtin_ctz(v);
+#endif
+
+#ifdef QT_SUPPORTS_IS_CONSTANT_EVALUATED
+    // Try hardware functions if not constexpr. Note: no runtime detection.
+    if (!is_constant_evaluated()) {
+        if constexpr (std::is_integral_v<decltype(detail::hw_countr_zero(v))>)
+            return detail::hw_countr_zero(v);
+    }
+#endif
+
+    if constexpr (sizeof(T) > sizeof(quint32)) {
+        quint32 l = quint32(v);
+        return l ? countr_zero(l) : 32 + countr_zero(quint32(v >> 32));
+    }
+
+    // see http://graphics.stanford.edu/~seander/bithacks.html#ZerosOnRightParallel
+    int c = std::numeric_limits<T>::digits; // c will be the number of zero bits on the right
+QT_WARNING_PUSH
+QT_WARNING_DISABLE_MSVC(4146)   // unary minus operator applied to unsigned type, result still unsigned
+    v &= T(-v);
+QT_WARNING_POP
+    if (v) c--;
+    if constexpr (sizeof(T) == sizeof(quint32)) {
+        if (v & 0x0000FFFF) c -= 16;
+        if (v & 0x00FF00FF) c -= 8;
+        if (v & 0x0F0F0F0F) c -= 4;
+        if (v & 0x33333333) c -= 2;
+        if (v & 0x55555555) c -= 1;
+    } else if constexpr (sizeof(T) == sizeof(quint16)) {
+        if (v & 0x000000FF) c -= 8;
+        if (v & 0x00000F0F) c -= 4;
+        if (v & 0x00003333) c -= 2;
+        if (v & 0x00005555) c -= 1;
+    } else /*if constexpr (sizeof(T) == sizeof(quint8))*/ {
+        if (v & 0x0000000F) c -= 4;
+        if (v & 0x00000033) c -= 2;
+        if (v & 0x00000055) c -= 1;
+    }
+    return c;
 }
 #endif // __cpp_lib_bitops
 } // namespace q20
