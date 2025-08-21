@@ -40,6 +40,30 @@ class Q_NETWORK_EXPORT QAuthenticatorPrivate
 public:
     enum Method { None, Basic, Negotiate, Ntlm, DigestMd5, };
     QAuthenticatorPrivate();
+
+    QT_MOVE_ASSIGNMENT_OPERATOR_IMPL_VIA_PURE_SWAP(QAuthenticatorPrivate)
+    void swap(QAuthenticatorPrivate &other) noexcept
+    {
+        user.swap(other.user);
+        extractedUser.swap(other.extractedUser);
+        password.swap(other.password);
+        options.swap(other.options);
+        std::swap(method, other.method);
+        realm.swap(other.realm);
+        challenge.swap(other.challenge);
+#if QT_CONFIG(sspi) // SSPI
+        sspiWindowsHandles.swap(other.sspiWindowsHandles);
+#elif QT_CONFIG(gssapi) // GSSAPI
+        gssApiHandles.swap(other.gssApiHandles);
+#endif
+        std::swap(hasFailed, other.hasFailed);
+        std::swap(phase, other.phase);
+        cnonce.swap(other.cnonce);
+        std::swap(nonceCount, other.nonceCount);
+        workstation.swap(other.workstation);
+        userDomain.swap(other.userDomain);
+    }
+
     ~QAuthenticatorPrivate();
 
     QString user;

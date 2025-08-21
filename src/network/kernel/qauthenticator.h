@@ -43,6 +43,8 @@ public:
 
     bool isNull() const;
     void detach();
+
+    void clear() noexcept;
 private:
     friend class QAuthenticatorPrivate;
     QAuthenticatorPrivate *d;
