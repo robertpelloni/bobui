@@ -25,7 +25,7 @@ namespace QtPrivate {
         static_assert(tagBits > 0,
             "Alignment of template parameter does not allow any tags");
 
-        static constexpr size_t tagSize = QtPrivate::qConstexprNextPowerOfTwo(nextByteSize(tagBits));
+        static constexpr size_t tagSize = qNextPowerOfTwo(nextByteSize(tagBits));
         static_assert(tagSize < sizeof(quintptr),
             "Alignment of template parameter allows tags masking away pointer");
 
