@@ -112,6 +112,10 @@ template <typename T> /*non-constexpr*/ inline auto hw_countr_zero(T v) noexcept
 template <typename T> constexpr std::enable_if_t<std::is_unsigned_v<T>, int>
 popcount(T v) noexcept
 {
+#if __has_builtin(__builtin_popcountg)
+    return __builtin_popcountg(v);
+#endif
+
     if constexpr (sizeof(T) > sizeof(quint64)) {
         static_assert(sizeof(T) == 16, "Unsupported integer size");
         return popcount(quint64(v)) + popcount(quint64(v >> 64));
@@ -150,6 +154,12 @@ popcount(T v) noexcept
 template <typename T> constexpr std::enable_if_t<std::is_unsigned_v<T>, int>
 countl_zero(T v) noexcept
 {
+#if __has_builtin(__builtin_clzg)
+    // "If two arguments are specified, and first argument is 0, the result is
+    // the second argument."
+    return __builtin_clzg(v, std::numeric_limits<T>::digits);
+#endif
+
     if constexpr (sizeof(T) > sizeof(quint64)) {
         static_assert(sizeof(T) == 16, "Unsupported integer size");
         if (quint64 h = quint64(v >> 64))
@@ -195,6 +205,12 @@ countl_zero(T v) noexcept
 template <typename T> constexpr std::enable_if_t<std::is_unsigned_v<T>, int>
 countr_zero(T v) noexcept
 {
+#if __has_builtin(__builtin_ctzg)
+    // "If two arguments are specified, and first argument is 0, the result is
+    // the second argument."
+    return __builtin_ctzg(v, std::numeric_limits<T>::digits);
+#endif
+
     if constexpr (sizeof(T) > sizeof(quint64)) {
         static_assert(sizeof(T) == 16, "Unsupported integer size");
         quint64 l = quint64(v);
