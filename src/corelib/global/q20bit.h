@@ -112,6 +112,16 @@ template <typename T> /*non-constexpr*/ inline auto hw_countl_zero(T v) noexcept
 
 template <typename T> /*non-constexpr*/ inline auto hw_countr_zero(T v) noexcept
 {
+#if defined(Q_CC_MSVC) && defined(Q_PROCESSOR_X86) && defined(__BMI__)
+    // Note: __BMI__ comes from qsimd.h, not the compiler
+#  if defined(Q_PROCESSOR_X86_64)
+    if constexpr (sizeof(T) == sizeof(quint64))
+        return int(_tzcnt_u64(v));
+#  endif
+    if constexpr (sizeof(T) == sizeof(quint32))
+        return int(_tzcnt_u32(v));
+    // No _tzcnt_u16 or u8 intrinsics
+#endif
 #if defined(Q_CC_MSVC) && defined(Q_PROCESSOR_X86)
     constexpr int Digits = std::numeric_limits<T>::digits;
     unsigned long result;
