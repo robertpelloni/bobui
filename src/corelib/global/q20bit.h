@@ -112,6 +112,11 @@ template <typename T> /*non-constexpr*/ inline auto hw_countr_zero(T v) noexcept
 template <typename T> constexpr std::enable_if_t<std::is_unsigned_v<T>, int>
 popcount(T v) noexcept
 {
+    if constexpr (sizeof(T) > sizeof(quint64)) {
+        static_assert(sizeof(T) == 16, "Unsupported integer size");
+        return popcount(quint64(v)) + popcount(quint64(v >> 64));
+    }
+
 #  if __has_builtin(__builtin_popcount)
     // These GCC/Clang intrinsics are constexpr and use the HW instructions
     // where available. Note: no runtime detection.
@@ -145,6 +150,13 @@ popcount(T v) noexcept
 template <typename T> constexpr std::enable_if_t<std::is_unsigned_v<T>, int>
 countl_zero(T v) noexcept
 {
+    if constexpr (sizeof(T) > sizeof(quint64)) {
+        static_assert(sizeof(T) == 16, "Unsupported integer size");
+        if (quint64 h = quint64(v >> 64))
+            return countl_zero(h);
+        return countl_zero(quint64(v)) + 64;
+    }
+
 #if __has_builtin(__builtin_clz)
     // These GCC/Clang intrinsics are constexpr and use the HW instructions
     // where available.
@@ -183,6 +195,12 @@ countl_zero(T v) noexcept
 template <typename T> constexpr std::enable_if_t<std::is_unsigned_v<T>, int>
 countr_zero(T v) noexcept
 {
+    if constexpr (sizeof(T) > sizeof(quint64)) {
+        static_assert(sizeof(T) == 16, "Unsupported integer size");
+        quint64 l = quint64(v);
+        return l ? countr_zero(l) : 64 + countr_zero(quint64(v >> 64));
+    }
+
 #if __has_builtin(__builtin_ctz)
     // These GCC/Clang intrinsics are constexpr and use the HW instructions
     // where available.
