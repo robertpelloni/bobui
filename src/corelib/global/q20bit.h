@@ -40,6 +40,7 @@ QT_BEGIN_NAMESPACE
 
 namespace q20 {
 #if defined(__cpp_lib_bitops)
+using std::countl_zero;
 using std::popcount;
 #else
 namespace detail {
@@ -56,6 +57,36 @@ template <typename T> /*non-constexpr*/ inline auto hw_popcount(T v) noexcept
     if constexpr (sizeof(T) == sizeof(quint32))
         return int(__popcnt(v));
     return int(__popcnt16(v));
+#else
+    Q_UNUSED(v);
+#endif
+}
+
+template <typename T> /*non-constexpr*/ inline auto hw_countl_zero(T v) noexcept
+{
+#if defined(Q_CC_MSVC) && defined(Q_PROCESSOR_X86)
+    constexpr int Digits = std::numeric_limits<T>::digits;
+    unsigned long result;
+
+    if constexpr (sizeof(T) == sizeof(quint64)) {
+#  ifdef Q_PROCESSOR_X86_64
+        if (_BitScanReverse64(&result, v) == 0)
+            return Digits;
+#  else
+        if (quint32 h = quint32(v >> 32))
+            return hw_countl_zero(h);
+        return hw_countl_zero(quint32(v)) + 32;
+#  endif
+    } else {
+        if (_BitScanReverse(&result, v) == 0)
+            return Digits;
+    }
+
+    // Now Invert the result: clz will count *down* from the msb to the lsb, so the msb index is 31
+    // and the lsb index is 0. The result for the index when counting up: msb index is 0 (because it
+    // starts there), and the lsb index is 31.
+    result ^= sizeof(T) * 8 - 1;
+    return int(result);
 #else
     Q_UNUSED(v);
 #endif
@@ -93,6 +124,44 @@ popcount(T v) noexcept
              (((v >> 60) & 0xfff)    * Q_UINT64_C(0x1001001001001) & Q_UINT64_C(0x84210842108421)) % 0x1f;
     }
     return r;
+}
+
+template <typename T> constexpr std::enable_if_t<std::is_unsigned_v<T>, int>
+countl_zero(T v) noexcept
+{
+#if __has_builtin(__builtin_clz)
+    // These GCC/Clang intrinsics are constexpr and use the HW instructions
+    // where available.
+    if (!v)
+        return std::numeric_limits<T>::digits;
+    if constexpr (sizeof(T) == sizeof(quint64))
+        return __builtin_clzll(v);
+#  if __has_builtin(__builtin_clzs)
+    if constexpr (sizeof(T) == sizeof(quint16))
+        return __builtin_clzs(v);
+#  endif
+    return __builtin_clz(v) - (32 - std::numeric_limits<T>::digits);
+#endif
+
+#ifdef QT_SUPPORTS_IS_CONSTANT_EVALUATED
+    // Try hardware functions if not constexpr. Note: no runtime detection.
+    if (!is_constant_evaluated()) {
+        if constexpr (std::is_integral_v<decltype(detail::hw_countl_zero(v))>)
+            return detail::hw_countl_zero(v);
+    }
+#endif
+
+    // Hacker's Delight, 2nd ed. Fig 5-16, p. 102
+    v = v | (v >> 1);
+    v = v | (v >> 2);
+    v = v | (v >> 4);
+    if constexpr (sizeof(T) > sizeof(quint8))
+        v = v | (v >> 8);
+    if constexpr (sizeof(T) > sizeof(quint16))
+        v = v | (v >> 16);
+    if constexpr (sizeof(T) > sizeof(quint32))
+        v = v | (v >> 32);
+    return popcount(T(~v));
 }
 #endif // __cpp_lib_bitops
 } // namespace q20
