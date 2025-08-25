@@ -137,8 +137,8 @@ QWidgetBaselineTest::QWidgetBaselineTest()
     const QColor windowColor = palette.window().color();
     const QColor textColor = palette.text().color();
     const QString appearanceIdString = (windowColor.value() > textColor.value()
-                                        ? QString("light-%1-%2") : QString("dark-%1-%2"))
-                                       .arg(styleName).arg(appearanceId, 0, 16);
+                                        ? QString("light-%2") : QString("dark-%2"))
+                                       .arg(appearanceId, 0, 16);
     QBaselineTest::addClientProperty("AppearanceID", appearanceIdString);
 
 #if defined(Q_OS_APPLE)
@@ -149,7 +149,15 @@ QWidgetBaselineTest::QWidgetBaselineTest()
     QBaselineTest::addClientProperty("DevicePixelRatio",
         QString::number(QGuiApplication::primaryScreen()->devicePixelRatio()));
 
-    QBaselineTest::addClientProperty("Style", qApp->style()->name());
+    QBaselineTest::addClientProperty("Style", styleName);
+
+    QBaselineTest::setProjectImageKeys({
+        "GitBranch",
+        "OSVersion",
+        "PlatformName",
+        "Style",
+        "AppearanceID"
+    });
 
     // let users know where they can find the results
     qDebug() << "PlatformName computed to be:" << platformName;
