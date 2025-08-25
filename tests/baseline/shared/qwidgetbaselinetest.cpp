@@ -16,6 +16,7 @@
 
 #include <QtCore/private/qabstractanimation_p.h>
 #include <QtWidgets/private/qapplication_p.h>
+#include <QtWidgets/private/qstyle_p.h>
 
 #if defined(Q_OS_APPLE)
 #include <QtCore/private/qcore_mac_p.h>
@@ -30,6 +31,7 @@ public:
         : QProxyStyle(style), baselineTest(baselineTest)
     {
         setParent(baselineTest);
+        QStylePrivate::get(this)->name = style->name();
     }
 
     void drawPrimitive(PrimitiveElement element, const QStyleOption *option, QPainter *painter, const QWidget *widget) const override
