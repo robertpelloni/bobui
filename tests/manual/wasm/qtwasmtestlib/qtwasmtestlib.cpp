@@ -127,7 +127,7 @@ void passTest()
 EMSCRIPTEN_BINDINGS(qtwebtestrunner) {
     emscripten::function("cleanupTestCase", &cleanupTestCase);
     emscripten::function("getTestFunctions", &getTestFunctions);
-    emscripten::function("runTestFunction", &runTestFunction);
+    emscripten::function("runTestFunction", &runTestFunction, emscripten::async());
     emscripten::function("qtWasmFail", &failTest);
     emscripten::function("qtWasmPass", &passTest);
 }

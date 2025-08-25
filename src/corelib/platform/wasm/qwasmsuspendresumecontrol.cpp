@@ -49,6 +49,7 @@ void qtSuspendResumeControlClearJs() {
             asyncifyEnabled: false, // asyncify 1 or JSPI enabled
             eventHandlers: {},
             pendingEvents: [],
+            exclusiveEventHandler: 0,
         });
     });
 }
@@ -118,7 +119,15 @@ void qtRegisterEventHandlerJs(int index) {
             });
 
             // Handle the event based on instance state and asyncify flag
-            if (control.resume) {
+            if (control.exclusiveEventHandler > 0) {
+                // In exclusive mode, resume on exclusive event handler match only
+                if (index != control.exclusiveEventHandler)
+                    return;
+
+                const resume = control.resume;
+                control.resume = null;
+                resume();
+            } else if (control.resume) {
                 // The instance is suspended in processEvents(), resume and process the event
                 const resume = control.resume;
                 control.resume = null;
@@ -148,14 +157,12 @@ QWasmSuspendResumeControl::QWasmSuspendResumeControl()
 #endif
     qtSuspendResumeControlClearJs();
     suspendResumeControlJs().set("asyncifyEnabled", qstdweb::haveAsyncify());
-    Q_ASSERT(!QWasmSuspendResumeControl::s_suspendResumeControl);
     QWasmSuspendResumeControl::s_suspendResumeControl = this;
 }
 
 QWasmSuspendResumeControl::~QWasmSuspendResumeControl()
 {
     qtSuspendResumeControlClearJs();
-    Q_ASSERT(QWasmSuspendResumeControl::s_suspendResumeControl);
     QWasmSuspendResumeControl::s_suspendResumeControl = nullptr;
 }
 
@@ -199,13 +206,24 @@ void QWasmSuspendResumeControl::suspend()
     qtSuspendJs();
 }
 
-// Sends any pending events. Returns true if an event was sent, false otherwise.
+void QWasmSuspendResumeControl::suspendExclusive(uint32_t eventHandlerIndex)
+{
+    suspendResumeControlJs().set("exclusiveEventHandler", eventHandlerIndex);
+    qtSuspendJs();
+}
+
+// Sends any pending events. Returns the number of sent events.
 int QWasmSuspendResumeControl::sendPendingEvents()
 {
 #if QT_CONFIG(thread)
     Q_ASSERT(emscripten_is_main_runtime_thread());
 #endif
-    emscripten::val pendingEvents = suspendResumeControlJs()["pendingEvents"];
+    emscripten::val control = suspendResumeControlJs();
+    emscripten::val pendingEvents = control["pendingEvents"];
+
+    if (control["exclusiveEventHandler"].as<int>() > 0)
+        return sendPendingExclusiveEvent();
+
     if (pendingEvents["length"].as<int>() == 0)
         return 0;
 
@@ -219,6 +237,21 @@ int QWasmSuspendResumeControl::sendPendingEvents()
         ++count;
     }
     return count;
+}
+
+// Sends the pending exclusive event, and resets the "exclusive" state
+int QWasmSuspendResumeControl::sendPendingExclusiveEvent()
+{
+    emscripten::val control = suspendResumeControlJs();
+    int exclusiveHandlerIndex = control["exclusiveEventHandler"].as<int>();
+    control.set("exclusiveEventHandler", 0);
+    emscripten::val event = control["pendingEvents"].call<val>("pop");
+    int eventHandlerIndex = event["index"].as<int>();
+    Q_ASSERT(exclusiveHandlerIndex == eventHandlerIndex);
+    auto it = m_eventHandlers.find(eventHandlerIndex);
+    Q_ASSERT(it != m_eventHandlers.end());
+    it->second(event["arg"]);
+    return 1;
 }
 
 void qtSendPendingEvents()

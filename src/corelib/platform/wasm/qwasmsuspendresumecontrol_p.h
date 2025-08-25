@@ -38,7 +38,9 @@ public:
     static emscripten::val suspendResumeControlJs();
 
     void suspend();
+    void suspendExclusive(uint32_t eventHandlerIndex);
     int sendPendingEvents();
+    int sendPendingExclusiveEvent();
 
 private:
     friend void qtSendPendingEvents();
