@@ -45,6 +45,10 @@ QIOSurfaceGraphicsBuffer::QIOSurfaceGraphicsBuffer(const QSize &size, const QPix
 
     Q_ASSERT(size_t(bytesPerLine()) == bytesPerRow);
     Q_ASSERT(size_t(byteCount()) == totalBytes);
+
+    QObject::connect(this, &QObject::objectNameChanged, this, [this]{
+        IOSurfaceSetValue(m_surface, kIOSurfaceName, objectName().toNSString());
+    });
 }
 
 QIOSurfaceGraphicsBuffer::~QIOSurfaceGraphicsBuffer()
