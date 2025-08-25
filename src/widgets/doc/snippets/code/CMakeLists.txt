@@ -36,6 +36,30 @@ if(QT_FEATURE_lineedit)
     )
 endif()
 
+if(QT_FEATURE_filedialog)
+    target_sources(widgets_snippets_code PRIVATE
+        src_gui_dialogs_qfiledialog.cpp
+    )
+endif()
+
+if(QT_FEATURE_fontdialog)
+    target_sources(widgets_snippets_code PRIVATE
+        src_gui_dialogs_qfontdialog.cpp
+    )
+endif()
+
+if(QT_FEATURE_messagebox)
+    target_sources(widgets_snippets_code PRIVATE
+        src_gui_dialogs_qmessagebox.cpp
+    )
+endif()
+
+if(QT_FEATURE_wizard)
+    target_sources(widgets_snippets_code PRIVATE
+        src_gui_dialogs_qwizard.cpp
+    )
+endif()
+
 set_target_properties(widgets_snippets_code PROPERTIES COMPILE_OPTIONS "-w")
 
 if ("${CMAKE_CXX_COMPILE_FEATURES}" MATCHES "cxx_std_23")
