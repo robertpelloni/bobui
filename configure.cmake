@@ -831,8 +831,11 @@ qt_feature("signaling_nan" PUBLIC
 )
 qt_feature("x86intrin" PRIVATE
     LABEL "Basic"
-    CONDITION (((TEST_architecture_arch STREQUAL i386) OR (TEST_architecture_arch STREQUAL x86_64))
-        AND (QT_FORCE_FEATURE_x86intrin OR TEST_x86intrin))
+    CONDITION
+        (    (TEST_architecture_arch STREQUAL i386)
+          OR (TEST_architecture_arch STREQUAL x86_64)
+          OR (QT_IS_MACOS_UNIVERSAL AND x86_64 IN_LIST CMAKE_OSX_ARCHITECTURES))
+        AND (QT_FORCE_FEATURE_x86intrin OR TEST_x86intrin)
     AUTODETECT NOT WASM
 )
 qt_feature("sse2" PRIVATE
