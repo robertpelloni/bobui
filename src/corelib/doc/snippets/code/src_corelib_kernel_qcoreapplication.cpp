@@ -10,10 +10,10 @@
 
 #if __has_include(<QtWidgets>)
 #  include <QPushButton>
-void example(QPointF &pos, QObject *mainWindow, QObject app)
+void example(QPointF &localPos, QPointF &globalPos, QObject *mainWindow, QObject app)
 {
     //! [0]
-    QMouseEvent event(QEvent::MouseButtonPress, pos, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QMouseEvent event(QEvent::MouseButtonPress, localPos, globalPos, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
     QCoreApplication::sendEvent(mainWindow, &event);
     //! [0]
 

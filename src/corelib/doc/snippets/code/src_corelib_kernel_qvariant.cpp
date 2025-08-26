@@ -126,10 +126,6 @@ QVariant examples()
         QVariant variant = QVariant::fromValue(intList);
         if (variant.canConvert<QVariantList>()) {
             QSequentialIterable iterable = variant.value<QSequentialIterable>();
-            // Can use foreach:
-            foreach (const QVariant &v, iterable) {
-                qDebug() << v;
-            }
             // Can use C++11 range-for:
             for (const QVariant &v : iterable) {
                 qDebug() << v;
@@ -154,10 +150,6 @@ QVariant examples()
         QVariant variant = QVariant::fromValue(mapping);
         if (variant.canConvert<QVariantHash>()) {
             QAssociativeIterable iterable = variant.value<QAssociativeIterable>();
-            // Can use foreach over the values:
-            foreach (const QVariant &v, iterable) {
-                qDebug() << v;
-            }
             // Can use C++11 range-for over the values:
             for (const QVariant &v : iterable) {
                 qDebug() << v;

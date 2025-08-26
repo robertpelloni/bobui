@@ -140,6 +140,7 @@ void examples()
         //! [15]
     }
 
+#if QT_DEPRECATED_SINCE(6, 9)
     {
         //! [16]
         QDateTime local(QDateTime::currentDateTime());
@@ -149,6 +150,7 @@ void examples()
         qDebug() << "No difference between times:" << local.secsTo(UTC);
         //! [16]
     }
+#endif // QT_DEPRECATED_SINCE(6, 9)
 
     {
         //! [17]
@@ -170,6 +172,7 @@ void examples()
         //! [18]
     }
 
+#if QT_DEPRECATED_SINCE(6, 9)
     {
         //! [19]
         QDateTime local(QDateTime::currentDateTime());
@@ -182,6 +185,7 @@ void examples()
         qDebug() << "There are" << local.secsTo(UTC) << "seconds difference between the datetimes.";
         //! [19]
     }
+#endif // QT_DEPRECATED_SINCE(6, 9)
 
 #if defined(__cpp_lib_crono) && __cpp_lib_crono > 201907L
     {

@@ -658,6 +658,7 @@ void process(const QChar &ch) { }
 
 void qchar_examples()
 {
+#if QT_DEPRECATED_SINCE(6, 6)
     {
     //! [as-const-0]
         QString s = "...";
@@ -667,6 +668,7 @@ void qchar_examples()
             process(ch);
     //! [as-const-0]
     }
+#endif // QT_DEPRECATED_SINCE(6, 6)
 
     //! [as-const-1]
         const QString s = "...";
