@@ -59,6 +59,7 @@ void EditorWindow::countWords()
 }
 //! [1]
 
+#if QT_DEPRECATED_SINCE(6, 2)
 inline bool boo()
 {
     QMessageBox::information(this, "Application name",
@@ -176,6 +177,7 @@ inline bool boo()
         }
     }
 }
+#endif // QT_DEPRECATED_SINCE(6, 2)
 
 inline void moo()
 {
