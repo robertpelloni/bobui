@@ -11,6 +11,8 @@
 
 QT_BEGIN_NAMESPACE
 
+#if QT_REMOVAL_QT7_DEPRECATED_SINCE(6, 11)
+
 QT_WARNING_PUSH
 QT_WARNING_DISABLE_DEPRECATED
 
@@ -195,5 +197,7 @@ QColormap &QColormap::operator=(const QColormap &colormap)
 { qAtomicAssign(d, colormap.d); return *this; }
 
 QT_WARNING_POP
+
+#endif // QT_REMOVAL_QT7_DEPRECATED_SINCE(6, 11)
 
 QT_END_NAMESPACE
