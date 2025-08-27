@@ -23,6 +23,7 @@
 #include <QtGui/private/qaccessiblebridgeutils_p.h>
 #include <QtGui/private/qguiapplication_p.h>
 #include <QtGui/private/qhighdpiscaling_p.h>
+#include <QtGui/private/qaccessiblecache_p.h>
 
 #include <QtWidgets/private/qapplication_p.h>
 #include <QtWidgets/private/qdialog_p.h>
@@ -235,7 +236,7 @@ private slots:
     void messageBoxTest();
 
     void widgetLocaleTest();
-
+    void noInterfacesBeforeSetActive();
 protected slots:
     void onClicked();
 private:
@@ -4831,6 +4832,31 @@ void tst_QAccessibility::widgetLocaleTest()
     QCOMPARE(chineseLocaleVariant.toLocale(), chinese);
 
     QTestAccessibility::clearEvents();
+}
+
+void tst_QAccessibility::noInterfacesBeforeSetActive()
+{
+    QPlatformIntegration *pfIntegration = QGuiApplicationPrivate::platformIntegration();
+    if (!pfIntegration->accessibility())
+        QSKIP("No platformaccessibility");
+
+    pfIntegration->accessibility()->setActive(false);
+
+    QMainWindow mainWindow;
+    QWidget w(&mainWindow);
+    {
+        QAccessibleEvent event(&w, QAccessible::NameChanged);
+        QAccessible::updateAccessibility(&event);
+
+        QCOMPARE(QAccessibleCache::instance()->idForObject(&w), 0u);
+    }
+    pfIntegration->accessibility()->setActive(true);
+    {
+        QAccessibleEvent event(&w, QAccessible::NameChanged);
+        QAccessible::updateAccessibility(&event);
+
+        QCOMPARE_NE(QAccessibleCache::instance()->idForObject(&w), 0u);
+    }
 }
 
 QTEST_MAIN(tst_QAccessibility)

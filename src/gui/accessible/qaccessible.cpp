@@ -949,14 +949,15 @@ void QAccessible::updateAccessibility(QAccessibleEvent *event)
     // during construction of widgets. If you see cases where the
     // cache seems wrong, this call is "to blame", but the code that
     // caches dynamic data should be updated to handle change events.
-    QAccessibleInterface *iface = event->accessibleInterface();
-    if (isActive() && iface) {
-        if (event->type() == QAccessible::TableModelChanged) {
-            if (iface->tableInterface())
-                iface->tableInterface()->modelChange(static_cast<QAccessibleTableModelChangeEvent*>(event));
+    if (isActive()) {
+        QAccessibleInterface *iface = event->accessibleInterface();
+        if (iface) {
+            if (event->type() == QAccessible::TableModelChanged) {
+                if (iface->tableInterface())
+                    iface->tableInterface()->modelChange(static_cast<QAccessibleTableModelChangeEvent*>(event));
+            }
         }
     }
-
     if (updateHandler) {
         updateHandler(event);
         return;
