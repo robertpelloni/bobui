@@ -468,25 +468,28 @@ static void startQtNativeApplication(JNIEnv *jenv, jobject object, jstring param
     const int ret = m_main(argc, argv.data());
     qInfo() << "main() returned" << ret;
 
-    QtNative::callStaticMethod("setStarted", false);
-
     if (mainLibraryHnd) {
         int res = dlclose(mainLibraryHnd);
         if (res < 0)
             qWarning() << "dlclose failed:" << dlerror();
     }
 
-    if (QtAndroid::isQtApplication()) {
-        // Now, that the Qt application has exited, tear down the Activity and Service
-        QNativeInterface::QAndroidApplication::runOnAndroidMainThread([]() {
+    QNativeInterface::QAndroidApplication::runOnAndroidMainThread([]() {
+        QtNative::callStaticMethod("setStarted", false);
+
+        if (QtAndroid::isQtApplication()) {
+            // Now, that the Qt application has exited, tear down the Activity and Service
             auto activity = QtAndroidPrivate::activity();
             if (activity.isValid())
                 activity.callMethod("finish");
             auto service = QtAndroidPrivate::service();
             if (service.isValid())
-                service.callMethod("stopSelf()");
-        });
-    }
+                service.callMethod("stopSelf");
+        } else {
+            // For the embedded case, we only need to terminate Qt
+            QtNative::callStaticMethod("terminateQtNativeApplication");
+        }
+    });
 
     sem_post(&m_stopQtSemaphore);
     sem_wait(&m_exitSemaphore);
