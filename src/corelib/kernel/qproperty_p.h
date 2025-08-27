@@ -520,13 +520,11 @@ class QObjectCompatProperty : public QPropertyData<T>
     {
         auto *thisData = static_cast<ThisType *>(dataPtr);
         QBindingStorage *storage = qGetBindingStorage(thisData->owner());
-        QPropertyData<T> copy;
+        QPropertyData<T> copy(thisData->valueBypassingBindings());
         {
             QtPrivate::CurrentCompatPropertyThief thief(storage->bindingStatus);
-            binding.vtable->call(type, &copy, binding.functor);
-            if constexpr (QTypeTraits::has_operator_equal_v<T>)
-                if (copy.valueBypassingBindings() == thisData->valueBypassingBindings())
-                    return false;
+            if (!binding.vtable->call(type, &copy, binding.functor))
+                return false;
         }
         // ensure value and setValue know we're currently evaluating our binding
         QtPrivate::CompatPropertySafePoint guardThis(storage->bindingStatus, thisData);
