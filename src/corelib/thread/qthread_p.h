@@ -386,7 +386,7 @@ public:
 private:
     friend class QAbstractEventDispatcher;
     friend class QBasicTimer;
-    static Q_AUTOTEST_EXPORT QThreadData *currentThreadData() noexcept Q_DECL_PURE_FUNCTION;
+    Q_DECL_PURE_FUNCTION static Q_AUTOTEST_EXPORT QThreadData *currentThreadData() noexcept;
     static Q_AUTOTEST_EXPORT QThreadData *createCurrentThreadData();
 };
 

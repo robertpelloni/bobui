@@ -772,10 +772,10 @@ public:
     constexpr const QtPrivate::QMetaTypeInterface *iface() const { return d_ptr; }
 
 private:
-    static bool isDefaultConstructible(const QtPrivate::QMetaTypeInterface *) noexcept Q_DECL_PURE_FUNCTION;
-    static bool isCopyConstructible(const QtPrivate::QMetaTypeInterface *) noexcept Q_DECL_PURE_FUNCTION;
-    static bool isMoveConstructible(const QtPrivate::QMetaTypeInterface *) noexcept Q_DECL_PURE_FUNCTION;
-    static bool isDestructible(const QtPrivate::QMetaTypeInterface *) noexcept Q_DECL_PURE_FUNCTION;
+    Q_DECL_PURE_FUNCTION static bool isDefaultConstructible(const QtPrivate::QMetaTypeInterface *) noexcept;
+    Q_DECL_PURE_FUNCTION static bool isCopyConstructible(const QtPrivate::QMetaTypeInterface *) noexcept;
+    Q_DECL_PURE_FUNCTION static bool isMoveConstructible(const QtPrivate::QMetaTypeInterface *) noexcept;
+    Q_DECL_PURE_FUNCTION static bool isDestructible(const QtPrivate::QMetaTypeInterface *) noexcept;
 
 #if QT_CORE_REMOVED_SINCE(6, 5)
     int idHelper() const;

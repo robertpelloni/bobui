@@ -205,7 +205,7 @@ private:
 
     void invalidate() noexcept;
 
-    static constexpr bool isRgbaValid(int r, int g, int b, int a = 255) noexcept Q_DECL_CONST_FUNCTION
+    Q_DECL_CONST_FUNCTION static constexpr bool isRgbaValid(int r, int g, int b, int a = 255) noexcept
     {
         return uint(r) <= 255 && uint(g) <= 255 && uint(b) <= 255 && uint(a) <= 255;
     }

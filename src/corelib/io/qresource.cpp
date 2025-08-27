@@ -288,7 +288,7 @@ public:
 
     void ensureInitialized() const;
     void ensureChildren() const;
-    qint64 uncompressedSize() const Q_DECL_PURE_FUNCTION;
+    Q_DECL_PURE_FUNCTION qint64 uncompressedSize() const;
     qsizetype decompress(char *buffer, qsizetype bufferSize) const;
 
     bool load(const QString &file);
