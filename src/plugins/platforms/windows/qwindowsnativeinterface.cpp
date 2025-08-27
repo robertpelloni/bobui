@@ -56,7 +56,6 @@ void *QWindowsNativeInterface::nativeResourceForWindow(const QByteArray &resourc
         return bw->handle();
     switch (window->surfaceType()) {
     case QWindow::RasterSurface:
-    case QWindow::RasterGLSurface:
         if (type == GetDCType)
             return bw->getDC();
         if (type == ReleaseDCType) {

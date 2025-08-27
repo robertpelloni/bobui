@@ -228,11 +228,9 @@ bool QEglFSIntegration::hasCapability(QPlatformIntegration::Capability cap) cons
 #ifndef QT_NO_OPENGL
     case OpenGL: return true;
     case ThreadedOpenGL: return true;
-    case RasterGLSurface: return true;
 #else
     case OpenGL: return false;
     case ThreadedOpenGL: return false;
-    case RasterGLSurface: return false;
 #endif
     case WindowManagement: return false;
     case OpenGLOnRasterSurface: return true;

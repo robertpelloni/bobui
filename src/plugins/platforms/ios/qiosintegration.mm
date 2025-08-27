@@ -141,8 +141,6 @@ bool QIOSIntegration::hasCapability(Capability cap) const
     case OpenGL:
     case ThreadedOpenGL:
         return true;
-    case RasterGLSurface:
-        return true;
 #endif
     case ThreadedPixmaps:
         return true;

@@ -323,8 +323,7 @@ QEglFSScreen *QEglFSWindow::screen() const
 
 bool QEglFSWindow::isRaster() const
 {
-    const QWindow::SurfaceType type = window()->surfaceType();
-    return type == QSurface::RasterSurface || type == QSurface::RasterGLSurface;
+    return window()->surfaceType() == QSurface::RasterSurface;
 }
 
 #ifndef QT_NO_OPENGL

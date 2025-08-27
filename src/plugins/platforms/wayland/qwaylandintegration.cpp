@@ -127,8 +127,6 @@ bool QWaylandIntegration::hasCapability(QPlatformIntegration::Capability cap) co
     case MultipleWindows:
     case NonFullScreenWindows:
         return true;
-    case RasterGLSurface:
-        return true;
     case WindowActivation:
         return true;
     case ScreenWindowGrabbing: // whether QScreen::grabWindow() is supported
@@ -139,7 +137,7 @@ bool QWaylandIntegration::hasCapability(QPlatformIntegration::Capability cap) co
 
 QPlatformWindow *QWaylandIntegration::createPlatformWindow(QWindow *window) const
 {
-    if ((window->surfaceType() == QWindow::OpenGLSurface || window->surfaceType() == QWindow::RasterGLSurface)
+    if (window->surfaceType() == QWindow::OpenGLSurface
         && mDisplay->clientBufferIntegration())
         return mDisplay->clientBufferIntegration()->createEglWindow(window);
 

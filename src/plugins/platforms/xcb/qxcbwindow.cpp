@@ -302,7 +302,7 @@ void QXcbWindow::create()
     if (QPlatformWindow::parent()) {
         // When using a Vulkan QWindow via QWidget::createWindowContainer() we
         // must make sure the visuals are compatible. Now, the parent will be
-        // of RasterGLSurface which typically chooses a GLX/EGL compatible
+        // of OpenGLSurface which typically chooses a GLX/EGL compatible
         // visual which may not be what the Vulkan window would choose.
         // Therefore, take the parent's visual.
         if (window()->surfaceType() == QSurface::VulkanSurface

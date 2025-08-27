@@ -79,8 +79,7 @@ QT_BEGIN_NAMESPACE
     will not destroy it.
 
     \note With the OpenGL backend, QRhiSwapChain can only target QWindow
-    instances that have their surface type set to QSurface::OpenGLSurface or
-    QSurface::RasterGLSurface.
+    instances that have their surface type set to QSurface::OpenGLSurface.
 
     \note \c window is optional. It is recommended to specify it whenever
     possible, in order to avoid problems on multi-adapter and multi-screen

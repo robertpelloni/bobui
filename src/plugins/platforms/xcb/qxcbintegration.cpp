@@ -226,8 +226,7 @@ QPlatformWindow *QXcbIntegration::createPlatformWindow(QWindow *window) const
         }
     }
 
-    Q_ASSERT(window->type() == Qt::Desktop || isTrayIconWindow || !window->supportsOpenGL()
-             || (!glIntegration && window->surfaceType() == QSurface::RasterGLSurface)); // for VNC
+    Q_ASSERT(window->type() == Qt::Desktop || isTrayIconWindow || !window->supportsOpenGL()); // for VNC
     QXcbWindow *xcbWindow = new QXcbWindow(window);
     xcbWindow->create();
     return xcbWindow;
@@ -318,7 +317,6 @@ bool QXcbIntegration::hasCapability(QPlatformIntegration::Capability cap) const
     case MultipleWindows:
     case ForeignWindows:
     case SyncState:
-    case RasterGLSurface:
         return true;
 
     case SwitchableWidgetComposition:

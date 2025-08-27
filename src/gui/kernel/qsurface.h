@@ -30,7 +30,9 @@ public:
     enum SurfaceType {
         RasterSurface,
         OpenGLSurface,
-        RasterGLSurface,
+#if QT_REMOVAL_QT7_DEPRECATED_SINCE(6, 11)
+        RasterGLSurface Q_DECL_ENUMERATOR_DEPRECATED_X("Use RasterSurface instead"),
+#endif
         OpenVGSurface,
         VulkanSurface,
         MetalSurface,

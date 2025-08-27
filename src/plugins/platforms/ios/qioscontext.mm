@@ -99,7 +99,7 @@ static QString fboStatusString(GLenum status)
 }
 
 #define Q_ASSERT_IS_GL_SURFACE(surface) \
-    Q_ASSERT(surface && (surface->surface()->surfaceType() & (QSurface::OpenGLSurface | QSurface::RasterGLSurface)))
+    Q_ASSERT(surface && (surface->surface()->surfaceType() == QSurface::OpenGLSurface))
 
 bool QIOSContext::makeCurrent(QPlatformSurface *surface)
 {
