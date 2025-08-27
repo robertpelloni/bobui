@@ -10,6 +10,8 @@
 #include <QtQml/QQmlContext>
 #include <QQuickWidget>
 #include <QQuickItem>
+#elif defined(Q_CC_MSVC)
+#pragma message "Building without Quick UI"
 #else
 #warning "Building without Quick UI"
 #endif
