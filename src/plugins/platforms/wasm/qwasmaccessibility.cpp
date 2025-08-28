@@ -10,6 +10,11 @@
 
 #include <sstream>
 
+void QWasmAccessibilityEnable()
+{
+    QWasmAccessibility::enable();
+}
+
 #if QT_CONFIG(accessibility)
 
 #include <QtGui/private/qaccessiblebridgeutils_p.h>
@@ -91,6 +96,11 @@ void QWasmAccessibility::onRemoveWindow(QWindow *window)
 bool QWasmAccessibility::isEnabled()
 {
     return get()->m_accessibilityEnabled;
+}
+void QWasmAccessibility::enable()
+{
+    if (!isEnabled())
+        get()->enableAccessibility();
 }
 
 void QWasmAccessibility::addAccessibilityEnableButtonImpl(QWindow *window)

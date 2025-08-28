@@ -19,6 +19,8 @@
 
 Q_DECLARE_LOGGING_CATEGORY(lcQpaAccessibility)
 
+void QWasmAccessibilityEnable();
+
 #if !QT_CONFIG(accessibility)
 class QWasmAccessibility
 {
@@ -29,6 +31,7 @@ public:
     static bool isEnabled() {
         return false;
     }
+    static void enable() {}
 };
 #else
 class QWasmAccessibility : public QPlatformAccessibility
@@ -43,6 +46,7 @@ public:
     static void onShowWindow(QWindow *);
     static void onRemoveWindow(QWindow *);
     static bool isEnabled();
+    static void enable();
 
 private:
     void addAccessibilityEnableButtonImpl(QWindow *window);
