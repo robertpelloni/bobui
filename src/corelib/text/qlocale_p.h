@@ -268,6 +268,8 @@ public:
     [[nodiscard]] static const QLocaleData *c() noexcept;
     [[nodiscard]] Q_AUTOTEST_EXPORT
     static bool allLocaleDataRows(bool (*check)(qsizetype, const QLocaleData &));
+    [[nodiscard]] Q_AUTOTEST_EXPORT
+    static const QLocaleData *dataForLocaleIndex(qsizetype index);
 
     enum DoubleForm {
         DFExponent = 0,

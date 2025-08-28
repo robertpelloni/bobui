@@ -530,6 +530,14 @@ bool QLocaleData::allLocaleDataRows(bool (*check)(qsizetype, const QLocaleData &
     return true;
 }
 
+// Internal: to enable tst_qlocaledata to access locales
+const QLocaleData *QLocaleData::dataForLocaleIndex(qsizetype index)
+{
+    Q_PRE(index >= 0);
+    Q_PRE(index < locale_data_size);
+    return locale_data + index;
+}
+
 #if QT_CONFIG(timezone) && QT_CONFIG(timezone_locale) && !QT_CONFIG(icu)
 namespace QtTimeZoneLocale {
 
@@ -986,8 +994,7 @@ static QLocalePrivate *localePrivateByName(QStringView name)
     if (name == u"C")
         return c_private();
     const qsizetype index = QLocaleData::findLocaleIndex(QLocaleId::fromName(name));
-    Q_ASSERT(index >= 0 && index < locale_data_size);
-    return new QLocalePrivate(locale_data + index, index,
+    return new QLocalePrivate(QLocaleData::dataForLocaleIndex(index), index,
                               defaultNumberOptions(locale_data[index].m_language_id));
 }
 
@@ -998,8 +1005,7 @@ static QLocalePrivate *findLocalePrivate(QLocale::Language language, QLocale::Sc
         return c_private();
 
     qsizetype index = QLocaleData::findLocaleIndex(QLocaleId { language, script, territory });
-    Q_ASSERT(index >= 0 && index < locale_data_size);
-    const QLocaleData *data = locale_data + index;
+    const QLocaleData *data = QLocaleData::dataForLocaleIndex(index);
 
     QLocale::NumberOptions numberOptions = QLocale::DefaultNumberOptions;
 
@@ -1025,8 +1031,7 @@ bool comparesEqual(const QLocale &loc, QLocale::Language lang)
         return compareWithPrivate(c_private()->m_data, c_private()->m_numberOptions);
 
     qsizetype index = QLocaleData::findLocaleIndex(QLocaleId { lang });
-    Q_ASSERT(index >= 0 && index < locale_data_size);
-    const QLocaleData *data = locale_data + index;
+    const QLocaleData *data = QLocaleData::dataForLocaleIndex(index);
 
     QLocale::NumberOptions numberOptions = QLocale::DefaultNumberOptions;
 
@@ -3167,8 +3172,10 @@ QList<QLocale> QLocale::matchingLocales(Language language, Script script, Territ
         result.reserve(locale_data_size);
 
     quint16 index = locale_index[language];
+    Q_ASSERT(index >= 0);
     // There may be no matches, for some languages (e.g. Abkhazian at CLDR v39).
-    while (filter.acceptLanguage(locale_data[index].m_language_id)) {
+    while (index < locale_data_size
+           && filter.acceptLanguage(locale_data[index].m_language_id)) {
         const QLocaleId id = locale_data[index].id();
         if (filter.acceptScriptTerritory(id)) {
             result.append(QLocale(*(id.language_id == C ? c_private()
