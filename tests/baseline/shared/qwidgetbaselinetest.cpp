@@ -101,7 +101,7 @@ QWidgetBaselineTest::QWidgetBaselineTest()
     QBaselineTest::setProject("Widgets");
 
     // Set key platform properties that are relevant for the appearance of widgets
-    const QString platformName = QGuiApplication::platformName() + "-" + QSysInfo::productType();
+    const QString platformName = QGuiApplication::platformName();
     QBaselineTest::addClientProperty("PlatformName", platformName);
     QBaselineTest::addClientProperty("OSVersion", QSysInfo::productVersion());
 
@@ -153,6 +153,7 @@ QWidgetBaselineTest::QWidgetBaselineTest()
 
     QBaselineTest::setProjectImageKeys({
         "GitBranch",
+        "OSName",
         "OSVersion",
         "PlatformName",
         "Style",
