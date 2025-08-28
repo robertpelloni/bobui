@@ -955,6 +955,35 @@ void QWasmAccessibility::removeObject(QAccessibleInterface *iface)
     }
 }
 
+void QWasmAccessibility::unlinkParentForChildren(QAccessibleInterface *iface)
+{
+    auto element = getHtmlElement(iface);
+    if (!element.isUndefined()) {
+        auto oldContainer = element["parentElement"];
+        auto newContainer = getElementContainer(iface);
+        if (!oldContainer.isUndefined() &&
+            !oldContainer.isNull() &&
+            oldContainer != newContainer) {
+            oldContainer.call<void>("removeChild", element);
+        }
+    }
+    for (int i = 0; i < iface->childCount(); ++i)
+        unlinkParentForChildren(iface->child(i));
+}
+
+void QWasmAccessibility::relinkParentForChildren(QAccessibleInterface *iface)
+{
+    auto element = getHtmlElement(iface);
+    if (!element.isUndefined()) {
+        if (element["parentElement"].isUndefined() ||
+            element["parentElement"].isNull()) {
+            linkToParent(iface);
+        }
+    }
+    for (int i = 0; i < iface->childCount(); ++i)
+        relinkParentForChildren(iface->child(i));
+}
+
 void QWasmAccessibility::notifyAccessibilityUpdate(QAccessibleEvent *event)
 {
     if (!m_accessibilityEnabled)
@@ -981,6 +1010,11 @@ void QWasmAccessibility::notifyAccessibilityUpdate(QAccessibleEvent *event)
 
     case QAccessible::ObjectShow: // We do not get ObjectCreated from widgets, we get ObjectShow
         createObject(iface);
+        break;
+
+    case QAccessible::ParentChanged:
+        unlinkParentForChildren(iface);
+        relinkParentForChildren(iface);
         break;
 
     default:

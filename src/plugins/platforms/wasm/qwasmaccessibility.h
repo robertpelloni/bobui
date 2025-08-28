@@ -94,6 +94,9 @@ private:
     void populateAccessibilityTree(QAccessibleInterface *iface);
     void createObject(QAccessibleInterface *iface);
     void removeObject(QAccessibleInterface *iface);
+    void unlinkParentForChildren(QAccessibleInterface *iface);
+    void relinkParentForChildren(QAccessibleInterface *iface);
+
     void notifyAccessibilityUpdate(QAccessibleEvent *event) override;
     void setRootObject(QObject *o) override;
     void initialize() override;

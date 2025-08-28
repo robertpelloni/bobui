@@ -856,6 +856,12 @@ void QWindow::setParent(QWindow *parent)
 
     QEvent parentChangedEvent(QEvent::ParentWindowChange);
     QCoreApplication::sendEvent(this, &parentChangedEvent);
+#if QT_CONFIG(accessibility)
+    if (QGuiApplicationPrivate::is_app_running && !QGuiApplicationPrivate::is_app_closing) {
+        QAccessibleEvent qaEvent(this, QAccessible::ParentChanged);
+        QAccessible::updateAccessibility(&qaEvent);
+    }
+#endif
 }
 
 /*!

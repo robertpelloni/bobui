@@ -237,6 +237,8 @@ private slots:
 
     void widgetLocaleTest();
     void noInterfacesBeforeSetActive();
+    void parentChangedEvent();
+
 protected slots:
     void onClicked();
 private:
@@ -4856,6 +4858,28 @@ void tst_QAccessibility::noInterfacesBeforeSetActive()
         QAccessible::updateAccessibility(&event);
 
         QCOMPARE_NE(QAccessibleCache::instance()->idForObject(&w), 0u);
+    }
+}
+
+void tst_QAccessibility::parentChangedEvent()
+{
+    {
+        QMainWindow mainWindow;
+        QWidget w;
+        QTestAccessibility::clearEvents();
+
+        w.setParent(&mainWindow);
+        QAccessibleEvent parentChangedEvent(&w, QAccessible::ParentChanged);
+        QVERIFY(QTestAccessibility::containsEvent(&parentChangedEvent));
+    }
+    {
+        QWindow mainWindow;
+        QWindow w;
+        QTestAccessibility::clearEvents();
+
+        w.setParent(&mainWindow);
+        QAccessibleEvent parentChangedEvent(&w, QAccessible::ParentChanged);
+        QVERIFY(QTestAccessibility::containsEvent(&parentChangedEvent));
     }
 }
 

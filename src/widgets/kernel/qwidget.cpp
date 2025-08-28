@@ -10960,6 +10960,14 @@ void QWidget::setParent(QWidget *parent, Qt::WindowFlags f)
             }
         }
     }
+
+#if QT_CONFIG(accessibility)
+    if (QGuiApplicationPrivate::is_app_running && !QGuiApplicationPrivate::is_app_closing) {
+        QAccessibleEvent qaEvent(this, QAccessible::ParentChanged);
+        QAccessible::updateAccessibility(&qaEvent);
+    }
+#endif
+
 }
 
 void QWidgetPrivate::setParent_sys(QWidget *newparent, Qt::WindowFlags f)
