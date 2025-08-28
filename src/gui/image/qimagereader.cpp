@@ -277,7 +277,7 @@ static QImageIOHandler *createReadHandlerHelper(QIODevice *device,
             // ok, we're done.
             return handler;
         }
-        qCDebug(lcImageReader) << handler << "claimed support for " << suffix
+        qCDebug(lcImageReader) << handler << "claimed support for" << suffix
                                << "but could not read the file";
         // File may still be valid, just with wrong suffix, so fall back to
         // finding a handler based on contents, below.
