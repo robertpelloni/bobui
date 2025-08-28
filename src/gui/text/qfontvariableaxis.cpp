@@ -119,6 +119,11 @@ void QFontVariableAxis::setName(const QString &name)
 }
 
 /*!
+    \property QFontVariableAxis::minimumValue
+    \brief the minimum value of the axis.
+*/
+
+/*!
     Returns the minimum value of the axis. Setting the axis to a value which is lower than this
     is not supported.
 
