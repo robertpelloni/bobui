@@ -41,7 +41,7 @@ PlatformInfo PlatformInfo::localHostInfo()
 #elif defined(Q_OS_MACOS)
     pi.insert(PI_OSName, QLS("macOS"));
 #else
-    pi.insert(PI_OSName, QLS("Other"));
+    pi.insert(PI_OSName, QSysInfo::productType());
 #endif
     pi.insert(PI_OSVersion, QSysInfo::kernelVersion());
 
