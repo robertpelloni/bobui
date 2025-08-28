@@ -3244,7 +3244,6 @@ void tst_QWindow::enterLeaveOnWindowShowHide()
         QSKIP("We can't move the cursor");
 
     window.show();
-    window.requestActivate();
     QVERIFY(QTest::qWaitForWindowActive(&window));
 
     ++expectedEnter;
