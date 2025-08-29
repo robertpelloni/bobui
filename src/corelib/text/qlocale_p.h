@@ -238,7 +238,7 @@ struct QLocaleId
     [[nodiscard]] QLocaleId withLikelySubtagsAdded() const noexcept;
     [[nodiscard]] QLocaleId withLikelySubtagsRemoved() const noexcept;
 
-    [[nodiscard]] QByteArray name(char separator = '-') const;
+    [[nodiscard]] Q_AUTOTEST_EXPORT QByteArray name(char separator = '-') const;
 
     ushort language_id = 0, script_id = 0, territory_id = 0;
 };
@@ -264,8 +264,8 @@ struct QLocaleData
 public:
     // Having an index for each locale enables us to have diverse sources of
     // data, e.g. calendar locales, as well as the main CLDR-derived data.
-    [[nodiscard]] static qsizetype findLocaleIndex(QLocaleId localeId) noexcept;
-    [[nodiscard]] static const QLocaleData *c() noexcept;
+    [[nodiscard]] Q_AUTOTEST_EXPORT static qsizetype findLocaleIndex(QLocaleId localeId) noexcept;
+    [[nodiscard]] Q_AUTOTEST_EXPORT static const QLocaleData *c() noexcept;
     [[nodiscard]] Q_AUTOTEST_EXPORT
     static bool allLocaleDataRows(bool (*check)(qsizetype, const QLocaleData &));
     [[nodiscard]] Q_AUTOTEST_EXPORT
@@ -400,9 +400,9 @@ public:
                 break;
             }
         }
-        // All users of this class can see the implementation.
-        inline NumericData(const QLocaleData *data, QLocaleData::NumberMode mode);
-        const GroupSizes &groupSizes() const { return grouping; }
+        Q_AUTOTEST_EXPORT
+        NumericData(const QLocaleData *data, QLocaleData::NumberMode mode);
+        [[nodiscard]] const GroupSizes &groupSizes() const { return grouping; }
 
         [[nodiscard]] bool isValid(NumberMode mode) const // Asserted as a sanity check.
         {
@@ -453,7 +453,7 @@ public:
     [[nodiscard]] QString listSeparator() const;
     [[nodiscard]] QString percentSign() const;
     [[nodiscard]] QString zeroDigit() const;
-    [[nodiscard]] char32_t zeroUcs() const;
+    [[nodiscard]] Q_AUTOTEST_EXPORT char32_t zeroUcs() const;
     [[nodiscard]] QString positiveSign() const;
     [[nodiscard]] QString negativeSign() const;
     [[nodiscard]] QString exponentSeparator() const;

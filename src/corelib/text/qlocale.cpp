@@ -4375,8 +4375,15 @@ QString QLocaleData::applyIntegerFormatting(QString &&numStr, bool negative, int
     return result;
 }
 
-inline QLocaleData::NumericData::NumericData(const QLocaleData *data, QLocaleData::NumberMode mode)
+// Most users of this class are in this file, but tests in developer builds also
+// instantiate it. So it needs to be out-of-line for those builds:
+#ifndef QT_BUILD_INTERNAL
+inline
+#endif // ... but can otherwise be inline.
+QLocaleData::NumericData::NumericData(const QLocaleData *data, QLocaleData::NumberMode mode)
     : grouping(data->groupSizes()), isC(data == c())
+      // Note: actually test pointer equality to c(), not language == C, as
+      // system locale might be configured as C with tweaks.
 {
     if (isC)
         return;

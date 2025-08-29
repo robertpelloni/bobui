@@ -27,6 +27,13 @@ private slots:
     void signsNeverCompareEqualToNullCharacter_data() { testNames_data(); }
     void signsNeverCompareEqualToNullCharacter();
 
+    void numericData_data();
+    void numericData();
+    void numericDataDigits_data();
+    void numericDataDigits();
+    void suzhouDigits_data();
+    void suzhouDigits();
+
     void strtod_data();
     void strtod();
 
@@ -106,6 +113,282 @@ void tst_QLocaleData::signsNeverCompareEqualToNullCharacter() // otherwise QText
     const QLocale loc(language, country);
     QCOMPARE_NE(loc.negativeSign(), QChar());
     QCOMPARE_NE(loc.positiveSign(), QChar());
+}
+
+#define LOCALE_DATA_PTR(lang, script, terr) QLocaleData::dataForLocaleIndex( \
+        QLocaleData::findLocaleIndex({ QLocale::lang, QLocale::script, QLocale::terr }))
+
+void tst_QLocaleData::numericData_data()
+{
+    // Inputs:
+    QTest::addColumn<const QLocaleData *>("data");
+    QTest::addColumn<QLocaleData::NumberMode>("mode");
+    // Outputs:
+    QTest::addColumn<QString>("decimal");
+    QTest::addColumn<QString>("group"); // (*Whether* to group is a QLocalePrivate question.)
+    QTest::addColumn<QString>("minus");
+    QTest::addColumn<QString>("plus");
+    QTest::addColumn<QString>("exponent");
+    QTest::addColumn<QLocaleData::GroupSizes>("groupSizes");
+#define GS(f, h, e) QLocaleData::GroupSizes{f, h, e}
+    QTest::addColumn<char32_t>("zero");
+    QTest::addColumn<int>("zlen");
+    QTest::addColumn<bool>("cyril");
+    // isC: handled by inspecting test-row name.
+
+    // Doesn't set any field of NumericData except isC and grouping:
+    QTest::newRow("C/exp")
+        << QLocaleData::c() << QLocaleData::DoubleScientificMode
+        << u""_s << u""_s << u""_s << u""_s << u""_s << GS(1, 3, 3) << char32_t(0) << 0 << false;
+
+    const QLocaleData *enUS = LOCALE_DATA_PTR(English, LatinScript, UnitedStates);
+    // Check mode controls which fields are set:
+    QTest::newRow("en-Latn-US/int")
+        << enUS << QLocaleData::IntegerMode
+        << u""_s << u","_s << u"-"_s << u"+"_s << u""_s << GS(1, 3, 3) << U'0' << 1 << false;
+    QTest::newRow("en-Latn-US/frac")
+        << enUS << QLocaleData::DoubleStandardMode
+        << u"."_s << u","_s << u"-"_s << u"+"_s << u""_s << GS(1, 3, 3) << U'0' << 1 << false;
+    QTest::newRow("en-Latn-US/exp")
+        << enUS << QLocaleData::DoubleScientificMode
+        << u"."_s << u","_s << u"-"_s << u"+"_s << u"E"_s << GS(1, 3, 3) << U'0' << 1 << false;
+    QTest::newRow("en-US/exp")
+        << LOCALE_DATA_PTR(English, AnyScript, UnitedStates) << QLocaleData::DoubleScientificMode
+        << u"."_s << u","_s << u"-"_s << u"+"_s << u"E"_s << GS(1, 3, 3) << U'0' << 1 << false;
+    QTest::newRow("en/exp")
+        << LOCALE_DATA_PTR(English, AnyScript, AnyTerritory) << QLocaleData::DoubleScientificMode
+        << u"."_s << u","_s << u"-"_s << u"+"_s << u"E"_s << GS(1, 3, 3) << U'0' << 1 << false;
+    QTest::newRow("en-Latn/exp")
+        << LOCALE_DATA_PTR(English, LatinScript, AnyTerritory) << QLocaleData::DoubleScientificMode
+        << u"."_s << u","_s << u"-"_s << u"+"_s << u"E"_s << GS(1, 3, 3) << U'0' << 1 << false;
+
+    // Check for Cyrillic special case:
+    QTest::newRow("uk-Cyrl-UA/exp")
+        << LOCALE_DATA_PTR(Ukrainian, CyrillicScript, Ukraine) << QLocaleData::DoubleScientificMode
+        << u","_s << u"\u00A0"_s << u"-"_s << u"+"_s << u"\u0415"_s
+        << GS(1, 3, 3) << U'0' << 1 << true;
+
+    // Check Arabic:
+    QTest::newRow("ar-EG/exp") // U+061C (Arabic Letter Mark) before signs.
+        << LOCALE_DATA_PTR(Arabic, ArabicScript, Egypt) << QLocaleData::DoubleScientificMode
+        << u"\u066B"_s << u"\u066C"_s << u"\u061C-"_s << u"\u061C+"_s << u"\u0623\u0633"_s
+        << GS(1, 3, 3) << U'\u0660' << 1 << false;
+
+    // Variations on zero digit:
+    QTest::newRow("pa-Arab-PK/exp") // L-to-R mark both before and after sign
+        << LOCALE_DATA_PTR(Punjabi, ArabicScript, Pakistan) << QLocaleData::DoubleScientificMode
+        << u"\u066B"_s << u"\u066C"_s << u"\u200E-\u200E"_s << u"\u200E+\u200E"_s
+        << u"\u00D7\u06F1\u06F0^"_s << GS(1, 3, 3) << U'\u06F0' << 1 << false;
+
+    QTest::newRow("ne-Deva-NP/exp")
+        << LOCALE_DATA_PTR(Nepali, DevanagariScript, Nepal) << QLocaleData::DoubleScientificMode
+        << u"."_s << u","_s << u"-"_s << u"+"_s << u"E"_s << GS(1, 2, 3) << U'\u0966' << 1 << false;
+
+    QTest::newRow("mni-Beng-IN/exp")
+        << LOCALE_DATA_PTR(Manipuri, BanglaScript, India) << QLocaleData::DoubleScientificMode
+        << u"."_s << u","_s << u"-"_s << u"+"_s << u"E"_s << GS(1, 3, 3) << U'\u09E6' << 1 << false;
+
+    QTest::newRow("mni-Mtei-IN/exp")
+        << LOCALE_DATA_PTR(Manipuri, MeiteiMayekScript, India) << QLocaleData::DoubleScientificMode
+        << u"."_s << u","_s << u"-"_s << u"+"_s << u"E"_s << GS(1, 3, 3) << U'\uABF0' << 1 << false;
+
+    QTest::newRow("nqo-Nkoo-GN/exp")
+        << LOCALE_DATA_PTR(Nko, NkoScript, Guinea) << QLocaleData::DoubleScientificMode
+        << u"."_s << u"\u060C"_s << u"-"_s << u"+"_s << u"E"_s
+        << GS(1, 3, 3) << U'\u07C0' << 1 << false;
+
+    QTest::newRow("ff-Adlm-GN/exp")
+        << LOCALE_DATA_PTR(Fulah, AdlamScript, Guinea) << QLocaleData::DoubleScientificMode
+        << u"."_s << u"\u2E41"_s << u"-"_s << u"+"_s << u"\U0001E909"_s <<
+        GS(1, 3, 3) << U'\U0001E950' << 2 << false;
+
+    QTest::newRow("ccp-Cakm-BD/exp")
+        << LOCALE_DATA_PTR(Chakma, ChakmaScript, Bangladesh) << QLocaleData::DoubleScientificMode
+        << u"."_s << u","_s << u"-"_s << u"+"_s << u"E"_s
+        << GS(1, 2, 3) << U'\U00011136' << 2 << false;
+
+    QTest::newRow("dz-Tibt-BT/exp")
+        << LOCALE_DATA_PTR(Dzongkha, TibetanScript, Bhutan) << QLocaleData::DoubleScientificMode
+        << u"."_s << u","_s << u"-"_s << u"+"_s << u"E"_s << GS(1, 2, 3) << U'\u0F20' << 1 << false;
+
+    QTest::newRow("my-Mimr-MM/exp")
+        << LOCALE_DATA_PTR(Burmese, MyanmarScript, Myanmar) << QLocaleData::DoubleScientificMode
+        << u"."_s << u","_s << u"-"_s << u"+"_s << u"E"_s << GS(1, 3, 3) << U'\u1040' << 1 << false;
+
+    QTest::newRow("sat-Olck-IN/exp")
+        << LOCALE_DATA_PTR(Santali, OlChikiScript, India) << QLocaleData::DoubleScientificMode
+        << u"."_s << u","_s << u"-"_s << u"+"_s << u"E"_s << GS(1, 3, 3) << U'\u1C50' << 1 << false;
+
+    // Variations on exponent separator (where not already covered)
+    QTest::newRow("se-Latn-NO/exp")
+        << LOCALE_DATA_PTR(NorthernSami, LatinScript, Norway) << QLocaleData::DoubleScientificMode
+        << u","_s << u"\u00A0"_s << u"\u2212"_s << u"+"_s << u"\u00B7" "10^"_s
+        << GS(1, 3, 3) << U'0' << 1 << false;
+
+    QTest::newRow("sv-Latn-SE/exp")
+        << LOCALE_DATA_PTR(Swedish, LatinScript, Sweden) << QLocaleData::DoubleScientificMode
+        << u","_s << u"\u00A0"_s << u"\u2212"_s << u"+"_s << u"\u00D7" "10^"_s
+        << GS(1, 3, 3) << U'0' << 1 << false;
+
+    // Central and Southern Kurdish share their exponent with Sindhi.
+    // Central Kurdish also has an unusual variant on minus sign.
+    QTest::newRow("ckb-Arab-IQ/exp") // R-to-L mark before sign:
+        << LOCALE_DATA_PTR(CentralKurdish, ArabicScript, Iraq) << QLocaleData::DoubleScientificMode
+        << u"\u066B"_s << u"\u066C"_s << u"\u200F-"_s << u"\u200F+"_s << u"\u0627\u0633"_s
+        << GS(1, 3, 3) << U'\u0660' << 1 << false;
+
+    // Sign variants:
+    QTest::newRow("ar-Arab-TN/exp") // L-to-R mark only before sign:
+        << LOCALE_DATA_PTR(Arabic, ArabicScript, Tunisia) << QLocaleData::DoubleScientificMode
+        << u","_s << u"."_s << u"\u200E-"_s << u"\u200E+"_s << u"E"_s
+        << GS(1, 3, 3) << U'0' << 1 << false;
+
+    QTest::newRow("fa-Arab-IR/exp")
+        << LOCALE_DATA_PTR(Persian, ArabicScript, Iran) << QLocaleData::DoubleScientificMode
+        << u"\u066B"_s << u"\u066C"_s << u"\u200E\u2212"_s << u"\u200E+"_s
+        << u"\u00D7\u06F1\u06F0^"_s << GS(1, 3, 3) << U'\u06F0' << 1 << false;
+
+    // Grouping separator variants:
+    QTest::newRow("gsw-Latn-CH/exp") // Right single quote for grouping:
+        << LOCALE_DATA_PTR(SwissGerman, LatinScript, Switzerland)
+        << QLocaleData::DoubleScientificMode
+        << u"."_s << u"\u2019"_s << u"\u2212"_s << u"+"_s << u"E"_s
+        << GS(1, 3, 3) << U'0' << 1 << false;
+
+    QTest::newRow("fr-Latn-FR/exp") // Narrow non-breaking space (as in BIPM) for grouping:
+        << LOCALE_DATA_PTR(French, LatinScript, France) << QLocaleData::DoubleScientificMode
+        << u","_s << u"\u202F"_s << u"-"_s << u"+"_s << u"E"_s
+        << GS(1, 3, 3) << U'0' << 1 << false;
+
+    QTest::newRow("gez-Ethi-ET/exp") // U+12C8 (Ethiopic Symbol WA) as grouping separator:
+        << LOCALE_DATA_PTR(Geez, EthiopicScript, Ethiopia) << QLocaleData::DoubleScientificMode
+        << u"."_s << u"\u12C8"_s << u"-"_s << u"+"_s << u"E"_s
+        << GS(1, 3, 3) << U'0' << 1 << false;
+#undef GS
+}
+
+void tst_QLocaleData::numericData()
+{
+    QFETCH(const QLocaleData *, data);
+    QFETCH(const QLocaleData::NumberMode, mode);
+    QFETCH(const QString, decimal);
+    QFETCH(const QString, group);
+    QFETCH(const QString, minus);
+    QFETCH(const QString, plus);
+    QFETCH(const QString, exponent);
+    QFETCH(const QLocaleData::GroupSizes, groupSizes);
+    QFETCH(const char32_t, zero);
+    QFETCH(const int, zlen);
+    QFETCH(const bool, cyril);
+    const bool isC = QByteArrayView(QTest::currentDataTag()).startsWith("C/");
+
+    QLocaleData::NumericData numeric(data, mode);
+    QCOMPARE(numeric.decimal, decimal);
+    QCOMPARE(numeric.group, group);
+    QCOMPARE(numeric.minus, minus);
+    QCOMPARE(numeric.plus, plus);
+    QCOMPARE(numeric.exponent, exponent);
+    QCOMPARE(numeric.isC, isC);
+    QCOMPARE(numeric.grouping.first, groupSizes.first);
+    QCOMPARE(numeric.grouping.higher, groupSizes.higher);
+    QCOMPARE(numeric.grouping.least, groupSizes.least);
+    QCOMPARE(numeric.zeroUcs, zero);
+    QCOMPARE(numeric.zeroLen, zlen);
+    QCOMPARE(numeric.exponentCyrillic, cyril);
+}
+
+void tst_QLocaleData::numericDataDigits_data()
+{
+    QTest::addColumn<const QLocaleData *>("data");
+    QTest::addColumn<char32_t>("character");
+    QTest::addColumn<int>("value");
+
+    // All but Suzhou digits come in contiguous blocks.
+    const auto dataFor = [](const QLocaleData *data) {
+        const char32_t zero = data->zeroUcs();
+        const bool wide = QChar::requiresSurrogates(zero);
+        const QByteArray name = data->id().name();
+        const char *nom = name.data();
+        for (int i = 0; i < 10; ++i) {
+            QTest::addRow("%s/%d", nom, i) << data << char32_t(zero + i) << i;
+            QTest::addRow("%s/ASCII-%d", nom, i) << data << char32_t(U'0' + i) << (wide ? -1 : i);
+        }
+        QTest::addRow("%s/early", nom) << data << char32_t(zero - 1) << -1;
+        QTest::addRow("%s/late", nom) << data << char32_t(zero + 10) << -1;
+        QTest::addRow("%s/ASCII-early", nom) << data << U'/' << -1; // U'0' - 1
+        QTest::addRow("%s/ASCII-late", nom) << std::move(data) << U':' << -1; // U'9' + 1
+    };
+    dataFor(QLocaleData::c());
+    dataFor(LOCALE_DATA_PTR(English, LatinScript, UnitedStates));
+    dataFor(LOCALE_DATA_PTR(Ukrainian, CyrillicScript, Ukraine));
+    dataFor(LOCALE_DATA_PTR(Arabic, ArabicScript, Egypt));
+    dataFor(LOCALE_DATA_PTR(Punjabi, ArabicScript, Pakistan));
+    dataFor(LOCALE_DATA_PTR(Nepali, DevanagariScript, Nepal));
+    dataFor(LOCALE_DATA_PTR(Manipuri, BanglaScript, India));
+    dataFor(LOCALE_DATA_PTR(Manipuri, MeiteiMayekScript, India));
+    dataFor(LOCALE_DATA_PTR(Nko, NkoScript, Guinea));
+    dataFor(LOCALE_DATA_PTR(Fulah, AdlamScript, Guinea));
+    dataFor(LOCALE_DATA_PTR(Chakma, ChakmaScript, Bangladesh));
+    dataFor(LOCALE_DATA_PTR(Dzongkha, TibetanScript, Bhutan));
+    dataFor(LOCALE_DATA_PTR(Burmese, MyanmarScript, Myanmar));
+    dataFor(LOCALE_DATA_PTR(Santali, OlChikiScript, India));
+    dataFor(LOCALE_DATA_PTR(NorthernSami, LatinScript, Norway));
+    dataFor(LOCALE_DATA_PTR(Swedish, LatinScript, Sweden));
+    dataFor(LOCALE_DATA_PTR(CentralKurdish, ArabicScript, Iraq));
+    dataFor(LOCALE_DATA_PTR(Arabic, ArabicScript, Tunisia));
+    dataFor(LOCALE_DATA_PTR(Persian, ArabicScript, Iran));
+    dataFor(LOCALE_DATA_PTR(SwissGerman, LatinScript, Switzerland));
+    dataFor(LOCALE_DATA_PTR(French, LatinScript, France));
+    dataFor(LOCALE_DATA_PTR(Geez, EthiopicScript, Ethiopia));
+
+    // No CLDR locale uses Suzhou digits: see suzhouDigits() below.
+}
+#undef LOCALE_DATA_PTR
+
+void tst_QLocaleData::numericDataDigits()
+{
+    QFETCH(const QLocaleData *, data);
+    QFETCH(const char32_t, character);
+    QFETCH(const int, value);
+
+    // digitValue() doesn't depend on mode
+    QLocaleData::NumericData numeric(data, QLocaleData::IntegerMode);
+    QCOMPARE(numeric.digitValue(character), qint8(value));
+}
+
+void tst_QLocaleData::suzhouDigits_data()
+{
+    QTest::addColumn<char32_t>("character");
+    QTest::addColumn<int>("value");
+
+    QTest::newRow("0") << U'\u3007' << 0;
+    for (int i = 1; i < 10; ++i) {
+        QTest::addRow("%d", i) << char32_t(U'\u3020' + i) << i;
+        QTest::addRow("ASCII-%d", i) << char32_t(U'0' + i) << i;
+    }
+
+    // 25 == 0x20 - 0x07
+    for (uint i = 10; i <= 25; ++i)
+        QTest::addRow("gap-%x", i - 10) << char32_t(U'\u3007' + i) << -1;
+
+    QTest::newRow("early") << U'\u3006' << -1;
+    QTest::newRow("late") << U'\u302a' << -1;
+    QTest::newRow("ASCII-early") << U'/' << -1;
+    QTest::newRow("ASCII-late") << U':' << -1;
+}
+
+void tst_QLocaleData::suzhouDigits()
+{
+    QFETCH(const char32_t, character);
+    QFETCH(const int, value);
+
+    // Fake up a suzhou-using locale's numeric data:
+    const QLocaleData *zhHantCN = QLocaleData::dataForLocaleIndex(QLocaleData::findLocaleIndex({
+                QLocale::Chinese, QLocale::TraditionalHanScript, QLocale::China}));
+    QLocaleData::NumericData suzhou(zhHantCN, QLocaleData::IntegerMode);
+    suzhou.setZero(u"\u3007");
+
+    QCOMPARE(suzhou.digitValue(character), qint8(value));
 }
 
 void tst_QLocaleData::strtod_data()
