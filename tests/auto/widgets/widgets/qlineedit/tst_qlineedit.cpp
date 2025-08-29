@@ -4094,7 +4094,7 @@ void tst_QLineEdit::QTBUG697_paletteCurrentColorGroup()
     QWindow window;
     window.resize(100, 50);
     window.show();
-    window.requestActivate();
+    QVERIFY(QTest::qWaitForWindowActive(&window));
     QVERIFY(QTest::qWaitForWindowFocused(&window));
     le.render(&img);
     QCOMPARE(img.pixel(10, le.height()/2), QColor(Qt::red).rgb());
