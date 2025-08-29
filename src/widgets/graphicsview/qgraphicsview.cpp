@@ -2223,7 +2223,9 @@ QList<QGraphicsItem *> QGraphicsView::items() const
     a subclass in QGraphicsView. \a pos is in untransformed viewport
     coordinates, just like QMouseEvent::position().
 
+    \snippet code/src_gui_graphicsview_qgraphicsview.cpp 5_6_declaration
     \snippet code/src_gui_graphicsview_qgraphicsview.cpp 5
+    \snippet code/src_gui_graphicsview_qgraphicsview.cpp 5_6_end
 
     \sa QGraphicsScene::items(), {QGraphicsItem#Sorting}{Sorting}
 */
@@ -2338,7 +2340,9 @@ QList<QGraphicsItem *> QGraphicsView::items(const QPainterPath &path, Qt::ItemSe
 
     Example:
 
+    \snippet code/src_gui_graphicsview_qgraphicsview.cpp 5_6_declaration
     \snippet code/src_gui_graphicsview_qgraphicsview.cpp 6
+    \snippet code/src_gui_graphicsview_qgraphicsview.cpp 5_6_end
 
     \sa items(), {QGraphicsItem#Sorting}{Sorting}
 */
