@@ -14,6 +14,10 @@
 #include <QtTest/qabstractitemmodeltester.h>
 #endif
 
+#if defined(__cpp_lib_ranges)
+#include <ranges>
+#endif
+
 class tst_QRangeModel : public QRangeModelTest
 {
     Q_OBJECT
@@ -65,6 +69,7 @@ private slots:
     void inconsistentColumnCount();
     void largeArrays();
     void mapsAsRange();
+    void filterAsRange();
 
     void tree_data();
     void tree();
@@ -1205,6 +1210,20 @@ void tst_QRangeModel::mapsAsRange()
         });
         QCOMPARE(model.columnCount(), 2);
     }
+}
+
+void tst_QRangeModel::filterAsRange()
+{
+#if defined(__cpp_lib_ranges)
+    auto view = std::views::iota(0, 100)
+              | std::views::filter([](int i){ return 0 == i % 2; })
+              | std::views::transform([](int i){ return i * i; });
+
+    QRangeModel model(std::ranges::subrange(view.begin(), view.end()));
+    QCOMPARE(model.rowCount(), 50);
+#else
+    QSKIP("Test of std::ranges requires C++ 20");
+#endif
 }
 
 enum class TreeProtocol {

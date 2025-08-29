@@ -796,17 +796,40 @@ namespace QRangeModelDetails
     // The storage of the model data. We might store it as a pointer, or as a
     // (copied- or moved-into) value (or smart pointer). But we always return a
     // raw pointer.
-    template <typename ModelStorage, typename ItemType>
-    struct ModelData : PropertyData<has_metaobject_v<ItemType>>
+    template <typename ModelStorage, typename = void>
+    struct Storage
     {
-        auto model() { return pointerTo(m_model); }
-        auto model() const { return pointerTo(m_model); }
+        mutable std::remove_const_t<ModelStorage> m_model;
+
+        using iterator = decltype(begin(m_model));
+        using const_iterator = decltype(begin(m_model));
+    };
+
+    template <typename ModelStorage>
+    struct Storage<ModelStorage,
+                   std::void_t<decltype(begin(std::declval<const ModelStorage&>()))>>
+    {
+        ModelStorage m_model;
+
+        using iterator = decltype(begin(m_model));
+        using const_iterator = decltype(begin(std::as_const(m_model)));
+    };
+
+    template <typename ModelStorage, typename ItemType>
+    struct ModelData : Storage<ModelStorage>,
+                       PropertyData<has_metaobject_v<ItemType>>
+    {
+        using WrappedStorage = Storage<wrapped_t<ModelStorage>>;
+        using iterator = typename WrappedStorage::iterator;
+        using const_iterator = typename WrappedStorage::const_iterator;
+
+        auto model() { return pointerTo(this->m_model); }
+        auto model() const { return pointerTo(this->m_model); }
 
         template <typename Model = ModelStorage>
         ModelData(Model &&model)
-            : m_model(std::forward<Model>(model))
+            : Storage<ModelStorage>{std::forward<Model>(model)}
         {}
-        ModelStorage m_model;
     };
 } // namespace QRangeModelDetails
 
@@ -984,10 +1007,23 @@ class QRangeModelImpl
 {
 public:
     using range_type = QRangeModelDetails::wrapped_t<Range>;
+    using range_features = QRangeModelDetails::range_traits<range_type>;
     using row_reference = decltype(*QRangeModelDetails::begin(std::declval<range_type&>()));
-    using const_row_reference = decltype(*QRangeModelDetails::begin(std::declval<const range_type&>()));
     using row_type = std::remove_reference_t<row_reference>;
+    using wrapped_row_type = QRangeModelDetails::wrapped_t<row_type>;
+    using row_features = QRangeModelDetails::range_traits<wrapped_row_type>;
+    using row_traits = QRangeModelDetails::row_traits<std::remove_cv_t<wrapped_row_type>>;
     using protocol_type = QRangeModelDetails::wrapped_t<Protocol>;
+    using protocol_traits = QRangeModelDetails::protocol_traits<Range, protocol_type>;
+
+    using ModelData = QRangeModelDetails::ModelData<std::conditional_t<
+                                                        std::is_pointer_v<Range>,
+                                                        Range, std::remove_reference_t<Range>
+                                                    >,
+                                                    typename row_traits::item_type
+                                                >;
+
+    using const_row_reference = decltype(*std::declval<typename ModelData::const_iterator&>());
 
     static_assert(!QRangeModelDetails::is_any_of<range_type, std::optional>() &&
                   !QRangeModelDetails::is_any_of<row_type, std::optional>(),
@@ -1022,12 +1058,6 @@ protected:
         }
     }
 
-    using range_features = QRangeModelDetails::range_traits<range_type>;
-    using wrapped_row_type = QRangeModelDetails::wrapped_t<row_type>;
-    using row_features = QRangeModelDetails::range_traits<wrapped_row_type>;
-    using row_traits = QRangeModelDetails::row_traits<std::remove_cv_t<wrapped_row_type>>;
-    using protocol_traits = QRangeModelDetails::protocol_traits<Range, protocol_type>;
-
     static constexpr bool isMutable()
     {
         return range_features::is_mutable && row_features::is_mutable
@@ -1053,13 +1083,6 @@ protected:
     template <typename T>
     static constexpr bool has_metaobject = QRangeModelDetails::has_metaobject_v<
                                                 std::remove_pointer_t<std::remove_reference_t<T>>>;
-
-    using ModelData = QRangeModelDetails::ModelData<std::conditional_t<
-                                                        std::is_pointer_v<Range>,
-                                                        Range, std::remove_reference_t<Range>
-                                                    >,
-                                                    typename row_traits::item_type
-                                                >;
 
     // A iterator type to use as the input iterator with the
     // range_type::insert(pos, start, end) overload if available (it is in

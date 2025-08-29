@@ -288,6 +288,16 @@ public slots:
         });
     }
 
+    QRangeModel *makeFilterView()
+    {
+        auto view = std::views::iota(0, 100)
+                  | std::views::filter([](int i){ return 0 == i % 2; })
+                  | std::views::transform([](int i){ return i * i; });
+
+        // suboptimal: eager evaluation of view.begin()
+        return new QRangeModel(std::ranges::subrange(view.begin(), view.end()));
+    }
+
     QRangeModel *makeMultiRoleMap()
     {
         using ColorEntry = QMap<Qt::ItemDataRole, QVariant>;
