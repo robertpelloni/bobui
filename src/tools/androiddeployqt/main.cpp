@@ -3905,7 +3905,7 @@ int generateJavaQmlComponents(const Options &options)
                    << "public int connect%1(%2 signalListener) {\n"_L1.arg(
                               firstCharToUpper(signalInterfaceName), signalInterfaceName)
                    << indent
-                   << "    return connectSignalListener(\"%1\", new Class[]{ %2 }, signalListener);\n"_L1
+                   << "    return connectSignalListener(\"%1\", new Class<?>[]{ %2 }, signalListener);\n"_L1
                               .arg(methodName, javaParamsClassesString)
                    << indent << "}\n\n";
         }
