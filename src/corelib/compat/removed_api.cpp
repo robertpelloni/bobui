@@ -1516,6 +1516,14 @@ void QReadWriteLock::unlock()
 }
 #endif // QT_CONFIG(thread)
 
+#include "qtimer.h"
+
+void QTimer::singleShotImpl(int msec, Qt::TimerType timerType,
+                            const QObject *receiver, QtPrivate::QSlotObjectBase *slotObj)
+{
+    singleShotImpl(std::chrono::milliseconds{msec}, timerType, receiver, slotObj);
+}
+
 // #include "qotherheader.h"
 // // implement removed functions from qotherheader.h
 // order sections alphabetically to reduce chances of merge conflicts
