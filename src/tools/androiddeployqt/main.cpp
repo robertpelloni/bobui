@@ -3925,7 +3925,7 @@ int generateJavaQmlComponents(const Options &options)
         for (const auto &value : params) {
             const auto object = value.toObject();
             if (!object.contains("typeName"_L1)) {
-                qWarning() << "Skipping function" << functionName
+                qWarning() << "  -- Skipping function" << functionName
                            << "due to untyped function parameter detected while generating Java "
                               "code for QML methods.";
                 return;
@@ -3933,7 +3933,7 @@ int generateJavaQmlComponents(const Options &options)
 
             const auto qmlParamType = object["typeName"_L1].toString();
             if (!qmlToJavaType.contains(qmlParamType)) {
-                qWarning() << "Skipping function" << functionName
+                qWarning() << "  -- Skipping function" << functionName
                            << "due to unsupported type detected in parameters:" << qmlParamType;
                 return;
             }
