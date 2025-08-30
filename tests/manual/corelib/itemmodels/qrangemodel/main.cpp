@@ -294,8 +294,7 @@ public slots:
                   | std::views::filter([](int i){ return 0 == i % 2; })
                   | std::views::transform([](int i){ return i * i; });
 
-        // suboptimal: eager evaluation of view.begin()
-        return new QRangeModel(std::ranges::subrange(view.begin(), view.end()));
+        return new QRangeModel(view);
     }
 
     QRangeModel *makeMultiRoleMap()

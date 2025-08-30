@@ -481,6 +481,13 @@ namespace QRangeModelDetails
     struct test_size<C, std::void_t<decltype(std::size(std::declval<C&>()))>> : std::true_type {};
 
     template <typename C, typename = void>
+    struct test_cbegin : std::false_type {};
+    template <typename C>
+    struct test_cbegin<C, std::void_t<decltype(std::begin(std::declval<const C&>()))>>
+        : std::true_type
+    {};
+
+    template <typename C, typename = void>
     struct range_traits : std::false_type {
         static constexpr bool is_mutable = !std::is_const_v<C>;
         static constexpr bool has_insert = false;
@@ -488,6 +495,7 @@ namespace QRangeModelDetails
         static constexpr bool has_erase = false;
         static constexpr bool has_resize = false;
         static constexpr bool has_rotate = false;
+        static constexpr bool has_cbegin = false;
     };
     template <typename C>
     struct range_traits<C, std::void_t<decltype(begin(std::declval<C&>())),
@@ -503,6 +511,7 @@ namespace QRangeModelDetails
         static constexpr bool has_erase = test_erase<C>();
         static constexpr bool has_resize = test_resize<C>();
         static constexpr bool has_rotate = test_rotate<iterator>();
+        static constexpr bool has_cbegin = test_cbegin<C>::value;
     };
 
     // Specializations for types that look like ranges, but should be
@@ -515,6 +524,7 @@ namespace QRangeModelDetails
         static constexpr bool has_erase = false;
         static constexpr bool has_resize = false;
         static constexpr bool has_rotate = false;
+        static constexpr bool has_cbegin = true;
     };
     template <> struct range_traits<QByteArray> : iterable_value<Mutable::Yes> {};
     template <> struct range_traits<QString> : iterable_value<Mutable::Yes> {};
@@ -1042,19 +1052,23 @@ protected:
     template <typename C>
     static constexpr int size(const C &c)
     {
-        if (!QRangeModelDetails::isValid(c))
+        using namespace QRangeModelDetails;
+        if (!isValid(c))
             return 0;
 
-        if constexpr (QRangeModelDetails::test_size<C>()) {
+        if constexpr (test_size<C>()) {
             return int(std::size(c));
         } else {
 #if defined(__cpp_lib_ranges)
-            return int(std::ranges::distance(QRangeModelDetails::begin(c),
-                                             QRangeModelDetails::end(c)));
+            using std::ranges::distance;
 #else
-            return int(std::distance(QRangeModelDetails::begin(c),
-                                     QRangeModelDetails::end(c)));
+            using std::distance;
 #endif
+            using container_type = std::conditional_t<range_traits<C>::has_cbegin,
+                                                      const wrapped_t<C>,
+                                                      wrapped_t<C>>;
+            container_type& container = const_cast<container_type &>(refTo(c));
+            return int(distance(std::begin(container), std::end(container)));
         }
     }
 

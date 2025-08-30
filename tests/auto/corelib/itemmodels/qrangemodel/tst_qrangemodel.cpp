@@ -1219,7 +1219,7 @@ void tst_QRangeModel::filterAsRange()
               | std::views::filter([](int i){ return 0 == i % 2; })
               | std::views::transform([](int i){ return i * i; });
 
-    QRangeModel model(std::ranges::subrange(view.begin(), view.end()));
+    QRangeModel model(view);
     QCOMPARE(model.rowCount(), 50);
 #else
     QSKIP("Test of std::ranges requires C++ 20");
