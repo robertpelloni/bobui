@@ -2919,6 +2919,15 @@ void QMenu::mouseReleaseEvent(QMouseEvent *e)
     Q_D(QMenu);
     if (d->aboutToHide || d->mouseEventTaken(e))
         return;
+#if QT_CONFIG(menubar)
+    if (e->button() == Qt::LeftButton) {
+        // the QMenu popup steals the mouse release event from the QMenuBar
+        // so we need to inform it for a redraw with the new state
+        QMenuBar *mb = qobject_cast<QMenuBar *>(d->causedPopup.widget);
+        if (mb)
+            mb->d_func()->mouseRelaseEventFromQMenu();
+    }
+#endif
     if (QMenuPrivate::mouseDown != this) {
         QMenuPrivate::mouseDown = nullptr;
         return;

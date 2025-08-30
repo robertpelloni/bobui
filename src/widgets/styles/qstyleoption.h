@@ -360,6 +360,21 @@ protected:
     QStyleOptionMenuItem(int version);
 };
 
+// ### Qt7: merge with QStyleOptionHeader
+class Q_WIDGETS_EXPORT QStyleOptionMenuItemV2 : public QStyleOptionMenuItem
+{
+public:
+    enum StyleOptionVersion { Version = 2 };
+
+    QStyleOptionMenuItemV2();
+    QStyleOptionMenuItemV2(const QStyleOptionMenuItemV2 &other) : QStyleOptionMenuItem(Version) { *this = other; }
+    QStyleOptionMenuItemV2 &operator=(const QStyleOptionMenuItemV2 &) = default;
+
+    bool mouseDown;
+protected:
+    QStyleOptionMenuItemV2(int version);
+};
+
 class Q_WIDGETS_EXPORT QStyleOptionDockWidget : public QStyleOption
 {
 public:

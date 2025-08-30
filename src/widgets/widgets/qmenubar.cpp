@@ -348,6 +348,7 @@ void QMenuBarPrivate::setCurrentAction(QAction *action, bool popup, bool activat
     QWidget *fw = nullptr;
     if (QMenu *menu = activeMenu) {
         activeMenu = nullptr;
+        hoverAction = nullptr;
         if (popup) {
             fw = q->window()->focusWidget();
             q->setFocus(Qt::NoFocusReason);
@@ -423,7 +424,7 @@ void QMenuBarPrivate::calcActionRects(int max_width, int start) const
         }
 
         //let the style modify the above size..
-        QStyleOptionMenuItem opt;
+        QStyleOptionMenuItemV2 opt;
         q->initStyleOption(&opt, action);
         sz = q->style()->sizeFromContents(QStyle::CT_MenuBarItem, &opt, sz, q);
 
@@ -541,6 +542,11 @@ void QMenuBar::initStyleOption(QStyleOptionMenuItem *option, const QAction *acti
     }
     if (hasFocus() || d->currentAction)
         option->state |= QStyle::State_HasFocus;
+    if (d->hoverAction == action) {
+        if (auto optionV2 = qstyleoption_cast<QStyleOptionMenuItemV2 *>(option))
+            optionV2->mouseDown = d->mouseDown;
+        option->state |= QStyle::State_MouseOver;
+    }
     option->menuRect = rect();
     option->menuItemType = QStyleOptionMenuItem::Normal;
     option->checkType = QStyleOptionMenuItem::NotCheckable;
@@ -904,7 +910,7 @@ void QMenuBar::paintEvent(QPaintEvent *e)
             continue;
 
         emptyArea -= adjustedActionRect;
-        QStyleOptionMenuItem opt;
+        QStyleOptionMenuItemV2 opt;
         initStyleOption(&opt, action);
         opt.rect = adjustedActionRect;
         p.setClipRect(adjustedActionRect);
@@ -977,10 +983,13 @@ void QMenuBar::mousePressEvent(QMouseEvent *e)
             d->activeMenu = nullptr;
             menu->setAttribute(Qt::WA_NoMouseReplay);
             menu->hide();
+            grabMouse();    // otherwise we don't get the corresponding mouseReleaseEvent...
         }
     } else {
         d->setCurrentAction(action, true);
     }
+    d->hoverAction = action;
+    update(d->actionRect(d->hoverAction));
 }
 
 /*!
@@ -989,8 +998,10 @@ void QMenuBar::mousePressEvent(QMouseEvent *e)
 void QMenuBar::mouseReleaseEvent(QMouseEvent *e)
 {
     Q_D(QMenuBar);
-    if (e->button() != Qt::LeftButton || !d->mouseDown)
+    if (e->button() != Qt::LeftButton)
         return;
+
+    releaseMouse();
 
     d->mouseDown = false;
     QAction *action = d->actionAt(e->position().toPoint());
@@ -1006,6 +1017,8 @@ void QMenuBar::mouseReleaseEvent(QMouseEvent *e)
             d->activateAction(action, QAction::Trigger);
     }
     d->closePopupMode = 0;
+    d->hoverAction = action;
+    update(d->actionRect(d->hoverAction));
 }
 
 /*!
@@ -1132,8 +1145,12 @@ void QMenuBar::mouseMoveEvent(QMouseEvent *e)
 
     bool popupState = d->popupState || d->mouseDown;
     QAction *action = d->actionAt(e->position().toPoint());
+    QAction *oldHoverAction = d->hoverAction;
     if ((action && d->isVisible(action)) || !popupState)
         d->setCurrentAction(action, popupState);
+    if (oldHoverAction != action)
+        update(d->actionRect(oldHoverAction));
+    d->hoverAction = action;
 }
 
 /*!
@@ -1143,8 +1160,10 @@ void QMenuBar::leaveEvent(QEvent *)
 {
     Q_D(QMenuBar);
     if ((!hasFocus() && !d->popupState) ||
-        (d->currentAction && d->currentAction->menu() == nullptr))
+        (d->currentAction && d->currentAction->menu() == nullptr)) {
         d->setCurrentAction(nullptr);
+        d->hoverAction = nullptr;
+    }
 }
 
 QPlatformMenu *QMenuBarPrivate::getPlatformMenu(const QAction *action)

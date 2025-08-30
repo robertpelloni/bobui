@@ -72,7 +72,7 @@ QT_BEGIN_NAMESPACE
     \value SO_GraphicsItem \l QStyleOptionGraphicsItem
     \value SO_GroupBox \l QStyleOptionGroupBox
     \value SO_Header \l QStyleOptionHeader
-    \value SO_MenuItem \l QStyleOptionMenuItem
+    \value SO_MenuItem \l QStyleOptionMenuItemV2
     \value SO_ProgressBar \l QStyleOptionProgressBar
     \value SO_RubberBand \l QStyleOptionRubberBand
     \value SO_SizeGrip \l QStyleOptionSizeGrip
@@ -1595,6 +1595,45 @@ QStyleOptionProgressBar::QStyleOptionProgressBar(int version)
     The default value is false.
 
     \sa QProgressBar::textDirection
+*/
+
+/*!
+    \class QStyleOptionMenuItemV2
+    \brief The QStyleOptionMenuItemV2 class enhances
+    QStyleOptionMenuItem with new members.
+
+    \inmodule QtWidgets
+*/
+
+/*!
+    Constructs a QStyleOptionMenuItemV2, initializing the members
+    variables to their default values.
+*/
+QStyleOptionMenuItemV2::QStyleOptionMenuItemV2()
+    : QStyleOptionMenuItemV2(QStyleOptionMenuItemV2::Version)
+{}
+
+/*!
+    \fn QStyleOptionMenuItemV2::QStyleOptionMenuItemV2(const QStyleOptionMenuItemV2 &other)
+
+    Constructs a copy of the \a other style option.
+*/
+
+/*!
+    \internal
+*/
+QStyleOptionMenuItemV2::QStyleOptionMenuItemV2(int version)
+    : QStyleOptionMenuItem(version), mouseDown(false)
+{}
+
+/*!
+    \variable QStyleOptionMenuItemV2::mouseDown
+    \brief true when the mouse is pressed down.
+
+    This is needed because there is no differentation between
+    a pressed and a sunken state when QStyle::State_Sunken is set.
+    QStyle::State_Sunken is also set when the menu is open
+    (i.e. showing the popup menu)
 */
 
 /*!
