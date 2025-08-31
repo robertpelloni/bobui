@@ -1642,24 +1642,38 @@ public:
         return this->itemModel().QAbstractItemModel::roleNames();
     }
 
+
+    template <typename InsertFn>
+    bool doInsertColumns(int column, int count, const QModelIndex &parent, InsertFn &&insertFn)
+    {
+        if (count == 0)
+            return false;
+        range_type * const children = childRange(parent);
+        if (!children)
+            return false;
+
+        this->beginInsertColumns(parent, column, column + count - 1);
+
+        for (auto &child : *children) {
+            auto it = QRangeModelDetails::pos(child, column);
+            (void)std::forward<InsertFn>(insertFn)(QRangeModelDetails::refTo(child), it, count);
+        }
+
+        this->endInsertColumns();
+
+        return true;
+    }
+
     bool insertColumns(int column, int count, const QModelIndex &parent)
     {
         if constexpr (dynamicColumns() && isMutable() && row_features::has_insert) {
-            if (count == 0)
-                return false;
-            range_type * const children = childRange(parent);
-            if (!children)
-                return false;
-
-            this->beginInsertColumns(parent, column, column + count - 1);
-            for (auto &child : *children) {
-                auto it = QRangeModelDetails::pos(child, column);
-                QRangeModelDetails::refTo(child).insert(it, count, {});
-            }
-            this->endInsertColumns();
-            return true;
+            return doInsertColumns(column, count, parent, [](auto &row, auto it, int n){
+                row.insert(it, n, {});
+                return true;
+            });
+        } else {
+            return false;
         }
-        return false;
     }
 
     bool removeColumns(int column, int count, const QModelIndex &parent)
@@ -1723,33 +1737,44 @@ public:
         return false;
     }
 
+    template <typename InsertFn>
+    bool doInsertRows(int row, int count, const QModelIndex &parent, InsertFn &&insertFn)
+    {
+        range_type *children = childRange(parent);
+        if (!children)
+            return false;
+
+        this->beginInsertRows(parent, row, row + count - 1);
+
+        (void)std::forward<InsertFn>(insertFn)(*children, row, count);
+
+        // fix the parent in all children of the modified row, as the
+        // references back to the parent might have become invalid.
+        that().resetParentInChildren(children);
+
+        this->endInsertRows();
+
+        return true;
+    }
+
     bool insertRows(int row, int count, const QModelIndex &parent)
     {
         if constexpr (canInsertRows()) {
-            range_type *children = childRange(parent);
-            if (!children)
-                return false;
+            return doInsertRows(row, count, parent,
+                                [this, &parent](range_type &children, int r, int n){
+                EmptyRowGenerator generator{0, &that(), &parent};
 
-            EmptyRowGenerator generator{0, &that(), &parent};
-
-            this->beginInsertRows(parent, row, row + count - 1);
-
-            const auto pos = QRangeModelDetails::pos(children, row);
-            if constexpr (range_features::has_insert_range) {
-                children->insert(pos, generator, EmptyRowGenerator{count});
-            } else if constexpr (rows_are_owning_or_raw_pointers) {
-                auto start = children->insert(pos, count, row_type{});
-                std::copy(generator, EmptyRowGenerator{count}, start);
-            } else {
-                children->insert(pos, count, *generator);
-            }
-
-            // fix the parent in all children of the modified row, as the
-            // references back to the parent might have become invalid.
-            that().resetParentInChildren(children);
-
-            this->endInsertRows();
-            return true;
+                const auto pos = QRangeModelDetails::pos(children, r);
+                if constexpr (range_features::has_insert_range) {
+                    children.insert(pos, std::move(generator), EmptyRowGenerator{n});
+                } else if constexpr (rows_are_owning_or_raw_pointers) {
+                    auto start = children.insert(pos, n, nullptr); // MSVC doesn't like row_type{}
+                    std::copy(std::move(generator), EmptyRowGenerator{n}, start);
+                } else {
+                    children.insert(pos, n, std::move(*generator));
+                }
+                return true;
+            });
         } else {
             return false;
         }
