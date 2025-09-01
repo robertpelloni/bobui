@@ -24,11 +24,11 @@ FileDialogExample::FileDialogExample()
     }
 
     {
-        /* For convinient quoting.
         //! [1]
-        "Images (*.png *.xpm *.jpg);;Text files (*.txt);;XML files (*.xml)"
+        QFileDialog dialog(this);
+        dialog.setNameFilter(tr("Images (*.png *.xpm *.jpg);;Text files (*.txt);;XML files (*.xml)"));
+        dialog.exec();
         //! [1]
-        */
     }
 
     {
