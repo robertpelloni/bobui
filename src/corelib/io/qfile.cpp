@@ -1375,6 +1375,15 @@ qint64 QFile::size() const
     concurrent updates to \l qt_ntfs_permission_lookup.
 */
 
+#ifndef QT_NO_DEBUG_STREAM
+void QFilePrivate::writeToDebugStream(QDebug &dbg) const
+{
+    Q_Q(const QFile);
+    dbg.nospace();
+    dbg << "QFile(" << q->fileName() << ')';
+}
+#endif
+
 QT_END_NAMESPACE
 
 #ifndef QT_NO_QOBJECT
