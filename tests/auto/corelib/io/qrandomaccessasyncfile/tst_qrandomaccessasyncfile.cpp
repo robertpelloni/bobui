@@ -40,7 +40,20 @@ private Q_SLOTS:
     void operationsDeletedInProgress_data();
     void operationsDeletedInProgress();
 
+    void readWriteNoBuffers_data();
+    void readWriteNoBuffers();
+
 private:
+    enum class ReadWriteOp : quint8
+    {
+        OwningRead,
+        OwningWrite,
+        SingleSpanRead,
+        SingleSpanWrite,
+        MultiSpanRead,
+        MultiSpanWrite,
+    };
+
     enum class Ownership : quint8
     {
         Owning,
@@ -659,6 +672,81 @@ void tst_QRandomAccessAsyncFile::generateOperationColumns()
         QTest::addRow("write_%s", v.name) << v.own << QIOOperation::Type::Write;
     }
     QTest::newRow("flush") << Ownership::NonOwning /* ignored */ << QIOOperation::Type::Flush;
+}
+
+void tst_QRandomAccessAsyncFile::readWriteNoBuffers_data()
+{
+    QTest::addColumn<ReadWriteOp>("op");
+    QTest::addColumn<qint64>("maxSize"); // for owning read only
+
+    QTest::newRow("OwningRead_zero") << ReadWriteOp::OwningRead << 0LL;
+    QTest::newRow("OwningRead_negative") << ReadWriteOp::OwningRead << -1LL;
+    QTest::newRow("OwningWrite") << ReadWriteOp::OwningWrite << 0LL;
+    QTest::newRow("SingleSpanRead") << ReadWriteOp::SingleSpanRead << 0LL;
+    QTest::newRow("SingleSpanWrite") << ReadWriteOp::SingleSpanWrite << 0LL;
+    QTest::newRow("MultiSpanRead") << ReadWriteOp::MultiSpanRead << 0LL;
+    QTest::newRow("MultiSpanWrite") << ReadWriteOp::MultiSpanWrite << 0LL;
+}
+
+void tst_QRandomAccessAsyncFile::readWriteNoBuffers()
+{
+    QFETCH(const ReadWriteOp, op);
+    QFETCH(const qint64, maxSize); // for OwningRead only
+
+    QRandomAccessAsyncFile file;
+    QVERIFY(file.open(m_file.fileName(), QIODeviceBase::ReadWrite));
+
+    constexpr qint64 offset = 1024 * 1024;
+    QByteArray emptyBuffer;
+    QIOReadWriteOperationBase *opBase = nullptr;
+    switch (op) {
+    case ReadWriteOp::OwningRead:
+        if (maxSize < 0) {
+            QTest::ignoreMessage(QtWarningMsg,
+                                 "Using a negative maxSize in QRandomAccessAsyncFile::read() "
+                                 "is incorrect. Resetting to zero!");
+        }
+        opBase = file.read(offset, maxSize);
+        break;
+    case ReadWriteOp::OwningWrite:
+        opBase = file.write(offset, emptyBuffer);
+        break;
+    case ReadWriteOp::SingleSpanRead:
+        opBase = file.readInto(offset, as_writable_bytes(QSpan(emptyBuffer)));
+        break;
+    case ReadWriteOp::SingleSpanWrite:
+        opBase = file.writeFrom(offset, as_bytes(QSpan(emptyBuffer)));
+        break;
+    case ReadWriteOp::MultiSpanRead:
+        opBase = file.readInto(offset, { as_writable_bytes(QSpan(emptyBuffer)),
+                                         as_writable_bytes(QSpan(emptyBuffer)) });
+        break;
+    case ReadWriteOp::MultiSpanWrite:
+        opBase = file.writeFrom(offset, { as_bytes(QSpan(emptyBuffer)),
+                                          as_bytes(QSpan(emptyBuffer)) });
+        break;
+    }
+    QVERIFY(opBase);
+
+    QSignalSpy finishedSpy(opBase, &QIOOperation::finished);
+    QSignalSpy errorSpy(opBase, &QIOOperation::errorOccurred);
+
+    QTRY_COMPARE_EQ(finishedSpy.size(), 1);
+    QCOMPARE_EQ(errorSpy.size(), 0);
+    QCOMPARE_EQ(opBase->error(), QIOOperation::Error::None);
+    QCOMPARE_EQ(opBase->isFinished(), true);
+    QCOMPARE_EQ(opBase->numBytesProcessed(), 0);
+
+    if (op == ReadWriteOp::SingleSpanRead || op == ReadWriteOp::MultiSpanRead) {
+        auto *readOp = static_cast<QIOVectoredReadOperation *>(opBase);
+        const auto buffers = readOp->data();
+        QCOMPARE_GE(buffers.size(), 1);
+        for (auto buf : buffers)
+            QCOMPARE_EQ(buf.size(), 0);
+    } else if (op == ReadWriteOp::OwningRead) {
+        auto *readOp = static_cast<QIOReadOperation *>(opBase);
+        QCOMPARE_EQ(readOp->data().size(), 0);
+    }
 }
 
 QTEST_MAIN(tst_QRandomAccessAsyncFile)

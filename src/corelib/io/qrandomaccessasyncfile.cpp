@@ -65,6 +65,11 @@ QIOOperation *QRandomAccessAsyncFile::flush()
 QIOReadOperation *QRandomAccessAsyncFile::read(qint64 offset, qint64 maxSize)
 {
     Q_D(QRandomAccessAsyncFile);
+    if (maxSize < 0) {
+        qWarning("Using a negative maxSize in QRandomAccessAsyncFile::read() is incorrect. "
+                 "Resetting to zero!");
+        maxSize = 0;
+    }
     return d->read(offset, maxSize);
 }
 
