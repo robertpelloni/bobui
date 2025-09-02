@@ -187,6 +187,9 @@ QLabel::QLabel(const QString &text, QWidget *parent, Qt::WindowFlags f)
 QLabel::~QLabel()
 {
     Q_D(QLabel);
+
+    if (d->buddy)
+        d->buddy->d_func()->labels.removeAll(this);
     d->clearContents();
 }
 
@@ -1139,15 +1142,19 @@ void QLabel::setBuddy(QWidget *buddy)
 {
     Q_D(QLabel);
 
-    if (d->buddy)
+    if (d->buddy) {
         QObjectPrivate::disconnect(d->buddy, &QObject::destroyed,
                                    d, &QLabelPrivate::buddyDeleted);
+        d->buddy->d_func()->labels.removeAll(this);
+    }
 
     d->buddy = buddy;
 
-    if (buddy)
+    if (buddy) {
+        buddy->d_func()->labels.append(this);
         QObjectPrivate::connect(buddy, &QObject::destroyed,
                                 d, &QLabelPrivate::buddyDeleted);
+    }
 
     if (d->isTextLabel) {
         if (d->shortcutId)
