@@ -749,6 +749,13 @@ qt_internal_extend_target(Core CONDITION INTEGRITY
         --pending_instantiations=128
 )
 
+qt_internal_extend_target(Core CONDITION QT_FEATURE_liburing
+    SOURCES
+        io/qioring.cpp io/qioring_linux.cpp io/qioring_p.h
+    LIBRARIES
+        uring
+)
+
 # Workaround for QTBUG-101411
 # Remove if QCC (gcc version 8.3.0) for QNX 7.1.0 is no longer supported
 qt_internal_extend_target(Core CONDITION QCC AND (CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL "8.3.0")

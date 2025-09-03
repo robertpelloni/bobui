@@ -1453,6 +1453,7 @@ endif()
 qt_configure_add_summary_entry(ARGS "Using vcpkg" TYPE "message" MESSAGE "${_vcpkg_entry_message}")
 
 qt_configure_add_summary_entry(ARGS "libudev")
+qt_configure_add_summary_entry(ARGS "liburing")
 qt_configure_add_summary_entry(ARGS "openssl")
 qt_configure_add_summary_entry(ARGS "openssl-linked")
 qt_configure_add_summary_entry(ARGS "opensslv11")

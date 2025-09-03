@@ -43,6 +43,8 @@ qt_find_package(JeMalloc MODULE
     PROVIDED_TARGETS PkgConfig::JeMalloc MODULE_NAME core QMAKE_LIB jemalloc)
 qt_find_package(Libsystemd MODULE
     PROVIDED_TARGETS PkgConfig::Libsystemd MODULE_NAME core QMAKE_LIB journald)
+qt_find_package(Liburing MODULE
+    PROVIDED_TARGETS PkgConfig::Liburing MODULE_NAME global QMAKE_LIB liburing)
 qt_find_package(WrapAtomic MODULE
     PROVIDED_TARGETS WrapAtomic::WrapAtomic MODULE_NAME core QMAKE_LIB libatomic)
 qt_find_package(Libb2 MODULE PROVIDED_TARGETS Libb2::Libb2 MODULE_NAME core QMAKE_LIB libb2)
@@ -398,6 +400,20 @@ qt_config_compile_test(posix_sem
 int main(void)
 {
     sem_close(sem_open(\"test\", O_CREAT | O_EXCL, 0666, 0));
+    return 0;
+}
+")
+
+# liburing
+qt_config_compile_test(liburing
+    LABEL "liburing"
+    LIBRARIES uring
+    CODE
+"#include <liburing.h>
+
+int main(void)
+{
+    io_uring_enter(0, 0, 0, 0, nullptr);
     return 0;
 }
 ")
@@ -808,6 +824,11 @@ qt_feature("linkat" PRIVATE
     LABEL "linkat()"
     AUTODETECT ( LINUX AND NOT ANDROID ) OR HURD
     CONDITION TEST_linkat
+)
+qt_feature("liburing" PRIVATE
+    LABEL "liburing"
+    AUTODETECT LINUX
+    CONDITION Liburing_FOUND
 )
 qt_feature("std-atomic64" PUBLIC
     LABEL "64 bit atomic operations"
@@ -1250,6 +1271,7 @@ qt_configure_add_summary_entry(ARGS "forkfd_pidfd" CONDITION LINUX)
 qt_configure_add_summary_entry(ARGS "glib")
 qt_configure_add_summary_entry(ARGS "icu")
 qt_configure_add_summary_entry(ARGS "jemalloc")
+qt_configure_add_summary_entry(ARGS "liburing")
 qt_configure_add_summary_entry(ARGS "timezone_tzdb")
 qt_configure_add_summary_entry(ARGS "system-libb2")
 qt_configure_add_summary_entry(ARGS "mimetype-database")
