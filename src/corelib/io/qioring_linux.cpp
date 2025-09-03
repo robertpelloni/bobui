@@ -35,19 +35,6 @@ static io_uring_op toUringOp(QIORing::Operation op);
 static void prepareFileReadWrite(io_uring_sqe *sqe, const QIORingRequestOffsetFdBase &request,
                                  const void *address, qsizetype size);
 
-
-QIORing *QIORing::sharedInstance()
-{
-    thread_local QIORing instance;
-    if (!instance.initializeIORing())
-        return nullptr;
-    return &instance;
-}
-
-QIORing::QIORing(quint32 submissionQueueSize, quint32 completionQueueSize)
-    : sqEntries(submissionQueueSize), cqEntries(completionQueueSize)
-{
-}
 QIORing::~QIORing()
 {
     if (eventDescriptor != -1)

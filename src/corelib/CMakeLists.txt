@@ -583,7 +583,7 @@ if(QT_FEATURE_async_io)
             SOURCES
                 io/qrandomaccessasyncfile_darwin.mm
         )
-    elseif(LINUX AND QT_FEATURE_liburing)
+    elseif((LINUX AND QT_FEATURE_liburing) OR (WIN32 AND QT_FEATURE_windows_ioring))
         qt_internal_extend_target(Core
             SOURCES
                 io/qrandomaccessasyncfile_qioring.cpp
@@ -761,6 +761,11 @@ qt_internal_extend_target(Core CONDITION QT_FEATURE_liburing
         io/qioring.cpp io/qioring_linux.cpp io/qioring_p.h
     LIBRARIES
         uring
+)
+
+qt_internal_extend_target(Core CONDITION QT_FEATURE_windows_ioring
+    SOURCES
+        io/qioring.cpp io/qioring_win.cpp io/qioring_p.h
 )
 
 # Workaround for QTBUG-101411

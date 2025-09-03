@@ -22,7 +22,6 @@
 #include <QtCore/qspan.h>
 #include <QtCore/qhash.h>
 #include <QtCore/qfiledevice.h>
-#include <QtCore/qwineventnotifier.h>
 #include <QtCore/qloggingcategory.h>
 #include <QtCore/qdeadlinetimer.h>
 
@@ -30,10 +29,15 @@
 #  include <QtCore/qsocketnotifier.h>
 struct io_uring_sqe;
 struct io_uring_cqe;
+#elif defined(Q_OS_WIN)
+#  include <QtCore/qwineventnotifier.h>
+#  include <qt_windows.h>
+#  include <ioringapi.h>
 #endif
 
 #include <algorithm>
 #include <filesystem>
+#include <QtCore/qxpfunctional.h>
 #include <variant>
 #include <optional>
 #include <type_traits>
@@ -162,6 +166,12 @@ private:
     template <typename Fun>
     static auto invokeOnOp(GenericRequestType &req, Fun fn);
 
+    template <Operation Op>
+    static void setFileErrorResult(QIORingRequest<Op> &req, QFileDevice::FileError error)
+    {
+        req.result.template emplace<QFileDevice::FileError>(error);
+    }
+    static void setFileErrorResult(GenericRequestType &req, QFileDevice::FileError error);
     static void finishRequestWithError(GenericRequestType &req, QFileDevice::FileError error);
     static bool verifyFd(GenericRequestType &req);
 
@@ -205,6 +215,28 @@ private:
     ReadWriteStatus handleReadCompletion(const io_uring_cqe *cqe, GenericRequestType *request);
     template <Operation Op>
     ReadWriteStatus handleWriteCompletion(const io_uring_cqe *cqe, GenericRequestType *request);
+#elif defined(Q_OS_WIN)
+    // We use UINT32 because that's the type used for size parameters in their API.
+    static constexpr qsizetype MaxReadWriteLen = std::numeric_limits<UINT32>::max();
+    std::optional<QWinEventNotifier> notifier;
+    HIORING ioRingHandle = nullptr;
+    HANDLE eventHandle = INVALID_HANDLE_VALUE;
+
+    bool initialized = false;
+    bool queueWasFull = false;
+    [[nodiscard]]
+    RequestPrepResult prepareRequest(GenericRequestType &request);
+    QIORing::ReadWriteStatus handleReadCompletion(
+            HRESULT result, quintptr information, QSpan<std::byte> *destinations, void *voidExtra,
+            qxp::function_ref<qint64(std::variant<QFileDevice::FileError, qint64>)> setResult);
+    template <Operation Op>
+    ReadWriteStatus handleReadCompletion(const IORING_CQE *cqe, GenericRequestType *request);
+    ReadWriteStatus handleWriteCompletion(
+            HRESULT result, quintptr information, const QSpan<const std::byte> *sources,
+            void *voidExtra,
+            qxp::function_ref<qint64(std::variant<QFileDevice::FileError, qint64>)> setResult);
+    template <Operation Op>
+    ReadWriteStatus handleWriteCompletion(const IORING_CQE *cqe, GenericRequestType *request);
 #endif
 };
 
@@ -243,6 +275,7 @@ struct QIORingRequestBase : Base
 template <>
 struct QIORingResult<QtPrivate::Operation::Open>
 {
+    // On Windows this is a HANDLE
     qintptr fd;
 };
 template <>
@@ -260,6 +293,7 @@ template <>
 struct QIORingRequest<QtPrivate::Operation::Close> final
     : QIORingRequestBase<QtPrivate::Operation::Close, QIORingRequestEmptyBase>
 {
+    // On Windows this is a HANDLE
     qintptr fd;
 };
 
@@ -318,6 +352,7 @@ struct QIORingResult<QtPrivate::Operation::Flush> final
 template <>
 struct QIORingRequest<QtPrivate::Operation::Flush> final : QIORingRequestBase<QtPrivate::Operation::Flush, QIORingRequestEmptyBase>
 {
+    // On Windows this is a HANDLE
     qintptr fd;
 };
 
@@ -330,6 +365,7 @@ template <>
 struct QIORingRequest<QtPrivate::Operation::Stat> final
     : QIORingRequestBase<QtPrivate::Operation::Stat, QIORingRequestEmptyBase>
 {
+    // On Windows this is a HANDLE
     qintptr fd;
 };
 
@@ -473,6 +509,7 @@ namespace QtPrivate {
 // The 'extra' struct for Read/Write operations that must be split up
 struct ReadWriteExtra
 {
+    qint64 totalProcessed = 0;
     qsizetype spanIndex = 0;
     qsizetype spanOffset = 0;
     qsizetype numSpans = 1;

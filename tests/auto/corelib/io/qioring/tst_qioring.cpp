@@ -5,7 +5,12 @@
 
 #include <QtCore/private/qioring_p.h>
 
+#ifdef Q_OS_WIN
+#include <QtCore/qt_windows.h>
+#include <io.h>
+#else
 #include <QtCore/private/qcore_unix_p.h>
+#endif
 
 using namespace Qt::StringLiterals;
 using namespace std::chrono_literals;
@@ -30,7 +35,13 @@ private:
 
 void tst_QIORing::closeFile(qintptr fd)
 {
+#ifdef Q_OS_WIN
+    // NOLINTNEXTLINE(performance-no-int-to-ptr)
+    HANDLE h = HANDLE(fd);
+    CloseHandle(h);
+#else
     QT_CLOSE(fd);
+#endif
 }
 
 qintptr tst_QIORing::openHelper(QIORing *ring, const QString &path, QIODevice::OpenMode flags)
@@ -109,7 +120,11 @@ void tst_QIORing::read()
     QFile file(QFINDTESTDATA("data/input.txt"));
     QVERIFY(file.open(QIODevice::ReadOnly));
     int fd = file.handle();
+#ifdef Q_OS_WIN
+    qintptr nativeFd = _get_osfhandle(fd);
+#else
     qintptr nativeFd = fd;
+#endif
 
     QIORing ring;
     QVERIFY(ring.ensureInitialized());

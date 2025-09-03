@@ -8,6 +8,20 @@ QT_BEGIN_NAMESPACE
 
 Q_LOGGING_CATEGORY(lcQIORing, "qt.core.ioring", QtCriticalMsg)
 
+QIORing *QIORing::sharedInstance()
+{
+    thread_local QIORing instance;
+    if (!instance.initializeIORing())
+        return nullptr;
+    return &instance;
+}
+
+QIORing::QIORing(quint32 submissionQueueSize, quint32 completionQueueSize)
+    : sqEntries(submissionQueueSize), cqEntries(completionQueueSize)
+{
+    // Destructor in respective _<platform>.cpp
+}
+
 auto QIORing::queueRequestInternal(GenericRequestType &request) -> QueuedRequestStatus
 {
     if (!ensureInitialized() || preparingRequests) { // preparingRequests protects against recursing
@@ -65,12 +79,20 @@ template <typename T>
 constexpr bool HasResultMember = qxp::is_detected_v<DetectResult, T>;
 }
 
+void QIORing::setFileErrorResult(QIORing::GenericRequestType &req, QFileDevice::FileError error)
+{
+    invokeOnOp(req, [error](auto *concreteRequest) {
+        if constexpr (QtPrivate::HasResultMember<decltype(*concreteRequest)>)
+            setFileErrorResult(*concreteRequest, error);
+    });
+}
+
 void QIORing::finishRequestWithError(QIORing::GenericRequestType &req, QFileDevice::FileError error)
 {
-    invokeOnOp(req, [error](auto *req) {
-        if constexpr (QtPrivate::HasResultMember<decltype(*req)>)
-            req->result.template emplace<QFileDevice::FileError>(error);
-        invokeCallback(*req);
+    invokeOnOp(req, [error](auto *concreteRequest) {
+        if constexpr (QtPrivate::HasResultMember<decltype(*concreteRequest)>)
+            setFileErrorResult(*concreteRequest, error);
+        invokeCallback(*concreteRequest);
     });
 }
 
