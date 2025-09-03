@@ -47,8 +47,6 @@ public:
 
     GLuint defaultFramebufferObject(QPlatformSurface *surface) const override;
 
-    QFunctionPointer getProcAddress(const char *procName) override;
-
 protected:
     EGLSurface eglSurfaceForPlatformSurface(QPlatformSurface *surface) override;
     EGLSurface createTemporaryOffscreenSurface() override;

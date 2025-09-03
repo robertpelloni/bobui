@@ -417,14 +417,6 @@ GLuint QWaylandGLContext::defaultFramebufferObject(QPlatformSurface *surface) co
     return static_cast<QWaylandEglWindow *>(surface)->contentFBO();
 }
 
-QFunctionPointer QWaylandGLContext::getProcAddress(const char *procName)
-{
-    QFunctionPointer proc = (QFunctionPointer) eglGetProcAddress(procName);
-    if (!proc)
-        proc = (QFunctionPointer) dlsym(RTLD_DEFAULT, procName);
-    return proc;
-}
-
 EGLSurface QWaylandGLContext::eglSurfaceForPlatformSurface(QPlatformSurface *surface)
 {
     return static_cast<QWaylandEglWindow *>(surface)->eglSurface();
