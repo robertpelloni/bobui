@@ -721,26 +721,39 @@ function(qt_internal_add_test name)
         list(APPEND extra_test_args "quseemrun")
         list(APPEND extra_test_args "qtestname=${testname}")
         list(APPEND extra_test_args "--silence_timeout=60")
+
+
         # TODO: Add functionality to specify browser
-        if(DEFINED ENV{BROWSER_FOR_WASM})
-            set(browser $ENV{BROWSER_FOR_WASM})
+        set(browser "")
+        set(browser_args "")
+        if(DEFINED ENV{WASM_BROWSER_JSPI})
+            set(browser "$ENV{WASM_BROWSER_JSPI}")
+            set(browser_args "$ENV{WASM_BROWSER_JSPI_ARGS}")
         else()
-            set(browser "chrome")
+            if(DEFINED ENV{BROWSER_FOR_WASM})
+                set(browser "$ENV{BROWSER_FOR_WASM}")
+            else()
+                set(browser "chrome")
+            endif()
+
+            if(DEFINED ENV{HEADLESS_CHROME_FOR_TESTING})
+                set(browser_args "${browser_args} --headless")
+            endif()
+            set(browser_args "${browser_args} --password-store=basic")
         endif()
+
         list(APPEND extra_test_args "--browser=${browser}")
-        if(DEFINED ENV{HEADLESS_CHROME_FOR_TESTING})
-            list(APPEND extra_test_args "--browser_args=\"--password-store=basic --headless\"")
-        else()
-            list(APPEND extra_test_args "--browser_args=\"--password-store=basic\"")
-        endif()
+        list(APPEND extra_test_args "--browser_args=\"${browser_args}\"")
         list(APPEND extra_test_args "--kill_exit")
 
-        # Tests may require asyncify if they use exec(). Enable asyncify for
-        # batched tests since this is the configuration used on the CI system.
-        # Optimize for size (-Os), since asyncify tends to make the resulting
-        # binary very large
-        if(batch_current_test)
-            target_link_options("${name}" PRIVATE "SHELL:-s ASYNCIFY" "-Os")
+        if (NOT QT_FEATURE_wasm_jspi)
+            # Tests may require asyncify if they use exec(). Enable asyncify for
+            # batched tests since this is the configuration used on the CI system.
+            # Optimize for size (-Os), since asyncify tends to make the resulting
+            # binary very large
+            if(batch_current_test)
+                target_link_options("${name}" PRIVATE "SHELL:-s ASYNCIFY" "-Os")
+            endif()
         endif()
 
         # This tells cmake to run the tests with this script, since wasm files can't be
