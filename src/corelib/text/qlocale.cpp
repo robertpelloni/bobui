@@ -3172,7 +3172,6 @@ QList<QLocale> QLocale::matchingLocales(Language language, Script script, Territ
         result.reserve(locale_data_size);
 
     quint16 index = locale_index[language];
-    Q_ASSERT(index >= 0);
     // There may be no matches, for some languages (e.g. Abkhazian at CLDR v39).
     while (index < locale_data_size
            && filter.acceptLanguage(locale_data[index].m_language_id)) {
