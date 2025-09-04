@@ -1574,6 +1574,12 @@ qt_feature("test_gui" PUBLIC
     LABEL "Build QtGuiTest namespace"
 )
 
+# Run squish based tests
+qt_feature_definition("test_squish" "QT_SQUISH_TEST" VALUE "0")
+qt_feature("test_squish" PUBLIC
+    LABEL "Run Squish based tests"
+)
+
 qt_configure_add_report_entry(
     TYPE WARNING
     MESSAGE "Starting with Qt 6.10, a -no-prefix or -developer-build
