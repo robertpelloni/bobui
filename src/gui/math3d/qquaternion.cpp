@@ -716,7 +716,7 @@ QQuaternion QQuaternion::fromRotationMatrix(const QMatrix3x3 &rot3x3)
     \l{QQuaternion}{quaternion}.
 
 
-    \sa QQuaternion::toAxes(), QQuaternion::fromAxes(Axes)
+    \sa QQuaternion::toAxes(), QQuaternion::fromAxes(QQuaternion::Axes)
 */
 
 /*!
