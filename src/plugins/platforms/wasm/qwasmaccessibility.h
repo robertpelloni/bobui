@@ -64,6 +64,7 @@ private:
     emscripten::val createHtmlElement(QAccessibleInterface *iface);
     void destroyHtmlElement(QAccessibleInterface *iface);
     emscripten::val getHtmlElement(QAccessibleInterface *iface);
+    void repairLinks(QAccessibleInterface *iface);
     void linkToParent(QAccessibleInterface *iface);
     void setHtmlElementVisibility(QAccessibleInterface *iface, bool visible);
     void setHtmlElementGeometry(QAccessibleInterface *iface);

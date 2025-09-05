@@ -16,6 +16,21 @@
 
 Q_LOGGING_CATEGORY(lcQpaAccessibility, "qt.qpa.accessibility")
 
+namespace {
+EM_JS(emscripten::EM_VAL, getActiveElement_js, (emscripten::EM_VAL undefHandle), {
+    var activeEl = document.activeElement;
+    while (true) {
+        if (!activeEl) {
+            return undefHandle;
+        } else if (activeEl.shadowRoot) {
+            activeEl = activeEl.shadowRoot.activeElement;
+        } else {
+            return Emval.toHandle(activeEl);
+        }
+    }
+})
+}
+
 // Qt WebAssembly a11y backend
 //
 // This backend implements accessibility support by creating "shadowing" html
@@ -473,28 +488,70 @@ emscripten::val QWasmAccessibility::getHtmlElement(QAccessibleInterface *iface)
     return emscripten::val::undefined();
 }
 
+void QWasmAccessibility::repairLinks(QAccessibleInterface *iface)
+{
+    // relink any children that are linked to the wrong parent,
+    // This can be caused by a missing ParentChanged event.
+    bool moved = false;
+    for (int i = 0; i < iface->childCount(); ++i) {
+        const auto elementI = getHtmlElement(iface->child(i));
+        const auto containerI = getElementContainer(iface->child(i));
+
+        if (!elementI.isUndefined() &&
+            !containerI.isUndefined() &&
+            !elementI["parentElement"].isUndefined() &&
+            !elementI["parentElement"].isNull() &&
+            elementI["parentElement"] != containerI) {
+                moved = true;
+                break;
+        }
+    }
+    if (moved) {
+        for (int i = 0; i < iface->childCount(); ++i) {
+            const auto elementI = getHtmlElement(iface->child(i));
+            const auto containerI = getElementContainer(iface->child(i));
+            if (!elementI.isUndefined() && !containerI.isUndefined())
+                containerI.call<void>("appendChild", elementI);
+        }
+    }
+}
+
 void QWasmAccessibility::linkToParent(QAccessibleInterface *iface)
 {
     emscripten::val element = getHtmlElement(iface);
     emscripten::val container = getElementContainer(iface);
+    if (container.isUndefined() || element.isUndefined())
+        return;
 
-    if (!container.isUndefined())
-    {
-        emscripten::val next = emscripten::val::undefined();
-        const int thisIndex = iface->parent()->indexOfChild(iface);
-        for (int i = thisIndex + 1; i < iface->parent()->childCount(); ++i) {
-            auto element = getHtmlElement(iface->parent()->child(i));
-            if (!element.isUndefined() &&
-                !element["parentElement"].isUndefined() &&
-                !element["parentElement"].isNull()) {
-                next = element;
-                break;
-            }
+    // Make sure that we don't change the focused element
+    const auto activeElementBefore = emscripten::val::take_ownership(
+        getActiveElement_js(emscripten::val::undefined().as_handle()));
+
+
+    repairLinks(iface->parent());
+
+    emscripten::val next = emscripten::val::undefined();
+    const int thisIndex = iface->parent()->indexOfChild(iface);
+    Q_ASSERT(thisIndex >= 0 && thisIndex < iface->parent()->childCount());
+    for (int i = thisIndex + 1; i < iface->parent()->childCount(); ++i) {
+        const auto elementI = getHtmlElement(iface->parent()->child(i));
+        if (!elementI.isUndefined() &&
+            elementI["parentElement"] == container) {
+            next = elementI;
+            break;
         }
-        if (next.isUndefined())
-            container.call<void>("appendChild", element);
-        else
-            container.call<void>("insertBefore", element, next);
+    }
+    if (next.isUndefined()) {
+        container.call<void>("appendChild", element);
+    } else {
+        container.call<void>("insertBefore", element, next);
+    }
+
+    const auto activeElementAfter = emscripten::val::take_ownership(
+        getActiveElement_js(emscripten::val::undefined().as_handle()));
+    if (activeElementBefore != activeElementAfter) {
+        if (!activeElementBefore.isUndefined() && !activeElementBefore.isNull())
+            activeElementBefore.call<void>("focus");
     }
 }
 
