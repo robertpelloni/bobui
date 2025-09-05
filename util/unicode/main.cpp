@@ -1324,7 +1324,7 @@ void readUnicodeFile(const char *fileName, qxp::function_ref<void(const QByteArr
 
     QFile f("data/"_L1 % QLatin1StringView{fileName});
     if (!f.open(QFile::ReadOnly))
-        qFatal("Couln't open %s: %ls", fileName, qUtf16Printable(f.errorString()));
+        qFatal("Couldn't open %s: %ls", fileName, qUtf16Printable(f.errorString()));
 
     int lineNo = 0;
     QByteArray line;
