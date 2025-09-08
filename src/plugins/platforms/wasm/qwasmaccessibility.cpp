@@ -553,8 +553,9 @@ void QWasmAccessibility::setHtmlElementTextName(QAccessibleInterface *iface)
     const QString name = iface->text(QAccessible::Name);
     const QString value = iface->text(QAccessible::Value);
 
+    // A <div> cannot contain aria-label
     if (iface->role() == QAccessible::StaticText)
-        setAttribute(element, "aria-label", name.toStdString());
+        setProperty(element, "innerText", name.toStdString());
     else if (iface->role() == QAccessible::EditableText)
         setProperty(element, "value", value.toStdString());
     else
@@ -918,7 +919,7 @@ void QWasmAccessibility::handleDescriptionChanged(QAccessibleInterface *iface)
             setAttribute(describedBy, "id", id);
             setAttribute(describedBy, "aria-hidden", true);
             setAttribute(element, "aria-describedby", id);
-            setProperty(describedBy, "innerHTML", desc);
+            setProperty(describedBy, "innerText", desc);
         }
     }
 }
