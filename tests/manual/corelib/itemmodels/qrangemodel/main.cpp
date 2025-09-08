@@ -301,9 +301,11 @@ public slots:
 
     QRangeModel *makeFilterView()
     {
-        auto view = std::views::iota(0, 100)
-                  | std::views::filter([](int i){ return 0 == i % 2; })
-                  | std::views::transform([](int i){ return i * i; });
+        const QDate today = QDate::currentDate();
+        auto view = std::views::iota(today.addYears(-100), today.addYears(100))
+                  | std::views::filter([](QDate date){
+                        return date.dayOfWeek() < 6;
+                    });
 
         return new QRangeModel(view);
     }
