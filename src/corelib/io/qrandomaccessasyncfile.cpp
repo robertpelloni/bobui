@@ -18,12 +18,6 @@ QRandomAccessAsyncFile::~QRandomAccessAsyncFile()
     close();
 }
 
-bool QRandomAccessAsyncFile::open(const QString &filePath, QIODeviceBase::OpenMode mode)
-{
-    Q_D(QRandomAccessAsyncFile);
-    return d->open(filePath, mode);
-}
-
 void QRandomAccessAsyncFile::close()
 {
     Q_D(QRandomAccessAsyncFile);
@@ -34,6 +28,19 @@ qint64 QRandomAccessAsyncFile::size() const
 {
     Q_D(const QRandomAccessAsyncFile);
     return d->size();
+}
+
+/*!
+    \internal
+
+    Attempts to open the file \a filePath with mode \a mode.
+
+    \include qrandomaccessasyncfile.cpp returns-qiooperation
+*/
+QIOOperation *QRandomAccessAsyncFile::open(const QString &filePath, QIODeviceBase::OpenMode mode)
+{
+    Q_D(QRandomAccessAsyncFile);
+    return d->open(filePath, mode);
 }
 
 /*!

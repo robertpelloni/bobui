@@ -37,6 +37,7 @@ public:
         Read,
         Write,
         Flush,
+        Open,
         Aborted,
     };
     Q_ENUM(Error)
@@ -47,6 +48,7 @@ public:
         Read,
         Write,
         Flush,
+        Open,
     };
     Q_ENUM(Type)
 

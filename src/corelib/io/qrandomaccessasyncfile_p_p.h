@@ -48,10 +48,10 @@ public:
     void init();
     void cancelAndWait(QIOOperation *op);
 
-    bool open(const QString &path, QIODeviceBase::OpenMode mode);
     void close();
     qint64 size() const;
 
+    [[nodiscard]] QIOOperation *open(const QString &path, QIODeviceBase::OpenMode mode);
     [[nodiscard]] QIOOperation *flush();
 
     [[nodiscard]] QIOReadOperation *read(qint64 offset, qint64 maxSize);
@@ -78,6 +78,13 @@ public:
     };
 
 private:
+    enum class FileState : quint8
+    {
+        Closed,
+        OpenPending, // already got an open request
+        Opened,
+    };
+
     mutable QBasicMutex m_engineMutex;
     std::unique_ptr<QFSFileEngine> m_engine;
     QFutureWatcher<OperationResult> m_watcher;
@@ -86,9 +93,14 @@ private:
     QPointer<QIOOperation> m_currentOperation;
     qsizetype numProcessedBuffers = 0;
 
+    QString m_filePath;
+    QIODeviceBase::OpenMode m_openMode;
+    FileState m_fileState = FileState::Closed;
+
     void executeNextOperation();
     void processBufferAt(qsizetype idx);
     void processFlush();
+    void processOpen();
     void operationComplete();
 #endif
 };

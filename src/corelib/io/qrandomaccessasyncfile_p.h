@@ -32,10 +32,10 @@ public:
     ~QRandomAccessAsyncFile() override;
 
     // sync APIs
-    bool open(const QString &filePath, QIODeviceBase::OpenMode mode);
     void close();
     qint64 size() const;
 
+    [[nodiscard]] QIOOperation *open(const QString &filePath, QIODeviceBase::OpenMode mode);
     [[nodiscard]] QIOOperation *flush();
 
     // owning APIs: we are responsible for storing the data

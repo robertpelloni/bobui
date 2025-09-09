@@ -96,17 +96,27 @@ void QRandomAccessAsyncFilePrivate::cancelAndWait(QIOOperation *op)
     }
 }
 
-bool QRandomAccessAsyncFilePrivate::open(const QString &path, QIODeviceBase::OpenMode mode)
+QIOOperation *
+QRandomAccessAsyncFilePrivate::open(const QString &path, QIODeviceBase::OpenMode mode)
 {
-    QMutexLocker locker(&m_engineMutex);
-    if (m_engine) {
-        // already opened!
-        return false;
+    // We generate the command in any case. But if the file is already opened,
+    // it will finish with an error
+    if (m_fileState == FileState::Closed) {
+        m_filePath = path;
+        m_openMode = mode;
+        m_fileState = FileState::OpenPending;
     }
 
-    m_engine = std::make_unique<QFSFileEngine>(path);
-    mode |= QIODeviceBase::Unbuffered;
-    return m_engine->open(mode, std::nullopt);
+    auto *dataStorage = new QtPrivate::QIOOperationDataStorage();
+
+    auto *priv = new QIOOperationPrivate(dataStorage);
+    priv->type = QIOOperation::Type::Open;
+
+    auto *op = new QIOOperation(*priv, q_ptr);
+
+    m_operations.append(op);
+    executeNextOperation();
+    return op;
 }
 
 void QRandomAccessAsyncFilePrivate::close()
@@ -127,11 +137,15 @@ void QRandomAccessAsyncFilePrivate::close()
         cancelAndWait(m_currentOperation.get());
     }
 
-    QMutexLocker locker(&m_engineMutex);
-    if (m_engine) {
-        m_engine->close();
-        m_engine.reset();
+    {
+        QMutexLocker locker(&m_engineMutex);
+        if (m_engine) {
+            m_engine->close();
+            m_engine.reset();
+        }
     }
+
+    m_fileState = FileState::Closed;
 }
 
 qint64 QRandomAccessAsyncFilePrivate::size() const
@@ -323,6 +337,9 @@ void QRandomAccessAsyncFilePrivate::executeNextOperation()
             case QIOOperation::Type::Flush:
                 processFlush();
                 break;
+            case QIOOperation::Type::Open:
+                processOpen();
+                break;
             case QIOOperation::Type::Unknown:
                 Q_ASSERT_X(false, "executeNextOperation", "Operation of type Unknown!");
                 // For release builds - directly complete the operation
@@ -425,6 +442,38 @@ void QRandomAccessAsyncFilePrivate::processFlush()
     m_watcher.setFuture(f);
 }
 
+void QRandomAccessAsyncFilePrivate::processOpen()
+{
+    Q_ASSERT(!m_currentOperation.isNull());
+    auto *priv = QIOOperationPrivate::get(m_currentOperation.get());
+    auto &dataStorage = priv->dataStorage;
+    Q_ASSERT(dataStorage->isEmpty());
+
+    QFuture<OperationResult> f;
+    if (m_fileState == FileState::OpenPending) {
+        // create the engine
+        m_engineMutex.lock();
+        m_engine = std::make_unique<QFSFileEngine>(m_filePath);
+        m_engineMutex.unlock();
+        QBasicMutex *mutexPtr = &m_engineMutex;
+        auto op = [engine = m_engine.get(), mutexPtr, mode = m_openMode] {
+            QRandomAccessAsyncFilePrivate::OperationResult result{0, QIOOperation::Error::None};
+            QMutexLocker locker(mutexPtr);
+            const bool res =
+                    engine && engine->open(mode | QIODeviceBase::Unbuffered, std::nullopt);
+            if (!res)
+                result.error = QIOOperation::Error::Open;
+            return result;
+        };
+        f = QtFuture::makeReadyVoidFuture().then(asyncFileThreadPool(), op);
+    } else {
+        f = QtFuture::makeReadyVoidFuture().then(asyncFileThreadPool(), [] {
+            return QRandomAccessAsyncFilePrivate::OperationResult{0, QIOOperation::Error::Open};
+        });
+    }
+    m_watcher.setFuture(f);
+}
+
 void QRandomAccessAsyncFilePrivate::operationComplete()
 {
     // TODO: if one of the buffers was read/written with an error,
@@ -482,6 +531,19 @@ void QRandomAccessAsyncFilePrivate::operationComplete()
             break;
         }
         case QIOOperation::Type::Flush:
+            priv->operationComplete(res.error);
+            break;
+        case QIOOperation::Type::Open:
+            if (m_fileState == FileState::OpenPending) {
+                if (res.error == QIOOperation::Error::None) {
+                    m_fileState = FileState::Opened;
+                } else {
+                    m_fileState = FileState::Closed;
+                    m_engineMutex.lock();
+                    m_engine.reset();
+                    m_engineMutex.unlock();
+                }
+            }
             priv->operationComplete(res.error);
             break;
         case QIOOperation::Type::Unknown:
