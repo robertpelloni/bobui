@@ -1627,6 +1627,8 @@ bool QRhiGles2::isFeatureSupported(QRhi::Feature feature) const
         return caps.perRenderTargetBlending;
     case QRhi::SampleVariables:
         return caps.sampleVariables;
+    case QRhi::InstanceIndexIncludesBaseInstance:
+        return false; // because BaseInstance is always false
     default:
         Q_UNREACHABLE_RETURN(false);
     }

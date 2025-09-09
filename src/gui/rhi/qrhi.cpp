@@ -834,7 +834,8 @@ Q_LOGGING_CATEGORY(QRHI_LOG_RUB, "qt.rhi.rub")
     supporting draw calls with a base instance at all. Currently QRhi's OpenGL
     backend does not implement the functionality for OpenGL (non-ES) either,
     because portable applications cannot rely on a non-zero base instance in
-    practice due to GLES.
+    practice due to GLES. If the application still chooses to do so, it should
+    be aware of the InstanceIndexIncludesBaseInstance feature as well.
 
     \value TriangleFanTopology Indicates that QRhiGraphicsPipeline::setTopology()
     supports QRhiGraphicsPipeline::TriangleFan. In practice this feature will be
@@ -1102,6 +1103,14 @@ Q_LOGGING_CATEGORY(QRHI_LOG_RUB, "qt.rhi.rub")
     In practice this can be expected to be supported everywhere except OpenGL ES,
     where it is only available with GLES 3.2 implementations.
     This enum value has been introduced in Qt 6.9.
+
+    \value InstanceIndexIncludesBaseInstance Indicates that \c gl_InstanceIndex
+    includes the base instance (the \c firstInstance argument in draw calls) in
+    its value. When this feature is unsupported, but BaseInstance is, it
+    indicates that \c gl_InstanceIndex always starts at 0, not the base value.
+    In practice this will be the case for Direct 3D 11 and 12 at the moment.
+    With Vulkan and Metal this feature is expected to be reported as supported
+    always. This enum value has been introduced in Qt 6.11.
  */
 
 /*!
@@ -10354,6 +10363,13 @@ void QRhiCommandBuffer::setShadingRate(const QSize &coarsePixelSize)
     Vulkan-compatible built-in variables, instead of \c gl_VertexID and \c
     gl_InstanceID.
 
+    \note When \a firstInstance is non-zero, \c gl_InstanceIndex will not
+    include the base value with some of the underlying 3D APIs. This is
+    indicated by the QRhi::InstanceIndexIncludesBaseInstance feature. If relying
+    on a base instance value cannot be avoided, applications are advised to pass
+    in the value as a uniform conditionally based on what that feature reports,
+    and add it to \c gl_InstanceIndex in the shader.
+
     \note This function can only be called inside a render pass, meaning
     between a beginPass() and endPass() call.
  */
@@ -10397,6 +10413,13 @@ void QRhiCommandBuffer::draw(quint32 vertexCount,
     instance must use \c gl_VertexIndex and \c gl_InstanceIndex, i.e., the
     Vulkan-compatible built-in variables, instead of \c gl_VertexID and \c
     gl_InstanceID.
+
+    \note When \a firstInstance is non-zero, \c gl_InstanceIndex will not
+    include the base value with some of the underlying 3D APIs. This is
+    indicated by the QRhi::InstanceIndexIncludesBaseInstance feature. If relying
+    on a base instance value cannot be avoided, applications are advised to pass
+    in the value as a uniform conditionally based on what that feature reports,
+    and add it to \c gl_InstanceIndex in the shader.
 
     \note This function can only be called inside a render pass, meaning
     between a beginPass() and endPass() call.

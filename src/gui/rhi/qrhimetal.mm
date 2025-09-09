@@ -871,6 +871,8 @@ bool QRhiMetal::isFeatureSupported(QRhi::Feature feature) const
     case QRhi::PerRenderTargetBlending:
     case QRhi::SampleVariables:
         return true;
+    case QRhi::InstanceIndexIncludesBaseInstance:
+        return true;
     default:
         Q_UNREACHABLE();
         return false;
