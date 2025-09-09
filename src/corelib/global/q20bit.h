@@ -11,6 +11,8 @@
 #ifdef __cpp_lib_bitops
 #  include <bit>
 #else
+#  include <QtCore/qtypes.h>
+#  include <limits>
 
 #  ifdef Q_CC_MSVC
 // avoiding qsimd.h -> immintrin.h unless necessary, because it increases
