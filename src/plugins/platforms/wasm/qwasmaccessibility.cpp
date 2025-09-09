@@ -444,7 +444,7 @@ emscripten::val QWasmAccessibility::createHtmlElement(QAccessibleInterface *ifac
     setHtmlElementGeometry(iface);
     setHtmlElementTextName(iface);
     setHtmlElementDisabled(iface);
-    setHtmlElementVisibility(iface, true);
+    setHtmlElementVisibility(iface, !iface->state().invisible);
     handleIdentifierUpdate(iface);
     handleDescriptionChanged(iface);
 
@@ -502,7 +502,6 @@ void QWasmAccessibility::setHtmlElementVisibility(QAccessibleInterface *iface, b
 {
     emscripten::val element = getHtmlElement(iface);
 
-    visible = visible && !iface->state().invisible;
     if (visible) {
         setAttribute(element, "aria-hidden", false);
         setAttribute(element, "tabindex", "");
@@ -748,7 +747,7 @@ void QWasmAccessibility::populateAccessibilityTree(QAccessibleInterface *iface)
 
         if (exists) {
             linkToParent(iface);
-            setHtmlElementVisibility(iface, true);
+            setHtmlElementVisibility(iface, !iface->state().invisible);
             setHtmlElementGeometry(iface);
             setHtmlElementTextName(iface);
             setHtmlElementDisabled(iface);
