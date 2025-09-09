@@ -43,7 +43,6 @@ add_library(corelib_snippets_code OBJECT
     src_corelib_kernel_qmetatype.cpp
     src_corelib_kernel_qmimedata.cpp
     src_corelib_kernel_qproperty.cpp
-    src_corelib_kernel_qsystemsemaphore.cpp
     src_corelib_kernel_qvariant.cpp
     src_corelib_mimetype_qmimedatabase.cpp
     src_corelib_plugin_qlibrary.cpp
@@ -112,6 +111,12 @@ if(QT_FEATURE_process)
     target_sources(corelib_snippets_code PRIVATE
         src_corelib_io_qiodevice.cpp
         src_corelib_io_qprocess.cpp
+    )
+endif()
+
+if(NOT EMSCRIPTEN)
+    target_sources(corelib_snippets_code PRIVATE
+        src_corelib_kernel_qsystemsemaphore.cpp
     )
 endif()
 

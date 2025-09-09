@@ -559,14 +559,17 @@ void wrapInFunction()
 #include <emscripten/val.h>
 void emscripten_examples()
 {
-    //! [55]
-    emscripten::val uint8array = emscripten::val::global("g_uint8array");
-    QByteArray byteArray = QByteArray::fromEcmaUint8Array(uint8array);
-    //! [55]
-
-     //! [56]
-    QByteArray byteArray = "test";
-    emscripten::val uint8array = byteArray.toEcmaUint8Array();
-    //! [56]
+    {
+        //! [55]
+        emscripten::val uint8array = emscripten::val::global("g_uint8array");
+        QByteArray byteArray = QByteArray::fromEcmaUint8Array(uint8array);
+        //! [55]
+    }
+    {
+        //! [56]
+        QByteArray byteArray = "test";
+        emscripten::val uint8array = byteArray.toEcmaUint8Array();
+        //! [56]
+    }
 }
 # endif
