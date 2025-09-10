@@ -3413,11 +3413,9 @@ void tst_QVariant::canConvertMetaTypeToInt() const
 
 #undef CONVERT_META_TYPE
 
-/*!
- These calls should not produce any warnings.
- */
 void tst_QVariant::variantToDateTimeWithoutWarnings() const
 {
+    QTest::failOnWarning(); // These calls should not produce any warnings.
     {
         const QVariant variant(QLatin1String("An invalid QDateTime string"));
         const QDateTime dateTime(variant.toDateTime());
