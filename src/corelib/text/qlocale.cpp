@@ -1154,6 +1154,8 @@ QLocaleData::GroupSizes QLocaleData::groupSizes() const
  \internal
 */
 QLocale::QLocale(QLocalePrivate &dd)
+    // If this ever becomes explicitly noexcept(false),
+    // adjust QLocale::c() to not use this ctor anymore.
     : d(&dd)
 {}
 
@@ -3094,8 +3096,6 @@ QString QLocale::toString(double f, char format, int precision) const
 }
 
 /*!
-    \fn QLocale QLocale::c()
-
     Returns a QLocale object initialized to the "C" locale.
 
     This locale is based on en_US but with various quirks of its own, such as
@@ -3111,6 +3111,10 @@ QString QLocale::toString(double f, char format, int precision) const
 
     \sa system()
 */
+QLocale QLocale::c() noexcept
+{
+    return QLocale(*c_private());
+}
 
 /*!
     Returns a QLocale object initialized to the system locale.

@@ -1162,7 +1162,7 @@ public:
     static QString scriptToString(Script script);
     static void setDefault(const QLocale &locale);
 
-    static QLocale c() { return QLocale(C); }
+    static QLocale c() noexcept;
     static QLocale system();
 
     static QList<QLocale> matchingLocales(QLocale::Language language, QLocale::Script script,
