@@ -311,6 +311,7 @@ qt_internal_add_module(Core
         tools/qoffsetstringarray_p.h
         tools/qpair.h
         tools/qpoint.cpp tools/qpoint.h
+        tools/qquasivirtual_impl.h
         tools/qqueue.h
         tools/qrect.cpp tools/qrect.h
         tools/qrefcount.cpp tools/qrefcount.h
