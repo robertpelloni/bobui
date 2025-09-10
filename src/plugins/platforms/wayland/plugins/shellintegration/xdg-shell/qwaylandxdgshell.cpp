@@ -586,6 +586,7 @@ bool QWaylandXdgSurface::requestActivate()
 
             const auto tokenProvider = activation->requestXdgActivationToken(
                     wlWindow->display(), wlWindow->wlSurface(), serial, appId);
+            tokenProvider->setParent(this);
             connect(tokenProvider, &QWaylandXdgActivationTokenV1::done, this,
                     [this](const QString &token) {
                         m_shell->activation()->activate(token, window()->wlSurface());
