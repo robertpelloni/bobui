@@ -328,6 +328,50 @@ static bool processAndroidManifest()
     return true;
 }
 
+static QStringList queryDangerousPermissions()
+{
+    QByteArray output;
+    const QStringList args({ "shell"_L1, "dumpsys"_L1, "package"_L1, "permissions"_L1 });
+    if (!execAdbCommand(args, &output, false)) {
+        qWarning("Failed to query permissions via dumpsys");
+        return {};
+    }
+
+    /*
+     * Permissions section from this command look like:
+     *
+     * Permission [android.permission.INTERNET] (c8cafdc):
+     *     sourcePackage=android
+     *     uid=1000 gids=[3003] type=0 prot=normal|instant
+     *     perm=PermissionInfo{5f5bfbb android.permission.INTERNET}
+     *     flags=0x0
+     */
+     const static QRegularExpression regex("^\\s*permission\\s+([A-Za-z0-9._]+):"_L1);
+    QStringList dangerousPermissions;
+    QString currentPerm;
+
+    const QStringList lines = QString::fromUtf8(output).split(u'\n');
+    for (const QString &line : lines) {
+        QRegularExpressionMatch match = regex.match(line);
+        if (match.hasMatch()) {
+            currentPerm = match.captured(1);
+            continue;
+        }
+
+        int protIndex = line.indexOf("prot="_L1);
+        if (protIndex == -1)
+            continue;
+
+        QString protectionTypes = line.mid(protIndex + 5).trimmed();
+        if (protectionTypes.contains("dangerous"_L1, Qt::CaseInsensitive)) {
+            dangerousPermissions.append(currentPerm);
+            currentPerm.clear();
+        }
+    }
+
+    return dangerousPermissions;
+}
+
 static void setOutputFile(QString file, QString format)
 {
     if (format.isEmpty())
@@ -938,7 +982,10 @@ int main(int argc, char *argv[])
             return EXIT_ERROR;
     }
 
+    const QStringList dangerousPermisisons = queryDangerousPermissions();
     for (const auto &permission : g_options.permissions) {
+        if (!dangerousPermisisons.contains(permission))
+            continue;
         if (!execAdbCommand({ "shell"_L1, "pm"_L1, "grant"_L1, g_options.package, permission },
                             nullptr)) {
             qWarning("Unable to grant '%s' to '%s'. Probably the Android version mismatch.",
