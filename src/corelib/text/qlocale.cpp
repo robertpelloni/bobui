@@ -4455,8 +4455,8 @@ public:
     }
     bool done() const { return !(m_index < m_text.size()); }
     qsizetype index() const { return m_index; }
-    inline int asBmpDigit(char16_t digit) const;
-    inline bool isInfNanChar(char ch) const { return matchInfNaN.matches(ch); }
+    int digitValue(char32_t digit) const { return m_guide.digitValue(digit); }
+    bool isInfNanChar(char ch) const { return matchInfNaN.matches(ch); }
     char nextToken();
     bool fractionGroupClash() const
     {
@@ -4466,11 +4466,6 @@ public:
         return Q_UNLIKELY(m_mode != QLocaleData::IntegerMode && m_guide.fractionalIsGroup());
     }
 };
-
-int NumericTokenizer::asBmpDigit(char16_t digit) const
-{
-    return m_guide.digitValue(digit);
-}
 
 char NumericTokenizer::nextToken()
 {
@@ -4544,23 +4539,23 @@ char NumericTokenizer::nextToken()
     // Must match qlocale_tools.h's unicodeForDigit()
     if (m_guide.zeroLen == 1) {
         if (!ch.isSurrogate()) {
-            const int gap = asBmpDigit(ch.unicode());
-            if (gap >= 0) {
+            if (const int gap = digitValue(char32_t(ch.unicode())); gap >= 0) {
                 ++m_index;
                 return '0' + gap;
             }
         } else if (ch.isHighSurrogate() && tail.size() > 1 && tail.at(1).isLowSurrogate()) {
             return 0;
         }
+        // There remain one or two things a non-surrogate might be ...
     } else if (ch.isHighSurrogate()) {
         // None of the corner cases below matches a surrogate, so (update
         // already and) return early if we don't have a digit.
         if (tail.size() > 1) {
-            QChar low = tail.at(1);
-            if (low.isLowSurrogate()) {
-                m_index += 2;
-                const uint gap = QChar::surrogateToUcs4(ch, low) - m_guide.zeroUcs;
-                return gap < 10u ? '0' + gap : 0;
+            if (const QChar low = tail.at(1); low.isLowSurrogate()) {
+                if (const int gap = digitValue(QChar::surrogateToUcs4(ch, low)); gap >= 0) {
+                    m_index += 2;
+                    return '0' + gap;
+                }
             }
         }
         return 0;
