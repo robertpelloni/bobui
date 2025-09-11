@@ -63,7 +63,6 @@ add_library(corelib_snippets_code OBJECT
     src_corelib_text_qstringconverter.cpp
     src_corelib_text_qstringview.cpp
     src_corelib_text_qutf8stringview.cpp
-    src_corelib_thread_qexception.cpp
     src_corelib_thread_qmutex.cpp
     src_corelib_thread_qreadwritelock.cpp
     src_corelib_thread_qsemaphore.cpp
