@@ -4441,14 +4441,14 @@ class NumericTokenizer
     static constexpr auto matchInfNaN = QtPrivate::makeCharacterSetMatch<lettersInfNaN>();
     const QStringView m_text;
     const QLocaleData::NumericData m_guide;
-    qsizetype m_index = 0;
+    qsizetype m_index;
     const QLocaleData::NumberMode m_mode;
     static_assert('+' + 1 == ',' && ',' + 1 == '-' && '-' + 1 == '.');
     char lastMark; // C locale accepts '+' through lastMark.
 public:
     NumericTokenizer(QStringView text, QLocaleData::NumericData &&guide,
-                     QLocaleData::NumberMode mode)
-        : m_text(text), m_guide(guide), m_mode(mode),
+                     QLocaleData::NumberMode mode, qsizetype from = 0)
+        : m_text(text), m_guide(guide), m_index(from), m_mode(mode),
           lastMark(mode == QLocaleData::IntegerMode ? '-' : '.')
     {
         Q_ASSERT(m_guide.isValid(mode));
