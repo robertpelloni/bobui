@@ -4465,6 +4465,7 @@ public:
         // though we can skip them in integer mode.
         return Q_UNLIKELY(m_mode != QLocaleData::IntegerMode && m_guide.fractionalIsGroup());
     }
+    const QLocaleData::GroupSizes &groupSizes() { return m_guide.groupSizes(); }
 };
 
 char NumericTokenizer::nextToken()
@@ -4629,7 +4630,7 @@ bool QLocaleData::numberToCLocale(QStringView s, QLocale::NumberOptions number_o
     // Digit-grouping details (all modes):
     bool needHigherGroup = false; // Set when first group is too short to be the only one
     qsizetype digitsInGroup = 0;
-    const QLocaleData::GroupSizes grouping = groupSizes();
+    const QLocaleData::GroupSizes &grouping = tokens.groupSizes();
     const auto badLeastGroup = [&]() {
         // In principle we could object to a complete absence of grouping, when
         // digitsInGroup >= qMax(grouping.first, grouping.least), unless the
