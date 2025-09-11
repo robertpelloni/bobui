@@ -9,7 +9,6 @@ foreignwindows \
 fontfeatures \
 gestures \
 highdpi \
-keypadnavigation \
 keyevents \
 lance \
 network_remote_stresstest \
