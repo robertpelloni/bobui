@@ -4463,7 +4463,7 @@ public:
         // If the user's hand-configuration of the system makes group and
         // fractional part separators coincide, we have some kludges to apply,
         // though we can skip them in integer mode.
-        return Q_UNLIKELY(m_mode != QLocaleData::IntegerMode && m_guide.group == m_guide.decimal);
+        return Q_UNLIKELY(m_mode != QLocaleData::IntegerMode && m_guide.fractionalIsGroup());
     }
 };
 

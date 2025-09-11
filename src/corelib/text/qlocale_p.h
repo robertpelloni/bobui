@@ -435,6 +435,16 @@ public:
             qint32 ans = digit - U'0';
             return qint8(0 <= ans && ans <= 9 ? ans : -1);
         }
+
+        [[nodiscard]] bool fractionalIsGroup() const
+        {
+            // True precisely if fractional part separator and digit-grouping
+            // separator are the same. This can happen due to user
+            // mis-configuration. (Our CLDR-digestion scripts check against CLDR
+            // having such clashes.)
+            // For C locale we don't store separators, we just know them.
+            return Q_UNLIKELY(!isC && group == decimal);
+        }
     };
 
     // this function is used in QIntValidator (QtGui)
