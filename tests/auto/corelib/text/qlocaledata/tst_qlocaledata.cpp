@@ -163,13 +163,25 @@ void tst_QLocaleData::numericData_data()
         << u"."_s << u","_s << u"-"_s << u"+"_s << u"E"_s << GS(1, 3, 3) << U'0' << 1 << false;
 
     // Check for Cyrillic special case:
+    QTest::newRow("uk-Cyrl-UA/frac")
+        << LOCALE_DATA_PTR(Ukrainian, CyrillicScript, Ukraine) << QLocaleData::DoubleStandardMode
+        << u","_s << u"\u00A0"_s << u"-"_s << u"+"_s << QString()
+        << GS(1, 3, 3) << U'0' << false; // Only applies when exponent is included.
     QTest::newRow("uk-Cyrl-UA/exp")
         << LOCALE_DATA_PTR(Ukrainian, CyrillicScript, Ukraine) << QLocaleData::DoubleScientificMode
         << u","_s << u"\u00A0"_s << u"-"_s << u"+"_s << u"\u0415"_s
         << GS(1, 3, 3) << U'0' << 1 << true;
 
     // Check Arabic:
-    QTest::newRow("ar-EG/exp") // U+061C (Arabic Letter Mark) before signs.
+    QTest::newRow("ar-EG/int") // U+061C (Arabic Letter Mark) before signs.
+        << LOCALE_DATA_PTR(Arabic, ArabicScript, Egypt) << QLocaleData::IntegerMode
+        << QString() << u"\u066C"_s << u"\u061C-"_s << u"\u061C+"_s << QString()
+        << GS(1, 3, 3) << U'\u0660' << false;
+    QTest::newRow("ar-EG/frac")
+        << LOCALE_DATA_PTR(Arabic, ArabicScript, Egypt) << QLocaleData::DoubleStandardMode
+        << u"\u066B"_s << u"\u066C"_s << u"\u061C-"_s << u"\u061C+"_s << QString()
+        << GS(1, 3, 3) << U'\u0660' << false;
+    QTest::newRow("ar-EG/exp")
         << LOCALE_DATA_PTR(Arabic, ArabicScript, Egypt) << QLocaleData::DoubleScientificMode
         << u"\u066B"_s << u"\u066C"_s << u"\u061C-"_s << u"\u061C+"_s << u"\u0623\u0633"_s
         << GS(1, 3, 3) << U'\u0660' << 1 << false;
