@@ -18,8 +18,27 @@ class Q_CORE_EXPORT QTextBoundaryFinder
 public:
     QTextBoundaryFinder();
     QTextBoundaryFinder(const QTextBoundaryFinder &other);
+    QTextBoundaryFinder(QTextBoundaryFinder &&other) noexcept
+        : t{other.t},
+          s{std::move(other.s)},
+          sv{other.sv},
+          pos{other.pos},
+          freeBuffer{other.freeBuffer},
+          attributes{std::exchange(other.attributes, nullptr)}
+    {}
     QTextBoundaryFinder &operator=(const QTextBoundaryFinder &other);
+    QT_MOVE_ASSIGNMENT_OPERATOR_IMPL_VIA_PURE_SWAP(QTextBoundaryFinder)
     ~QTextBoundaryFinder();
+
+    void swap(QTextBoundaryFinder &other) noexcept
+    {
+        std::swap(t, other.t);
+        s.swap(other.s);
+        std::swap(sv, other.sv);
+        std::swap(pos, other.pos);
+        std::swap(freeBuffer, other.freeBuffer);
+        qt_ptr_swap(attributes, other.attributes);
+    }
 
     enum BoundaryType {
         Grapheme,
@@ -68,6 +87,8 @@ private:
     uint freeBuffer; // this may be used to store another 31 bit of data in the future
     QCharAttributes *attributes = nullptr;
 };
+
+Q_DECLARE_SHARED(QTextBoundaryFinder)
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(QTextBoundaryFinder::BoundaryReasons)
 

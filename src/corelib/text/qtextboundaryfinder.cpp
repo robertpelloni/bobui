@@ -126,6 +126,17 @@ QTextBoundaryFinder::QTextBoundaryFinder(const QTextBoundaryFinder &other)
 }
 
 /*!
+    \since 6.11
+    \fn QTextBoundaryFinder::QTextBoundaryFinder(QTextBoundaryFinder &&other)
+
+    Move-constructs a new QTextBoundaryFinder from \a other.
+
+    \note The moved-from object other is placed in a partially-formed state, in
+    which the only valid operations are destruction and assignment of a new
+    value.
+*/
+
+/*!
   Assigns the object, \a other, to another QTextBoundaryFinder object.
 */
 QTextBoundaryFinder &QTextBoundaryFinder::operator=(const QTextBoundaryFinder &other)
@@ -159,6 +170,17 @@ QTextBoundaryFinder &QTextBoundaryFinder::operator=(const QTextBoundaryFinder &o
 }
 
 /*!
+    \since 6.11
+    \fn QTextBoundaryFinder::operator=(QTextBoundaryFinder &&other)
+
+    Move-assigns \a other to this QTextBoundaryFinder instance.
+
+    \note The moved-from object other is placed in a partially-formed state, in
+    which the only valid operations are destruction and assignment of a new
+    value.
+*/
+
+/*!
   Destructs the QTextBoundaryFinder object.
 */
 QTextBoundaryFinder::~QTextBoundaryFinder()
@@ -166,6 +188,12 @@ QTextBoundaryFinder::~QTextBoundaryFinder()
     if (freeBuffer)
         free(attributes);
 }
+
+/*!
+    \since 6.11
+    \fn void QTextBoundaryFinder::swap(QTextBoundaryFinder &other)
+    \memberswap{text boundary finder}
+*/
 
 /*!
   Creates a QTextBoundaryFinder object of \a type operating on \a string.
