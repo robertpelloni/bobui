@@ -65,9 +65,51 @@ EM_ASYNC_JS(void, qtSuspendJs, (), {
 // The wasm instance will then call the C++ event after it is resumed.
 void qtRegisterEventHandlerJs(int index) {
     EM_ASM({
+
+        function createNamedFunction(name, parent, obj) {
+            return {
+                [name]: function(...args) {
+                    return obj.call(parent, args);
+                }
+            }[name];
+        }
+
+        function deepShallowClone(parent, obj, depth) {
+            if (obj === null)
+                return obj;
+
+            if (typeof obj === 'function') {
+                if (obj.name !== "")
+                    return createNamedFunction(obj.name, parent, obj);
+            }
+
+            if (depth >= 1)
+                return obj;
+
+            if (typeof obj !== 'object')
+                return obj;
+
+            if (Array.isArray(obj)) {
+                const arrCopy = [];
+                for (let i = 0; i < obj.length; i++)
+                    arrCopy[i] = deepShallowClone(obj, obj[i], depth + 1);
+
+                return arrCopy;
+            }
+
+            const objCopy = {};
+            for (const key in obj)
+                objCopy[key] = deepShallowClone(obj, obj[key], depth + 1);
+
+            return objCopy;
+        }
+
         let index = $0;
         let control = Module.qtSuspendResumeControl;
         let handler = (arg) => {
+            // Copy the top level object, alias the rest.
+            // functions are copied by creating new forwarding functions.
+            arg = deepShallowClone(arg, arg, 0);
 
             // Add event to event queue
             control.pendingEvents.push({
