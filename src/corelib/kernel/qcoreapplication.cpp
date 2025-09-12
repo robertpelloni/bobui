@@ -2344,6 +2344,11 @@ QString qtTrId(const char *id, int n)
     return QCoreApplication::translate(nullptr, id, nullptr, n);
 }
 
+QString qTrId(const char *id, int n)
+{
+    return qtTrId(id, n);
+}
+
 bool QCoreApplicationPrivate::isTranslatorInstalled(QTranslator *translator)
 {
     if (!QCoreApplication::self)

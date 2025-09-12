@@ -30,9 +30,9 @@ class QString;
 #define QT_TRANSLATE_N_NOOP3(scope, x, comment) {x, comment}
 
 // Defined in qcoreapplication.cpp
-// The better name qTrId() is reserved for an upcoming function which would
-// return a much more powerful QStringFormatter instead of a QString.
 Q_CORE_EXPORT QString qtTrId(const char *id, int n = -1);
+
+Q_CORE_EXPORT QString qTrId(const char *id, int n = -1);
 
 #define QT_TRID_NOOP(id) id
 #define QT_TRID_N_NOOP(id) id
