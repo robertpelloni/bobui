@@ -4483,7 +4483,6 @@ char NumericTokenizer::nextToken()
     }
     if (m_guide.isC) {
         // "Conversion" to C locale is just a filter:
-        ++m_index;
         if (Q_LIKELY(ch.unicode() < 256)) {
             unsigned char ascii = asciiLower(ch.toLatin1());
             if (Q_LIKELY(isAsciiDigit(ascii) || ('+' <= ascii && ascii <= lastMark)
@@ -4491,6 +4490,7 @@ char NumericTokenizer::nextToken()
                          // so !IntegerMode implies scientific, for now.
                          || (m_mode != QLocaleData::IntegerMode && isInfNanChar(ascii))
                          || (m_mode == QLocaleData::DoubleScientificMode && ascii == 'e'))) {
+                ++m_index;
                 return ascii;
             }
         }
