@@ -2669,6 +2669,22 @@ static bool check_method_code(int code, const QObject *object, const char *metho
     return true;
 }
 
+#if QT_VERSION < QT_VERSION_CHECK(7, 0, 0)
+static void check_and_warn_non_slot(const char *func, const char *method, int membcode,
+                                    const QMetaObject *rmeta, const QMetaMethod &rmethod)
+{
+    if (membcode == QSLOT_CODE && rmethod.methodType() != QMetaMethod::Slot) {
+        // In Qt7 QMetaObject::indexOfSlot{,relative} will return -1 if `method`
+        // isn't a slot.
+        qCWarning(lcConnect,
+                  "QObject::%s: the SLOT() macro is used with a non-slot function: %s::%s. "
+                  "This currently works due to backwards-compatibility reasons. In Qt7 the "
+                  "SLOT() macro will work only for methods marked as slots.",
+                  func, rmeta->className(), method);
+    }
+}
+#endif // QT_VERSION < QT_VERSION_CHECK(7, 0, 0)
+
 Q_DECL_COLD_FUNCTION
 static void err_method_notfound(const QObject *object,
                                 const char *method, const char *func)
@@ -3143,11 +3159,16 @@ QMetaObject::Connection QObject::connect(const QObject *sender, const char *sign
         return QMetaObject::Connection(nullptr);
     }
 
+    QMetaMethod rmethod = rmeta->method(method_index_relative + rmeta->methodOffset());
 #ifndef QT_NO_DEBUG
     QMetaMethod smethod = QMetaObjectPrivate::signal(smeta, signal_index);
-    QMetaMethod rmethod = rmeta->method(method_index_relative + rmeta->methodOffset());
     check_and_warn_compat(smeta, smethod, rmeta, rmethod);
 #endif
+
+#if QT_VERSION < QT_VERSION_CHECK(7, 0, 0)
+    check_and_warn_non_slot("connect", method, membcode, rmeta, rmethod);
+#endif
+
     QMetaObject::Connection handle = QMetaObject::Connection(QMetaObjectPrivate::connect(
         sender, signal_index, smeta, receiver, method_index_relative, rmeta ,type, types));
     return handle;
@@ -3420,9 +3441,14 @@ bool QObject::disconnect(const QObject *sender, const char *signal,
                 // Already computed the method_index for receiver->metaObject() above
                 if (rmeta != receiver->metaObject())
                     method_index = getMethodIndex(membcode, rmeta, methodName, methodTypes);
-                if (method_index >= 0)
+                if (method_index >= 0) {
+#if QT_VERSION < QT_VERSION_CHECK(7, 0, 0)
+                    check_and_warn_non_slot("disconnect", method, membcode, rmeta,
+                                            rmeta->method(method_index));
+#endif
                     while (method_index < rmeta->methodOffset())
                             rmeta = rmeta->superClass();
+                }
                 if (method_index < 0)
                     break;
                 res |= QMetaObjectPrivate::disconnect(sender, signal_index, smeta, receiver, method_index, nullptr);

@@ -735,9 +735,14 @@ inline int QMetaObjectPrivate::indexOfMethodRelative(const QMetaObject **baseObj
             Q_UNREACHABLE_RETURN(-1);
         }
 
+        // Is iterating backwards here significant?
         for (; i >= end; --i) {
             auto data = QMetaMethod::fromRelativeMethodIndex(m, i);
             if (methodMatch(m, data, name, types)) {
+                if (QT_VERSION >= QT_VERSION_CHECK(7, 0, 0)
+                    && what == QMetaMethod::Slot && data.methodType() != QMetaMethod::Slot) {
+                    return -1;
+                }
                 *baseObject = m;
                 return i;
             }

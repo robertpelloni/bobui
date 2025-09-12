@@ -334,7 +334,12 @@ void tst_QObject::disconnect()
     connect(&s, SIGNAL(signal2()), &r1, SLOT(slot2()));
     connect(&s, SIGNAL(signal3()), &r1, SLOT(slot3()));
     connect(&s, SIGNAL(signal4()), &r1, SLOT(slot4()));
+
+    static auto re = QRegularExpression(u"QObject::connect: the SLOT\\(\\) macro is "
+                                        "used with a non-slot function:.*"_s);
+    QTest::ignoreMessage(QtWarningMsg, re);
     connect(&s, SIGNAL(signalInvoke1()), &r1, SLOT(slotInvoke1()));
+    QTest::ignoreMessage(QtWarningMsg, re);
     connect(&s, SIGNAL(signalSinvoke1()), &r1, SLOT(slotSinvoke1()));
 
     s.emitSignal1();
@@ -364,7 +369,11 @@ void tst_QObject::disconnect()
     ret = QObject::disconnect(&s, SIGNAL(signal1()), &r1, SLOT(slot1()));
     QVERIFY(!ret);
 
+    static auto re2 = QRegularExpression(u"QObject::disconnect: the SLOT\\(\\) macro is "
+                                         "used with a non-slot function:.*"_s);
+    QTest::ignoreMessage(QtWarningMsg, re2);
     QObject::disconnect(&s, SIGNAL(signalInvoke1()), &r1, SLOT(slotInvoke1()));
+    QTest::ignoreMessage(QtWarningMsg, re2);
     QObject::disconnect(&s, SIGNAL(signalSinvoke1()), &r1, SLOT(slotSinvoke1()));
 
     s.emitSignalInvoke1();
