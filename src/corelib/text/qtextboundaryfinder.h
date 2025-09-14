@@ -8,8 +8,11 @@
 #include <QtCore/qchar.h>
 #include <QtCore/qstring.h>
 
-QT_BEGIN_NAMESPACE
+#if QT_VERSION >= QT_VERSION_CHECK(7, 0, 0)
+#  include <array>
+#endif
 
+QT_BEGIN_NAMESPACE
 
 struct QCharAttributes;
 
@@ -26,6 +29,7 @@ public:
     {
           t = other.t;
           freeBuffer = other.freeBuffer;
+          QT7_ONLY(reserved = other.reserved;)
     }
     QTextBoundaryFinder &operator=(const QTextBoundaryFinder &other);
     QT_MOVE_ASSIGNMENT_OPERATOR_IMPL_VIA_PURE_SWAP(QTextBoundaryFinder)
@@ -39,9 +43,10 @@ public:
         std::swap(pos, other.pos);
         std::swap(freeBuffer, other.freeBuffer);
         qt_ptr_swap(attributes, other.attributes);
+        QT7_ONLY(reserved.swap(other.reserved);)
     }
 
-    enum BoundaryType {
+    enum BoundaryType QT7_ONLY(: quint8) {
         Grapheme,
         Word,
         Sentence,
@@ -90,6 +95,7 @@ private:
 #if QT_VERSION >= QT_VERSION_CHECK(7, 0, 0)
     bool freeBuffer = true;
     BoundaryType t = Grapheme;
+    std::array<quint8, sizeof(void *) - 2> reserved = {};
 #endif
 };
 
