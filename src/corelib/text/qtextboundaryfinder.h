@@ -19,13 +19,14 @@ public:
     QTextBoundaryFinder();
     QTextBoundaryFinder(const QTextBoundaryFinder &other);
     QTextBoundaryFinder(QTextBoundaryFinder &&other) noexcept
-        : t{other.t},
-          s{std::move(other.s)},
+        : s{std::move(other.s)},
           sv{other.sv},
           pos{other.pos},
-          freeBuffer{other.freeBuffer},
           attributes{std::exchange(other.attributes, nullptr)}
-    {}
+    {
+          t = other.t;
+          freeBuffer = other.freeBuffer;
+    }
     QTextBoundaryFinder &operator=(const QTextBoundaryFinder &other);
     QT_MOVE_ASSIGNMENT_OPERATOR_IMPL_VIA_PURE_SWAP(QTextBoundaryFinder)
     ~QTextBoundaryFinder();
@@ -80,12 +81,16 @@ public:
     BoundaryReasons boundaryReasons() const;
 
 private:
-    BoundaryType t = Grapheme;
+    QT6_ONLY(BoundaryType t = Grapheme;)
     QString s;
     QStringView sv;
     qsizetype pos = 0;
-    uint freeBuffer; // this may be used to store another 31 bit of data in the future
+    QT6_ONLY(uint freeBuffer = true;)
     QCharAttributes *attributes = nullptr;
+#if QT_VERSION >= QT_VERSION_CHECK(7, 0, 0)
+    bool freeBuffer = true;
+    BoundaryType t = Grapheme;
+#endif
 };
 
 Q_DECLARE_SHARED(QTextBoundaryFinder)
