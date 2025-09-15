@@ -206,6 +206,7 @@ void QAbstractTestLogger::outputString(const char *msg)
 
 #if defined(Q_OS_WINDOWS)
 #define isatty _isatty
+#define fileno _fileno
 #endif
 
     if (isatty(fileno(stream))) {
@@ -222,6 +223,7 @@ void QAbstractTestLogger::outputString(const char *msg)
 
 #if defined(Q_OS_WINDOWS)
 #undef isatty
+#undef fileno
 #endif
 }
 
