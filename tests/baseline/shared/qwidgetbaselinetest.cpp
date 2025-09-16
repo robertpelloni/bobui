@@ -50,13 +50,19 @@ public:
     {
         QProxyStyle::drawComplexControl(control, option, painter, widget);
         drawDebugRect("QStyle::drawComplexControl", Qt::magenta, control, option, widget, painter);
-    }
 
-    QRect subControlRect(ComplexControl control, const QStyleOptionComplex *option, SubControl subControl, const QWidget *widget) const override
-    {
-        auto ret = QProxyStyle::subControlRect(control, option, subControl, widget);
-        drawDebugRect("QStyle::subControlRect", Qt::red, subControl, option, widget);
-        return ret;
+        // Report all matching sub-controls, independently of whether the above call queries them
+        static QMetaEnum complexControlEnum = QMetaEnum::fromType<ComplexControl>();
+        static QMetaEnum subControlEnum = QMetaEnum::fromType<SubControl>();
+        const auto prefix = QByteArray(complexControlEnum.valueToKey(control)).replace("CC_", "SC_");
+        for (int i = 0; i < subControlEnum.keyCount(); ++i) {
+            const QByteArray key = subControlEnum.key(i);
+            if (key.startsWith(prefix)) {
+                auto rect = subControlRect(control, option, SubControl(subControlEnum.value(i)), widget);
+                baselineTest->reportDebugRect("QStyle::subControlRect", QColorConstants::Svg::orange,
+                    key, rect.translated(option->rect.topLeft()), widget, painter);
+            }
+        }
     }
 
 private:
