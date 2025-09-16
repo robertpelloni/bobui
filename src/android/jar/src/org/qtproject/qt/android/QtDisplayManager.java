@@ -135,25 +135,159 @@ class QtDisplayManager
         displayManager.unregisterDisplayListener(m_displayListener);
     }
 
-    @SuppressWarnings("deprecation")
-    void setSystemUiVisibilityPreAndroidR(View decorView)
+    /*
+    * Convenience method to call deprecated API prior to Android R (30).
+    */
+    @SuppressWarnings ("deprecation")
+    private static void setDecorFitsSystemWindows(Window window, boolean enable)
     {
-        int systemUiVisibility;
+        final int sdk = Build.VERSION.SDK_INT;
+        if (sdk < Build.VERSION_CODES.R || sdk > Build.VERSION_CODES.VANILLA_ICE_CREAM)
+            return;
+        window.setDecorFitsSystemWindows(enable);
+    }
 
-        if (m_isFullScreen || m_expandedToCutout) {
-            systemUiVisibility =  View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION;
-            if (m_isFullScreen) {
-                systemUiVisibility |=  View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                                    | View.SYSTEM_UI_FLAG_FULLSCREEN
-                                    | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                                    | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
+    static void useCutoutShortEdges(Window window, boolean enabled)
+    {
+        if (window == null)
+            return;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            WindowManager.LayoutParams layoutParams = window.getAttributes();
+            layoutParams.layoutInDisplayCutoutMode = enabled
+                    ? WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+                    : WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_NEVER;
+            window.setAttributes(layoutParams);
+        }
+    }
+
+    static void showNormal(Activity activity)
+    {
+        Window window = activity.getWindow();
+        if (window == null)
+            return;
+
+        final View decor = window.getDecorView();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            setDecorFitsSystemWindows(window, true);
+            WindowInsetsController ctrl = window.getInsetsController();
+            if (ctrl != null) {
+                ctrl.show(WindowInsets.Type.systemBars());
+                ctrl.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_DEFAULT);
             }
         } else {
-            systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE;
+            @SuppressWarnings("deprecation")
+            int flags = View.SYSTEM_UI_FLAG_VISIBLE; // clear all flags
+            setSystemUiVisibility(decor, flags);
         }
 
-        decorView.setSystemUiVisibility(systemUiVisibility);
+        setTransparentSystemBars(activity, false);
+        useCutoutShortEdges(window, false);
+
+        decor.post(() -> decor.requestApplyInsets());
+    }
+
+    /*
+    * Make system bars transparent for Andorid versions prior to Android 15.
+    */
+    @SuppressWarnings("deprecation")
+    static void setTransparentSystemBars(Activity activity, boolean transparent)
+    {
+        Window window = activity.getWindow();
+        if (window == null)
+            return;
+
+        if (edgeToEdgeEnabled(activity))
+            return;
+
+        // These are needed to operate on system bar colors
+        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS
+                    | WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
+        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+
+        if (transparent) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                window.setStatusBarColor(Color.TRANSPARENT);
+                window.setNavigationBarColor(Color.TRANSPARENT);
+            } else {
+                // Android 9 and prior doesn't add the semi-transparent bars
+                // to avoid low contrast system icons, so try to mimick it
+                // by taking the current color and only increase the opacity.
+                int statusBarColor = window.getStatusBarColor();
+                int transparentStatusBar = statusBarColor & 0x00FFFFFF;
+                window.setStatusBarColor(transparentStatusBar);
+
+                int navigationBarColor = window.getNavigationBarColor();
+                int semiTransparentNavigationBar = navigationBarColor & 0x7FFFFFFF;
+                window.setNavigationBarColor(semiTransparentNavigationBar);
+            }
+        } else {
+            // Restore theme's system bars colors
+            int defaultStatusBarColor = getThemeDefaultStatusBarColor(activity);
+            window.setStatusBarColor(defaultStatusBarColor);
+
+            int defaultNavigationBarColor = getThemeDefaultNavigationBarColor(activity);
+            window.setNavigationBarColor(defaultNavigationBarColor);
+        }
+    }
+
+    static void showExpanded(Activity activity)
+    {
+        Window window = activity.getWindow();
+        if (window == null)
+            return;
+
+        final View decor = window.getDecorView();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            setDecorFitsSystemWindows(window, false);
+            WindowInsetsController ctrl = window.getInsetsController();
+            if (ctrl != null) {
+                ctrl.show(WindowInsets.Type.systemBars());
+                ctrl.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_DEFAULT);
+            }
+        } else {
+            @SuppressWarnings("deprecation")
+            int flags =   View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION;
+            setSystemUiVisibility(decor, flags);
+        }
+
+        setTransparentSystemBars(activity, true);
+        useCutoutShortEdges(window, true);
+
+        decor.post(() -> decor.requestApplyInsets());
+    }
+
+    public static void showFullScreen(Activity activity)
+    {
+        Window window = activity.getWindow();
+        if (window == null)
+            return;
+
+        final View decor = window.getDecorView();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            setDecorFitsSystemWindows(window, false);
+            WindowInsetsController ctrl = window.getInsetsController();
+            if (ctrl != null) {
+                ctrl.hide(WindowInsets.Type.systemBars());
+                ctrl.setSystemBarsBehavior(
+                    WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+            }
+        } else {
+            @SuppressWarnings("deprecation")
+            int flags =   View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
+            setSystemUiVisibility(decor, flags);
+        }
+
+        useCutoutShortEdges(window, true);
+
+        decor.post(() -> decor.requestApplyInsets());
     }
 
     void setSystemUiVisibility(boolean isFullScreen, boolean expandedToCutout)
@@ -164,77 +298,12 @@ class QtDisplayManager
         m_isFullScreen = isFullScreen;
         m_expandedToCutout = expandedToCutout;
 
-        Window window = m_activity.getWindow();
-        View decorView = window.getDecorView();
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            int cutoutMode;
-            if (m_isFullScreen || m_expandedToCutout) {
-                window.setDecorFitsSystemWindows(false);
-                cutoutMode = LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
-            } else {
-                window.setDecorFitsSystemWindows(true);
-                cutoutMode = LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT;
-            }
-            LayoutParams layoutParams = window.getAttributes();
-            layoutParams.layoutInDisplayCutoutMode = cutoutMode;
-            window.setAttributes(layoutParams);
-
-            final WindowInsetsController insetsControl = window.getInsetsController();
-            if (insetsControl != null) {
-                int sysBarsBehavior;
-                if (m_isFullScreen) {
-                    insetsControl.hide(WindowInsets.Type.systemBars());
-                    sysBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE;
-                } else {
-                    insetsControl.show(WindowInsets.Type.systemBars());
-                    sysBarsBehavior = WindowInsetsController.BEHAVIOR_DEFAULT;
-                }
-                insetsControl.setSystemBarsBehavior(sysBarsBehavior);
-            }
-        } else {
-            setSystemUiVisibilityPreAndroidR(decorView);
-        }
-
-        if (!isFullScreen && !edgeToEdgeEnabled(m_activity)) {
-            // These are needed to operate on system bar colors
-            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS
-                        | WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
-            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-
-            // Handle transparent status and navigation bars
-            if (m_expandedToCutout) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    window.setStatusBarColor(Color.TRANSPARENT);
-                    window.setNavigationBarColor(Color.TRANSPARENT);
-                } else {
-                    // Android 9 and prior doesn't add the semi-transparent bars
-                    // to avoid low contrast system icons, so try to mimick it
-                    // by taking the current color and only increase the opacity.
-                    int statusBarColor = window.getStatusBarColor();
-                    int transparentStatusBar = statusBarColor & 0x00FFFFFF;
-                    window.setStatusBarColor(transparentStatusBar);
-
-                    int navigationBarColor = window.getNavigationBarColor();
-                    int semiTransparentNavigationBar = navigationBarColor & 0x7FFFFFFF;
-                    window.setNavigationBarColor(semiTransparentNavigationBar);
-                }
-            } else {
-                // Restore theme's system bars colors
-                Theme theme = m_activity.getTheme();
-                TypedValue typedValue = new TypedValue();
-
-                theme.resolveAttribute(android.R.attr.statusBarColor, typedValue, true);
-                int defaultStatusBarColor = typedValue.data;
-                window.setStatusBarColor(defaultStatusBarColor);
-
-                theme.resolveAttribute(android.R.attr.navigationBarColor, typedValue, true);
-                int defaultNavigationBarColor = typedValue.data;
-                window.setNavigationBarColor(defaultNavigationBarColor);
-            }
-        }
-
-        decorView.post(() -> decorView.requestApplyInsets());
+        if (m_isFullScreen)
+            showFullScreen(m_activity);
+        else if (m_expandedToCutout)
+            showExpanded(m_activity);
+        else
+            showNormal(m_activity);
     }
 
     private static boolean edgeToEdgeEnabled(Activity activity) {
