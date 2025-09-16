@@ -729,10 +729,10 @@ public:
 
 void QWaylandInputDevice::Pointer::pointer_leave(uint32_t serial, struct wl_surface *surface)
 {
+    Q_UNUSED(serial);
+
     invalidateFocus();
     mButtons = Qt::NoButton;
-
-    mParent->mSerial = serial;
 
     // The event may arrive after destroying the window, indicated by
     // a null surface.
