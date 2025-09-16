@@ -4839,6 +4839,46 @@ QDateTime QDateTime::addDays(qint64 ndays) const
 }
 
 /*!
+    \fn QDate &QDate::operator++(QDate &date)
+    \since 6.11
+
+    The prefix \c{++} operator, adds a day to \a date and returns a reference to
+    the modified date object.
+
+    \sa addDays(), operator--()
+*/
+
+/*!
+    \fn QDate QDate::operator++(QDate &date, int)
+    \since 6.11
+
+    The postfix \c{++} operator, adds a day to \a date and returns the copy of
+    \a date with the previous date.
+
+    \sa addDays(), operator--()
+*/
+
+/*!
+    \fn QDate &QDate::operator--(QDate &date)
+    \since 6.11
+
+    The prefix \c{--} operator, subtracts a day from \a date and returns a
+    reference to the modified date object.
+
+    \sa addDays(), operator++()
+*/
+
+/*!
+    \fn QDate QDate::operator--(QDate &date, int)
+    \since 6.11
+
+    The postfix \c{--} operator, subtracts a day from \a date and returns a
+    reference to the modified date object.
+
+    \sa addDays(), operator++()
+*/
+
+/*!
     Returns a QDateTime object containing a datetime \a nmonths months
     later than the datetime of this object (or earlier if \a nmonths
     is negative).

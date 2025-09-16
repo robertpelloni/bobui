@@ -65,6 +65,8 @@ private Q_SLOTS:
     void julianDaysLimits();
     void addDays_data();
     void addDays();
+    void incrementable_data() { addDays_data(); }
+    void incrementable();
     void addMonths_data();
     void addMonths();
     void addYears_data();
@@ -99,6 +101,7 @@ private Q_SLOTS:
 #endif
     void roundtrip() const;
     void qdebug() const;
+
 private:
     QDate defDate() const { return QDate(1900, 1, 1); }
 
@@ -890,6 +893,51 @@ void tst_QDate::addDays_data()
     QTest::newRow( "data13" ) << -4713 << 1 << 2 <<  2 << -4713 <<  1 <<  4;
 
     QTest::newRow( "invalid" ) << 0 << 0 << 0 << 1 << 0 << 0 << 0;
+}
+
+void tst_QDate::incrementable()
+{
+#ifdef __cpp_concepts
+    static_assert(std::weakly_incrementable<QDate>);
+#endif
+
+    QFETCH(int, year);
+    QFETCH(int, month);
+    QFETCH(int, day);
+    QFETCH(int, amountToAdd);
+    QFETCH(int, expectedYear);
+    QFETCH(int, expectedMonth);
+    QFETCH(int, expectedDay);
+
+    const QDate dt( year, month, day);
+
+    QDate pre = dt;
+
+    if (amountToAdd < 0) {
+        for (int i = amountToAdd; i < 0; ++i)
+            --pre;
+    } else {
+        for (int i = 0; i < amountToAdd; ++i)
+            ++pre;
+    }
+
+    QCOMPARE(pre.year(), expectedYear);
+    QCOMPARE(pre.month(), expectedMonth);
+    QCOMPARE(pre.day(), expectedDay);
+
+    QDate post = dt;
+
+    if (amountToAdd < 0) {
+        for (int i = amountToAdd; i < 0; ++i)
+            post--;
+    } else {
+        for (int i = 0; i < amountToAdd; ++i)
+            post++;
+    }
+
+    QCOMPARE(post.year(), expectedYear);
+    QCOMPARE(post.month(), expectedMonth);
+    QCOMPARE(post.day(), expectedDay);
 }
 
 void tst_QDate::addMonths()
