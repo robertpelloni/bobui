@@ -50,11 +50,15 @@ if(QT_FEATURE_widgets)
         src_gui_kernel_qapplication.cpp
         src_gui_kernel_qguiapplication.cpp
         src_gui_kernel_qkeysequence.cpp
-        src_gui_opengl_qopenglfunctions.cpp
-        src_gui_painting_qpainter.cpp
         src_gui_text_qsyntaxhighlighter.cpp
         src_gui_util_qvalidator.cpp
     )
+if(QT_FEATURE_opengl)
+    target_sources(gui_snippets PRIVATE
+        src_gui_opengl_qopenglfunctions.cpp
+        src_gui_painting_qpainter.cpp
+    )
+endif()
 endif()
 
 if(QT_FEATURE_vulkan)
