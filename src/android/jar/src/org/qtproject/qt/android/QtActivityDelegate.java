@@ -138,9 +138,9 @@ class QtActivityDelegate extends QtActivityDelegateBase
         int orientation = m_activity.getResources().getConfiguration().orientation;
         setUpSplashScreen(orientation);
         m_activity.registerForContextMenu(m_layout);
-        m_activity.setContentView(m_layout,
-                                  new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
-                                                             ViewGroup.LayoutParams.MATCH_PARENT));
+        ViewGroup.LayoutParams rootParams = new ViewGroup.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        m_activity.setContentView(m_layout, rootParams);
 
         handleUiModeChange();
 
