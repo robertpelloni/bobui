@@ -3,3 +3,4 @@
 
 add_subdirectory(keypadnavigation_testsetup)
 add_subdirectory(qlayout_testsetup)
+add_subdirectory(qconcatenateproxymodel_testsetup)
