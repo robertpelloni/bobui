@@ -102,9 +102,11 @@ public class QtActivityBase extends Activity
         requestWindowFeature(Window.FEATURE_ACTION_BAR);
 
         if (!m_isCustomThemeSet) {
-            setTheme(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ?
-                    android.R.style.Theme_DeviceDefault_DayNight :
-                    android.R.style.Theme_Holo_Light);
+            @SuppressWarnings("deprecation")
+            int themeId = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+                ? android.R.style.Theme_DeviceDefault_DayNight
+                : android.R.style.Theme_Holo_Light;
+            setTheme(themeId);
         }
 
         if (QtNative.getStateDetails().isStarted) {
