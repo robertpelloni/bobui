@@ -4852,7 +4852,7 @@ QDateTime QDateTime::addDays(qint64 ndays) const
     \fn QDate QDate::operator++(QDate &date, int)
     \since 6.11
 
-    The postfix \c{++} operator, adds a day to \a date and returns the copy of
+    The postfix \c{++} operator, adds a day to \a date and returns a copy of
     \a date with the previous date.
 
     \sa addDays(), operator--()
@@ -4873,7 +4873,7 @@ QDateTime QDateTime::addDays(qint64 ndays) const
     \since 6.11
 
     The postfix \c{--} operator, subtracts a day from \a date and returns a
-    reference to the modified date object.
+    copy of \a date with the next date.
 
     \sa addDays(), operator++()
 */

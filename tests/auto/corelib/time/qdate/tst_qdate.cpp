@@ -914,11 +914,25 @@ void tst_QDate::incrementable()
     QDate pre = dt;
 
     if (amountToAdd < 0) {
-        for (int i = amountToAdd; i < 0; ++i)
-            --pre;
+        for (int i = amountToAdd; i < 0; ++i) {
+            const auto old = pre;
+            const auto now = --pre;
+            QCOMPARE(now, pre); // We got the new value.
+            if (old.isValid())
+                QCOMPARE_LT(now, old);
+            else
+                QVERIFY(!now.isValid());
+        }
     } else {
-        for (int i = 0; i < amountToAdd; ++i)
-            ++pre;
+        for (int i = 0; i < amountToAdd; ++i) {
+            const auto old = pre;
+            const auto now = ++pre;
+            QCOMPARE(now, pre); // We got the new value.
+            if (old.isValid())
+                QCOMPARE_GT(now, old);
+            else
+                QVERIFY(!now.isValid());
+        }
     }
 
     QCOMPARE(pre.year(), expectedYear);
@@ -928,11 +942,25 @@ void tst_QDate::incrementable()
     QDate post = dt;
 
     if (amountToAdd < 0) {
-        for (int i = amountToAdd; i < 0; ++i)
-            post--;
+        for (int i = amountToAdd; i < 0; ++i) {
+            const auto old = post;
+            const auto now = post--;
+            QCOMPARE(now, old); // We got the prior value.
+            if (old.isValid())
+                QCOMPARE_GT(now, pre);
+            else
+                QVERIFY(!now.isValid());
+        }
     } else {
-        for (int i = 0; i < amountToAdd; ++i)
-            post++;
+        for (int i = 0; i < amountToAdd; ++i) {
+            const auto old = post;
+            const auto now = post++;
+            QCOMPARE(now, old); // We got the prior value.
+            if (old.isValid())
+                QCOMPARE_LT(now, post);
+            else
+                QVERIFY(!now.isValid());
+        }
     }
 
     QCOMPARE(post.year(), expectedYear);
