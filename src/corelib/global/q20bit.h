@@ -8,7 +8,7 @@
 
 #include <QtCore/q20type_traits.h>
 
-#ifdef __cpp_lib_bitops
+#if defined(__cpp_lib_bitops) || defined(__cpp_lib_int_pow2)
 #  include <bit>
 #else
 #  include <QtCore/qtypes.h>
