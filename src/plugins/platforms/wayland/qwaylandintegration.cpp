@@ -157,6 +157,13 @@ QPlatformOpenGLContext *QWaylandIntegration::createPlatformOpenGLContext(QOpenGL
     return nullptr;
 }
 
+QPlatformOffscreenSurface *QWaylandIntegration::createPlatformOffscreenSurface(QOffscreenSurface *surface) const
+{
+    if (mDisplay->clientBufferIntegration())
+        return mDisplay->clientBufferIntegration()->createPlatformOffscreenSurface(surface);
+    return nullptr;
+}
+
 QOpenGLContext *QWaylandIntegration::createOpenGLContext(EGLContext context, EGLDisplay contextDisplay, QOpenGLContext *shareContext) const
 {
     return mClientBufferIntegration->createOpenGLContext(context, contextDisplay, shareContext);

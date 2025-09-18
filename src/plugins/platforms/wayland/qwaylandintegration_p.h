@@ -55,6 +55,7 @@ public:
     QPlatformWindow *createPlatformWindow(QWindow *window) const override;
 #if QT_CONFIG(opengl)
     QPlatformOpenGLContext *createPlatformOpenGLContext(QOpenGLContext *context) const override;
+    QPlatformOffscreenSurface *createPlatformOffscreenSurface(QOffscreenSurface *surface) const override;
     QOpenGLContext *createOpenGLContext(EGLContext context, EGLDisplay display, QOpenGLContext *shareContext) const override;
 #endif
     QPlatformBackingStore *createPlatformBackingStore(QWindow *window) const override;
