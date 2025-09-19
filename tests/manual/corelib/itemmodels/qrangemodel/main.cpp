@@ -28,6 +28,7 @@ class Gadget
     Q_PROPERTY(QString display READ display WRITE setDisplay)
     Q_PROPERTY(QColor decoration READ decoration WRITE setDecoration)
     Q_PROPERTY(QString toolTip READ toolTip WRITE setToolTip)
+    Q_PROPERTY(QString user READ display WRITE setDisplay)
 public:
     Gadget() = default;
 
@@ -268,6 +269,17 @@ public slots:
         static auto z = std::array<QChar, 6>{u'A', u'B', u'C', u'D', u'E', u'F'};
 
         return new QRangeModel(std::views::zip(x, y, z));
+    }
+
+    QRangeModel *makeGadgetList()
+    {
+        QList<Gadget> gadgetList = {
+            {"1/1", Qt::red, "red"},
+            {"1/2", Qt::black, "black"},
+            {"2/1", Qt::blue, "blue"},
+            {"2/2", Qt::green, "green"},
+        };
+        return new QRangeModel(gadgetList);
     }
 
     QRangeModel *makeGadgetTable()
@@ -522,6 +534,18 @@ private:
                 statusBar()->showMessage(tr("Failed to load QML"));
             else
                 quickWidget->rootObject()->setProperty("model", QVariant::fromValue(model));
+
+            QQmlContext *rootContext = quickWidget->rootContext();
+            QQmlContext *UIContext = quickWidget->engine()->contextForObject(quickWidget->rootObject());
+            qDebug() << "context objects" << rootContext->contextObject() << UIContext->contextObject();
+            qDebug() << "context URLs" << rootContext->baseUrl() << UIContext->baseUrl();
+
+            qDebug() << "name" << quickWidget->rootContext()->nameForObject(quickWidget->rootObject());
+            qDebug() << "root object" << quickWidget->rootContext()->objectForName("root");
+            qDebug() << "list object" << quickWidget->rootContext()->objectForName("root");
+
+            qDebug() << "root object in context" << quickWidget->engine()->contextForObject(quickWidget->rootObject())->objectForName("root");
+            qDebug() << "list object in context" << quickWidget->engine()->contextForObject(quickWidget->rootObject())->objectForName("list");
 #endif
         }
 

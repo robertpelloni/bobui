@@ -562,6 +562,33 @@ namespace QRangeModelDetails
         static constexpr bool isMultiRole = rowCategory == RowCategory::MultiRoleItem;
     };
 
+    // Detect an ItemAccess specialization with static read/writeRole members
+    template <typename T> struct QRangeModelItemAccess;
+
+    template <typename T, typename = void>
+    struct item_access : std::false_type {};
+
+    template <typename T>
+    struct item_access<T,
+        std::void_t<decltype(QRangeModelItemAccess<T>::readRole(std::declval<const T&>(),
+                                                                Qt::DisplayRole)),
+                    decltype(QRangeModelItemAccess<T>::writeRole(std::declval<T&>(),
+                                                                 std::declval<QVariant>(),
+                                                                 Qt::DisplayRole))
+                   >
+        > : std::true_type
+    {
+        using ItemAccess = QRangeModelItemAccess<T>;
+        static_assert(std::is_invocable_r_v<bool,
+            decltype(ItemAccess::writeRole), T&, QVariant, Qt::ItemDataRole>,
+            "The return type of the ItemAccess::writeRole implementation "
+            "needs to be convertible to a bool!");
+        static_assert(std::is_invocable_r_v<QVariant,
+            decltype(ItemAccess::readRole), const T&, Qt::ItemDataRole>,
+            "The return type of the ItemAccess::readRole implementation "
+            "needs to be convertible to QVariant!");
+    };
+
     // Find out how many fixed elements can be retrieved from a row element.
     // main template for simple values and ranges. Specializing for ranges
     // is ambiguous with arrays, as they are also ranges
@@ -1273,7 +1300,20 @@ public:
             Q_UNUSED(this);
             using value_type = q20::remove_cvref_t<decltype(value)>;
             using multi_role = QRangeModelDetails::is_multi_role<value_type>;
-            if constexpr (multi_role()) {
+            using wrapped_value_type = QRangeModelDetails::wrapped_t<value_type>;
+
+            if constexpr (QRangeModelDetails::item_access<wrapped_value_type>()) {
+                using ItemAccess = QRangeModelDetails::QRangeModelItemAccess<wrapped_value_type>;
+                tried = true;
+                const auto roles = this->itemModel().roleNames().keys();
+                for (auto &role : roles) {
+                    if (role == Qt::RangeModelDataRole)
+                        continue;
+                    QVariant data = ItemAccess::readRole(value, role);
+                    if (data.isValid())
+                        result[role] = std::move(data);
+                }
+            } else if constexpr (multi_role()) {
                 tried = true;
                 if constexpr (std::is_convertible_v<value_type, decltype(result)>) {
                     result = value;
@@ -1332,7 +1372,25 @@ public:
             Q_UNUSED(index);
             using value_type = q20::remove_cvref_t<decltype(value)>;
             using multi_role = QRangeModelDetails::is_multi_role<value_type>;
-            if constexpr (multi_role()) {
+            using wrapped_value_type = QRangeModelDetails::wrapped_t<value_type>;
+
+            if constexpr (QRangeModelDetails::item_access<wrapped_value_type>()) {
+                using ItemAccess = QRangeModelDetails::QRangeModelItemAccess<wrapped_value_type>;
+                tried = true;
+                for (auto &roleData : roleDataSpan) {
+                    if (roleData.role() == Qt::RangeModelDataRole) {
+                        // Qt QML support: "modelData" role returns the entire multi-role item.
+                        // QML can only use raw pointers to QObject (so we unwrap), and gadgets
+                        // only by value (so we take the reference).
+                        if constexpr (std::is_copy_assignable_v<wrapped_value_type>)
+                            roleData.setData(QVariant::fromValue(QRangeModelDetails::refTo(value)));
+                        else
+                            roleData.setData(QVariant::fromValue(QRangeModelDetails::pointerTo(value)));
+                    } else {
+                        roleData.setData(ItemAccess::readRole(value, roleData.role()));
+                    }
+                }
+            } else if constexpr (multi_role()) {
                 tried = true;
                 const auto roleNames = [this]() -> QHash<int, QByteArray> {
                     Q_UNUSED(this);
@@ -1360,7 +1418,6 @@ public:
                     tried = true;
                     for (auto &roleData : roleDataSpan) {
                         if (roleData.role() == Qt::RangeModelDataRole) {
-                            using wrapped_value_type = QRangeModelDetails::wrapped_t<value_type>;
                             // Qt QML support: "modelData" role returns the entire multi-role item.
                             // QML can only use raw pointers to QObject (so we unwrap), and gadgets
                             // only by value (so we take the reference).
@@ -1421,42 +1478,52 @@ public:
                 using value_type = q20::remove_cvref_t<decltype(target)>;
                 using wrapped_value_type = QRangeModelDetails::wrapped_t<value_type>;
                 using multi_role = QRangeModelDetails::is_multi_role<value_type>;
-                if constexpr (has_metaobject<value_type>) {
-                    if (role == Qt::RangeModelDataRole) {
-                        auto &targetRef = QRangeModelDetails::refTo(target);
-                        constexpr auto targetMetaType = QMetaType::fromType<value_type>();
-                        const auto dataMetaType = data.metaType();
-                        if constexpr (!std::is_copy_assignable_v<wrapped_value_type>) {
-                            // This covers move-only types, but also polymorph types like QObject.
-                            // We don't support replacing a stored object with another one, as this
-                            // makes object ownership very messy.
-                            // fall through to error handling
-                        } else if constexpr (QRangeModelDetails::is_wrapped<value_type>()) {
-                            if (QRangeModelDetails::isValid(target)) {
-                                // we need to get a wrapped value type out of the QVariant, which
-                                // might carry a pointer. We have to try all alternatives.
-                                if (const auto mt = QMetaType::fromType<wrapped_value_type>();
-                                    data.canConvert(mt)) {
-                                    targetRef = data.value<wrapped_value_type>();
-                                    return true;
-                                } else if (const auto mtp = QMetaType::fromType<wrapped_value_type *>();
-                                           data.canConvert(mtp)) {
-                                    targetRef = *data.value<wrapped_value_type *>();
-                                    return true;
-                                }
+
+                auto setRangeModelDataRole = [&target, &data]{
+                    auto &targetRef = QRangeModelDetails::refTo(target);
+                    constexpr auto targetMetaType = QMetaType::fromType<value_type>();
+                    const auto dataMetaType = data.metaType();
+                    if constexpr (!std::is_copy_assignable_v<wrapped_value_type>) {
+                        // This covers move-only types, but also polymorph types like QObject.
+                        // We don't support replacing a stored object with another one, as this
+                        // makes object ownership very messy.
+                        // fall through to error handling
+                    } else if constexpr (QRangeModelDetails::is_wrapped<value_type>()) {
+                        if (QRangeModelDetails::isValid(targetRef)) {
+                            // we need to get a wrapped value type out of the QVariant, which
+                            // might carry a pointer. We have to try all alternatives.
+                            if (const auto mt = QMetaType::fromType<wrapped_value_type>();
+                                data.canConvert(mt)) {
+                                targetRef = data.value<wrapped_value_type>();
+                                return true;
+                            } else if (const auto mtp = QMetaType::fromType<wrapped_value_type *>();
+                                        data.canConvert(mtp)) {
+                                targetRef = *data.value<wrapped_value_type *>();
+                                return true;
                             }
-                        } else if (targetMetaType == dataMetaType) {
-                            targetRef = data.value<value_type>();
-                            return true;
-                        } else if (dataMetaType.flags() & QMetaType::PointerToGadget) {
-                            targetRef = *data.value<value_type *>();
-                            return true;
                         }
+                    } else if (targetMetaType == dataMetaType) {
+                        targetRef = data.value<value_type>();
+                        return true;
+                    } else if (dataMetaType.flags() & QMetaType::PointerToGadget) {
+                        targetRef = *data.value<value_type *>();
+                        return true;
+                    }
 #ifndef QT_NO_DEBUG
-                        qCritical("Not able to assign %s to %s",
-                                  qPrintable(QDebug::toString(data)), targetMetaType.name());
+                    qCritical("Not able to assign %s to %s",
+                                qPrintable(QDebug::toString(data)), targetMetaType.name());
 #endif
-                        return false;
+                    return false;
+                };
+
+                if constexpr (QRangeModelDetails::item_access<wrapped_value_type>()) {
+                    using ItemAccess = QRangeModelDetails::QRangeModelItemAccess<wrapped_value_type>;
+                    if (role == Qt::RangeModelDataRole)
+                        return setRangeModelDataRole();
+                    return ItemAccess::writeRole(target, data, role);
+                } if constexpr (has_metaobject<value_type>) {
+                    if (role == Qt::RangeModelDataRole) {
+                        return setRangeModelDataRole();
                     } else if (row_traits::fixed_size() <= 1) {
                         return writeRole(role, QRangeModelDetails::pointerTo(target), data);
                     } else if (column <= row_traits::fixed_size()
@@ -1552,7 +1619,20 @@ public:
 
                 const auto roleNames = this->itemModel().roleNames();
 
-                if constexpr (multi_role()) {
+                if constexpr (QRangeModelDetails::item_access<wrapped_value_type>()) {
+                    tried = true;
+                    using ItemAccess = QRangeModelDetails::QRangeModelItemAccess<wrapped_value_type>;
+                    const auto roles = roleNames.keys();
+                    auto targetCopy = makeCopy(target);
+                    for (int role : roles) {
+                        if (!ItemAccess::writeRole(QRangeModelDetails::refTo(targetCopy),
+                                                   data.value(role), role)) {
+                            return false;
+                        }
+                    }
+                    updateTarget(target, std::move(targetCopy));
+                    return true;
+                } else if constexpr (multi_role()) {
                     using key_type = typename value_type::key_type;
                     tried = true;
                     const auto roleName = [&roleNames](int role) {

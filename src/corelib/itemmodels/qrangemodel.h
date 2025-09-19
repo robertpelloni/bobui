@@ -26,6 +26,9 @@ public:
     template <typename T>
     struct RowOptions {};
 
+    template <typename T>
+    struct ItemAccess {};
+
     template <typename Range,
               QRangeModelDetails::if_table_range<Range> = true>
     explicit QRangeModel(Range &&range, QObject *parent = nullptr)
@@ -193,12 +196,15 @@ const QAbstractItemModel &QRangeModelImplBase::itemModel() const
     return *m_rangeModel;
 }
 
-// Helper template that we can forward declare in the _impl header,
+// Helper templates that we can forward declare in the _impl header,
 // where QRangeModel is not yet defined.
 namespace QRangeModelDetails
 {
 template <typename T>
 struct QRangeModelRowOptions : QRangeModel::RowOptions<T> {};
+
+template <typename T>
+struct QRangeModelItemAccess : QRangeModel::ItemAccess<T> {};
 }
 
 QT_END_NAMESPACE

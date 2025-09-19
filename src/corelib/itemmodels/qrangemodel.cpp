@@ -508,6 +508,46 @@ QRangeModel::QRangeModel(QRangeModelImplBase *impl, QObject *parent)
 */
 
 /*!
+    \class QRangeModel::ItemAccess
+    \inmodule QtCore
+    \ingroup model-view
+    \brief The ItemAccess template provides a customization point to control
+           how QRangeModel accesses role data of individual items.
+    \since 6.11
+
+    Specialize this template for the type used in your data structure, and
+    implement \c{readRole()} and \c{writeRole()} members to access the role-
+    specific data of your type.
+
+    \code
+    template <>
+    struct QRangeModel::ItemAccess<ItemType>
+    {
+        static QVariant readRole(const ItemType &item, int role)
+        {
+            switch (role) {
+                // ...
+            }
+            return {};
+        }
+
+        static bool writeRole(ItemType &item, const QVariant &data, int role)
+        {
+            bool ok = false;
+            switch (role) {
+                // ...
+            }
+
+            return ok;
+        }
+    };
+    \endcode
+
+    A specialization of this type will take precedence over any predefined
+    behavior. Do not specialize this template for types you do not own.
+*/
+
+/*!
     \fn template <typename Range, QRangeModelDetails::if_table_range<Range>> QRangeModel::QRangeModel(Range &&range, QObject *parent)
     \fn template <typename Range, QRangeModelDetails::if_tree_range<Range>> QRangeModel::QRangeModel(Range &&range, QObject *parent)
     \fn template <typename Range, typename Protocol, QRangeModelDetails::if_tree_range<Range, Protocol>> QRangeModel::QRangeModel(Range &&range, Protocol &&protocol, QObject *parent)

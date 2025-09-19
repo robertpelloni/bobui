@@ -78,6 +78,38 @@ struct QRangeModel::RowOptions<MultiRoleGadget>
     static constexpr auto rowCategory = QRangeModel::RowCategory::MultiRoleItem;
 };
 
+struct ItemAccessType
+{
+    int display = 0;
+};
+
+template <>
+struct QRangeModel::ItemAccess<ItemAccessType>
+{
+    static QVariant readRole(const ItemAccessType &item, int role)
+    {
+        switch (role) {
+        case Qt::DisplayRole:
+        case Qt::EditRole:
+            return item.display;
+        }
+        return {};
+    }
+
+    static bool writeRole(ItemAccessType &item, const QVariant &data, int role)
+    {
+        bool ok = false;
+        switch (role) {
+        case Qt::DisplayRole:
+        case Qt::EditRole:
+            item.display = data.toInt(&ok);
+            break;
+        }
+
+        return ok;
+    }
+};
+
 class Object : public QObject
 {
     Q_OBJECT
@@ -386,6 +418,10 @@ struct Data {
         std::make_unique<MultiRoleGadget>(MultiRoleGadget{u"red"_s, Qt::red, {}}),
         std::make_unique<MultiRoleGadget>(MultiRoleGadget{u"green"_s, Qt::green, {}}),
         std::make_unique<MultiRoleGadget>(MultiRoleGadget{u"blue"_s, Qt::blue, {}}),
+    };
+
+    std::vector<ItemAccessType> vectorOfItemAccess = {
+        {1}, {2}, {42}
     };
 
     std::vector<Row> vectorOfStructs = {

@@ -241,6 +241,9 @@ void tst_QRangeModel::createTestData()
     ADD_POINTER(arrayOfUniqueMultiRoleGadgets, 1, ChangeAction::SetData | ChangeAction::SetItemData,
             u"MultiRoleGadget"_s);
 
+    ADD_ALL(vectorOfItemAccess, 1, ChangeAction::ChangeRows | ChangeAction::SetData | ChangeAction::SetItemData,
+            1);
+
     ADD_MOVE(listOfObjects, 2, ChangeAction::ChangeRows | ChangeAction::SetData | ChangeAction::SetItemData,
              u"string"_s);
     ADD_REF(arrayOfUniqueObjects, 2, ChangeAction::SetData | ChangeAction::SetItemData,
