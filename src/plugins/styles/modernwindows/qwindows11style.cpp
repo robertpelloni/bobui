@@ -2450,9 +2450,6 @@ void QWindows11Style::polish(QPalette& result)
     SET_IF_UNRESOLVED(QPalette::Inactive, QPalette::Text, result.text().color());
     SET_IF_UNRESOLVED(QPalette::Inactive, QPalette::WindowText, result.windowText().color());
 
-    if (highContrastTheme)
-        result.setColor(QPalette::Active, QPalette::HighlightedText, result.windowText().color());
-
     auto *d = const_cast<QWindows11StylePrivate *>(d_func());
     d->m_titleBarMinIcon = QIcon();
     d->m_titleBarMaxIcon = QIcon();
