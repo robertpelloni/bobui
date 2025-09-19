@@ -1499,6 +1499,25 @@ public:
         return success;
     }
 
+    template <typename LHS, typename RHS>
+    void updateTarget(LHS &org, RHS &&copy) noexcept
+    {
+        if constexpr (std::is_pointer_v<RHS>) {
+            return;
+        } else {
+            using std::swap;
+            if constexpr (std::conjunction_v<std::is_same<LHS, RHS>, std::is_move_assignable<LHS>>)
+                org = std::move(copy);
+            else
+                swap(org, copy);
+        }
+    }
+    template <typename LHS, typename RHS>
+    void updateTarget(LHS *org, RHS &&copy) noexcept
+    {
+        updateTarget(*org, std::move(copy));
+    }
+
     bool setItemData(const QModelIndex &index, const QMap<int, QVariant> &data)
     {
         if (!index.isValid() || data.isEmpty())
@@ -1516,11 +1535,28 @@ public:
                 Q_UNUSED(this);
                 using value_type = q20::remove_cvref_t<decltype(target)>;
                 using multi_role = QRangeModelDetails::is_multi_role<value_type>;
+                using wrapped_value_type = QRangeModelDetails::wrapped_t<value_type>;
+
+                // transactional: if possible, modify a copy and only
+                // update target if all values from data could be stored.
+                auto makeCopy = [](const value_type &original){
+                    if constexpr (!std::is_copy_assignable_v<wrapped_value_type>)
+                        return QRangeModelDetails::pointerTo(original); // no transaction support
+                    else if constexpr (std::is_pointer_v<decltype(original)>)
+                        return *original;
+                    else if constexpr (std::is_copy_assignable_v<value_type>)
+                        return original;
+                    else
+                        return QRangeModelDetails::pointerTo(original);
+                };
+
+                const auto roleNames = this->itemModel().roleNames();
+
                 if constexpr (multi_role()) {
                     using key_type = typename value_type::key_type;
                     tried = true;
-                    const auto roleName = [map = this->itemModel().roleNames()](int role) {
-                        return map.value(role);
+                    const auto roleName = [&roleNames](int role) {
+                        return roleNames.value(role);
                     };
 
                     // transactional: only update target if all values from data
@@ -1549,20 +1585,7 @@ public:
                 } else if constexpr (has_metaobject<value_type>) {
                     if (row_traits::fixed_size() <= 1) {
                         tried = true;
-                        using wrapped_type = QRangeModelDetails::wrapped_t<value_type>;
-                        // transactional: if possible, modify a copy and only
-                        // update target if all values from data could be stored.
-                        auto targetCopy = [](auto &&origin) {
-                            if constexpr (!std::is_copy_assignable_v<wrapped_type>)
-                                return QRangeModelDetails::pointerTo(origin); // no transaction support
-                            else if constexpr (std::is_pointer_v<decltype(target)>)
-                                return *origin;
-                            else if constexpr (std::is_copy_assignable_v<value_type>)
-                                return origin;
-                            else
-                                return QRangeModelDetails::pointerTo(origin);
-                        }(target);
-                        const auto roleNames = this->itemModel().roleNames();
+                        auto targetCopy = makeCopy(target);
                         for (auto &&[role, value] : data.asKeyValueRange()) {
                             if (role == Qt::RangeModelDataRole)
                                 continue;
@@ -1575,12 +1598,7 @@ public:
                                 return false;
                             }
                         }
-                        if constexpr (std::is_pointer_v<decltype(targetCopy)>)
-                            ; // couldn't copy
-                        else if constexpr (std::is_pointer_v<decltype(target)>)
-                            qSwap(*target, targetCopy);
-                        else
-                            qSwap(target, targetCopy);
+                        updateTarget(target, std::move(targetCopy));
                         return true;
                     }
                 }
