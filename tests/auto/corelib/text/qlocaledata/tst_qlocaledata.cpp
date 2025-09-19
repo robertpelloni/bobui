@@ -138,7 +138,7 @@ void tst_QLocaleData::numericData_data()
     // Doesn't set any field of NumericData except isC and grouping:
     QTest::newRow("C/exp")
         << QLocaleData::c() << QLocaleData::DoubleScientificMode
-        << u""_s << u""_s << u""_s << u""_s << u""_s << GS(1, 3, 3) << char32_t(0) << false;
+        << u"."_s << u","_s << u"-"_s << u"+"_s << u"e"_s << GS(1, 3, 3) << U'0' << false;
 
     const QLocaleData *enUS = LOCALE_DATA_PTR(English, LatinScript, UnitedStates);
     // Check mode controls which fields are set:
@@ -293,11 +293,28 @@ void tst_QLocaleData::numericData()
     const bool isC = QByteArrayView(QTest::currentDataTag()).startsWith("C/");
 
     QLocaleData::NumericData numeric(data, mode);
-    QCOMPARE(numeric.decimal, decimal);
-    QCOMPARE(numeric.group, group);
-    QCOMPARE(numeric.minus, minus);
-    QCOMPARE(numeric.plus, plus);
-    QCOMPARE(numeric.exponent, exponent);
+    if (isC || mode == QLocaleData::IntegerMode)
+        QVERIFY(numeric.decimal.isNull());
+    else
+        QCOMPARE(numeric.decimal, decimal);
+    if (isC)
+        QVERIFY(numeric.group.isNull());
+    else
+        QCOMPARE(numeric.group, group);
+
+    if (isC)
+        QVERIFY(numeric.minus.isNull());
+    else
+        QCOMPARE(numeric.minus, minus);
+    if (isC)
+        QVERIFY(numeric.plus.isNull());
+    else
+        QCOMPARE(numeric.plus, plus);
+
+    if (isC || mode != QLocaleData::DoubleScientificMode)
+        QVERIFY(numeric.exponent.isNull());
+    else
+        QCOMPARE(numeric.exponent, exponent);
     QCOMPARE(numeric.isC, isC);
     QCOMPARE(numeric.grouping.first, groupSizes.first);
     QCOMPARE(numeric.grouping.higher, groupSizes.higher);
