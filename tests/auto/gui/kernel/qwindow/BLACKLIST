@@ -25,3 +25,5 @@ android
 windows-10
 windows-11
 android
+[stateChangeSignal]
+macos # QTBUG-140388
