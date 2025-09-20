@@ -3339,13 +3339,17 @@ bool QObject::disconnect(const QObject *sender, const char *signal,
 
     QByteArray pinnedSignal;
     bool signal_found = false;
+    const QMetaObject *smeta = sender->metaObject();
+    Q_ASSERT(QMetaObjectPrivate::get(smeta)->revision >= 7);
+    QByteArrayView signalName;
+    QArgumentTypeArray signalTypes;
     if (signal) {
         QT_TRY {
             pinnedSignal = QMetaObject::normalizedSignature(signal);
             signal = pinnedSignal.constData();
         } QT_CATCH (const std::bad_alloc &) {
             // if the signal is already normalized, we can continue.
-            if (sender->metaObject()->indexOfSignal(signal) == -1)
+            if (smeta->indexOfSignal(signal) == -1)
                 QT_RETHROW;
         }
     }
@@ -3363,13 +3367,17 @@ bool QObject::disconnect(const QObject *sender, const char *signal,
 
     QByteArray pinnedMethod;
     bool method_found = false;
+    const QMetaObject *rmeta = receiver ? receiver->metaObject() : nullptr;
+    Q_ASSERT(!rmeta || QMetaObjectPrivate::get(rmeta)->revision >= 7);
+    QByteArrayView methodName;
+    QArgumentTypeArray methodTypes;
     if (method) {
         QT_TRY {
             pinnedMethod = QMetaObject::normalizedSignature(method);
             method = pinnedMethod.constData();
         } QT_CATCH(const std::bad_alloc &) {
             // if the method is already normalized, we can continue.
-            if (receiver->metaObject()->indexOfMethod(method) == -1)
+            if (rmeta->indexOfMethod(method) == -1)
                 QT_RETHROW;
         }
     }
@@ -3379,15 +3387,8 @@ bool QObject::disconnect(const QObject *sender, const char *signal,
      * and slots with the same signature.
     */
     bool res = false;
-    const QMetaObject *smeta = sender->metaObject();
-    QByteArrayView signalName;
-    QArgumentTypeArray signalTypes;
-    Q_ASSERT(QMetaObjectPrivate::get(smeta)->revision >= 7);
     if (signal)
         signalName = QMetaObjectPrivate::decodeMethodSignature(signal, signalTypes);
-    QByteArrayView methodName;
-    QArgumentTypeArray methodTypes;
-    Q_ASSERT(!receiver || QMetaObjectPrivate::get(receiver->metaObject())->revision >= 7);
     if (method)
         methodName = QMetaObjectPrivate::decodeMethodSignature(method, methodTypes);
     do {
@@ -3405,7 +3406,6 @@ bool QObject::disconnect(const QObject *sender, const char *signal,
         if (!method) {
             res |= QMetaObjectPrivate::disconnect(sender, signal_index, smeta, receiver, -1, nullptr);
         } else {
-            const QMetaObject *rmeta = receiver->metaObject();
             do {
                 int method_index = getMethodIndex(membcode, rmeta, methodName, methodTypes);
                 if (method_index >= 0)
