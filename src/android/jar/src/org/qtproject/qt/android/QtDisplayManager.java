@@ -47,9 +47,6 @@ class QtDisplayManager
     static native void handleScreenDensityChanged(double density);
     // screen methods
 
-    private boolean m_isFullScreen = false;
-    private boolean m_expandedToCutout = false;
-
     private static int m_previousRotation = -1;
 
     private final DisplayManager.DisplayListener m_displayListener;
@@ -290,17 +287,11 @@ class QtDisplayManager
         decor.post(() -> decor.requestApplyInsets());
     }
 
-    void setSystemUiVisibility(boolean isFullScreen, boolean expandedToCutout)
+    void setSystemUiVisibility(boolean fullScreen, boolean expandedClientArea)
     {
-        if (m_isFullScreen == isFullScreen && m_expandedToCutout == expandedToCutout)
-            return;
-
-        m_isFullScreen = isFullScreen;
-        m_expandedToCutout = expandedToCutout;
-
-        if (m_isFullScreen)
+        if (fullScreen)
             showFullScreen(m_activity);
-        else if (m_expandedToCutout)
+        else if (expandedClientArea)
             showExpanded(m_activity);
         else
             showNormal(m_activity);
@@ -320,27 +311,50 @@ class QtDisplayManager
         }
     }
 
-    boolean isFullScreen()
+    static boolean isFullScreen(Activity activity)
     {
-        return m_isFullScreen;
-    }
+        Window window = activity.getWindow();
+        if (window == null)
+            return false;
 
-    boolean expandedToCutout()
-    {
-        return m_expandedToCutout;
-    }
-
-    boolean decorFitsSystemWindows()
-    {
-        return !isFullScreen() && !expandedToCutout();
-    }
-
-    void reinstateFullScreen()
-    {
-        if (m_isFullScreen) {
-            m_isFullScreen = false;
-            setSystemUiVisibility(true, m_expandedToCutout);
+        final View decor = window.getDecorView();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            WindowInsets insets = activity.getWindow().getDecorView().getRootWindowInsets();
+            if (insets != null)
+                return !insets.isVisible(WindowInsets.Type.statusBars());
+        } else {
+            @SuppressWarnings("deprecation")
+            int flags = decor.getSystemUiVisibility();
+            @SuppressWarnings("deprecation")
+            int immersiveMask = View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
+            return (flags & immersiveMask) == immersiveMask;
         }
+
+        return false;
+    }
+
+    static boolean isExpandedClientArea(Activity activity)
+    {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM)
+            return edgeToEdgeEnabled(activity);
+
+        @SuppressWarnings("deprecation")
+        int statusBarColor = activity.getWindow().getStatusBarColor();
+        // If the status bar is not fully opaque assume we have expanded client
+        // area and we're drawing under it.
+        int statusBarAlpha = statusBarColor >>> 24;
+        return statusBarAlpha != 0xFF;
+    }
+
+    static boolean decorFitsSystemWindows(Activity activity)
+    {
+        return !isFullScreen(activity) && !isExpandedClientArea(activity);
+    }
+
+    void restoreFullScreenVisibility(Activity activity)
+    {
+        if (isFullScreen(activity))
+            setSystemUiVisibility(true, false);
     }
 
     /*

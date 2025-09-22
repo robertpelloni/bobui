@@ -46,7 +46,9 @@ abstract class QtActivityDelegateBase
         m_activity = activity;
         QtNative.setActivity(m_activity);
         m_displayManager = new QtDisplayManager(m_activity);
-        m_inputDelegate = new QtInputDelegate(m_displayManager::reinstateFullScreen);
+        m_inputDelegate = new QtInputDelegate(() -> {
+            m_displayManager.restoreFullScreenVisibility(m_activity);
+        });
         m_accessibilityDelegate = new QtAccessibilityDelegate();
     }
 
@@ -105,7 +107,7 @@ abstract class QtActivityDelegateBase
         Configuration config = resources.getConfiguration();
         int uiMode = config.uiMode & Configuration.UI_MODE_NIGHT_MASK;
 
-        if (m_displayManager.decorFitsSystemWindows()) {
+        if (QtDisplayManager.decorFitsSystemWindows(m_activity)) {
             Window window = m_activity.getWindow();
             QtDisplayManager.enableSystemBarsBackgroundDrawing(window);
             int status = QtDisplayManager.getThemeDefaultStatusBarColor(m_activity);
