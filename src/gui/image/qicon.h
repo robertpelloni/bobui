@@ -18,9 +18,12 @@ class QPainter;
 
 class Q_GUI_EXPORT QIcon
 {
+    Q_GADGET
 public:
     enum Mode { Normal, Disabled, Active, Selected };
+    Q_ENUM(Mode);
     enum State { On, Off };
+    Q_ENUM(State);
 
     enum class ThemeIcon {
         AddressBookNew,
@@ -178,6 +181,7 @@ public:
 
         NThemeIcons
     };
+    Q_ENUM(ThemeIcon);
 
     QIcon() noexcept;
     QIcon(const QPixmap &pixmap);
