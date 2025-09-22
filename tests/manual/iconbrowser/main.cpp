@@ -401,47 +401,62 @@ public:
                 const int pixmapIndex = styleMO->indexOfEnumerator("StandardPixmap");
                 Q_ASSERT(pixmapIndex >= 0);
                 const QMetaEnum pixmapEnum = styleMO->enumerator(pixmapIndex);
+                if (unsigned(pixmapEnum.value(row)) >= unsigned(QStyle::NStandardPixmap))
+                    return {};
                 const QString pixmapName = QString::fromUtf8(pixmapEnum.key(row));
                 return QVariant(pixmapName);
             }
             case File:
                 return row < fileIconTypes.size() ? fileIconTypes.at(row) : QVariant();
             default:
-                return themedIcons.at(row);
-            }
-            break;
-        case Qt::DecorationRole:
-            switch (index.column()) {
-            case Name:
-                break;
-            case StylePixmap:
-                if (row >= themedIcons.size())
-                    break;
-                return QIcon(QApplication::style()->standardPixmap(QStyle::StandardPixmap(row)));
-            case StyleIcon:
-                if (row >= themedIcons.size())
-                    break;
-                return QApplication::style()->standardIcon(QStyle::StandardPixmap(row));
-            case Theme:
-                if (row >= themedIcons.size())
-                    break;
-                return QIcon(QApplicationPrivate::platformTheme()->standardPixmap(
-                    QPlatformTheme::StandardPixmap(row), QSize(64, 64) * qGuiApp->devicePixelRatio()));
-            case Icon:
                 if (row < themedIcons.size())
-                    return QIcon::fromTheme(themedIcons.at(row));
-                break;
-            case File:
-                if (row >= fileIconTypes.size())
-                    break;
-                if (row <= QAbstractFileIconProvider::File)
-                    return m_fileIconProvider.icon(QAbstractFileIconProvider::IconType(row));
-                return m_fileIconProvider.icon(QFileInfo(fileIconTypes.at(row)));
+                    return themedIcons.at(row);
+                return {};
             }
             break;
+        case Qt::DecorationRole: {
+            QIcon result = [&]{
+                switch (index.column()) {
+                case Name:
+                    break;
+                case StylePixmap:
+                    if (row >= themedIcons.size())
+                        break;
+                    return QIcon(QApplication::style()->standardPixmap(QStyle::StandardPixmap(row)));
+                case StyleIcon:
+                    if (row >= themedIcons.size())
+                        break;
+                    return QApplication::style()->standardIcon(QStyle::StandardPixmap(row));
+                case Theme:
+                    if (row >= themedIcons.size())
+                        break;
+                    return QIcon(QApplicationPrivate::platformTheme()->standardPixmap(
+                        QPlatformTheme::StandardPixmap(row), QSize(64, 64) * qGuiApp->devicePixelRatio()));
+                case Icon:
+                    if (row < themedIcons.size())
+                        return QIcon::fromTheme(themedIcons.at(row));
+                    break;
+                case File:
+                    if (row >= fileIconTypes.size())
+                        break;
+                    if (row <= QAbstractFileIconProvider::File)
+                        return m_fileIconProvider.icon(QAbstractFileIconProvider::IconType(row));
+                    return m_fileIconProvider.icon(QFileInfo(fileIconTypes.at(row)));
+                }
+                return QIcon();
+            }();
+            static QIcon missingIcon = []{
+                QImage image(64, 64, QImage::Format_ARGB32_Premultiplied);
+                image.fill(Qt::magenta);
+                return QIcon(QPixmap::fromImage(image));
+            }();
+            return !result.isNull() ? result : missingIcon;
+            break;
+        }
         default:
             break;
         }
+
         return {};
     }
     QVariant headerData(int section, Qt::Orientation orientation, int role) const override
@@ -482,8 +497,8 @@ struct ColumnModel : public QSortFilterProxyModel
     bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const override
     {
         const QModelIndex sourceIndex = sourceModel()->index(sourceRow, Column, sourceParent);
-        const QIcon iconData = sourceModel()->data(sourceIndex, Qt::DecorationRole).template value<QIcon>();
-        return !iconData.isNull();
+        const QString iconName = sourceModel()->data(sourceIndex, Qt::DisplayRole).template value<QString>();
+        return !iconName.isNull();
     }
 };
 
