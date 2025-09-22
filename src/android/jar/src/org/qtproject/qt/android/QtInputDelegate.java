@@ -9,6 +9,7 @@ import android.graphics.Rect;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.ResultReceiver;
 import android.text.method.MetaKeyKeyListener;
 import android.util.DisplayMetrics;
@@ -166,7 +167,7 @@ class QtInputDelegate implements QtInputConnection.QtInputConnectionListener, Qt
         } else {
             if (m_imm == null)
                 return;
-            m_imm.showSoftInput(m_currentEditText, 0, new ResultReceiver(new Handler()) {
+            m_imm.showSoftInput(m_currentEditText, 0, new ResultReceiver(new Handler(Looper.getMainLooper())) {
                 @Override
                 @SuppressWarnings("fallthrough")
                 protected void onReceiveResult(int resultCode, Bundle resultData) {
@@ -278,7 +279,7 @@ class QtInputDelegate implements QtInputConnection.QtInputConnectionListener, Qt
                 activity.getWindow().getInsetsController().hide(Type.ime());
             } else {
                 m_imm.hideSoftInputFromWindow(m_currentEditText.getWindowToken(), 0,
-                        new ResultReceiver(new Handler()) {
+                        new ResultReceiver(new Handler(Looper.getMainLooper())) {
                             @Override
                             protected void onReceiveResult(int resultCode, Bundle resultData) {
                                 switch (resultCode) {
