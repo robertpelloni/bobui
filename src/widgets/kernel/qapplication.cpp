@@ -1584,7 +1584,7 @@ QWidget *QApplication::activeWindow()
 #if QT_DEPRECATED_SINCE(6,0)
 QFontMetrics QApplication::fontMetrics()
 {
-    return QApplicationPrivate::desktop()->fontMetrics();
+    return QFontMetrics(qApp->font());
 }
 #endif
 
