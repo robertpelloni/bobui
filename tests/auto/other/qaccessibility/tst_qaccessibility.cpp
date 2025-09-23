@@ -1904,6 +1904,20 @@ void tst_QAccessibility::textEditTest()
         QCOMPARE(textIface->textAtOffset(15, QAccessible::LineBoundary, &startOffset, &endOffset), QString("How are you today?"));
         QCOMPARE(startOffset, 13);
         QCOMPARE(endOffset, 31);
+
+        QCOMPARE(textIface->textAfterOffset(3, QAccessible::WordBoundary, &startOffset, &endOffset),
+                 QString("world"));
+        QCOMPARE(
+                textIface->textBeforeOffset(8, QAccessible::WordBoundary, &startOffset, &endOffset),
+                QString("hello"));
+        // no more word before or after the last one
+        QCOMPARE(
+                textIface->textBeforeOffset(1, QAccessible::WordBoundary, &startOffset, &endOffset),
+                QString());
+        QCOMPARE(textIface->textAfterOffset(textIface->characterCount() - 1,
+                                            QAccessible::WordBoundary, &startOffset, &endOffset),
+                 QString());
+
         QCOMPARE(textIface->characterCount(), 48);
         QFontMetrics fm(edit.document()->defaultFont());
         QCOMPARE(textIface->characterRect(0).size(), QSize(fm.horizontalAdvance("h"), fm.height()));
