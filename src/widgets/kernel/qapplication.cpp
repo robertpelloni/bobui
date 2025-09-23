@@ -357,8 +357,6 @@ Q_GLOBAL_STATIC(FontHash, app_fonts)
 // Exported accessor for use outside of this file
 FontHash *qt_app_fonts_hash() { return app_fonts(); }
 
-QWidget *qt_desktopWidget = nullptr;                // root window widgets
-
 /*!
     \internal
 */
@@ -684,9 +682,6 @@ QApplication::~QApplication()
         }
         delete mySet;
     }
-
-    delete qt_desktopWidget;
-    qt_desktopWidget = nullptr;
 
     QApplicationPrivate::widgetPalettes.clear();
 
@@ -2436,24 +2431,6 @@ void QApplicationPrivate::sendSyntheticEnterLeave(QWidget *widget)
 #else // !QT_NO_CURSOR
     Q_UNUSED(widget);
 #endif // QT_NO_CURSOR
-}
-
-/*!
-    \internal
-
-    Returns the desktop widget (also called the root window).
-
-    The widget represents the entire virtual desktop, and its geometry will
-    be the union of all screens.
-*/
-QWidget *QApplicationPrivate::desktop()
-{
-    CHECK_QAPP_INSTANCE(nullptr)
-    if (!qt_desktopWidget || // not created yet
-         !(qt_desktopWidget->windowType() == Qt::Desktop)) { // reparented away
-        qt_desktopWidget = new QWidget(nullptr, Qt::Desktop);
-    }
-    return qt_desktopWidget;
 }
 
 /*
