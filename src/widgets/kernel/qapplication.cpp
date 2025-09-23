@@ -2155,7 +2155,7 @@ void QApplicationPrivate::dispatchEnterLeave(QWidget* enter, QWidget* leave, con
         if (!parentOfLeavingCursor->window()->graphicsProxyWidget())
 #endif
         {
-            if (enter == QApplicationPrivate::desktop()) {
+            if (enter && enter->windowFlags().testFlag(Qt::Desktop)) {
                 qt_qpa_set_cursor(enter, true);
             } else {
                 qt_qpa_set_cursor(parentOfLeavingCursor, true);
