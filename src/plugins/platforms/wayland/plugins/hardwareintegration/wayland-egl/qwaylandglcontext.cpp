@@ -15,6 +15,8 @@
 #include <QtGui/private/qopenglcontext_p.h>
 #include <QtOpenGL/private/qopengltexturecache_p.h>
 #include <QtGui/private/qguiapplication_p.h>
+#include <QtGui/private/qeglpbuffer_p.h>
+
 
 #include <qpa/qplatformopenglcontext.h>
 #include <QtGui/QSurfaceFormat>
@@ -370,14 +372,18 @@ void QWaylandGLContext::initialize()
 
 void QWaylandGLContext::beginFrame()
 {
-    Q_ASSERT(m_currentWindow != nullptr);
+    if (!m_currentWindow)
+        return;
+
     if (m_supportNonBlockingSwap)
         m_currentWindow->beginFrame();
 }
 
 void QWaylandGLContext::endFrame()
 {
-    Q_ASSERT(m_currentWindow != nullptr);
+    if (!m_currentWindow)
+        return;
+
     if (m_doneCurrentWorkAround) {
         doneCurrent();
         QOpenGLContextPrivate::setCurrentContext(nullptr);
@@ -391,6 +397,11 @@ bool QWaylandGLContext::makeCurrent(QPlatformSurface *surface)
 {
     if (!isValid()) {
         return false;
+    }
+
+    if (surface->surface()->surfaceClass() == QSurface::Offscreen) {
+        m_currentWindow = nullptr;
+        return QEGLPlatformContext::makeCurrent(surface);
     }
 
     // in QWaylandGLContext() we called eglBindAPI with the correct value. However,
@@ -438,11 +449,16 @@ bool QWaylandGLContext::makeCurrent(QPlatformSurface *surface)
 
 void QWaylandGLContext::doneCurrent()
 {
+    m_currentWindow = nullptr;
     eglMakeCurrent(eglDisplay(), EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 }
 
 void QWaylandGLContext::swapBuffers(QPlatformSurface *surface)
 {
+    if (surface->surface()->surfaceClass() == QSurface::Offscreen) {
+        return QEGLPlatformContext::swapBuffers(surface);
+    }
+
     QWaylandEglWindow *window = static_cast<QWaylandEglWindow *>(surface);
 
     EGLSurface eglSurface = window->eglSurface();
@@ -481,12 +497,18 @@ void QWaylandGLContext::swapBuffers(QPlatformSurface *surface)
 
 GLuint QWaylandGLContext::defaultFramebufferObject(QPlatformSurface *surface) const
 {
-    return static_cast<QWaylandEglWindow *>(surface)->contentFBO();
+    if (surface->surface()->surfaceClass() == QSurface::Window)
+        return static_cast<QWaylandEglWindow *>(surface)->contentFBO();
+    else
+        return 0;
 }
 
 EGLSurface QWaylandGLContext::eglSurfaceForPlatformSurface(QPlatformSurface *surface)
 {
-    return static_cast<QWaylandEglWindow *>(surface)->eglSurface();
+    if (surface->surface()->surfaceClass() == QSurface::Window)
+        return static_cast<QWaylandEglWindow *>(surface)->eglSurface();
+    else
+        return static_cast<QEGLPbuffer *>(surface)->pbuffer();
 }
 
 }
