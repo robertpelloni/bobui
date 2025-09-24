@@ -986,9 +986,7 @@ void QWidgetPrivate::init(QWidget *parentWidget, Qt::WindowFlags f)
     data.crect = parentWidget ? QRect(0,0,100,30) : QRect(0,0,640,480);
     initFocusChain();
 
-    if ((f & Qt::WindowType_Mask) == Qt::Desktop)
-        q->create();
-    else if (parentWidget)
+    if (parentWidget)
         q->setParent(parentWidget, data.window_flags);
     else {
         adjustFlags(data.window_flags, q);
@@ -1225,7 +1223,7 @@ void QWidget::create(WId window, bool initializeWindow, bool destroyOldWindow)
     d->create();
 
     // A real toplevel window needs a paint manager
-    if (isWindow() && windowType() != Qt::Desktop)
+    if (isWindow())
         d->topData()->repaintManager.reset(new QWidgetRepaintManager(this));
 
     d->setModal_sys();
@@ -1243,12 +1241,10 @@ void QWidget::create(WId window, bool initializeWindow, bool destroyOldWindow)
         d->setWindowTitle_helper(d->topData()->caption);
     if (isWindow() && !d->topData()->filePath.isEmpty())
         d->setWindowFilePath_helper(d->topData()->filePath);
-    if (windowType() != Qt::Desktop) {
-        d->updateSystemBackground();
+    d->updateSystemBackground();
 
-        if (isWindow() && !testAttribute(Qt::WA_SetWindowIcon))
-            d->setWindowIcon_sys();
-    }
+    if (isWindow() && !testAttribute(Qt::WA_SetWindowIcon))
+        d->setWindowIcon_sys();
 
     // Frame strut update needed in cases where there are native widgets such as QGLWidget,
     // as those force native window creation on their ancestors before they are shown.
@@ -1327,10 +1323,8 @@ void QWidgetPrivate::create()
     if (win->isTopLevel()) {
         QScreen *targetScreen = topData()->initialScreen;
         topData()->initialScreen = nullptr;
-        if (!targetScreen) {
-            targetScreen = q->windowType() != Qt::Desktop
-                ? q->screen() : nullptr;
-        }
+        if (!targetScreen)
+            targetScreen = q->screen();
         win->setScreen(targetScreen);
     }
 
@@ -1356,12 +1350,10 @@ void QWidgetPrivate::create()
     qt_window_private(win)->positionPolicy = topData()->posIncludesFrame ?
         QWindowPrivate::WindowFrameInclusive : QWindowPrivate::WindowFrameExclusive;
 
-    if (q->windowType() != Qt::Desktop || q->testAttribute(Qt::WA_NativeWindow)) {
-        win->create();
-        // Enable nonclient-area events for QDockWidget and other NonClientArea-mouse event processing.
-        if (QPlatformWindow *platformWindow = win->handle())
-            platformWindow->setFrameStrutEventsEnabled(true);
-    }
+    win->create();
+    // Enable nonclient-area events for QDockWidget and other NonClientArea-mouse event processing.
+    if (QPlatformWindow *platformWindow = win->handle())
+        platformWindow->setFrameStrutEventsEnabled(true);
 
     data.window_flags = win->flags();
 
@@ -1381,19 +1373,15 @@ void QWidgetPrivate::create()
     QBackingStore *store = q->backingStore();
     usesRhiFlush = false;
 
-    if (q->windowType() == Qt::Desktop) {
-        q->setAttribute(Qt::WA_PaintOnScreen, true);
-    } else {
-        if (!store && q->isWindow())
-            q->setBackingStore(new QBackingStore(win));
+    if (!store && q->isWindow())
+        q->setBackingStore(new QBackingStore(win));
 
-        QPlatformBackingStoreRhiConfig rhiConfig;
-        usesRhiFlush = q_evaluateRhiConfig(q, &rhiConfig, nullptr);
-        if (usesRhiFlush && q->backingStore()) {
-            // Trigger creation of support infrastructure up front,
-            // now that we have a specific RHI configuration.
-            q->backingStore()->handle()->createRhi(win, rhiConfig);
-        }
+    QPlatformBackingStoreRhiConfig rhiConfig;
+    usesRhiFlush = q_evaluateRhiConfig(q, &rhiConfig, nullptr);
+    if (usesRhiFlush && q->backingStore()) {
+        // Trigger creation of support infrastructure up front,
+        // now that we have a specific RHI configuration.
+        q->backingStore()->handle()->createRhi(win, rhiConfig);
     }
 
     setWindowModified_helper();
@@ -2698,7 +2686,7 @@ void QWidgetPrivate::setStyle_helper(QStyle *newStyle, bool propagate)
     extra->style = newStyle;
 
     // repolish
-    if (polished && q->windowType() != Qt::Desktop) {
+    if (polished) {
         oldStyle->unpolish(q);
         q->style()->polish(q);
     }
@@ -3481,10 +3469,6 @@ void QWidgetPrivate::setEnabled_helper(bool enable)
 
     Setting this property to true announces to the system that this
     widget \e may be able to accept drop events.
-
-    If the widget is the desktop (windowType() == Qt::Desktop), this may
-    fail if another application is using the desktop; you can call
-    acceptDrops() to test if this occurs.
 
     \warning Do not modify this property in a drag and drop event handler.
 
@@ -9270,8 +9254,7 @@ bool QWidget::event(QEvent *event)
         d->resolveFont();
         break;
     case QEvent::ApplicationPaletteChange:
-        if (!(windowType() == Qt::Desktop))
-            d->resolvePalette();
+        d->resolvePalette();
         break;
 
     case QEvent::ToolBarChange:
@@ -9519,7 +9502,7 @@ void QWidget::changeEvent(QEvent * event)
         break;
 
     case QEvent::ThemeChange:
-        if (QGuiApplication::desktopSettingsAware() && windowType() != Qt::Desktop
+        if (QGuiApplication::desktopSettingsAware()
             && qApp && !QCoreApplication::closingDown()) {
             if (testAttribute(Qt::WA_WState_Polished))
                 QApplication::style()->unpolish(this);
@@ -10798,12 +10781,9 @@ void QWidget::setParent(QWidget *parent, Qt::WindowFlags f)
     if (f & Qt::Window) // Frame geometry likely changes, refresh.
         d->data.fstrut_dirty = true;
 
-    QWidget *desktopWidget = nullptr;
-    if (parent && parent->windowType() == Qt::Desktop)
-        desktopWidget = parent;
-    bool newParent = (parent != parentWidget()) || desktopWidget;
+    bool newParent = (parent != parentWidget());
 
-    if (newParent && parent && !desktopWidget) {
+    if (newParent && parent) {
         if (testAttribute(Qt::WA_NativeWindow) && !QCoreApplication::testAttribute(Qt::AA_DontCreateNativeWidgetSiblings))
             parent->d_func()->enforceNativeChildren();
         else if (parent->d_func()->nativeChildrenForced() || parent->testAttribute(Qt::WA_PaintOnScreen))
@@ -10847,9 +10827,6 @@ void QWidget::setParent(QWidget *parent, Qt::WindowFlags f)
         focusWidget()->clearFocus();
 
     d->setParent_sys(parent, f);
-
-    if (desktopWidget)
-        parent = nullptr;
 
     if (d->textureChildSeen && parent) {
         // set the textureChildSeen flag up the whole parent chain
@@ -11011,14 +10988,6 @@ void QWidgetPrivate::setParent_sys(QWidget *newparent, Qt::WindowFlags f)
     bool wasCreated = q->testAttribute(Qt::WA_WState_Created);
 
     QScreen *targetScreen = nullptr;
-    // Handle a request to move the widget to a particular screen
-    if (newparent && newparent->windowType() == Qt::Desktop) {
-        // make sure the widget is created on the same screen as the
-        // programmer specified desktop widget
-        targetScreen = newparent->screen();
-        newparent = nullptr;
-    }
-
     setWinId(0);
 
     if (!newparent) {
@@ -11463,7 +11432,7 @@ void QWidget::setAttribute(Qt::WidgetAttribute attribute, bool on)
                       "QWidgetPrivate::high_attributes[] too small to contain all attributes in WidgetAttribute");
 #ifdef Q_OS_WIN
     // ### Don't use PaintOnScreen+paintEngine() to do native painting in some future release
-    if (attribute == Qt::WA_PaintOnScreen && on && windowType() != Qt::Desktop && !inherits("QGLWidget")) {
+    if (attribute == Qt::WA_PaintOnScreen && on && !inherits("QGLWidget")) {
         // see ::paintEngine for details
         paintEngine();
         if (d->noPaintOnScreen)
@@ -12286,7 +12255,7 @@ void QWidgetPrivate::stackUnder_sys(QWidget*)
 QRect QWidgetPrivate::frameStrut() const
 {
     Q_Q(const QWidget);
-    if (!q->isWindow() || (q->windowType() == Qt::Desktop) || q->testAttribute(Qt::WA_DontShowOnScreen)) {
+    if (!q->isWindow() || q->testAttribute(Qt::WA_DontShowOnScreen)) {
         // x2 = x1 + w - 1, so w/h = 1
         return QRect(0, 0, 1, 1);
     }
@@ -12685,28 +12654,26 @@ void QWidget::destroy(bool destroyWindow, bool destroySubWindows)
 
     setAttribute(Qt::WA_WState_Created, false);
 
-    if (windowType() != Qt::Desktop) {
-        if (destroySubWindows) {
-            QObjectList childList(children());
-            for (int i = 0; i < childList.size(); i++) {
-                QWidget *widget = qobject_cast<QWidget *>(childList.at(i));
-                if (widget && widget->testAttribute(Qt::WA_NativeWindow)) {
-                    if (widget->windowHandle()) {
-                        widget->destroy();
-                    }
+    if (destroySubWindows) {
+        QObjectList childList(children());
+        for (int i = 0; i < childList.size(); i++) {
+            QWidget *widget = qobject_cast<QWidget *>(childList.at(i));
+            if (widget && widget->testAttribute(Qt::WA_NativeWindow)) {
+                if (widget->windowHandle()) {
+                    widget->destroy();
                 }
             }
         }
-        if (destroyWindow) {
-            d->deleteTLSysExtra();
-        } else {
-            if (parentWidget() && parentWidget()->testAttribute(Qt::WA_WState_Created)) {
-                d->hide_sys();
-            }
-        }
-
-        d->setWinId(0);
     }
+    if (destroyWindow) {
+        d->deleteTLSysExtra();
+    } else {
+        if (parentWidget() && parentWidget()->testAttribute(Qt::WA_WState_Created)) {
+            d->hide_sys();
+        }
+    }
+
+    d->setWinId(0);
 }
 
 /*!
