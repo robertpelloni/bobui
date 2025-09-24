@@ -455,6 +455,41 @@ namespace QRangeModelDetails
         : std::true_type
     {};
 
+    template <typename C, typename = void>
+    struct test_splice : std::false_type {};
+
+    template <typename C>
+    struct test_splice<C, std::void_t<decltype(std::declval<C>().splice(
+        std::declval<typename C::const_iterator>(),
+        std::declval<C&>(),
+        std::declval<typename C::const_iterator>(),
+        std::declval<typename C::const_iterator>()
+    ))>>
+        : std::true_type
+    {};
+
+    template <typename C>
+    static void rotate(C& c, int src, int count, int dst) {
+        auto& container = QRangeModelDetails::refTo(c);
+        using Container = std::remove_reference_t<decltype(container)>;
+
+        const auto srcBegin = QRangeModelDetails::pos(container, src);
+        const auto srcEnd = std::next(srcBegin, count);
+        const auto dstBegin = QRangeModelDetails::pos(container, dst);
+
+        if constexpr (test_splice<Container>::value) {
+            if (dst > src && dst < src + count) // dst must be out of the source range
+                container.splice(srcBegin, container, dstBegin, srcEnd);
+            else if (dst != src) // otherwise, std::list gets corrupted
+                container.splice(dstBegin, container, srcBegin, srcEnd);
+        } else {
+            if (src < dst) // moving right
+                std::rotate(srcBegin, srcEnd, dstBegin);
+            else // moving left
+                std::rotate(dstBegin, srcBegin, srcEnd);
+        }
+    }
+
     // Test if a type is an associative container that we can use for multi-role
     // data, i.e. has a key_type and a mapped_type typedef, and maps from int,
     // Qt::ItemDataRole, or QString to QVariant. This excludes std::set (and
@@ -497,6 +532,7 @@ namespace QRangeModelDetails
         static constexpr bool has_erase = false;
         static constexpr bool has_resize = false;
         static constexpr bool has_rotate = false;
+        static constexpr bool has_splice = false;
         static constexpr bool has_cbegin = false;
     };
     template <typename C>
@@ -513,6 +549,7 @@ namespace QRangeModelDetails
         static constexpr bool has_erase = test_erase<C>();
         static constexpr bool has_resize = test_resize<C>();
         static constexpr bool has_rotate = test_rotate<iterator>();
+        static constexpr bool has_splice = test_splice<C>();
         static constexpr bool has_cbegin = test_cbegin<C>::value;
     };
 
@@ -526,6 +563,7 @@ namespace QRangeModelDetails
         static constexpr bool has_erase = false;
         static constexpr bool has_resize = false;
         static constexpr bool has_rotate = false;
+        static constexpr bool has_splice = false;
         static constexpr bool has_cbegin = true;
     };
     template <> struct range_traits<QByteArray> : iterable_value<Mutable::Yes> {};
@@ -1805,7 +1843,7 @@ public:
         // we only support moving columns within the same parent
         if (sourceParent != destParent)
             return false;
-        if constexpr (isMutable() && row_features::has_rotate) {
+        if constexpr (isMutable() && (row_features::has_rotate || row_features::has_splice)) {
             if (!Structure::canMoveColumns(sourceParent, destParent))
                 return false;
 
@@ -1821,16 +1859,8 @@ public:
                     return false;
                 }
 
-                for (auto &child : *children) {
-                    const auto first = QRangeModelDetails::pos(child, sourceColumn);
-                    const auto middle = std::next(first, count);
-                    const auto last = QRangeModelDetails::pos(child, destColumn);
-
-                    if (sourceColumn < destColumn) // moving right
-                        std::rotate(first, middle, last);
-                    else // moving left
-                        std::rotate(last, first, middle);
-                }
+                for (auto &child : *children)
+                    QRangeModelDetails::rotate(child, sourceColumn, count, destColumn);
 
                 this->endMoveColumns();
                 return true;
@@ -1934,7 +1964,7 @@ public:
     bool moveRows(const QModelIndex &sourceParent, int sourceRow, int count,
                   const QModelIndex &destParent, int destRow)
     {
-        if constexpr (isMutable() && range_features::has_rotate) {
+        if constexpr (isMutable() && (range_features::has_rotate || range_features::has_splice)) {
             if (!Structure::canMoveRows(sourceParent, destParent))
                 return false;
 
@@ -1954,14 +1984,7 @@ public:
             if (!this->beginMoveRows(sourceParent, sourceRow, sourceRow + count - 1, destParent, destRow))
                 return false;
 
-            const auto first = QRangeModelDetails::pos(source, sourceRow);
-            const auto middle = std::next(first, count);
-            const auto last = QRangeModelDetails::pos(source, destRow);
-
-            if (sourceRow < destRow) // moving down
-                std::rotate(first, middle, last);
-            else // moving up
-                std::rotate(last, first, middle);
+            QRangeModelDetails::rotate(source, sourceRow, count, destRow);
 
             that().resetParentInChildren(source);
 
