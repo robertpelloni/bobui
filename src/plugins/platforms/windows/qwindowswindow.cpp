@@ -1602,9 +1602,6 @@ QWindowsWindow::QWindowsWindow(QWindow *aWindow, const QWindowsWindowData &data)
         ShowWindow(m_data.hwndTitlebar, SW_SHOW);
     }
 
-    const Qt::WindowType type = aWindow->type();
-    if (type == Qt::Desktop)
-        return; // No further handling for Qt::Desktop
     if (aWindow->surfaceType() == QWindow::Direct3DSurface)
         setFlag(Direct3DSurface);
 #if QT_CONFIG(opengl)
@@ -1658,16 +1655,14 @@ void QWindowsWindow::initialize()
 
     // Trigger geometry change (unless it has a special state in which case setWindowState()
     // will send the message) and screen change signals of QWindow.
-    if (w->type() != Qt::Desktop) {
-        const Qt::WindowState state = w->windowState();
-        const QRect obtainedGeometry(creationContext->obtainedPos, creationContext->obtainedSize);
-        QPlatformScreen *obtainedScreen = screenForGeometry(obtainedGeometry);
-        if (obtainedScreen && screen() != obtainedScreen)
-            QWindowSystemInterface::handleWindowScreenChanged<QWindowSystemInterface::SynchronousDelivery>(w, obtainedScreen->screen());
-        if (state != Qt::WindowMaximized && state != Qt::WindowFullScreen
-            && creationContext->requestedGeometryIn != obtainedGeometry) {
-            QWindowSystemInterface::handleGeometryChange<QWindowSystemInterface::SynchronousDelivery>(w, obtainedGeometry);
-        }
+    const Qt::WindowState state = w->windowState();
+    const QRect obtainedGeometry(creationContext->obtainedPos, creationContext->obtainedSize);
+    QPlatformScreen *obtainedScreen = screenForGeometry(obtainedGeometry);
+    if (obtainedScreen && screen() != obtainedScreen)
+        QWindowSystemInterface::handleWindowScreenChanged<QWindowSystemInterface::SynchronousDelivery>(w, obtainedScreen->screen());
+    if (state != Qt::WindowMaximized && state != Qt::WindowFullScreen
+        && creationContext->requestedGeometryIn != obtainedGeometry) {
+        QWindowSystemInterface::handleGeometryChange<QWindowSystemInterface::SynchronousDelivery>(w, obtainedGeometry);
     }
     QWindowsWindow::setSavedDpi(GetDpiForWindow(handle()));
 }
