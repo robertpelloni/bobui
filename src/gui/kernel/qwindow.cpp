@@ -134,16 +134,6 @@ QWindow::QWindow(QScreen *targetScreen)
     d->init(nullptr, targetScreen);
 }
 
-static QWindow *nonDesktopParent(QWindow *parent)
-{
-    if (parent && parent->type() == Qt::Desktop) {
-        qWarning("QWindows cannot be reparented into desktop windows");
-        return nullptr;
-    }
-
-    return parent;
-}
-
 /*!
     Creates a window as a child of the given \a parent window.
 
@@ -176,7 +166,7 @@ QWindow::QWindow(QWindowPrivate &dd, QWindow *parent)
     , QSurface(QSurface::Window)
 {
     Q_D(QWindow);
-    d->init(nonDesktopParent(parent));
+    d->init(parent);
 }
 
 /*!
@@ -805,8 +795,6 @@ QWindow *QWindow::parent(AncestorMode mode) const
 */
 void QWindow::setParent(QWindow *parent)
 {
-    parent = nonDesktopParent(parent);
-
     Q_D(QWindow);
     if (d->parentWindow == parent)
         return;
@@ -1076,7 +1064,7 @@ void QWindow::setTitle(const QString &title)
         d->windowTitle = title;
         changed = true;
     }
-    if (d->platformWindow && type() != Qt::Desktop)
+    if (d->platformWindow)
         d->platformWindow->setWindowTitle(title);
     if (changed)
         emit windowTitleChanged(title);
