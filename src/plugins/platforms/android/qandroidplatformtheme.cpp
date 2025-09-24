@@ -27,7 +27,7 @@ QT_BEGIN_NAMESPACE
 
 Q_LOGGING_CATEGORY(lcQpaMenus, "qt.qpa.menus")
 
-Q_DECLARE_JNI_CLASS(QtDisplayManager, "org/qtproject/qt/android/QtDisplayManager")
+Q_DECLARE_JNI_CLASS(QtWindowInsetsController, "org/qtproject/qt/android/QtWindowInsetsController")
 
 using namespace Qt::StringLiterals;
 
@@ -448,9 +448,9 @@ void QAndroidPlatformTheme::requestColorScheme(Qt::ColorScheme scheme)
     const auto iface = qGuiApp->nativeInterface<QNativeInterface::QAndroidApplication>();
     iface->runOnAndroidMainThread([=]() {
         bool isLight = scheme == Qt::ColorScheme::Light;
-        QtJniTypes::QtDisplayManager::callStaticMethod("setStatusBarColorHint",
+        QtJniTypes::QtWindowInsetsController::callStaticMethod("setStatusBarColorHint",
             iface->context().object<QtJniTypes::Activity>(), isLight);
-        QtJniTypes::QtDisplayManager::callStaticMethod("setNavigationBarColorHint",
+        QtJniTypes::QtWindowInsetsController::callStaticMethod("setNavigationBarColorHint",
             iface->context().object<QtJniTypes::Activity>(), isLight);
     });
 }

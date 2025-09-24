@@ -22,6 +22,7 @@ Q_DECLARE_JNI_CLASS(QtInputInterface, "org/qtproject/qt/android/QtInputInterface
 Q_DECLARE_JNI_CLASS(QtInputConnectionListener,
                     "org/qtproject/qt/android/QtInputConnection$QtInputConnectionListener")
 Q_DECLARE_JNI_CLASS(QtDisplayManager, "org/qtproject/qt/android/QtWindowInterface")
+Q_DECLARE_JNI_CLASS(QtWindowInsetsController, "org/qtproject/qt/android/QtWindowInsetsController")
 
 QAndroidPlatformWindow::QAndroidPlatformWindow(QWindow *window)
     : QPlatformWindow(window), m_nativeQtWindow(nullptr),
@@ -260,10 +261,17 @@ void QAndroidPlatformWindow::updateSystemUiVisibility()
     const int flags = window()->flags();
     const bool isNonRegularWindow = flags & (Qt::Popup | Qt::Dialog | Qt::Sheet) & ~Qt::Window;
     if (!isNonRegularWindow) {
-        const bool isFullScreen = (m_windowState & Qt::WindowFullScreen);
-        const bool expandedToCutout = (flags & Qt::ExpandedClientAreaHint);
-        QtAndroid::backendRegister()->callInterface<QtJniTypes::QtWindowInterface, void>(
-            "setSystemUiVisibility", isFullScreen, expandedToCutout);
+        auto iface = qGuiApp->nativeInterface<QNativeInterface::QAndroidApplication>();
+        iface->runOnAndroidMainThread([=]() {
+            using namespace QtJniTypes;
+            auto activity = iface->context().object<Activity>();
+            if (m_windowState & Qt::WindowFullScreen)
+                QtWindowInsetsController::callStaticMethod("showFullScreen", activity);
+            else if (flags & Qt::ExpandedClientAreaHint)
+                QtWindowInsetsController::callStaticMethod("showExpanded", activity);
+            else
+                QtWindowInsetsController::callStaticMethod("showNormal", activity);
+        });
     }
 }
 

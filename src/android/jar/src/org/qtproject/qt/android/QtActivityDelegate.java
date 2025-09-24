@@ -86,21 +86,6 @@ class QtActivityDelegate extends QtActivityDelegateBase
     }
 
     @Override
-    public void setSystemUiVisibility(boolean isFullScreen, boolean expandedToCutout)
-    {
-        if (m_layout == null)
-            return;
-
-        QtNative.runAction(() -> {
-            if (m_layout != null) {
-                m_displayManager.setSystemUiVisibility(isFullScreen, expandedToCutout);
-                QtWindow.updateWindows();
-            }
-        });
-    }
-
-
-    @Override
     final public void onAppStateDetailsChanged(QtNative.ApplicationStateDetails details) {
         if (details.isStarted)
             registerBackends();
