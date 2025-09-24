@@ -777,7 +777,7 @@ void QWindowsScreenManager::addScreen(const QWindowsScreenData &screenData)
     // change here, now that we are processing the WM_DISPLAYCHANGE.
     const auto allWindows = QGuiApplication::allWindows();
     for (QWindow *w : allWindows) {
-        if (w->isVisible() && w->handle() && w->type() != Qt::Desktop) {
+        if (w->isVisible() && w->handle()) {
             if (QWindowsWindow *window = QWindowsWindow::windowsWindowOf(w))
                 window->checkForScreenChanged(QWindowsWindow::ScreenChangeMode::FromScreenAdded);
         }
@@ -801,7 +801,7 @@ void QWindowsScreenManager::removeScreen(int index)
         unsigned movedWindowCount = 0;
         const QWindowList tlws = QGuiApplication::topLevelWindows();
         for (QWindow *w : tlws) {
-            if (w->screen() == screen && w->handle() && w->type() != Qt::Desktop) {
+            if (w->screen() == screen && w->handle()) {
                 if (w->isVisible() && w->windowState() != Qt::WindowMinimized
                     && (QWindowsWindow::baseWindowOf(w)->exStyle() & WS_EX_TOOLWINDOW)) {
                     moveToVirtualScreen(w, primaryScreen);
