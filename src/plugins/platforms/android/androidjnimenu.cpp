@@ -114,7 +114,7 @@ namespace QtAndroidMenu
         if (!window)
             return;
 
-        bool isNonRegularWindow = flags & (Qt::Desktop | Qt::Popup | Qt::Dialog | Qt::Sheet) & ~Qt::Window;
+        bool isNonRegularWindow = flags & (Qt::Popup | Qt::Dialog | Qt::Sheet) & ~Qt::Window;
         if (isNonRegularWindow)
             return;
 
