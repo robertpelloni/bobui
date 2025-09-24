@@ -883,7 +883,7 @@ void QGuiApplicationPrivate::updateBlockedStatus(QWindow *window)
 // included in this list (QTBUG-18099).
 static inline bool needsWindowBlockedEvent(const QWindow *w)
 {
-    return w->isTopLevel() && w->type() != Qt::Desktop;
+    return w->isTopLevel();
 }
 
 void QGuiApplicationPrivate::showModalWindow(QWindow *modal)
@@ -1088,12 +1088,6 @@ QWindowList QGuiApplication::topLevelWindows()
     for (int i = 0; i < list.size(); ++i) {
         QWindow *window = list.at(i);
         if (!window->isTopLevel())
-            continue;
-
-        // Desktop windows are special, as each individual desktop window
-        // will report that it's a top level window, but we don't want to
-        // include them in the application wide list of top level windows.
-        if (window->type() == Qt::Desktop)
             continue;
 
         // Windows embedded in native windows do not have QWindow parents,
@@ -2065,17 +2059,13 @@ bool QGuiApplication::event(QEvent *e)
         // if the layout direction was set explicitly, then don't override it here
         if (layout_direction == Qt::LayoutDirectionAuto)
             setLayoutDirection(layout_direction);
-        for (auto *topLevelWindow : QGuiApplication::topLevelWindows()) {
-            if (topLevelWindow->flags() != Qt::Desktop)
-                postEvent(topLevelWindow, new QEvent(QEvent::LanguageChange));
-        }
+        for (auto *topLevelWindow : QGuiApplication::topLevelWindows())
+            postEvent(topLevelWindow, new QEvent(QEvent::LanguageChange));
         break;
     case QEvent::ApplicationFontChange:
     case QEvent::ApplicationPaletteChange:
-        for (auto *topLevelWindow : QGuiApplication::topLevelWindows()) {
-            if (topLevelWindow->flags() != Qt::Desktop)
-                postEvent(topLevelWindow, new QEvent(e->type()));
-        }
+        for (auto *topLevelWindow : QGuiApplication::topLevelWindows())
+            postEvent(topLevelWindow, new QEvent(e->type()));
         break;
     case QEvent::ThemeChange:
         for (auto *w : QGuiApplication::allWindows())
@@ -4302,7 +4292,7 @@ static inline void applyCursor(const QList<QWindow *> &l, const QCursor &c)
 {
     for (int i = 0; i < l.size(); ++i) {
         QWindow *w = l.at(i);
-        if (w->handle() && w->type() != Qt::Desktop)
+        if (w->handle())
             applyCursor(w, c);
     }
 }
@@ -4327,7 +4317,7 @@ static inline void applyWindowCursor(const QList<QWindow *> &l)
 {
     for (int i = 0; i < l.size(); ++i) {
         QWindow *w = l.at(i);
-        if (w->handle() && w->type() != Qt::Desktop) {
+        if (w->handle()) {
             if (qt_window_private(w)->hasCursor) {
                 applyCursor(w, w->cursor());
             } else {
