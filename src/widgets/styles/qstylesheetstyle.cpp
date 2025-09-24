@@ -2499,9 +2499,6 @@ static QWidget *containerWidget(const QWidget *w)
  */
 static bool unstylable(const QWidget *w)
 {
-    if (w->windowType() == Qt::Desktop)
-        return true;
-
     if (!w->styleSheet().isEmpty())
         return false;
 
