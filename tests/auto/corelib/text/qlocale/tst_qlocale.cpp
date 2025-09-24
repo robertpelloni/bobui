@@ -1774,56 +1774,60 @@ void tst_QLocale::long_long_conversion_data()
     QTest::addColumn<QString>("num_str");
     QTest::addColumn<bool>("good");
     QTest::addColumn<qlonglong>("num");
+    using QLL = qlonglong;
 
-    QTest::newRow("C null")                   << QString("C")     << QString()       << false << (qlonglong) 0;
-    QTest::newRow("C empty")                  << QString("C")     << QString("")     << false << (qlonglong) 0;
-    QTest::newRow("C 0")                      << QString("C")     << "0"             << true  << (qlonglong) 0;
-    QTest::newRow("C 0,")                     << QString("C")     << "0,"            << false << (qlonglong) 0;
-    QTest::newRow("C 1")                      << QString("C")     << "1"             << true  << (qlonglong) 1;
-    QTest::newRow("C 1,")                     << QString("C")     << "1,"            << false << (qlonglong) 0;
-    QTest::newRow("C 1,2")                    << QString("C")     << "1,2"           << false << (qlonglong) 0;
-    QTest::newRow("C 1,23")                   << QString("C")     << "1,23"          << false << (qlonglong) 0;
-    QTest::newRow("C 1,234")                  << QString("C")     << "1,234"         << true  << (qlonglong) 1234;
-    QTest::newRow("C 1234567")                << QString("C")     << "1234567"       << true  << (qlonglong) 1234567;
-    QTest::newRow("C 1,234567")               << QString("C")     << "1,234567"      << false << (qlonglong) 0;
-    QTest::newRow("C 12,34567")               << QString("C")     << "12,34567"      << false << (qlonglong) 0;
-    QTest::newRow("C 123,4567")               << QString("C")     << "123,4567"      << false << (qlonglong) 0;
-    QTest::newRow("C 1234,567")               << QString("C")     << "1234,567"      << false << (qlonglong) 0;
-    QTest::newRow("C 12345,67")               << QString("C")     << "12345,67"      << false << (qlonglong) 0;
-    QTest::newRow("C 123456,7")               << QString("C")     << "123456,7"      << false << (qlonglong) 0;
-    QTest::newRow("C 1,234,567")              << QString("C")     << "1,234,567"     << true  << (qlonglong) 1234567;
-    using LL = std::numeric_limits<qlonglong>;
-    QTest::newRow("C LLONG_MIN") << QString("C") << QString::number(LL::min()) << true << LL::min();
-    QTest::newRow("C LLONG_MAX") << QString("C") << QString::number(LL::max()) << true << LL::max();
+    QTest::newRow("C/null") << u"C"_s << QString() << false << QLL(0);
+    QTest::newRow("C/empty") << u"C"_s << u""_s << false << QLL(0);
+    QTest::newRow("C/0") << u"C"_s << u"0"_s << true << QLL(0);
+    QTest::newRow("C/0,") << u"C"_s << u"0,"_s << false << QLL(0);
+    QTest::newRow("C/1") << u"C"_s << u"1"_s << true << QLL(1);
+    QTest::newRow("C/1,") << u"C"_s << u"1,"_s << false << QLL(0);
+    QTest::newRow("C/1,2") << u"C"_s << u"1,2"_s << false << QLL(0);
+    QTest::newRow("C/1,23") << u"C"_s << u"1,23"_s << false << QLL(0);
+    QTest::newRow("C/1,234") << u"C"_s << u"1,234"_s << true << QLL(1234);
+    QTest::newRow("C/1234567") << u"C"_s << u"1234567"_s << true << QLL(1234567);
+    QTest::newRow("C/1,234567") << u"C"_s << u"1,234567"_s << false << QLL(0);
+    QTest::newRow("C/12,34567") << u"C"_s << u"12,34567"_s << false << QLL(0);
+    QTest::newRow("C/123,4567") << u"C"_s << u"123,4567"_s << false << QLL(0);
+    QTest::newRow("C/1234,567") << u"C"_s << u"1234,567"_s << false << QLL(0);
+    QTest::newRow("C/12345,67") << u"C"_s << u"12345,67"_s << false << QLL(0);
+    QTest::newRow("C/123456,7") << u"C"_s << u"123456,7"_s << false << QLL(0);
+    QTest::newRow("C/1,234,567") << u"C"_s << u"1,234,567"_s << true << QLL(1234567);
 
-    QTest::newRow("de_DE 1")                  << QString("de_DE") << "1"             << true  << (qlonglong) 1;
-    QTest::newRow("de_DE 1.")                 << QString("de_DE") << "1."            << false << (qlonglong) 0;
-    QTest::newRow("de_DE 1.2")                << QString("de_DE") << "1.2"           << false << (qlonglong) 0;
-    QTest::newRow("de_DE 1.23")               << QString("de_DE") << "1.23"          << false << (qlonglong) 0;
-    QTest::newRow("de_DE 1.234")              << QString("de_DE") << "1.234"         << true  << (qlonglong) 1234;
-    QTest::newRow("de_DE 1234567")            << QString("de_DE") << "1234567"       << true  << (qlonglong) 1234567;
-    QTest::newRow("de_DE 1.234567")           << QString("de_DE") << "1.234567"      << false << (qlonglong) 0;
-    QTest::newRow("de_DE 12.34567")           << QString("de_DE") << "12.34567"      << false << (qlonglong) 0;
-    QTest::newRow("de_DE 123.4567")           << QString("de_DE") << "123.4567"      << false << (qlonglong) 0;
-    QTest::newRow("de_DE 1234.567")           << QString("de_DE") << "1234.567"      << false << (qlonglong) 0;
-    QTest::newRow("de_DE 12345.67")           << QString("de_DE") << "12345.67"      << false << (qlonglong) 0;
-    QTest::newRow("de_DE 123456.7")           << QString("de_DE") << "123456.7"      << false << (qlonglong) 0;
-    QTest::newRow("de_DE 1.234.567")          << QString("de_DE") << "1.234.567"     << true  << (qlonglong) 1234567;
-    QTest::newRow("de_DE 1.234.567 ldspcs")   << QString("de_DE") << "  1.234.567"   << true  << (qlonglong) 1234567;
-    QTest::newRow("de_DE 1.234.567 trspcs")   << QString("de_DE") << "1.234.567  "   << true  << (qlonglong) 1234567;
-    QTest::newRow("de_DE 1.234.567 ldtrspcs") << QString("de_DE") << "  1.234.567  " << true  << (qlonglong) 1234567;
+    using LL = std::numeric_limits<QLL>;
+    QTest::newRow("C/LLONG_MIN") << u"C"_s << QString::number(LL::min()) << true << LL::min();
+    QTest::newRow("C/LLONG_MAX") << u"C"_s << QString::number(LL::max()) << true << LL::max();
 
-    // test that space is also accepted whenever QLocale::groupSeparator() == 0xa0 (which looks like space).
-    QTest::newRow("nb_NO 123 groupsep")       << QString("nb_NO") << QString("1")+QChar(0xa0)+QString("234") << true  << (qlonglong) 1234;
-    QTest::newRow("nb_NO 123 groupsep_space") << QString("nb_NO") << QString("1")+QChar(0x20)+QString("234") << true  << (qlonglong) 1234;
+    QTest::newRow("de_DE/1") << u"de_DE"_s << u"1"_s << true << QLL(1);
+    QTest::newRow("de_DE/1.") << u"de_DE"_s << u"1."_s << false << QLL(0);
+    QTest::newRow("de_DE/1.2") << u"de_DE"_s << u"1.2"_s << false << QLL(0);
+    QTest::newRow("de_DE/1.23") << u"de_DE"_s << u"1.23"_s << false << QLL(0);
+    QTest::newRow("de_DE/1.234") << u"de_DE"_s << u"1.234"_s << true << QLL(1234);
+    QTest::newRow("de_DE/1234567") << u"de_DE"_s << u"1234567"_s << true << QLL(1234567);
+    QTest::newRow("de_DE/1.234567") << u"de_DE"_s << u"1.234567"_s << false << QLL(0);
+    QTest::newRow("de_DE/12.34567") << u"de_DE"_s << u"12.34567"_s << false << QLL(0);
+    QTest::newRow("de_DE/123.4567") << u"de_DE"_s << u"123.4567"_s << false << QLL(0);
+    QTest::newRow("de_DE/1234.567") << u"de_DE"_s << u"1234.567"_s << false << QLL(0);
+    QTest::newRow("de_DE/12345.67") << u"de_DE"_s << u"12345.67"_s << false << QLL(0);
+    QTest::newRow("de_DE/123456.7") << u"de_DE"_s << u"123456.7"_s << false << QLL(0);
+    QTest::newRow("de_DE/1.234.567") << u"de_DE"_s << u"1.234.567"_s << true  << QLL(1234567);
+    QTest::newRow("de_DE/  1.234.567") << u"de_DE"_s << u"  1.234.567"_s << true << QLL(1234567);
+    QTest::newRow("de_DE/1.234.567 ") << u"de_DE"_s << u"1.234.567  "_s << true << QLL(1234567);
+    QTest::newRow("de_DE/  1.234.567  ")
+        << u"de_DE"_s << u"  1.234.567  "_s << true  << QLL(1234567);
 
-    QTest::newRow("nb_NO 123 ldspcs")         << QString("nb_NO") << "  123"         << true  << (qlonglong) 123;
-    QTest::newRow("nb_NO 123 trspcs")         << QString("nb_NO") << "123  "         << true  << (qlonglong) 123;
-    QTest::newRow("nb_NO 123 ldtrspcs")       << QString("nb_NO") << "  123  "       << true  << (qlonglong) 123;
+    // Test that space is also accepted whenever QLocale::groupSeparator() ==
+    // 0xa0 (which looks like space).
+    QTest::newRow("nb_NO/1&nbsp;234") << u"nb_NO"_s << u"1\u00a0" "234"_s << true << QLL(1234);
+    QTest::newRow("nb_NO/1 234") << u"nb_NO"_s << u"1\u0020" "234"_s << true << QLL(1234);
 
-    QTest::newRow("C   1234")                 << QString("C")     << "  1234"        << true  << (qlonglong) 1234;
-    QTest::newRow("C 1234  ")                 << QString("C")     << "1234  "        << true  << (qlonglong) 1234;
-    QTest::newRow("C   1234  ")               << QString("C")     << "  1234  "      << true  << (qlonglong) 1234;
+    QTest::newRow("nb_NO/  123") << u"nb_NO"_s << u"  123"_s << true << QLL(123);
+    QTest::newRow("nb_NO/123  ") << u"nb_NO"_s << u"123  "_s << true << QLL(123);
+    QTest::newRow("nb_NO/  123  ") << u"nb_NO"_s << u"  123  "_s << true << QLL(123);
+
+    QTest::newRow("C/  1234") << u"C"_s << u"  1234"_s << true << QLL(1234);
+    QTest::newRow("C/1234  ") << u"C"_s << u"1234  "_s << true << QLL(1234);
+    QTest::newRow("C/  1234  ") << u"C"_s << u"  1234  "_s << true << QLL(1234);
 }
 
 void tst_QLocale::long_long_conversion()
