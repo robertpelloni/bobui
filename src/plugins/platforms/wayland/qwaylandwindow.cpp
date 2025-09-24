@@ -102,9 +102,6 @@ void QWaylandWindow::initWindow()
 {
     resetFrameCallback();
 
-    if (window()->type() == Qt::Desktop)
-        return;
-
     if (shouldCreateSubSurface()) {
         Q_ASSERT(!mSubSurfaceWindow);
 
