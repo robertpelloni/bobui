@@ -935,6 +935,10 @@ void QWidgetPrivate::init(QWidget *parentWidget, Qt::WindowFlags f)
     isWidget = true;
     wasWidget = true;
 
+    Q_ASSERT_X(!f.testFlag(Qt::WindowType::Desktop), Q_FUNC_INFO, "Qt::WindowType::Desktop is not allowed.");
+    if (f.testFlag(Qt::WindowType::Desktop))
+        f.setFlag(Qt::WindowType::Desktop, false);
+
     Q_ASSERT_X(q != parentWidget, Q_FUNC_INFO, "Cannot parent a QWidget to itself");
 
     if (Q_UNLIKELY(!qobject_cast<QApplication *>(QCoreApplication::instance())))
@@ -10655,6 +10659,11 @@ void QWidget::setWindowFlag(Qt::WindowType flag, bool on)
 void QWidgetPrivate::setWindowFlags(Qt::WindowFlags flags)
 {
     Q_Q(QWidget);
+    if (flags.testFlag(Qt::WindowType::Desktop)) {
+        qWarning() << "Qt::WindowType::Desktop has been deprecated in Qt 6. Ignoring.";
+        flags.setFlag(Qt::WindowType::Desktop, false);
+    }
+
     if (q->data->window_flags == flags)
         return;
 
