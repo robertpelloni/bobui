@@ -614,6 +614,64 @@ private:
     }
 };
 
+class Window : public QMainWindow
+{
+public:
+    Window()
+    {
+        QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
+        QAction *openThemeAction = fileMenu->addAction("Open theme");
+        connect(openThemeAction, &QAction::triggered, this, &Window::selectTheme);
+
+        QTabWidget *widget = new QTabWidget;
+        widget->setTabPosition(QTabWidget::West);
+        widget->addTab(new IconInspector, "Inspect");
+        widget->addTab(new IconView<IconModel::Icon>(&model), "QIcon::fromTheme");
+        widget->addTab(new IconView<IconModel::StylePixmap>(&model), "QStyle::standardPixmap");
+        widget->addTab(new IconView<IconModel::StyleIcon>(&model), "QStyle::standardIcon");
+        widget->addTab(new IconView<IconModel::Theme>(&model), "QPlatformTheme");
+        widget->addTab(new IconView<IconModel::File>(&model), "QAbstractFileIconProvider");
+
+    #ifdef QT_QUICKWIDGETS_LIB
+        QQuickWidget *quickBrowser = new QQuickWidget;
+        quickBrowser->setSource(QUrl(u"qrc:/Main.qml"_s));
+        quickBrowser->setResizeMode(QQuickWidget::SizeRootObjectToView);
+        widget->addTab(quickBrowser, "Qt Quick");
+        QObject::connect(quickBrowser, &QQuickWidget::statusChanged, quickBrowser,
+                        [](QQuickWidget::Status status){
+            qDebug() << status;
+        });
+        QObject::connect(quickBrowser, &QQuickWidget::sceneGraphError, quickBrowser,
+                        [](QQuickWindow::SceneGraphError error, const QString &message){
+            qDebug() << error << message;
+        });
+    #endif
+
+        setCentralWidget(widget);
+    }
+
+private:
+    void selectTheme()
+    {
+        QFileDialog *dialog = new QFileDialog(this);
+        dialog->setFileMode(QFileDialog::ExistingFile);
+        dialog->setAcceptMode(QFileDialog::AcceptOpen);
+        dialog->setNameFilter(u"Icon theme (*.theme)"_s);
+        dialog->setAttribute(Qt::WA_DeleteOnClose);
+        dialog->open();
+
+        connect(dialog, &QFileDialog::fileSelected, this, &Window::openTheme);
+    }
+
+    void openTheme(const QString &filePath)
+    {
+        QFileInfo themeFile(filePath);
+        QIcon::setThemeName(themeFile.path());
+    }
+
+    IconModel model;
+};
+
 int main(int argc, char* argv[])
 {
     QApplication app(argc, argv);
@@ -630,6 +688,8 @@ int main(int argc, char* argv[])
                                    u"The name of the icon theme"_s, u"theme"_s);
     parser.addOption(themeOption);
     parser.process(app);
+
+    QIcon::setThemeSearchPaths({"/"});
     if (const QString theme = parser.value(themeOption); !theme.isEmpty())
         QIcon::setThemeName(theme);
 
@@ -637,32 +697,8 @@ int main(int argc, char* argv[])
     Q_INIT_RESOURCE(icons);
 #endif
 
-    IconModel model;
+    Window mainWindow;
+    mainWindow.show();
 
-    QTabWidget widget;
-    widget.setTabPosition(QTabWidget::West);
-    widget.addTab(new IconInspector, "Inspect");
-    widget.addTab(new IconView<IconModel::Icon>(&model), "QIcon::fromTheme");
-    widget.addTab(new IconView<IconModel::StylePixmap>(&model), "QStyle::standardPixmap");
-    widget.addTab(new IconView<IconModel::StyleIcon>(&model), "QStyle::standardIcon");
-    widget.addTab(new IconView<IconModel::Theme>(&model), "QPlatformTheme");
-    widget.addTab(new IconView<IconModel::File>(&model), "QAbstractFileIconProvider");
-
-#ifdef QT_QUICKWIDGETS_LIB
-    QQuickWidget *quickBrowser = new QQuickWidget;
-    quickBrowser->setSource(QUrl(u"qrc:/Main.qml"_s));
-    quickBrowser->setResizeMode(QQuickWidget::SizeRootObjectToView);
-    widget.addTab(quickBrowser, "Qt Quick");
-    QObject::connect(quickBrowser, &QQuickWidget::statusChanged, quickBrowser,
-                     [](QQuickWidget::Status status){
-        qDebug() << status;
-    });
-    QObject::connect(quickBrowser, &QQuickWidget::sceneGraphError, quickBrowser,
-                     [](QQuickWindow::SceneGraphError error, const QString &message){
-        qDebug() << error << message;
-    });
-#endif
-
-    widget.show();
     return app.exec();
 }
