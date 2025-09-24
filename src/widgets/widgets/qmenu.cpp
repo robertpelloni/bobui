@@ -2322,9 +2322,6 @@ void QMenuPrivate::popup(const QPoint &p, QAction *atAction, PositionFunction po
     q->ensurePolished(); // Get the right font
 
     // Ensure that we get correct sizeHints by placing this window on the correct screen.
-    // However if the QMenu was constructed with a Qt::Desktop widget as its parent,
-    // then initialScreenIndex was set, so we should respect that for the lifetime of this menu.
-    // However if eventLoop exists, then exec() already did this by calling createWinId(); so leave it alone. (QTBUG-76162)
     if (!eventLoop) {
         bool screenSet = false;
         QScreen *screen = topData()->initialScreen;
