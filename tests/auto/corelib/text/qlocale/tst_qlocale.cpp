@@ -1007,7 +1007,7 @@ void tst_QLocale::toReal_data()
         << u"se_NO"_s << u"4\u00b7\u2212" "03"_s << false << 0.0;
     QTest::newRow("ar_EG 4e-3") // Arabic, Egypt
         << u"ar_EG"_s << u"\u0664\u0623\u0633\u061c-\u0660\u0663"_s << true << 4e-3;
-    QTest::newRow("ar_EG 4e!3") // Only first character of sign:
+    QTest::newRow("ar_EG 4e!3") // Arabic Letter Mark in place of sign
         << u"ar_EG"_s << u"\u0664\u0623\u0633\u061c\u0660\u0663"_s << false << 0.0;
     QTest::newRow("ar_EG 4x-3") // Only first character of exponent
         << u"ar_EG"_s << u"\u0664\u0623\u061c-\u0660\u0663"_s << false << 0.0;
@@ -1015,11 +1015,11 @@ void tst_QLocale::toReal_data()
         << u"ar_EG"_s << u"\u0664\u0623\u061c\u0660\u0663"_s << false << 0.0;
     QTest::newRow("fa_IR 4e-3") // Farsi, Iran
         << u"fa_IR"_s << u"\u06f4\u00d7\u06f1\u06f0^\u200e\u2212\u06f0\u06f3"_s << true << 4e-3;
-    QTest::newRow("fa_IR 4e!3") // Only first character of sign:
+    QTest::newRow("fa_IR 4e!3") // L2R in place of sign in exponent
         << u"fa_IR"_s << u"\u06f4\u00d7\u06f1\u06f0^\u200e\u06f0\u06f3"_s << false << 0.0;
     QTest::newRow("fa_IR 4x-3") // Only first character of exponent
         << u"fa_IR"_s << u"\u06f4\u00d7\u200e\u2212\u06f0\u06f3"_s << false << 0.0;
-    QTest::newRow("fa_IR 4x!3") // Only first character of exponent and sign
+    QTest::newRow("fa_IR 4x!3") // Only first character of exponent, L2R in place of its sign
         << u"fa_IR"_s << u"\u06f4\u00d7\u200e\u06f0\u06f3"_s << false << 0.0;
 
     // Cyrillic has its own E; only officially used by Ukrainian as exponent,
@@ -1824,10 +1824,50 @@ void tst_QLocale::long_long_conversion_data()
     QTest::newRow("nb_NO/  123") << u"nb_NO"_s << u"  123"_s << true << QLL(123);
     QTest::newRow("nb_NO/123  ") << u"nb_NO"_s << u"123  "_s << true << QLL(123);
     QTest::newRow("nb_NO/  123  ") << u"nb_NO"_s << u"  123  "_s << true << QLL(123);
+    QTest::newRow("sv_SE/&minus;1&nbsp;234")
+        << u"sv_SE"_s << u"\u2212" "1\u00A0" "234"_s << true << QLL(-1234);
 
     QTest::newRow("C/  1234") << u"C"_s << u"  1234"_s << true << QLL(1234);
     QTest::newRow("C/1234  ") << u"C"_s << u"1234  "_s << true << QLL(1234);
     QTest::newRow("C/  1234  ") << u"C"_s << u"  1234  "_s << true << QLL(1234);
+
+    // Signs may have invisible decorations that should be ignored when parsing.
+    // Use ASCII equivalent for digits, and ASCII representations for other
+    // characters, of non-Latn-locales in tags:
+    QTest::newRow("ar-EG/\\u061C-1,234")
+        << u"ar_EG"_s << u"\u061C-\u0661\u066C\u0662\u0663\u0664"_s << true << QLL(-1234);
+    QTest::newRow("ar-EG/\\u061C+1,234")
+        << u"ar_EG"_s << u"\u061C+\u0661\u066C\u0662\u0663\u0664"_s << true << QLL(1234);
+    QTest::newRow("ar-EG/-1,234")
+        << u"ar_EG"_s << u"-\u0661\u066C\u0662\u0663\u0664"_s << true << QLL(-1234);
+    QTest::newRow("ar-EG/+1,234")
+        << u"ar_EG"_s << u"+\u0661\u066C\u0662\u0663\u0664"_s << true << QLL(1234);
+    QTest::newRow("pa-PK/\\u200E-\\u200E1,234")
+        << u"pa_PK"_s << u"\u200E-\u200E\u06F1\u066C\u06F2\u06F3\u06F4"_s << true << QLL(-1234);
+    QTest::newRow("pa-PK/\\u200E-1,234") // Skipping redundant 2nd L2R marker
+        << u"pa_PK"_s << u"\u200E-\u06F1\u066C\u06F2\u06F3\u06F4"_s << true << QLL(-1234);
+    QTest::newRow("pa-PK/\\u200E+\\u200E1,234")
+        << u"pa_PK"_s << u"\u200E+\u200E\u06F1\u066C\u06F2\u06F3\u06F4"_s << true << QLL(1234);
+    QTest::newRow("pa-PK/\\u200E+1,234") // Skipping redundant 2nd L2R marker
+        << u"pa_PK"_s << u"\u200E+\u06F1\u066C\u06F2\u06F3\u06F4"_s << true << QLL(1234);
+    QTest::newRow("pa-PK/-1,234")
+        << u"pa_PK"_s << u"-\u06F1\u066C\u06F2\u06F3\u06F4"_s << true << QLL(-1234);
+    QTest::newRow("pa-PK/+1,234")
+        << u"pa_PK"_s << u"+\u06F1\u066C\u06F2\u06F3\u06F4"_s << true << QLL(1234);
+    QTest::newRow("ar-TN/\\u200E-1.234")
+        << u"ar_TN"_s << u"\u200E-1.234"_s << true << QLL(-1234);
+    QTest::newRow("ar-TN/\\u200E+1.234")
+        << u"ar_TN"_s << u"\u200E+1.234"_s << true << QLL(1234);
+    QTest::newRow("ar-TN/-1.234") << u"ar_TN"_s << u"-1.234"_s << true << QLL(-1234);
+    QTest::newRow("ar-TN/+1.234") << u"ar_TN"_s << u"+1.234"_s << true << QLL(1234);
+    QTest::newRow("fa-IR/\\u200E&minus;1,234")
+        << u"fa_IR"_s << u"\u200E\u2212\u06F1\u066C\u06F2\u06F3\u06F4"_s << true << QLL(-1234);
+    QTest::newRow("fa-IR/\\u200E+1,234")
+        << u"fa_IR"_s << u"\u200E+\u06F1\u066C\u06F2\u06F3\u06F4"_s << true << QLL(1234);
+    QTest::newRow("fa-IR/&minus;1,234")
+        << u"fa_IR"_s << u"\u2212\u06F1\u066C\u06F2\u06F3\u06F4"_s << true << QLL(-1234);
+    QTest::newRow("fa-IR/+1,234")
+        << u"fa_IR"_s << u"+\u06F1\u066C\u06F2\u06F3\u06F4"_s << true << QLL(1234);
 }
 
 void tst_QLocale::long_long_conversion()
@@ -1841,6 +1881,8 @@ void tst_QLocale::long_long_conversion()
     QLocale locale(locale_name);
     QCOMPARE(locale.name(), locale_name);
 
+    QEXPECT_FAIL("pa-PK/\\u200E-1,234", "QTBUG-139922 thrown off by BiDi marks", Continue);
+    QEXPECT_FAIL("pa-PK/\\u200E+1,234", "QTBUG-139922 thrown off by BiDi marks", Continue);
     bool ok;
     qlonglong l = locale.toLongLong(num_str, &ok);
     QCOMPARE(ok, good);
@@ -1848,6 +1890,8 @@ void tst_QLocale::long_long_conversion()
     if (ok)
         QCOMPARE(l, num);
 
+    QEXPECT_FAIL("pa-PK/\\u200E-1,234", "QTBUG-139922 thrown off by BiDi marks", Continue);
+    QEXPECT_FAIL("pa-PK/\\u200E+1,234", "QTBUG-139922 thrown off by BiDi marks", Continue);
     l = locale.toLongLong(num_strRef, &ok);
     QCOMPARE(ok, good);
 
@@ -1855,12 +1899,14 @@ void tst_QLocale::long_long_conversion()
         QCOMPARE(l, num);
 
     if (num >= 0) {
+        QEXPECT_FAIL("pa-PK/\\u200E+1,234", "QTBUG-139922 thrown off by BiDi marks", Continue);
         qulonglong ull = locale.toULongLong(num_str, &ok);
         QCOMPARE(ok, good);
 
         if (ok)
             QCOMPARE(ull, num);
 
+        QEXPECT_FAIL("pa-PK/\\u200E+1,234", "QTBUG-139922 thrown off by BiDi marks", Continue);
         ull = locale.toULongLong(num_strRef, &ok);
         QCOMPARE(ok, good);
 
