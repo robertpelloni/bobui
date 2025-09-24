@@ -210,7 +210,7 @@ QPlatformWindow *QXcbIntegration::createPlatformWindow(QWindow *window) const
 {
     QXcbGlIntegration *glIntegration = nullptr;
     const bool isTrayIconWindow = QXcbWindow::isTrayIconWindow(window);
-    if (window->type() != Qt::Desktop && !isTrayIconWindow) {
+    if (!isTrayIconWindow) {
         if (window->supportsOpenGL()) {
             glIntegration = connection()->glIntegration();
             if (glIntegration) {
@@ -227,7 +227,8 @@ QPlatformWindow *QXcbIntegration::createPlatformWindow(QWindow *window) const
         }
     }
 
-    Q_ASSERT(window->type() == Qt::Desktop || isTrayIconWindow || !window->supportsOpenGL()); // for VNC
+    Q_ASSERT(isTrayIconWindow || !window->supportsOpenGL()
+             || (!glIntegration && window->surfaceType() == QSurface::RasterGLSurface)); // for VNC
     QXcbWindow *xcbWindow = new QXcbWindow(window);
     xcbWindow->create();
     return xcbWindow;
