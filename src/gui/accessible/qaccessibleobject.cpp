@@ -126,7 +126,7 @@ static QObjectList topLevelObjects()
     const QWindowList tlw(QGuiApplication::topLevelWindows());
     for (int i = 0; i < tlw.size(); ++i) {
         QWindow *w = tlw.at(i);
-        if (w->type() != Qt::Popup && w->type() != Qt::Desktop) {
+        if (w->type() != Qt::Popup && w->type()) {
             if (QAccessibleInterface *root = w->accessibleRoot()) {
                 if (root->object())
                     list.append(root->object());
