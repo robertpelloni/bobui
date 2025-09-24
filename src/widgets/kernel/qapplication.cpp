@@ -981,10 +981,8 @@ void QApplication::setStyle(QStyle *style)
         if (QApplicationPrivate::is_app_running && !QApplicationPrivate::is_app_closing) {
             for (QWidgetList::ConstIterator it = all.constBegin(), cend = all.constEnd(); it != cend; ++it) {
                 QWidget *w = *it;
-                if (!(w->windowType() == Qt::Desktop) &&        // except desktop
-                     w->testAttribute(Qt::WA_WState_Polished)) { // has been polished
+                if (w->testAttribute(Qt::WA_WState_Polished)) // has been polished
                     QApplicationPrivate::app_style->unpolish(w);
-                }
             }
         }
         QApplicationPrivate::app_style->unpolish(qApp);
@@ -1022,7 +1020,7 @@ void QApplication::setStyle(QStyle *style)
     if (QApplicationPrivate::is_app_running && !QApplicationPrivate::is_app_closing) {
         for (QWidgetList::ConstIterator it = all.constBegin(), cend = all.constEnd(); it != cend; ++it) {
             QWidget *w = *it;
-            if (w->windowType() != Qt::Desktop && w->testAttribute(Qt::WA_WState_Polished)) {
+            if (w->testAttribute(Qt::WA_WState_Polished)) {
                 if (w->style() == QApplicationPrivate::app_style)
                     QApplicationPrivate::app_style->polish(w);                // repolish
 #if QT_CONFIG(style_stylesheet)
@@ -1034,10 +1032,10 @@ void QApplication::setStyle(QStyle *style)
 
         for (QWidgetList::ConstIterator it = all.constBegin(), cend = all.constEnd(); it != cend; ++it) {
             QWidget *w = *it;
-            if (w->windowType() != Qt::Desktop && !w->testAttribute(Qt::WA_SetStyle)) {
-                    QEvent e(QEvent::StyleChange);
-                    QCoreApplication::sendEvent(w, &e);
-                    w->update();
+            if (!w->testAttribute(Qt::WA_SetStyle)) {
+                QEvent e(QEvent::StyleChange);
+                QCoreApplication::sendEvent(w, &e);
+                w->update();
             }
         }
     }
@@ -1460,7 +1458,7 @@ QWidgetList QApplication::topLevelWidgets()
     QWidgetList list;
     if (QWidgetPrivate::allWidgets != nullptr) {
         const auto isTopLevelWidget = [] (const QWidget *w) {
-            return w->isWindow() && w->windowType() != Qt::Desktop;
+            return w->isWindow();
         };
         std::copy_if(QWidgetPrivate::allWidgets->cbegin(), QWidgetPrivate::allWidgets->cend(),
                      std::back_inserter(list), isTopLevelWidget);
@@ -1604,8 +1602,7 @@ bool QApplicationPrivate::tryCloseAllWidgetWindows(QWindowList *processedWindows
 retry:
     const QWidgetList list = QApplication::topLevelWidgets();
     for (auto *w : list) {
-        if (w->isVisible() && w->windowType() != Qt::Desktop &&
-                !w->testAttribute(Qt::WA_DontShowOnScreen) && !w->data->is_closing) {
+        if (w->isVisible() && !w->testAttribute(Qt::WA_DontShowOnScreen) && !w->data->is_closing) {
             QWindow *window = w->windowHandle();
             if (!window->close())  // Qt::WA_DeleteOnClose may cause deletion.
                 return false;
@@ -1686,7 +1683,7 @@ bool QApplication::event(QEvent *e)
         for (auto *w : topLevelWidgets()) {
             if (w->data->is_closing)
                 continue;
-            if (w->isVisible() && !(w->windowType() == Qt::Desktop) && !(w->windowType() == Qt::Popup) &&
+            if (w->isVisible() && !(w->windowType() == Qt::Popup) &&
                  (!(w->windowType() == Qt::Dialog) || !w->parentWidget()) && !w->testAttribute(Qt::WA_DontShowOnScreen)) {
                 e->ignore();
                 return true;
@@ -1702,10 +1699,8 @@ bool QApplication::event(QEvent *e)
         // WM_SETTINGCHANGE event handler.
         const QWidgetList list = topLevelWidgets();
         for (auto *w : list) {
-            if (!(w->windowType() == Qt::Desktop)) {
-                if (!w->testAttribute(Qt::WA_SetLocale))
-                    w->d_func()->setLocale_helper(QLocale(), true);
-            }
+            if (!w->testAttribute(Qt::WA_SetLocale))
+                w->d_func()->setLocale_helper(QLocale(), true);
         }
         break;
     }
@@ -1754,7 +1749,7 @@ bool QApplication::event(QEvent *e)
         // need to have the event posted here
         const QWidgetList list = topLevelWidgets();
         for (auto *w : list) {
-            if (!w->windowHandle() && (w->windowType() != Qt::Desktop))
+            if (!w->windowHandle())
                 postEvent(w, new QEvent(e->type()));
         }
         break;
@@ -2155,11 +2150,7 @@ void QApplicationPrivate::dispatchEnterLeave(QWidget* enter, QWidget* leave, con
         if (!parentOfLeavingCursor->window()->graphicsProxyWidget())
 #endif
         {
-            if (enter && enter->windowFlags().testFlag(Qt::Desktop)) {
-                qt_qpa_set_cursor(enter, true);
-            } else {
-                qt_qpa_set_cursor(parentOfLeavingCursor, true);
-            }
+            qt_qpa_set_cursor(parentOfLeavingCursor, true);
         }
     }
     if (enterOnAlien) {
