@@ -70,7 +70,7 @@ struct Q_GUI_EXPORT QX11Application
 #if QT_CONFIG(wayland) || defined(Q_QDOC)
 struct Q_GUI_EXPORT QWaylandApplication
 {
-    QT_DECLARE_NATIVE_INTERFACE(QWaylandApplication, 1, QGuiApplication)
+    QT_DECLARE_NATIVE_INTERFACE(QWaylandApplication, 2, QGuiApplication)
     virtual wl_display *display() const = 0;
     virtual wl_compositor *compositor() const = 0;
     virtual wl_seat *seat() const = 0;
