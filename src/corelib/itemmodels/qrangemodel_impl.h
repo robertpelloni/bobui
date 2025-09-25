@@ -1148,7 +1148,7 @@ protected:
         using iterator_category = std::input_iterator_tag;
         using difference_type = int;
 
-        value_type operator*() { return impl->makeEmptyRow(*parent); }
+        value_type operator*() { return impl->makeEmptyRow(parentRow); }
         EmptyRowGenerator &operator++() { ++n; return *this; }
         friend bool operator==(const EmptyRowGenerator &lhs, const EmptyRowGenerator &rhs) noexcept
         { return lhs.n == rhs.n; }
@@ -1157,7 +1157,7 @@ protected:
 
         difference_type n = 0;
         Structure *impl = nullptr;
-        const QModelIndex* parent = nullptr;
+        const row_ptr parentRow = nullptr;
     };
 
     // If we have a move-only row_type and can add/remove rows, then the range
@@ -1848,7 +1848,10 @@ public:
 
         this->beginInsertRows(parent, row, row + count - 1);
 
-        (void)std::forward<InsertFn>(insertFn)(*children, row, count);
+        row_ptr parentRow = parent.isValid()
+                            ? QRangeModelDetails::pointerTo(this->rowData(parent))
+                            : nullptr;
+        (void)std::forward<InsertFn>(insertFn)(*children, parentRow, row, count);
 
         // fix the parent in all children of the modified row, as the
         // references back to the parent might have become invalid.
@@ -1863,8 +1866,8 @@ public:
     {
         if constexpr (canInsertRows()) {
             return doInsertRows(row, count, parent,
-                                [this, &parent](range_type &children, int r, int n){
-                EmptyRowGenerator generator{0, &that(), &parent};
+                                [this](range_type &children, row_ptr parentRow, int r, int n){
+                EmptyRowGenerator generator{0, &that(), parentRow};
 
                 const auto pos = QRangeModelDetails::pos(children, r);
                 if constexpr (range_features::has_insert_range) {
@@ -2508,16 +2511,14 @@ protected:
         return true;
     }
 
-    auto makeEmptyRow(const QModelIndex &parent)
+    auto makeEmptyRow(row_ptr parentRow)
     {
         // tree traversal protocol: if we are here, then it must be possible
         // to change the parent of a row.
         static_assert(tree_traits::has_setParentRow);
         row_type empty_row = this->protocol().newRow();
-        if (QRangeModelDetails::isValid(empty_row) && parent.isValid()) {
-            this->protocol().setParentRow(QRangeModelDetails::refTo(empty_row),
-                                        QRangeModelDetails::pointerTo(this->rowData(parent)));
-        }
+        if (QRangeModelDetails::isValid(empty_row) && parentRow)
+            this->protocol().setParentRow(QRangeModelDetails::refTo(empty_row), parentRow);
         return empty_row;
     }
 
@@ -2729,7 +2730,7 @@ protected:
         return false;
     }
 
-    auto makeEmptyRow(const QModelIndex &)
+    auto makeEmptyRow(typename Base::row_ptr)
     {
         row_type empty_row = this->protocol().newRow();
 
