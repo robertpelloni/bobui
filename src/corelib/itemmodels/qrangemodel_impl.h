@@ -1644,7 +1644,7 @@ public:
 
 
     template <typename InsertFn>
-    bool doInsertColumns(int column, int count, const QModelIndex &parent, InsertFn &&insertFn)
+    bool doInsertColumns(int column, int count, const QModelIndex &parent, InsertFn insertFn)
     {
         if (count == 0)
             return false;
@@ -1656,7 +1656,7 @@ public:
 
         for (auto &child : *children) {
             auto it = QRangeModelDetails::pos(child, column);
-            (void)std::forward<InsertFn>(insertFn)(QRangeModelDetails::refTo(child), it, count);
+            (void)insertFn(QRangeModelDetails::refTo(child), it, count);
         }
 
         this->endInsertColumns();
