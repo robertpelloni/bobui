@@ -354,12 +354,13 @@ emscripten::val QWasmAccessibility::createHtmlElement(QAccessibleInterface *ifac
             element = document.call<emscripten::val>("createElement", std::string("button"));
             addEventListener(element, "click");
         } break;
+
         case QAccessible::CheckBox: {
             element = document.call<emscripten::val>("createElement", std::string("input"));
             setAttribute(element, "type", "checkbox");
             setAttribute(element, "checked", iface->state().checked);
+            setProperty(element, "indeterminate", iface->state().checkStateMixed);
             addEventListener(element, "change");
-
         } break;
 
         case QAccessible::RadioButton: {
@@ -735,6 +736,7 @@ void QWasmAccessibility::handleCheckBoxUpdate(QAccessibleEvent *event)
         QAccessibleInterface *accessible = event->accessibleInterface();
         const emscripten::val element = getHtmlElement(accessible);
         setAttribute(element, "checked", accessible->state().checked);
+        setProperty(element, "indeterminate", accessible->state().checkStateMixed);
     } break;
     default:
         qCDebug(lcQpaAccessibility) << "TODO: implement handleCheckBoxUpdate for event" << event->type();
