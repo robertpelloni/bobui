@@ -363,6 +363,17 @@ emscripten::val QWasmAccessibility::createHtmlElement(QAccessibleInterface *ifac
             addEventListener(element, "change");
         } break;
 
+        case QAccessible::Switch: {
+            element = document.call<emscripten::val>("createElement", std::string("button"));
+            setAttribute(element, "type", "button");
+            setAttribute(element, "role", "switch");
+            if (iface->state().checked)
+                setAttribute(element, "aria-checked", "true");
+            else
+                setAttribute(element, "aria-checked", "false");
+            addEventListener(element, "change");
+        } break;
+
         case QAccessible::RadioButton: {
             element = document.call<emscripten::val>("createElement", std::string("input"));
             setAttribute(element, "type", "radio");
@@ -743,6 +754,28 @@ void QWasmAccessibility::handleCheckBoxUpdate(QAccessibleEvent *event)
     break;
     }
 }
+
+void QWasmAccessibility::handleSwitchUpdate(QAccessibleEvent *event)
+{
+    switch (event->type()) {
+    case QAccessible::Focus:
+    case QAccessible::NameChanged: {
+        setHtmlElementTextName(event->accessibleInterface());
+    } break;
+    case QAccessible::StateChanged: {
+        QAccessibleInterface *accessible = event->accessibleInterface();
+        const emscripten::val element = getHtmlElement(accessible);
+        if (accessible->state().checked)
+            setAttribute(element, "aria-checked", "true");
+        else
+            setAttribute(element, "aria-checked", "false");
+    } break;
+    default:
+        qCDebug(lcQpaAccessibility) << "TODO: implement handleSwitchUpdate for event" << event->type();
+    break;
+    }
+}
+
 void QWasmAccessibility::handleToolUpdate(QAccessibleEvent *event)
 {
     QAccessibleInterface *iface = event->accessibleInterface();
@@ -1151,6 +1184,9 @@ void QWasmAccessibility::notifyAccessibilityUpdate(QAccessibleEvent *event)
     break;
     case QAccessible::CheckBox:
         handleCheckBoxUpdate(event);
+    break;
+    case QAccessible::Switch:
+        handleSwitchUpdate(event);
     break;
     case QAccessible::EditableText:
         handleLineEditUpdate(event);

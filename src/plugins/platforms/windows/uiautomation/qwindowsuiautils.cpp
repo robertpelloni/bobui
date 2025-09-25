@@ -132,6 +132,7 @@ long roleToControlTypeId(QAccessible::Role role)
         {QAccessible::EditableText, UIA_EditControlTypeId},
         {QAccessible::Button, UIA_ButtonControlTypeId},
         {QAccessible::CheckBox, UIA_CheckBoxControlTypeId},
+        {QAccessible::Switch, UIA_ButtonControlTypeId},
         {QAccessible::RadioButton, UIA_RadioButtonControlTypeId},
         {QAccessible::ComboBox, UIA_ComboBoxControlTypeId},
         {QAccessible::ProgressBar, UIA_ProgressBarControlTypeId},

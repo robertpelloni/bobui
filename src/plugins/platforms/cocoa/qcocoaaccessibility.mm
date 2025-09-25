@@ -132,6 +132,7 @@ static void populateRoleMap()
     roleMap[QAccessible::ComboBox] = NSAccessibilityComboBoxRole;
     roleMap[QAccessible::RadioButton] = NSAccessibilityRadioButtonRole;
     roleMap[QAccessible::CheckBox] = NSAccessibilityCheckBoxRole;
+    roleMap[QAccessible::Switch] = NSAccessibilityCheckBoxRole;
     roleMap[QAccessible::StaticText] = NSAccessibilityStaticTextRole;
     roleMap[QAccessible::Table] = NSAccessibilityTableRole;
     roleMap[QAccessible::StatusBar] = NSAccessibilityStaticTextRole;
@@ -204,6 +205,8 @@ NSString *macSubrole(QAccessibleInterface *interface)
         return NSAccessibilitySecureTextFieldSubrole;
     if (interface->role() == QAccessible::PageTab)
         return NSAccessibilityTabButtonSubrole;
+    if (interface->role() == QAccessible::Switch)
+        return NSAccessibilitySwitchSubrole;
     return nil;
 }
 
@@ -328,8 +331,11 @@ NSString *getTranslatedAction(const QString &qtAction)
 QString translateAction(NSString *nsAction, QAccessibleInterface *interface)
 {
     if ([nsAction compare: NSAccessibilityPressAction] == NSOrderedSame) {
-        if (interface->role() == QAccessible::CheckBox || interface->role() == QAccessible::RadioButton)
+        if (interface->role() == QAccessible::CheckBox
+            || interface->role() == QAccessible::RadioButton
+            || interface->role() == QAccessible::Switch) {
             return QAccessibleActionInterface::toggleAction();
+        }
         return QAccessibleActionInterface::pressAction();
     } else if ([nsAction compare: NSAccessibilityIncrementAction] == NSOrderedSame)
         return QAccessibleActionInterface::increaseAction();

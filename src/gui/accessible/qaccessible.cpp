@@ -342,6 +342,7 @@ Q_STATIC_LOGGING_CATEGORY(lcAccessibilityCore, "qt.accessibility.core");
     \value Splitter         A splitter distributing available space between its child widgets.
     \value StaticText       Static text, such as labels for other widgets.
     \value StatusBar        A status bar.
+    \value [since 6.11] Switch  A switch that can be toggled on or off.
     \value Table            A table representing data in a grid of rows and columns.
     \value Terminal         A terminal or command line interface.
     \value TitleBar         The title bar caption of a window.

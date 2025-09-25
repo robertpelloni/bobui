@@ -81,6 +81,7 @@ private:
     void handleStaticTextUpdate(QAccessibleEvent *event);
     void handleButtonUpdate(QAccessibleEvent *event);
     void handleCheckBoxUpdate(QAccessibleEvent *event);
+    void handleSwitchUpdate(QAccessibleEvent *event);
     void handleDialogUpdate(QAccessibleEvent *event);
     void handleMenuUpdate(QAccessibleEvent *event);
     void handleToolUpdate(QAccessibleEvent *event);

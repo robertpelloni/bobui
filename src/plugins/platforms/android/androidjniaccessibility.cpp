@@ -470,7 +470,6 @@ namespace QtAndroidAccessibility
         case QAccessible::Role::Link:
         {
             if (state.checkable)
-                // There is also a android.widget.Switch for which we have no match.
                 return QStringLiteral("android.widget.ToggleButton");
             return QStringLiteral("android.widget.Button");
         }
@@ -478,6 +477,8 @@ namespace QtAndroidAccessibility
             // As of android/accessibility/utils/Role.java::getRole a CheckBox
             // is NOT android.widget.CheckBox
             return QStringLiteral("android.widget.CompoundButton");
+        case QAccessible::Role::Switch:
+            return QStringLiteral("android.widget.Switch");
         case QAccessible::Role::Clock:
             return QStringLiteral("android.widget.TextClock");
         case QAccessible::Role::ComboBox:

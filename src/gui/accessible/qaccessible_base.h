@@ -267,6 +267,7 @@ public:
         WebDocument    = 0x00000084,
         Section        = 0x00000085,
         Notification   = 0x00000086,
+        Switch         = 0x00000087,
 
         // IAccessible2 roles
         // IA2_ROLE_CANVAS = 0x401, // An object that can be drawn into and to manage events from the objects drawn into it

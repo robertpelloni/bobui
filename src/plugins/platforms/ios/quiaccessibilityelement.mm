@@ -115,6 +115,9 @@ QT_NAMESPACE_ALIAS_OBJC_CLASS(QMacAccessibilityElement);
             || iface->role() == QAccessible::RadioButton)
             return @"";
 
+        if (iface->role() == QAccessible::Switch)
+            return state.checked ? @"1" : @"0";
+
         return state.checked
                 ? QCoreApplication::translate(ACCESSIBILITY_ELEMENT, AE_CHECKED).toNSString()
                 : QCoreApplication::translate(ACCESSIBILITY_ELEMENT, AE_UNCHECKED).toNSString();
@@ -169,6 +172,8 @@ QT_NAMESPACE_ALIAS_OBJC_CLASS(QMacAccessibilityElement);
                || accessibleRole == QAccessible::RadioButton) {
         if (state.checked)
             traits |= UIAccessibilityTraitSelected;
+    } else if (accessibleRole == QAccessible::Switch) {
+        traits |= UIAccessibilityTraitToggleButton;
     } else if (accessibleRole == QAccessible::EditableText) {
         static auto defaultTextFieldTraits = []{
             auto *textField = [[[UITextField alloc] initWithFrame:CGRectZero] autorelease];

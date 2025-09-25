@@ -82,8 +82,9 @@ void QWindowsUiaMainProvider::notifyStateChange(QAccessibleStateChangeEvent *eve
 {
     if (QAccessibleInterface *accessible = event->accessibleInterface()) {
         if (event->changedStates().checked || event->changedStates().checkStateMixed) {
-           // Notifies states changes in checkboxes.
-           if (accessible->role() == QAccessible::CheckBox) {
+            // Notifies states changes in checkboxes and switches.
+            if (accessible->role() == QAccessible::CheckBox
+                || accessible->role() == QAccessible::Switch) {
                 if (auto provider = providerForAccessible(accessible)) {
                     long toggleState = ToggleState_Off;
                     if (accessible->state().checked)
