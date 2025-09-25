@@ -273,7 +273,7 @@ private:
     QLabel *logoLabel;
     QGridLayout *layout;
     QPixmap bannerPixmap;
-    QWizard::BannerSizePolicy wizardBannerSizePolicy;
+    QWizard::BannerSizePolicy wizardBannerSizePolicy = QWizard::BannerSizePolicy::NoStretch;
 };
 
 QWizardHeader::QWizardHeader(QWidget *parent)
