@@ -430,11 +430,11 @@ void toWholeCommon_data()
     QTest::newRow("ar_EG: +403") // Arabic, Egypt
             << u"\u061c+\u0664\u0660\u0663"_s << u"ar_EG"_s << true << Integer(403ull);
     QTest::newRow("ar_EG: !403") // Arabic Letter Mark in place of sign
-            << u"\u061c\u0664\u0660\u0663"_s << u"ar_EG"_s << false << Integer(0ull);
+            << u"\u061c\u0664\u0660\u0663"_s << u"ar_EG"_s << true << Integer(403ull);
     QTest::newRow("fa_IR: +403") // Farsi, Iran
             << u"\u200e+\u06f4\u06f0\u06f3"_s << u"fa_IR"_s << true << Integer(403ull);
     QTest::newRow("fa_IR: !403") // L-to-R mark in place of sign
-            << u"\u200e\u06f4\u06f0\u06f3"_s << u"fa_IR"_s << false << Integer(0ull);
+            << u"\u200e\u06f4\u06f0\u06f3"_s << u"fa_IR"_s << true << Integer(403ull);
 }
 
 void tst_QLocale::toLongLong_data()
@@ -590,7 +590,7 @@ void tst_QLocale::toDouble_data()
     QTest::newRow("ar_EG: 4x-3") // Only first character of exponent
             << u"\u0664\u0623\u061c-\u0660\u0663"_s << u"ar_EG"_s << false << 0.0;
     QTest::newRow("ar_EG: 4e!3") // Arabic Letter Mark in place of sign
-            << u"\u0664\u0623\u0633\u061c\u0660\u0663"_s << u"ar_EG"_s << false << 0.0;
+            << u"\u0664\u0623\u0633\u061c\u0660\u0663"_s << u"ar_EG"_s << true << 4e3;
     QTest::newRow("ar_EG: 4x!3") // Only first character of sign and exponent
             << u"\u0664\u0623\u061c\u0660\u0663"_s << u"ar_EG"_s << false << 0.0;
 }

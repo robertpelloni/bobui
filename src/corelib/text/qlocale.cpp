@@ -4473,121 +4473,138 @@ char NumericTokenizer::nextToken()
     // As long as caller stops iterating on a zero return, those don't need to
     // keep m_index correctly updated.
     Q_ASSERT(!done());
-    // Mauls non-letters above 'Z' but we don't care:
-    const auto asciiLower = [](unsigned char c) { return c >= 'A' ? c | 0x20 : c; };
-    const QStringView tail = m_text.sliced(m_index);
-    const QChar ch = tail.front();
-    if (ch == u'\u2212') {
-        // Special case: match the "proper" minus sign, for all locales.
-        ++m_index;
-        return '-';
-    }
-    if (m_guide.isC) {
-        // "Conversion" to C locale is just a filter:
-        if (Q_LIKELY(ch.unicode() < 256)) {
-            unsigned char ascii = asciiLower(ch.toLatin1());
-            if (Q_LIKELY(isAsciiDigit(ascii) || ('+' <= ascii && ascii <= lastMark)
-                         // No caller presently (6.5) passes DoubleStandardMode,
-                         // so !IntegerMode implies scientific, for now.
-                         || (m_mode != QLocaleData::IntegerMode && isInfNanChar(ascii))
-                         || (m_mode == QLocaleData::DoubleScientificMode && ascii == 'e'))) {
+    do {
+        // Mauls non-letters above 'Z' but we don't care:
+        const auto asciiLower = [](unsigned char c) { return c >= 'A' ? c | 0x20 : c; };
+        const QStringView tail = m_text.sliced(m_index);
+        const QChar ch = tail.front();
+        if (ch == u'\u2212') {
+            // Special case: match the "proper" minus sign, for all locales.
+            ++m_index;
+            return '-';
+        }
+        if (m_guide.isC) {
+            // "Conversion" to C locale is just a filter:
+            if (Q_LIKELY(ch.unicode() < 256)) {
+                unsigned char ascii = asciiLower(ch.toLatin1());
+                if (Q_LIKELY(isAsciiDigit(ascii) || ('+' <= ascii && ascii <= lastMark)
+                             // No caller presently (6.5) passes DoubleStandardMode,
+                             // so !IntegerMode implies scientific, for now.
+                             || (m_mode != QLocaleData::IntegerMode && isInfNanChar(ascii))
+                             || (m_mode == QLocaleData::DoubleScientificMode && ascii == 'e'))) {
+                    ++m_index;
+                    return ascii;
+                }
+            }
+            return 0;
+        }
+        if (ch.unicode() < 256) {
+            // Accept the C locale's digits and signs in all locales:
+            char ascii = asciiLower(ch.toLatin1());
+            if (isAsciiDigit(ascii) || ascii == '-' || ascii == '+'
+                // Also its Inf and NaN letters:
+                || (m_mode != QLocaleData::IntegerMode && isInfNanChar(ascii))) {
                 ++m_index;
                 return ascii;
             }
         }
-        return 0;
-    }
-    if (ch.unicode() < 256) {
-        // Accept the C locale's digits and signs in all locales:
-        char ascii = asciiLower(ch.toLatin1());
-        if (isAsciiDigit(ascii) || ascii == '-' || ascii == '+'
-            // Also its Inf and NaN letters:
-            || (m_mode != QLocaleData::IntegerMode && isInfNanChar(ascii))) {
-            ++m_index;
-            return ascii;
-        }
-    }
 
-    // Other locales may be trickier:
-    if (tail.startsWith(m_guide.minus)) {
-        m_index += m_guide.minus.size();
-        return '-';
-    }
-    if (tail.startsWith(m_guide.plus)) {
-        m_index += m_guide.plus.size();
-        return '+';
-    }
-    if (!m_guide.group.isEmpty() && tail.startsWith(m_guide.group)) {
-        m_index += m_guide.group.size();
-        // When group and decimal coincide, and a fractional part is not
-        // unexpected, treat the last as a fractional part separator (and leave
-        // the caller to special-case the situations where that causes a
-        // parse-fail that we can dodge by not reading it that way).
-        if (fractionGroupClash() && tail.indexOf(m_guide.decimal, m_guide.group.size()) == -1)
+        // Other locales may be trickier:
+        if (tail.startsWith(m_guide.minus)) {
+            m_index += m_guide.minus.size();
+            return '-';
+        }
+        if (tail.startsWith(m_guide.plus)) {
+            m_index += m_guide.plus.size();
+            return '+';
+        }
+        if (!m_guide.group.isEmpty() && tail.startsWith(m_guide.group)) {
+            m_index += m_guide.group.size();
+            // When group and decimal coincide, and a fractional part is not
+            // unexpected, treat the last as a fractional part separator (and leave
+            // the caller to special-case the situations where that causes a
+            // parse-fail that we can dodge by not reading it that way).
+            if (fractionGroupClash() && tail.indexOf(m_guide.decimal, m_guide.group.size()) == -1)
+                return '.';
+            return ',';
+        }
+        if (m_mode != QLocaleData::IntegerMode && tail.startsWith(m_guide.decimal)) {
+            m_index += m_guide.decimal.size();
             return '.';
-        return ',';
-    }
-    if (m_mode != QLocaleData::IntegerMode && tail.startsWith(m_guide.decimal)) {
-        m_index += m_guide.decimal.size();
-        return '.';
-    }
-    if (m_mode == QLocaleData::DoubleScientificMode
-        && tail.startsWith(m_guide.exponent, Qt::CaseInsensitive)) {
-        m_index += m_guide.exponent.size();
-        return 'e';
-    }
-
-    // Must match qlocale_tools.h's unicodeForDigit()
-    if (m_guide.zeroLen == 1) {
-        if (!ch.isSurrogate()) {
-            if (const int gap = digitValue(char32_t(ch.unicode())); gap >= 0) {
-                ++m_index;
-                return '0' + gap;
-            }
-        } else if (ch.isHighSurrogate() && tail.size() > 1 && tail.at(1).isLowSurrogate()) {
-            return 0;
         }
-        // There remain one or two things a non-surrogate might be ...
-    } else if (ch.isHighSurrogate()) {
-        // None of the corner cases below matches a surrogate, so (update
-        // already and) return early if we don't have a digit.
-        if (tail.size() > 1) {
-            if (const QChar low = tail.at(1); low.isLowSurrogate()) {
-                if (const int gap = digitValue(QChar::surrogateToUcs4(ch, low)); gap >= 0) {
-                    m_index += 2;
+        if (m_mode == QLocaleData::DoubleScientificMode
+            && tail.startsWith(m_guide.exponent, Qt::CaseInsensitive)) {
+            m_index += m_guide.exponent.size();
+            return 'e';
+        }
+
+        // Must match qlocale_tools.h's unicodeForDigit()
+        if (m_guide.zeroLen == 1) {
+            if (!ch.isSurrogate()) {
+                if (const int gap = digitValue(char32_t(ch.unicode())); gap >= 0) {
+                    ++m_index;
                     return '0' + gap;
                 }
+            } else if (ch.isHighSurrogate() && tail.size() > 1 && tail.at(1).isLowSurrogate()) {
+                return 0;
             }
+            // There remain one or two things a non-surrogate might be ...
+        } else if (ch.isHighSurrogate()) {
+            // None of the corner cases below matches a surrogate, so return
+            // early if we don't have a digit.
+            if (tail.size() > 1) {
+                if (const QChar low = tail.at(1); low.isLowSurrogate()) {
+                    if (const int gap = digitValue(QChar::surrogateToUcs4(ch, low)); gap >= 0) {
+                        m_index += 2;
+                        return '0' + gap;
+                    }
+                }
+            }
+            return 0;
         }
-        return 0;
-    }
 
-    // All cases where tail starts with properly-matched surrogate pair
-    // have been handled by this point.
-    Q_ASSERT(!(ch.isHighSurrogate() && tail.size() > 1 && tail.at(1).isLowSurrogate()));
+        // All cases where tail starts with properly-matched surrogate pair
+        // have been handled by this point.
+        Q_ASSERT(!(ch.isHighSurrogate() && tail.size() > 1 && tail.at(1).isLowSurrogate()));
 
-    // Weird corner cases follow (code above assumes these match no surrogates).
+        // Weird corner cases (code above assumes these match no surrogates):
+        switch (ch.unicode()) {
+            // Skip over inivisble marks commonly found in numeric forms:
+        case 0x061C: // Arabic Letter Mark (before signs in standard Arabic)
+        case 0x200E: // Left-to-Right marker
+        case 0x200F: // Right-to-Left marker
+            ++m_index;
+            continue;
 
-    // Some locales use a non-breaking space (U+00A0) or its thin version
-    // (U+202f) for grouping. These look like spaces, so people (and thus some
-    // of our tests) use a regular space instead and complain if it doesn't
-    // work.
-    // Should this be extended generally to any case where group is a space ?
-    if ((m_guide.group == u"\u00a0" || m_guide.group == u"\u202f") && tail.startsWith(u' ')) {
-        ++m_index;
-        return ',';
-    }
+        case u' ':
+            // Some locales use a non-breaking space (U+00A0) or its thin
+            // version (U+202f) for grouping. These look like spaces, so people
+            // (and thus some of our tests) use a regular space instead and
+            // complain if it doesn't work.
+            // Should this be extended generally to any case where group is a space ?
+            if (m_guide.group == u"\u00a0" || m_guide.group == u"\u202f") {
+                ++m_index;
+                return ',';
+            }
+            break;
 
-    // Cyrillic has its own E, used by Ukrainian as exponent; but others
-    // writing Cyrillic may well use that; and Ukrainians might well use E.
-    // All other Cyrillic locales (officially) use plain ASCII E.
-    if (m_guide.exponentCyrillic // Only true in scientific float mode.
-        && (tail.startsWith(u"\u0415", Qt::CaseInsensitive)
-            || tail.startsWith(u"E", Qt::CaseInsensitive))) {
-        ++m_index;
-        return 'e';
-    }
+            // Case-insensitive match:
+        case u'E':
+        case u'e':
+        case u'\u0415': // Cyrillic E
+        case u'\u0435': // Cyrillic e
+            // Cyrillic E is used by Ukrainian as exponent; but others writing
+            // Cyrillic may well use that; and Ukrainians might well use E.
+            // All other Cyrillic locales (officially) use plain ASCII E.
+            if (m_guide.exponentCyrillic) { // Only true in scientific float mode.
+                ++m_index;
+                return 'e';
+            }
+            break;
+        }
 
+        break;
+    } while (!done());
     return 0;
 }
 } // namespace with no name

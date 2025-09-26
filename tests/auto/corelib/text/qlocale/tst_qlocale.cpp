@@ -1008,7 +1008,7 @@ void tst_QLocale::toReal_data()
     QTest::newRow("ar_EG 4e-3") // Arabic, Egypt
         << u"ar_EG"_s << u"\u0664\u0623\u0633\u061c-\u0660\u0663"_s << true << 4e-3;
     QTest::newRow("ar_EG 4e!3") // Arabic Letter Mark in place of sign
-        << u"ar_EG"_s << u"\u0664\u0623\u0633\u061c\u0660\u0663"_s << false << 0.0;
+        << u"ar_EG"_s << u"\u0664\u0623\u0633\u061c\u0660\u0663"_s << true << 4e3;
     QTest::newRow("ar_EG 4x-3") // Only first character of exponent
         << u"ar_EG"_s << u"\u0664\u0623\u061c-\u0660\u0663"_s << false << 0.0;
     QTest::newRow("ar_EG 4x!3") // Only first character of exponent and sign
@@ -1016,7 +1016,7 @@ void tst_QLocale::toReal_data()
     QTest::newRow("fa_IR 4e-3") // Farsi, Iran
         << u"fa_IR"_s << u"\u06f4\u00d7\u06f1\u06f0^\u200e\u2212\u06f0\u06f3"_s << true << 4e-3;
     QTest::newRow("fa_IR 4e!3") // L2R in place of sign in exponent
-        << u"fa_IR"_s << u"\u06f4\u00d7\u06f1\u06f0^\u200e\u06f0\u06f3"_s << false << 0.0;
+        << u"fa_IR"_s << u"\u06f4\u00d7\u06f1\u06f0^\u200e\u06f0\u06f3"_s << true << 4e3;
     QTest::newRow("fa_IR 4x-3") // Only first character of exponent
         << u"fa_IR"_s << u"\u06f4\u00d7\u200e\u2212\u06f0\u06f3"_s << false << 0.0;
     QTest::newRow("fa_IR 4x!3") // Only first character of exponent, L2R in place of its sign
@@ -1881,8 +1881,6 @@ void tst_QLocale::long_long_conversion()
     QLocale locale(locale_name);
     QCOMPARE(locale.name(), locale_name);
 
-    QEXPECT_FAIL("pa-PK/\\u200E-1,234", "QTBUG-139922 thrown off by BiDi marks", Continue);
-    QEXPECT_FAIL("pa-PK/\\u200E+1,234", "QTBUG-139922 thrown off by BiDi marks", Continue);
     bool ok;
     qlonglong l = locale.toLongLong(num_str, &ok);
     QCOMPARE(ok, good);
@@ -1890,8 +1888,6 @@ void tst_QLocale::long_long_conversion()
     if (ok)
         QCOMPARE(l, num);
 
-    QEXPECT_FAIL("pa-PK/\\u200E-1,234", "QTBUG-139922 thrown off by BiDi marks", Continue);
-    QEXPECT_FAIL("pa-PK/\\u200E+1,234", "QTBUG-139922 thrown off by BiDi marks", Continue);
     l = locale.toLongLong(num_strRef, &ok);
     QCOMPARE(ok, good);
 
@@ -1899,14 +1895,12 @@ void tst_QLocale::long_long_conversion()
         QCOMPARE(l, num);
 
     if (num >= 0) {
-        QEXPECT_FAIL("pa-PK/\\u200E+1,234", "QTBUG-139922 thrown off by BiDi marks", Continue);
         qulonglong ull = locale.toULongLong(num_str, &ok);
         QCOMPARE(ok, good);
 
         if (ok)
             QCOMPARE(ull, num);
 
-        QEXPECT_FAIL("pa-PK/\\u200E+1,234", "QTBUG-139922 thrown off by BiDi marks", Continue);
         ull = locale.toULongLong(num_strRef, &ok);
         QCOMPARE(ok, good);
 
