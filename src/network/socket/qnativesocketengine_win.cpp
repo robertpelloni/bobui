@@ -434,6 +434,11 @@ bool QNativeSocketEnginePrivate::setOption(QNativeSocketEngine::SocketOption opt
 }
 
 /*!
+    \class QNativeSocketEnginePrivate
+    \internal
+*/
+
+/*!
     Fetches information about both ends of the connection: whatever is
     available.
 */
