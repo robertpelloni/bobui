@@ -9,7 +9,13 @@
 
 QT_BEGIN_NAMESPACE
 
-class Q_CORE_EXPORT QAssociativeIterator : public QIterator<QMetaAssociation>
+#if QT_DEPRECATED_SINCE(6, 13)
+QT_WARNING_PUSH
+QT_WARNING_DISABLE_DEPRECATED
+
+class
+QT_DEPRECATED_VERSION_X_6_13("Use QMetaAssociation::Iterable::Iterator instead.")
+QAssociativeIterator : public QIterator<QMetaAssociation>
 {
 public:
     using key_type = QVariant;
@@ -21,14 +27,16 @@ public:
         : QIterator(std::move(it))
     {}
 
-    QVariant key() const;
-    QVariantRef<QAssociativeIterator> value() const;
+    Q_CORE_EXPORT QVariant key() const;
+    Q_CORE_EXPORT QVariantRef<QAssociativeIterator> value() const;
 
-    QVariantRef<QAssociativeIterator> operator*() const;
-    QVariantPointer<QAssociativeIterator> operator->() const;
+    Q_CORE_EXPORT QVariantRef<QAssociativeIterator> operator*() const;
+    Q_CORE_EXPORT QVariantPointer<QAssociativeIterator> operator->() const;
 };
 
-class Q_CORE_EXPORT QAssociativeConstIterator : public QConstIterator<QMetaAssociation>
+class
+QT_DEPRECATED_VERSION_X_6_13("Use QMetaAssociation::Iterable::ConstIterator instead.")
+QAssociativeConstIterator : public QConstIterator<QMetaAssociation>
 {
 public:
     using key_type = QVariant;
@@ -40,14 +48,16 @@ public:
         : QConstIterator(std::move(it))
     {}
 
-    QVariant key() const;
-    QVariant value() const;
+    Q_CORE_EXPORT QVariant key() const;
+    Q_CORE_EXPORT QVariant value() const;
 
-    QVariant operator*() const;
-    QVariantConstPointer operator->() const;
+    Q_CORE_EXPORT QVariant operator*() const;
+    Q_CORE_EXPORT QVariantConstPointer operator->() const;
 };
 
-class Q_CORE_EXPORT QAssociativeIterable : public QIterable<QMetaAssociation>
+class
+QT_DEPRECATED_VERSION_X_6_13("Use QMetaAssociation::Iterable instead.")
+QAssociativeIterable : public QIterable<QMetaAssociation>
 {
 public:
     using iterator = QTaggedIterator<QAssociativeIterator, void>;
@@ -86,14 +96,12 @@ public:
     {
     }
 
-    // ### Qt7: Pass QMetaType as value rather than const ref.
     QAssociativeIterable(const QMetaAssociation &metaAssociation, const QMetaType &metaType,
                          void *iterable)
         : QIterable(metaAssociation, metaType.alignOf(), iterable)
     {
     }
 
-    // ### Qt7: Pass QMetaType as value rather than const ref.
     QAssociativeIterable(const QMetaAssociation &metaAssociation, const QMetaType &metaType,
                          const void *iterable)
         : QIterable(metaAssociation, metaType.alignOf(), iterable)
@@ -117,16 +125,16 @@ public:
     iterator mutableBegin() { return iterator(QIterable::mutableBegin()); }
     iterator mutableEnd() { return iterator(QIterable::mutableEnd()); }
 
-    const_iterator find(const QVariant &key) const;
+    Q_CORE_EXPORT const_iterator find(const QVariant &key) const;
     const_iterator constFind(const QVariant &key) const { return find(key); }
-    iterator mutableFind(const QVariant &key);
+    Q_CORE_EXPORT iterator mutableFind(const QVariant &key);
 
-    bool containsKey(const QVariant &key);
-    void insertKey(const QVariant &key);
-    void removeKey(const QVariant &key);
+    Q_CORE_EXPORT bool containsKey(const QVariant &key);
+    Q_CORE_EXPORT void insertKey(const QVariant &key);
+    Q_CORE_EXPORT void removeKey(const QVariant &key);
 
-    QVariant value(const QVariant &key) const;
-    void setValue(const QVariant &key, const QVariant &mapped);
+    Q_CORE_EXPORT QVariant value(const QVariant &key) const;
+    Q_CORE_EXPORT void setValue(const QVariant &key, const QVariant &mapped);
 };
 
 template<>
@@ -167,6 +175,9 @@ inline QVariantRef<QAssociativeIterator> &QVariantRef<QAssociativeIterator>::ope
 Q_DECLARE_TYPEINFO(QAssociativeIterable, Q_RELOCATABLE_TYPE);
 Q_DECLARE_TYPEINFO(QAssociativeIterable::iterator, Q_RELOCATABLE_TYPE);
 Q_DECLARE_TYPEINFO(QAssociativeIterable::const_iterator, Q_RELOCATABLE_TYPE);
+
+QT_WARNING_POP
+#endif // QT_DEPRECATED_SINCE(6, 13)
 
 QT_END_NAMESPACE
 

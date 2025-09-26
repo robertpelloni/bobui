@@ -9,7 +9,13 @@
 
 QT_BEGIN_NAMESPACE
 
-class Q_CORE_EXPORT QSequentialIterator : public QIterator<QMetaSequence>
+#if QT_DEPRECATED_SINCE(6, 13)
+QT_WARNING_PUSH
+QT_WARNING_DISABLE_DEPRECATED
+
+class
+QT_DEPRECATED_VERSION_X_6_13("Use QMetaSequence::Iterable::Iterator instead.")
+QSequentialIterator : public QIterator<QMetaSequence>
 {
 public:
     using value_type = QVariant;
@@ -20,11 +26,13 @@ public:
         : QIterator(std::move(it))
     {}
 
-    QVariantRef<QSequentialIterator> operator*() const;
-    QVariantPointer<QSequentialIterator> operator->() const;
+    Q_CORE_EXPORT QVariantRef<QSequentialIterator> operator*() const;
+    Q_CORE_EXPORT QVariantPointer<QSequentialIterator> operator->() const;
 };
 
-class Q_CORE_EXPORT QSequentialConstIterator : public QConstIterator<QMetaSequence>
+class
+QT_DEPRECATED_VERSION_X_6_13("Use QMetaSequence::Iterable::ConstIterator instead.")
+QSequentialConstIterator : public QConstIterator<QMetaSequence>
 {
 public:
     using value_type = QVariant;
@@ -35,11 +43,13 @@ public:
         : QConstIterator(std::move(it))
     {}
 
-    QVariant operator*() const;
-    QVariantConstPointer operator->() const;
+    Q_CORE_EXPORT QVariant operator*() const;
+    Q_CORE_EXPORT QVariantConstPointer operator->() const;
 };
 
-class Q_CORE_EXPORT QSequentialIterable : public QIterable<QMetaSequence>
+class
+QT_DEPRECATED_VERSION_X_6_13("Use QMetaSequence::Iterable instead.")
+QSequentialIterable : public QIterable<QMetaSequence>
 {
 public:
     using iterator = QTaggedIterator<QSequentialIterator, void>;
@@ -79,14 +89,12 @@ public:
     {
     }
 
-    // ### Qt7: Pass QMetaType as value rather than const ref.
     QSequentialIterable(const QMetaSequence &metaSequence, const QMetaType &metaType,
                         void *iterable)
         : QIterable(metaSequence, metaType.alignOf(), iterable)
     {
     }
 
-    // ### Qt7: Pass QMetaType as value rather than const ref.
     QSequentialIterable(const QMetaSequence &metaSequence, const QMetaType &metaType,
                         const void *iterable)
         : QIterable(metaSequence, metaType.alignOf(), iterable)
@@ -110,14 +118,14 @@ public:
     iterator mutableBegin() { return iterator(QIterable::mutableBegin()); }
     iterator mutableEnd() { return iterator(QIterable::mutableEnd()); }
 
-    QVariant at(qsizetype idx) const;
-    void set(qsizetype idx, const QVariant &value);
+    Q_CORE_EXPORT QVariant at(qsizetype idx) const;
+    Q_CORE_EXPORT void set(qsizetype idx, const QVariant &value);
 
     enum Position { Unspecified, AtBegin, AtEnd };
-    void addValue(const QVariant &value, Position position = Unspecified);
-    void removeValue(Position position = Unspecified);
+    Q_CORE_EXPORT void addValue(const QVariant &value, Position position = Unspecified);
+    Q_CORE_EXPORT void removeValue(Position position = Unspecified);
 
-    QMetaType valueMetaType() const;
+    Q_CORE_EXPORT QMetaType valueMetaType() const;
 };
 
 template<>
@@ -149,6 +157,9 @@ inline QVariantRef<QSequentialIterator> &QVariantRef<QSequentialIterator>::opera
 Q_DECLARE_TYPEINFO(QSequentialIterable, Q_RELOCATABLE_TYPE);
 Q_DECLARE_TYPEINFO(QSequentialIterable::iterator, Q_RELOCATABLE_TYPE);
 Q_DECLARE_TYPEINFO(QSequentialIterable::const_iterator, Q_RELOCATABLE_TYPE);
+
+QT_WARNING_POP
+#endif // QT_DEPRECATED_SINCE(6, 13)
 
 QT_END_NAMESPACE
 

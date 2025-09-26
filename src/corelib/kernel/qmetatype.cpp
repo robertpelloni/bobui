@@ -2503,25 +2503,19 @@ bool QMetaType::convert(QMetaType fromType, const void *from, QMetaType toType, 
         return true;
 
     // handle iterables
-    if (toTypeId == QVariantList) {
-        if (convertIterableToVariantList<QMetaSequence::Iterable>(fromType, from, to))
-            return true;
-        if (convertIterableToVariantList<QSequentialIterable>(fromType, from, to))
-            return true;
+    if (toTypeId == QVariantList
+            && convertIterableToVariantList<QMetaSequence::Iterable>(fromType, from, to)) {
+        return true;
     }
 
-    if (toTypeId == QVariantMap) {
-        if (convertIterableToVariantMap<QMetaAssociation::Iterable>(fromType, from, to))
-            return true;
-        if (convertIterableToVariantMap<QAssociativeIterable>(fromType, from, to))
-            return true;
+    if (toTypeId == QVariantMap
+            && convertIterableToVariantMap<QMetaAssociation::Iterable>(fromType, from, to)) {
+        return true;
     }
 
-    if (toTypeId == QVariantHash) {
-        if (convertIterableToVariantHash<QMetaAssociation::Iterable>(fromType, from, to))
-            return true;
-        if (convertIterableToVariantHash<QAssociativeIterable>(fromType, from, to))
-            return true;
+    if (toTypeId == QVariantHash
+            && convertIterableToVariantHash<QMetaAssociation::Iterable>(fromType, from, to)) {
+        return true;
     }
 
     if (toTypeId == qMetaTypeId<QMetaSequence::Iterable>())
@@ -2530,11 +2524,33 @@ bool QMetaType::convert(QMetaType fromType, const void *from, QMetaType toType, 
     if (toTypeId == qMetaTypeId<QMetaAssociation::Iterable>())
         return convertToAssociativeIterable<QMetaAssociation::Iterable>(fromType, from, to);
 
+#if QT_DEPRECATED_SINCE(6, 13)
+    QT_WARNING_PUSH
+    QT_WARNING_DISABLE_DEPRECATED
+
+    if (toTypeId == QVariantList
+            && convertIterableToVariantList<QSequentialIterable>(fromType, from, to)) {
+        return true;
+    }
+
+    if (toTypeId == QVariantMap
+            && convertIterableToVariantMap<QAssociativeIterable>(fromType, from, to)) {
+        return true;
+    }
+
+    if (toTypeId == QVariantHash
+            && convertIterableToVariantHash<QAssociativeIterable>(fromType, from, to)) {
+        return true;
+    }
+
     if (toTypeId == qMetaTypeId<QSequentialIterable>())
         return convertToSequentialIterable<QSequentialIterable>(fromType, from, to);
 
     if (toTypeId == qMetaTypeId<QAssociativeIterable>())
         return convertToAssociativeIterable<QAssociativeIterable>(fromType, from, to);
+
+    QT_WARNING_POP
+#endif // QT_DEPRECATED_SINCE(6, 13)
 
     return convertMetaObject(fromType, from, toType, to);
 }
@@ -2562,11 +2578,18 @@ bool QMetaType::view(QMetaType fromType, void *from, QMetaType toType, void *to)
     if (toTypeId == qMetaTypeId<QMetaAssociation::Iterable>())
         return viewAsAssociativeIterable<QMetaAssociation::Iterable>(fromType, from, to);
 
+#if QT_DEPRECATED_SINCE(6, 13)
+    QT_WARNING_PUSH
+    QT_WARNING_DISABLE_DEPRECATED
+
     if (toTypeId == qMetaTypeId<QSequentialIterable>())
         return viewAsSequentialIterable<QSequentialIterable>(fromType, from, to);
 
     if (toTypeId == qMetaTypeId<QAssociativeIterable>())
         return viewAsAssociativeIterable<QAssociativeIterable>(fromType, from, to);
+
+    QT_WARNING_POP
+#endif // QT_DEPRECATED_SINCE(6, 13)
 
     return convertMetaObject(fromType, from, toType, to);
 }
@@ -2600,15 +2623,24 @@ bool QMetaType::canView(QMetaType fromType, QMetaType toType)
     if (f)
         return true;
 
-    if (toTypeId == qMetaTypeId<QMetaSequence::Iterable>()
-            || toTypeId == qMetaTypeId<QSequentialIterable>()) {
+    if (toTypeId == qMetaTypeId<QMetaSequence::Iterable>())
         return canImplicitlyViewAsSequentialIterable(fromType);
-    }
 
-    if (toTypeId == qMetaTypeId<QMetaAssociation::Iterable>()
-            || toTypeId == qMetaTypeId<QAssociativeIterable>()) {
+    if (toTypeId == qMetaTypeId<QMetaAssociation::Iterable>())
         return canImplicitlyViewAsAssociativeIterable(fromType);
-    }
+
+#if QT_DEPRECATED_SINCE(6, 13)
+    QT_WARNING_PUSH
+    QT_WARNING_DISABLE_DEPRECATED
+
+    if (toTypeId == qMetaTypeId<QSequentialIterable>())
+        return canImplicitlyViewAsSequentialIterable(fromType);
+
+    if (toTypeId == qMetaTypeId<QAssociativeIterable>())
+        return canImplicitlyViewAsAssociativeIterable(fromType);
+
+    QT_WARNING_POP
+#endif
 
     if (canConvertMetaObject(fromType, toType))
         return true;
@@ -2720,27 +2752,44 @@ bool QMetaType::canConvert(QMetaType fromType, QMetaType toType)
     if (f)
         return true;
 
-    if (toTypeId == qMetaTypeId<QMetaSequence::Iterable>()
-            || toTypeId == qMetaTypeId<QSequentialIterable>()) {
+    if (toTypeId == qMetaTypeId<QMetaSequence::Iterable>())
         return canConvertToSequentialIterable(fromType);
-    }
 
-    if (toTypeId == qMetaTypeId<QMetaAssociation::Iterable>()
-            || toTypeId == qMetaTypeId<QAssociativeIterable>()) {
+    if (toTypeId == qMetaTypeId<QMetaAssociation::Iterable>())
         return canConvertToAssociativeIterable(fromType);
-    }
 
     if (toTypeId == QVariantList
-            && (canConvert(fromType, QMetaType::fromType<QMetaSequence::Iterable>())
-                || canConvert(fromType, QMetaType::fromType<QSequentialIterable>()))) {
+            && canConvert(fromType, QMetaType::fromType<QMetaSequence::Iterable>())) {
         return true;
     }
 
     if ((toTypeId == QVariantHash || toTypeId == QVariantMap)
-            && (canConvert(fromType, QMetaType::fromType<QMetaAssociation::Iterable>())
-                || canConvert(fromType, QMetaType::fromType<QAssociativeIterable>()))) {
+            && canConvert(fromType, QMetaType::fromType<QMetaAssociation::Iterable>())) {
         return true;
     }
+
+#if QT_DEPRECATED_SINCE(6, 13)
+    QT_WARNING_PUSH
+    QT_WARNING_DISABLE_DEPRECATED
+
+    if (toTypeId == qMetaTypeId<QSequentialIterable>())
+        return canConvertToSequentialIterable(fromType);
+
+    if (toTypeId == qMetaTypeId<QAssociativeIterable>())
+        return canConvertToAssociativeIterable(fromType);
+
+    if (toTypeId == QVariantList
+            && canConvert(fromType, QMetaType::fromType<QSequentialIterable>())) {
+        return true;
+    }
+
+    if ((toTypeId == QVariantHash || toTypeId == QVariantMap)
+            && canConvert(fromType, QMetaType::fromType<QAssociativeIterable>())) {
+        return true;
+    }
+
+    QT_WARNING_POP
+#endif // QT_DEPRECATED_SINCE(6, 13)
 
     if (toTypeId == QVariantPair && hasRegisteredConverterFunction(
                     fromType, QMetaType::fromType<QtMetaTypePrivate::QPairVariantInterfaceImpl>()))

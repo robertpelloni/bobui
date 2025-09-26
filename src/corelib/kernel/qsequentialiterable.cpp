@@ -7,8 +7,13 @@
 
 QT_BEGIN_NAMESPACE
 
+#if QT_DEPRECATED_SINCE(6, 13)
+QT_WARNING_PUSH
+QT_WARNING_DISABLE_DEPRECATED
+
 /*!
     \class QSequentialIterable
+    \deprecated [6.13] Use QMetaSequence::Iterable instead.
     \since 5.2
     \inmodule QtCore
     \brief The QSequentialIterable class is an iterable interface for a container in a QVariant.
@@ -158,6 +163,7 @@ void QSequentialIterable::set(qsizetype idx, const QVariant &value)
 
 /*!
     \typealias QSequentialIterable::const_iterator
+    \deprecated [6.13] Use QMetaSequence::Iterable::ConstIterator instead.
     \brief The QSequentialIterable::const_iterator allows iteration over a container in a QVariant.
 
     A QSequentialIterable::const_iterator can only be created by a QSequentialIterable instance,
@@ -167,6 +173,7 @@ void QSequentialIterable::set(qsizetype idx, const QVariant &value)
 /*!
     \typealias QSequentialIterable::iterator
     \since 6.0
+    \deprecated [6.13] Use QMetaSequence::Iterable::Iterator instead.
     \brief The QSequentialIterable::iterator allows iteration over a container in a QVariant.
 
     A QSequentialIterable::iterator can only be created by a QSequentialIterable instance,
@@ -216,5 +223,8 @@ QVariantConstPointer QSequentialConstIterator::operator->() const
 {
     return QVariantConstPointer(operator*());
 }
+
+QT_WARNING_POP
+#endif // QT_DEPRECATED_SINCE(6, 13)
 
 QT_END_NAMESPACE

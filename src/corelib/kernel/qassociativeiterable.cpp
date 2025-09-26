@@ -7,6 +7,10 @@
 
 QT_BEGIN_NAMESPACE
 
+#if QT_DEPRECATED_SINCE(6, 13)
+QT_WARNING_PUSH
+QT_WARNING_DISABLE_DEPRECATED
+
 /*!
     \class QAssociativeIterator
     \internal
@@ -103,6 +107,7 @@ QVariantConstPointer QAssociativeConstIterator::operator->() const
 
 /*!
     \class QAssociativeIterable
+    \deprecated [6.13] Use QMetaAssociation::Iterable instead.
     \since 5.2
     \inmodule QtCore
     \brief The QAssociativeIterable class is an iterable interface for an associative container in a QVariant.
@@ -268,6 +273,7 @@ void QAssociativeIterable::setValue(const QVariant &key, const QVariant &mapped)
 
 /*!
     \typealias QAssociativeIterable::const_iterator
+    \deprecated [6.13] Use QMetaAssociation::Iterable::ConstIterator instead.
     \inmodule QtCore
     \brief The QAssociativeIterable::const_iterator allows iteration over a container in a QVariant.
 
@@ -280,6 +286,7 @@ void QAssociativeIterable::setValue(const QVariant &key, const QVariant &mapped)
 /*!
     \typealias QAssociativeIterable::iterator
     \since 6.0
+    \deprecated [6.13] Use QMetaAssociation::Iterable::Iterator instead.
     \inmodule QtCore
     \brief The QAssociativeIterable::iterator allows iteration over a container in a QVariant.
 
@@ -288,5 +295,8 @@ void QAssociativeIterable::setValue(const QVariant &key, const QVariant &mapped)
 
     \sa QAssociativeIterable
 */
+
+QT_WARNING_POP
+#endif // QT_DEPRECATED_SINCE(6, 13)
 
 QT_END_NAMESPACE
