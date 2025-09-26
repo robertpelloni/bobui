@@ -1883,7 +1883,7 @@ bool QMetaObject::invokeMethodImpl(QObject *object, QtPrivate::QSlotObjectBase *
     \internal
 
     \value Compatibility
-    \value Cloned
+    \value Cloned       // See QMetaObjectPrivate::originalClone()
     \value Scriptable
 */
 
@@ -4563,9 +4563,15 @@ const char *QMetaClassInfo::value() const
 
 /*!
     \internal
-    If the local_method_index is a cloned method, return the index of the original.
+    If the \a local_method_index is a cloned method, return the index of the original.
 
-    Example: if the index of "destroyed()" is passed, the index of "destroyed(QObject*)" is returned
+    A "cloned" method is a function with a default argument, this is handled by
+    pretending there is an overload without the argument, and the original function
+    is the overload with all arguments present.
+
+    Example: for a function \c {QObject::destroyed(QObject *o = nullptr}, if the
+    index of \c {destroyed()} is passed, the index of \c {destroyed(QObject*)}
+    is returned.
  */
 int QMetaObjectPrivate::originalClone(const QMetaObject *mobj, int local_method_index)
 {

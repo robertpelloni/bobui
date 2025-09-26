@@ -70,7 +70,7 @@ enum MethodFlags : uint {
     MethodTypeMask = 0x0c,
 
     MethodCompatibility = 0x10,
-    MethodCloned = 0x20,
+    MethodCloned = 0x20,    // Used for methods with default arguments
     MethodScriptable = 0x40,
     MethodRevisioned = 0x80,
 
