@@ -583,6 +583,13 @@ if(QT_FEATURE_async_io)
             SOURCES
                 io/qrandomaccessasyncfile_darwin.mm
         )
+    elseif(LINUX AND QT_FEATURE_liburing)
+        qt_internal_extend_target(Core
+            SOURCES
+                io/qrandomaccessasyncfile_qioring.cpp
+            DEFINES
+                QT_RANDOMACCESSASYNCFILE_QIORING
+        )
     elseif(QT_FEATURE_thread AND QT_FEATURE_future)
         # TODO: This should become the last (fallback) condition later.
         # We migth also want to rewrite it so that it does not depend on

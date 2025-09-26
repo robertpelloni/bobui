@@ -24,6 +24,10 @@
 #include <QtCore/qspan.h>
 #include <QtCore/qvarlengtharray.h>
 
+#ifdef QT_RANDOMACCESSASYNCFILE_QIORING
+#include <QtCore/private/qioring_p.h>
+#endif
+
 #include <variant>
 
 QT_BEGIN_NAMESPACE

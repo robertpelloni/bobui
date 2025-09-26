@@ -43,6 +43,11 @@
 
 #endif // Q_OS_DARWIN
 
+#ifdef QT_RANDOMACCESSASYNCFILE_QIORING
+#include <QtCore/private/qioring_p.h>
+#include <QtCore/qlist.h>
+#endif
+
 QT_BEGIN_NAMESPACE
 
 class QRandomAccessAsyncFilePrivate : public QObjectPrivate
@@ -114,6 +119,15 @@ private:
     void processFlush();
     void processOpen();
     void operationComplete();
+#elif defined(QT_RANDOMACCESSASYNCFILE_QIORING)
+    void queueCompletion(QIOOperationPrivate *priv, QIOOperation::Error error);
+    void startReadIntoSingle(QIOOperation *op, const QSpan<std::byte> &to);
+    void startWriteFromSingle(QIOOperation *op, const QSpan<const std::byte> &from);
+    QIORing::RequestHandle cancel(QIORing::RequestHandle handle);
+    QIORing *m_ioring = nullptr;
+    qintptr m_fd = -1;
+    QList<QPointer<QIOOperation>> m_operations;
+    QHash<QIOOperation *, QIORing::RequestHandle> m_opHandleMap;
 #endif
 #ifdef Q_OS_DARWIN
     using OperationId = quint64;

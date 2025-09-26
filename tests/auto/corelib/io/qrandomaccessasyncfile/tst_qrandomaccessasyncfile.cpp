@@ -78,8 +78,9 @@ void tst_QRandomAccessAsyncFile::initTestCase()
     QVERIFY(m_file.open());
 
     QByteArray data(FileSize, Qt::Uninitialized);
+    auto *ptr = data.data();
     for (qsizetype i = 0; i < FileSize; ++i)
-        data[i] = char(i % 256);
+        ptr[i] = char(i % 256);
 
     qint64 written = m_file.write(data);
     QCOMPARE_EQ(written, FileSize);
@@ -88,7 +89,13 @@ void tst_QRandomAccessAsyncFile::initTestCase()
 void tst_QRandomAccessAsyncFile::cleanupTestCase()
 {
     m_file.close();
-    QVERIFY(m_file.remove());
+    using namespace std::chrono_literals;
+    QDeadlineTimer dt(10s);
+    // Loop a little bit in case there is an access race on Windows:
+    bool success = false;
+    while (!(success = m_file.remove()) && !dt.hasExpired())
+        QThread::msleep(100);
+    QVERIFY2(success, qPrintable(m_file.errorString()));
 }
 
 void tst_QRandomAccessAsyncFile::size()
@@ -586,13 +593,16 @@ void tst_QRandomAccessAsyncFile::fileClosedInProgress()
     }
     file.close();
 
-    auto isAbortedOrComplete = [](QIOOperation *op) {
-        return op->error() == QIOOperation::Error::Aborted
-                || op->error() == QIOOperation::Error::None;
+    auto isAbortedOrCompleteOrFailedToOpen = [](QIOOperation *op) {
+        return op->error() == QIOOperation::Error::Aborted // Aborted
+                || op->error() == QIOOperation::Error::Open // Failed, because other op is in progress
+                || op->error() == QIOOperation::Error::None; // Completed
     };
     for (auto op : operations) {
         QTRY_VERIFY(op->isFinished());
-        QVERIFY(isAbortedOrComplete(op));
+        QVERIFY2(isAbortedOrCompleteOrFailedToOpen(op),
+                 qPrintable("Expected Aborted, Open or None, got %1"_L1.arg(
+                         QDebug::toString(op->error()))));
     }
 }
 
