@@ -619,6 +619,12 @@ void QMetaSequence::valueAtConstIterator(const void *iterator, void *result) con
 */
 
 /*!
+    \fn QVariant::Reference<QMetaSequence::Iterable::Iterator> QMetaSequence::Iterable::Iterator::operator[](qsizetype n) const
+    Returns the item offset from the current one by \a n, converted to a
+    QVariant::Reference.
+*/
+
+/*!
     \fn QVariant QMetaSequence::Iterable::ConstIterator::operator*() const
     Returns the current item, converted to a QVariant.
 */
@@ -626,6 +632,12 @@ void QMetaSequence::valueAtConstIterator(const void *iterator, void *result) con
 /*!
     \fn QVariant::ConstPointer<QMetaSequence::Iterable::ConstIterator> QMetaSequence::Iterable::ConstIterator::operator->() const
     Returns the current item, converted to a QVariant::ConstPointer.
+*/
+
+/*!
+    \fn QVariant QMetaSequence::Iterable::ConstIterator::operator[](qsizetype n) const
+    Returns the item offset from the current one by \a n, converted to a
+    QVariant.
 */
 
 QT_END_NAMESPACE

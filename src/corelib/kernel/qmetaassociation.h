@@ -41,6 +41,7 @@ public:
 
     reference operator*() const { return reference(*this); }
     pointer operator->() const { return pointer(*this); }
+    reference operator[](qsizetype n) const { return reference(*this + n); }
 };
 
 class AssociativeConstIterator : public QConstIterator<QMetaAssociation>
@@ -67,6 +68,7 @@ public:
 
     mapped_type operator*() const;
     pointer operator->() const { return pointer(*this); }
+    mapped_type operator[](qsizetype n) const;
 };
 
 } // namespace QtMetaContainerPrivate
@@ -122,6 +124,11 @@ namespace QtMetaContainerPrivate {
 inline AssociativeConstIterator::mapped_type AssociativeConstIterator::operator*() const
 {
     return reference(*this);
+}
+
+inline AssociativeConstIterator::mapped_type AssociativeConstIterator::operator[](qsizetype n) const
+{
+    return reference(*this + n);
 }
 
 class Association : public QIterable<QMetaAssociation>

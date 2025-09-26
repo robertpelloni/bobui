@@ -31,6 +31,7 @@ public:
 
     reference operator*() const { return reference(*this); }
     pointer operator->() const { return pointer(*this); }
+    reference operator[](qsizetype n) const { return reference(*this + n); }
 };
 
 class SequentialConstIterator : public QConstIterator<QMetaSequence>
@@ -46,6 +47,7 @@ public:
 
     value_type operator*() const;
     pointer operator->() const { return pointer(*this); }
+    value_type operator[](qsizetype n) const;
 };
 
 } // namespace QtMetaContainerPrivate
@@ -88,6 +90,11 @@ namespace QtMetaContainerPrivate {
 inline SequentialConstIterator::value_type SequentialConstIterator::operator*() const
 {
     return reference(*this);
+}
+
+inline SequentialConstIterator::value_type SequentialConstIterator::operator[](qsizetype n) const
+{
+    return reference(*this + n);
 }
 
 class Sequence : public QIterable<QMetaSequence>

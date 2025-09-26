@@ -940,6 +940,7 @@ public:
         public:
             QVariant::Reference<Iterator> operator*() const;
             QVariant::Pointer<Iterator> operator->() const;
+            QVariant::Reference<Iterator> operator[](qsizetype n) const;
         };
 
         class ConstIterator : public QConstIterator<QMetaSequence>
@@ -947,6 +948,7 @@ public:
         public:
             QVariant operator*() const;
             QVariant::ConstPointer<ConstIterator> operator->() const;
+            QVariant operator[](qsizetype n) const;
         };
 
         using RandomAccessIterator = Iterator;
@@ -1076,6 +1078,7 @@ public:
 
             QVariant::Reference<Iterator> operator*() const;
             QVariant::Pointer<Iterator> operator->() const;
+            QVariant::Reference<Iterator> operator[](qsizetype n) const;
         };
 
         class ConstIterator : public QConstIterator<QMetaAssociation>
@@ -1086,6 +1089,7 @@ public:
 
             QVariant operator*() const;
             QVariant::ConstPointer<ConstIterator> operator->() const;
+            QVariant operator[](qsizetype n) const;
         };
 
         using RandomAccessIterator = Iterator;

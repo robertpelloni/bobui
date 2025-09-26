@@ -398,6 +398,7 @@ private slots:
     void iterateAssociativeContainerElements() { runTestFunction(); }
     void iterateContainerElements();
     void emptyContainerInterface();
+    void modifyContainerElements();
     void pairElements_data();
     void pairElements() { runTestFunction(); }
 
@@ -5289,8 +5290,12 @@ void tst_QVariant::iterateContainerElements()
         QMetaSequence::Iterable::const_iterator it = iter.begin();
         QMetaSequence::Iterable::const_iterator end = iter.end();
         QCOMPARE(ints.at(1), *(it + 1));
-        int i = 0;
-        for ( ; it != end; ++it, ++i) {
+
+        for (int i = 0, end = ints.size(); i != end; ++i) {
+            QCOMPARE(ints.at(i), it[i]);
+        }
+
+        for (int i = 0; it != end; ++it, ++i) {
             QCOMPARE(ints.at(i), *it);
         }
 
@@ -5313,8 +5318,12 @@ void tst_QVariant::iterateContainerElements()
         QMetaAssociation::Iterable::const_iterator it = iter.begin();
         QMetaAssociation::Iterable::const_iterator end = iter.end();
         QCOMPARE(*(++mapping.begin()), (*(it + 1)).toString());
-        int i = 0;
-        for ( ; it != end; ++it, ++i) {
+
+        for (int i = 0, end = mapping.size(); i != end; ++i) {
+            QCOMPARE(*(std::next(mapping.begin(), i)), it[i].toString());
+        }
+
+        for (int i = 0; it != end; ++it, ++i) {
             QCOMPARE(*(std::next(mapping.begin(), i)), (*it).toString());
         }
 
@@ -5363,6 +5372,77 @@ void tst_QVariant::emptyContainerInterface()
     auto mutableEnd = emptyIterable.mutableEnd();
     QVERIFY(mutableBegin == mutableEnd);
     QCOMPARE(mutableEnd - mutableBegin, 0);
+}
+
+void tst_QVariant::modifyContainerElements()
+{
+    {
+        QList<int> ints({1, 2, 3});
+        QMetaSequence::Iterable iter;
+        QVERIFY(QMetaType::view(
+                    QMetaType::fromType<QList<int>>(), &ints,
+                    QMetaType::fromType<QMetaSequence::Iterable>(), &iter));
+        QMetaSequence::Iterable::iterator it = iter.mutableBegin();
+        QMetaSequence::Iterable::iterator end = iter.mutableEnd();
+
+        *(it + 1) = 4;
+        QCOMPARE(ints.at(1), 4);
+
+        for (int i = 0, end = ints.size(); i != end; ++i) {
+            it[i] = i + 10;
+            QCOMPARE(ints.at(i), i + 10);
+        }
+
+        for (int i = 0; it != end; ++it, ++i) {
+            *it = i + 20;
+            QCOMPARE(ints.at(i), i + 20);
+        }
+
+        it = iter.mutableBegin();
+        QCOMPARE(it[0], QVariant(20));
+        QCOMPARE(it[1], QVariant(21));
+        QCOMPARE(it[2], QVariant(22));
+    }
+
+    {
+        QMap<int, QString> mapping({ {1, "one"}, {2, "two"}, {3, "three"} });
+        QMetaAssociation::Iterable iter;
+        QVERIFY(QMetaType::view(
+                    QMetaType::fromType<QMap<int, QString>>(), &mapping,
+                    QMetaType::fromType<QMetaAssociation::Iterable>(), &iter));
+        QMetaAssociation::Iterable::iterator it = iter.mutableBegin();
+        QMetaAssociation::Iterable::iterator end = iter.mutableEnd();
+        *(it + 1) = QStringLiteral("four");
+        QCOMPARE(*(++mapping.begin()), "four");
+
+        for (int i = 0, end = mapping.size(); i != end; ++i) {
+            it[i] = QString::number(i);
+            QCOMPARE(*std::next(mapping.begin(), i), QString::number(i));
+        }
+
+        for (int i = 0; it != end; ++it, ++i) {
+            *it = QString::number(i + 10);
+            QCOMPARE(*std::next(mapping.begin(), i), QString::number(i + 10));
+        }
+
+        it = iter.mutableBegin();
+        *(it++) = "one";
+        *(it++) = "two";
+        *(it++) = "three";
+
+        QCOMPARE(mapping, (QMap<int, QString>({ {1, "one"}, {2, "two"}, {3, "three"} })));
+    }
+
+    {
+        QVariantMap container({{"one", 1}});
+        QMetaAssociation::Iterable iter;
+        QMetaType::view(
+                    QMetaType::fromType<QVariantMap>(), &container,
+                    QMetaType::fromType<QMetaAssociation::Iterable>(), &iter);
+        iter.setValue("one", 5);
+        const auto f = iter.constFind("one");
+        QCOMPARE(*f, QVariant(5));
+    }
 }
 
 template <typename Pair> static void testVariantPairElements()
