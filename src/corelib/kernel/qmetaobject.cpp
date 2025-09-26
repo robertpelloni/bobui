@@ -704,22 +704,36 @@ QMetaMethod QMetaObjectPrivate::firstMethod(const QMetaObject *baseObject, QByte
 }
 
 /**
-* \internal
-* helper function for indexOf{Method,Slot,Signal}, returns the relative index of the method within
-* the baseObject
-* \a MethodType might be MethodSignal or MethodSlot, or \nullptr to match everything.
+    \internal
+    Helper function for indexOf{Method,Slot,Signal}, returns the relative index
+    of the method within \a baseObject.
+
+    If \a what is QMetaMethod::Method it will search all functions registered for
+    \a baseobject.
 */
-template<int MethodType>
 inline int QMetaObjectPrivate::indexOfMethodRelative(const QMetaObject **baseObject,
                                         QByteArrayView name,
-                                        QSpan<const QArgumentType> types)
+                                        QSpan<const QArgumentType> types,
+                                        QMetaMethod::MethodType what)
 {
     for (const QMetaObject *m = *baseObject; m; m = m->d.superdata) {
         Q_ASSERT(priv(m->d.data)->revision >= 7);
-        int i = (MethodType == MethodSignal)
-                 ? (priv(m->d.data)->signalCount - 1) : (priv(m->d.data)->methodCount - 1);
-        const int end = (MethodType == MethodSlot)
-                        ? (priv(m->d.data)->signalCount) : 0;
+        int i = 0;
+        int end = 0;
+        switch (what) {
+        case QMetaMethod::Signal:
+            i = priv(m->d.data)->signalCount - 1;
+            break;
+        case QMetaMethod::Slot:
+            i = priv(m->d.data)->methodCount - 1;
+            end = priv(m->d.data)->signalCount;
+            break;
+        case QMetaMethod::Method:
+            i = priv(m->d.data)->methodCount - 1;
+            break;
+        case QMetaMethod::Constructor:
+            Q_UNREACHABLE_RETURN(-1);
+        }
 
         for (; i >= end; --i) {
             auto data = QMetaMethod::fromRelativeMethodIndex(m, i);
@@ -868,7 +882,7 @@ int QMetaObjectPrivate::indexOfSignalRelative(const QMetaObject **baseObject,
                                               QByteArrayView name,
                                               QSpan<const QArgumentType> types)
 {
-    int i = indexOfMethodRelative<MethodSignal>(baseObject, name, types);
+    int i = indexOfMethodRelative(baseObject, name, types, QMetaMethod::Signal);
 #ifndef QT_NO_DEBUG
     const QMetaObject *m = *baseObject;
     if (i >= 0 && m && m->d.superdata) {
@@ -917,7 +931,7 @@ int QMetaObjectPrivate::indexOfSlotRelative(const QMetaObject **m,
                                             QByteArrayView name,
                                             QSpan<const QArgumentType> types)
 {
-    return indexOfMethodRelative<MethodSlot>(m, name, types);
+    return indexOfMethodRelative(m, name, types, QMetaMethod::Slot);
 }
 
 int QMetaObjectPrivate::indexOfSignal(const QMetaObject *m, QByteArrayView name,
@@ -941,7 +955,7 @@ int QMetaObjectPrivate::indexOfSlot(const QMetaObject *m, QByteArrayView name,
 int QMetaObjectPrivate::indexOfMethod(const QMetaObject *m, QByteArrayView name,
                                       QSpan<const QArgumentType> types)
 {
-    int i = indexOfMethodRelative<0>(&m, name, types);
+    int i = indexOfMethodRelative(&m, name, types, QMetaMethod::Method);
     if (i >= 0)
         i += m->methodOffset();
     return i;
@@ -4258,12 +4272,12 @@ int QMetaProperty::notifySignalIndex() const
     const QByteArrayView signalName = stringDataView(mobj, methodIndex);
     const QMetaObject *m = mobj;
     // try 0-arg signal
-    int idx = QMetaObjectPrivate::indexOfMethodRelative<MethodSignal>(&m, signalName, {});
+    int idx = QMetaObjectPrivate::indexOfMethodRelative(&m, signalName, {}, QMetaMethod::Signal);
     if (idx >= 0)
         return idx + m->methodOffset();
     // try 1-arg signal
     QArgumentType argType[] = {metaType()};
-    idx = QMetaObjectPrivate::indexOfMethodRelative<MethodSignal>(&m, signalName, argType);
+    idx = QMetaObjectPrivate::indexOfMethodRelative(&m, signalName, argType, QMetaMethod::Signal);
     if (idx >= 0)
         return idx + m->methodOffset();
     qWarning("QMetaProperty::notifySignal: cannot find the NOTIFY signal %s in class %s for property '%s'",

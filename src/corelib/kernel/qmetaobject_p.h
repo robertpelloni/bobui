@@ -191,10 +191,10 @@ struct QMetaObjectPrivate
                                         QBasicMutex *senderMutex, DisconnectType = DisconnectAll);
 #endif
 
-    template<int MethodType>
     static inline int indexOfMethodRelative(const QMetaObject **baseObject,
                                             QByteArrayView name,
-                                            QSpan<const QArgumentType> types);
+                                            QSpan<const QArgumentType> types,
+                                            QMetaMethod::MethodType what);
 
     static bool methodMatch(const QMetaObject *m, const QMetaMethod &method,
                             QByteArrayView name,
