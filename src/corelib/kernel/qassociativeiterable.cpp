@@ -111,8 +111,6 @@ QVariantConstPointer QAssociativeConstIterator::operator->() const
     a QVariant. An instance of QAssociativeIterable can be extracted from a QVariant if it can
     be converted to a QVariantHash or QVariantMap or if a custom mutable view has been registered.
 
-    \snippet code/src_corelib_kernel_qvariant.cpp 10
-
     The container itself is not copied before iterating over it.
 
     \sa QVariant
@@ -275,8 +273,6 @@ void QAssociativeIterable::setValue(const QVariant &key, const QVariant &mapped)
 
     A QAssociativeIterable::const_iterator can only be created by a QAssociativeIterable instance,
     and can be used in a way similar to other stl-style iterators.
-
-    \snippet code/src_corelib_kernel_qvariant.cpp 10
 
     \sa QAssociativeIterable
 */

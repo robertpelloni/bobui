@@ -17,8 +17,6 @@ QT_BEGIN_NAMESPACE
     a QVariant. An instance of QSequentialIterable can be extracted from a QVariant if it can
     be converted to a QVariantList.
 
-    \snippet code/src_corelib_kernel_qvariant.cpp 9
-
     The container itself is not copied before iterating over it.
 
     \sa QVariant
@@ -164,8 +162,6 @@ void QSequentialIterable::set(qsizetype idx, const QVariant &value)
 
     A QSequentialIterable::const_iterator can only be created by a QSequentialIterable instance,
     and can be used in a way similar to other stl-style iterators.
-
-    \snippet code/src_corelib_kernel_qvariant.cpp 9
 */
 
 /*!

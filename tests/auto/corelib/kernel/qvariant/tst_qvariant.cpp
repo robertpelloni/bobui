@@ -56,7 +56,7 @@ CHECK_GET(MyVariant, const &&);
 #include <QtGui/qtransform.h>
 
 // QtCore:
-#include <QAssociativeIterable>
+#include <QMetaAssociation>
 #include <QBitArray>
 #include <QBuffer>
 #include <QByteArrayList>
@@ -74,7 +74,7 @@ CHECK_GET(MyVariant, const &&);
 #include <QQueue>
 #include <QRegularExpression>
 #include <QScopeGuard>
-#include <QSequentialIterable>
+#include <QMetaSequence>
 #include <QSet>
 #include <QStack>
 #include <QTimeZone>
@@ -5015,7 +5015,7 @@ struct KeyGetter<std::unordered_map<T, U> >
 };
 
 template<typename Iterator>
-void sortIterable(QSequentialIterable *iterable)
+void sortIterable(QMetaSequence::Iterable *iterable)
 {
     std::sort(Iterator(iterable->mutableBegin()), Iterator(iterable->mutableEnd()),
               [&](const QVariant &a, const QVariant &b) {
@@ -5026,6 +5026,10 @@ void sortIterable(QSequentialIterable *iterable)
 template<typename Container>
 static void testSequentialIteration()
 {
+    QFETCH(bool, hasSizeAccessor);
+    QFETCH(bool, hasIndexedAccessors);
+    QTest::failOnWarning();
+
     int numSeen = 0;
     Container sequence;
     ContainerAPI<Container>::insert(sequence, 1);
@@ -5036,15 +5040,17 @@ static void testSequentialIteration()
     QVERIFY(listVariant.canConvert<QVariantList>());
     QVariantList varList = listVariant.value<QVariantList>();
     QCOMPARE(varList.size(), (int)std::distance(sequence.begin(), sequence.end()));
-    QSequentialIterable listIter = listVariant.view<QSequentialIterable>();
-    QCOMPARE(varList.size(), listIter.size());
+    QMetaSequence::Iterable listIter = listVariant.view<QMetaSequence::Iterable>();
+    if (hasSizeAccessor)
+        QCOMPARE(listIter.size(), varList.size());
 
     typename Container::iterator containerIter = sequence.begin();
     const typename Container::iterator containerEnd = sequence.end();
-    for (int i = 0; i < listIter.size(); ++i, ++containerIter, ++numSeen)
+    for (int i = 0, end = varList.size(); i < end; ++i, ++containerIter, ++numSeen)
     {
-        QVERIFY(ContainerAPI<Container >::compare(listIter.at(i), *containerIter));
-        QVERIFY(ContainerAPI<Container >::compare(listIter.at(i), varList.at(i)));
+        QVERIFY(ContainerAPI<Container>::compare(*containerIter, varList.at(i)));
+        if (hasIndexedAccessors)
+            QVERIFY(ContainerAPI<Container>::compare(listIter.at(i), varList.at(i)));
     }
     QCOMPARE(numSeen, (int)std::distance(sequence.begin(), sequence.end()));
     QCOMPARE(containerIter, containerEnd);
@@ -5059,9 +5065,8 @@ static void testSequentialIteration()
     }
     QCOMPARE(numSeen, (int)std::distance(sequence.begin(), sequence.end()));
 
-    auto compareLists = [&]() {
+    auto compareLists = [&](const QVariantList &varList) {
         int numSeen = 0;
-        auto varList = listVariant.value<QVariantList>();
         auto varIter = varList.begin();
         for (const QVariant &v : std::as_const(listIter)) {
             QVERIFY(ContainerAPI<Container>::compare(v, *varIter));
@@ -5077,49 +5082,53 @@ static void testSequentialIteration()
             ++numSeen;
         }
         QCOMPARE(numSeen, (int)std::distance(varList.begin(), varList.end()));
+
+        if (hasSizeAccessor)
+            QCOMPARE(listIter.size(), varList.size());
+
+        if (!hasIndexedAccessors)
+            return;
+
+        for (qsizetype i = 0, end = varList.size(); i < end; ++i)
+            QCOMPARE(listIter.at(i), varList.at(i));
     };
-    compareLists();
+    compareLists(varList);
 
-    QVariant first = listIter.at(0);
-    QVariant second = listIter.at(1);
-    QVariant third = listIter.at(2);
-    compareLists();
-    listIter.addValue(third);
-    compareLists();
-    listIter.addValue(second);
-    compareLists();
-    listIter.addValue(first);
-    compareLists();
+    QVariant first = varList.at(0);
+    QVariant second = varList.at(1);
+    QVariant third = varList.at(2);
+    QCOMPARE(varList.size(), 3);
+    compareLists(varList);
 
-    QCOMPARE(listIter.size(), 6);
+    listIter.metaContainer().addValue(listIter.mutableIterable(), third.constData());
+    varList = listVariant.value<QVariantList>();
+    QCOMPARE(varList.size(), 4);
+    compareLists(varList);
+
+    listIter.metaContainer().addValue(listIter.mutableIterable(), second.constData());
+    varList = listVariant.value<QVariantList>();
+    QCOMPARE(varList.size(), 5);
+    compareLists(varList);
+
+    listIter.metaContainer().addValue(listIter.mutableIterable(), first.constData());
+    varList = listVariant.value<QVariantList>();
+    QCOMPARE(varList.size(), 6);
+    compareLists(varList);
 
     if (listIter.canRandomAccessIterate())
-        sortIterable<QSequentialIterable::RandomAccessIterator>(&listIter);
+        sortIterable<QMetaSequence::Iterable::RandomAccessIterator>(&listIter);
     else if (listIter.canReverseIterate())
-        sortIterable<QSequentialIterable::BidirectionalIterator>(&listIter);
+        sortIterable<QMetaSequence::Iterable::BidirectionalIterator>(&listIter);
     else if (listIter.canForwardIterate())
         return; // std::sort cannot sort with only forward iterators.
     else
         QFAIL("The container has no meaningful iterators");
 
-    compareLists();
-    QCOMPARE(listIter.size(), 6);
-    QCOMPARE(listIter.at(0), first);
-    QCOMPARE(listIter.at(1), first);
-    QCOMPARE(listIter.at(2), second);
-    QCOMPARE(listIter.at(3), second);
-    QCOMPARE(listIter.at(4), third);
-    QCOMPARE(listIter.at(5), third);
+    compareLists({first, first, second, second, third, third});
 
-    if (listIter.metaContainer().canRemoveValue()) {
-        listIter.removeValue();
-        compareLists();
-        QCOMPARE(listIter.size(), 5);
-        QCOMPARE(listIter.at(0), first);
-        QCOMPARE(listIter.at(1), first);
-        QCOMPARE(listIter.at(2), second);
-        QCOMPARE(listIter.at(3), second);
-        QCOMPARE(listIter.at(4), third);
+    if (listIter.metaContainer().canRemoveValueAtEnd()) {
+        listIter.removeLast();
+        compareLists({first, first, second, second, third});
     } else {
         // QString and QByteArray have no pop_back or pop_front and it's unclear what other
         // method we should use to remove an item.
@@ -5130,16 +5139,20 @@ static void testSequentialIteration()
     QVERIFY(i != listIter.mutableEnd());
 
     *i = QStringLiteral("17");
+    QVariant at0 = hasIndexedAccessors ? listIter.at(0) : *listIter.constBegin();
+
     if (listIter.metaContainer().valueMetaType() == QMetaType::fromType<int>())
-        QCOMPARE(listIter.at(0).toInt(), 17);
+        QCOMPARE(at0.toInt(), 17);
     else if (listIter.metaContainer().valueMetaType() == QMetaType::fromType<bool>())
-        QCOMPARE(listIter.at(0).toBool(), false);
+        QCOMPARE(at0.toBool(), false);
 
     *i = QStringLiteral("true");
+    at0 = hasIndexedAccessors ? listIter.at(0) : *listIter.constBegin();
+
     if (listIter.metaContainer().valueMetaType() == QMetaType::fromType<int>())
-        QCOMPARE(listIter.at(0).toInt(), 0);
+        QCOMPARE(at0.toInt(), 0);
     else if (listIter.metaContainer().valueMetaType() == QMetaType::fromType<bool>())
-        QCOMPARE(listIter.at(0).toBool(), true);
+        QCOMPARE(at0.toBool(), true);
 }
 
 template<typename Container>
@@ -5156,7 +5169,7 @@ static void testAssociativeIteration()
     QVariant mappingVariant = QVariant::fromValue(mapping);
     QVariantMap varMap = mappingVariant.value<QVariantMap>();
     QVariantMap varHash = mappingVariant.value<QVariantMap>();
-    QAssociativeIterable mappingIter = mappingVariant.view<QAssociativeIterable>();
+    QMetaAssociation::Iterable mappingIter = mappingVariant.view<QMetaAssociation::Iterable>();
 
     typename Container::const_iterator containerIter = mapping.begin();
     const typename Container::const_iterator containerEnd = mapping.end();
@@ -5168,7 +5181,7 @@ static void testAssociativeIteration()
         QCOMPARE(qvariant_cast<Mapped>(varMap.value(QString::number(key))), expected);
         QCOMPARE(qvariant_cast<Mapped>(varHash.value(QString::number(key))), expected);
         QCOMPARE(actual, expected);
-        const QAssociativeIterable::const_iterator it = mappingIter.find(key);
+        const QMetaAssociation::Iterable::const_iterator it = mappingIter.find(key);
         QVERIFY(it != mappingIter.end());
         QCOMPARE(it.value().value<Mapped>(), expected);
     }
@@ -5209,7 +5222,7 @@ static void testAssociativeIteration()
     container[0] = true;
 
     QVariant containerVariant = QVariant::fromValue(container);
-    QAssociativeIterable iter = containerVariant.value<QAssociativeIterable>();
+    QMetaAssociation::Iterable iter = containerVariant.value<QMetaAssociation::Iterable>();
     auto f = iter.constFind(QStringLiteral("anything"));
     QCOMPARE(f, iter.constEnd());
 }
@@ -5217,7 +5230,9 @@ static void testAssociativeIteration()
 void tst_QVariant::iterateSequentialContainerElements_data()
 {
     QTest::addColumn<QFunctionPointer>("testFunction");
-#define ADD(T)  QTest::newRow(#T) << &testSequentialIteration<T>
+    QTest::addColumn<bool>("hasSizeAccessor");
+    QTest::addColumn<bool>("hasIndexedAccessors");
+#define ADD(T)  QTest::newRow(#T) << &testSequentialIteration<T> << true << true
     ADD(QQueue<int>);
     ADD(QQueue<QVariant>);
     ADD(QQueue<QString>);
@@ -5231,14 +5246,19 @@ void tst_QVariant::iterateSequentialContainerElements_data()
     ADD(std::vector<int>);
     ADD(std::vector<QVariant>);
     ADD(std::vector<QString>);
-    ADD(std::list<int>);
-    ADD(std::list<QVariant>);
-    ADD(std::list<QString>);
     ADD(QStringList);
     ADD(QByteArrayList);
     ADD(QString);
     ADD(QByteArray);
 
+#undef ADD
+#define ADD(T)  QTest::newRow(#T) << &testSequentialIteration<T> << true << false
+    ADD(std::list<int>);
+    ADD(std::list<QVariant>);
+    ADD(std::list<QString>);
+
+#undef ADD
+#define ADD(T)  QTest::newRow(#T) << &testSequentialIteration<T> << false << false
 #ifdef TEST_FORWARD_LIST
     ADD(std::forward_list<int>);
     ADD(std::forward_list<QVariant>);
@@ -5265,9 +5285,9 @@ void tst_QVariant::iterateContainerElements()
         QVariantList ints;
         ints << 1 << 2 << 3;
         QVariant var = QVariant::fromValue(ints);
-        QSequentialIterable iter = var.value<QSequentialIterable>();
-        QSequentialIterable::const_iterator it = iter.begin();
-        QSequentialIterable::const_iterator end = iter.end();
+        QMetaSequence::Iterable iter = var.value<QMetaSequence::Iterable>();
+        QMetaSequence::Iterable::const_iterator it = iter.begin();
+        QMetaSequence::Iterable::const_iterator end = iter.end();
         QCOMPARE(ints.at(1), *(it + 1));
         int i = 0;
         for ( ; it != end; ++it, ++i) {
@@ -5289,9 +5309,9 @@ void tst_QVariant::iterateContainerElements()
         mapping.insert(2, "two");
         mapping.insert(3, "three");
         QVariant var = QVariant::fromValue(mapping);
-        QAssociativeIterable iter = var.value<QAssociativeIterable>();
-        QAssociativeIterable::const_iterator it = iter.begin();
-        QAssociativeIterable::const_iterator end = iter.end();
+        QMetaAssociation::Iterable iter = var.value<QMetaAssociation::Iterable>();
+        QMetaAssociation::Iterable::const_iterator it = iter.begin();
+        QMetaAssociation::Iterable::const_iterator end = iter.end();
         QCOMPARE(*(++mapping.begin()), (*(it + 1)).toString());
         int i = 0;
         for ( ; it != end; ++it, ++i) {
@@ -5316,7 +5336,7 @@ void tst_QVariant::iterateContainerElements()
         container["one"] = 1;
 
         auto containerVariant = QVariant::fromValue(container);
-        auto iter = containerVariant.value<QAssociativeIterable>();
+        auto iter = containerVariant.value<QMetaAssociation::Iterable>();
         auto value = iter.value("one");
         QCOMPARE(value, QVariant(1));
 
@@ -5602,9 +5622,9 @@ void tst_QVariant::accessSequentialContainerKey()
 
     QVariant variant = QVariant::fromValue(mapping);
 
-    QAssociativeIterable iterable = variant.value<QAssociativeIterable>();
-    QAssociativeIterable::const_iterator iit = iterable.begin();
-    const QAssociativeIterable::const_iterator end = iterable.end();
+    QMetaAssociation::Iterable iterable = variant.value<QMetaAssociation::Iterable>();
+    QMetaAssociation::Iterable::const_iterator iit = iterable.begin();
+    const QMetaAssociation::Iterable::const_iterator end = iterable.end();
     for ( ; iit != end; ++iit) {
         nameResult += iit.key().toString();
     }
@@ -5651,7 +5671,7 @@ void tst_QVariant::shouldDeleteVariantDataWorksForSequential()
         };
         metaSequence.valueMetaType = QtPrivate::qMetaTypeInterfaceForType<MyType>();
 
-        QSequentialIterable iterable(QMetaSequence(&metaSequence), nullptr);
+        QMetaSequence::Iterable iterable(QMetaSequence(&metaSequence), nullptr);
         QVariant value1 = iterable.at(0);
         QVERIFY(value1.canConvert<MyType>());
         QCOMPARE(value1.value<MyType>().number, 1);
@@ -5673,21 +5693,26 @@ void tst_QVariant::shouldDeleteVariantDataWorksForAssociative()
         iterator.keyMetaType = QtPrivate::qMetaTypeInterfaceForType<MyType>();
         iterator.createConstIteratorFn = [](
                 const void *, QtMetaContainerPrivate::QMetaContainerInterface::Position) -> void * {
-            return nullptr;
+            return new int(21);
         };
         iterator.advanceConstIteratorFn = [](void *, qsizetype) {};
-        iterator.destroyConstIteratorFn = [](const void *){};
-        iterator.compareConstIteratorFn = [](const void *, const void *) {
-            return true; /*all iterators are nullptr*/
+        iterator.destroyConstIteratorFn = [](const void *it) {
+            delete static_cast<const int *>(it);
         };
+        iterator.compareConstIteratorFn = [](const void *a, const void *b) {
+            return *static_cast<const int *>(a) == *static_cast<const int *>(b);
+        };
+
         iterator.createConstIteratorAtKeyFn = [](const void *, const void *) -> void * {
-            return reinterpret_cast<void *>(quintptr(42));
+            return new int(42);
         };
-        iterator.copyConstIteratorFn = [](void *, const void *) {};
+        iterator.copyConstIteratorFn = [](void *a, const void *b) {
+            *static_cast<int *>(a) = *static_cast<const int *>(b);
+        };
         iterator.diffConstIteratorFn = [](const void *, const void *) -> qsizetype { return 0; };
         iterator.keyAtConstIteratorFn = [](const void *iterator, void *dataPtr) -> void {
             MyType mytype {1, "key"};
-            if (reinterpret_cast<quintptr>(iterator) == 42) {
+            if (*static_cast<const int *>(iterator) == 42) {
                 mytype.number = 42;
                 mytype.text = "find_key";
             }
@@ -5695,13 +5720,13 @@ void tst_QVariant::shouldDeleteVariantDataWorksForAssociative()
         };
         iterator.mappedAtConstIteratorFn = [](const void *iterator, void *dataPtr) -> void {
             MyType mytype {2, "value"};
-            if (reinterpret_cast<quintptr>(iterator) == 42) {
+            if (*static_cast<const int *>(iterator) == 42) {
                 mytype.number = 42;
                 mytype.text = "find_value";
             }
             *static_cast<MyType *>(dataPtr) = mytype;
         };
-        QAssociativeIterable iterable(QMetaAssociation(&iterator), nullptr);
+        QMetaAssociation::Iterable iterable(QMetaAssociation(&iterator), nullptr);
         auto it = iterable.begin();
         QVariant value1 = it.key();
         QVERIFY(value1.canConvert<MyType>());
@@ -5834,8 +5859,8 @@ void tst_QVariant::sequentialIterableAppend()
     {
         QList<int> container { 1, 2 };
         auto variant = QVariant::fromValue(container);
-        QVERIFY(variant.canConvert<QSequentialIterable>());
-        QSequentialIterable asIterable = variant.view<QSequentialIterable>();
+        QVERIFY(variant.canConvert<QMetaSequence::Iterable>());
+        QMetaSequence::Iterable asIterable = variant.view<QMetaSequence::Iterable>();
         const int i = 3, j = 4;
         void *mutableIterable = asIterable.mutableIterable();
         asIterable.metaContainer().addValueAtEnd(mutableIterable, &i);
@@ -5854,8 +5879,8 @@ void tst_QVariant::sequentialIterableAppend()
     {
         QSet<QByteArray> container { QByteArray{"hello"}, QByteArray{"world"} };
         auto variant = QVariant::fromValue(std::move(container));
-        QVERIFY(variant.canConvert<QSequentialIterable>());
-        QSequentialIterable asIterable = variant.view<QSequentialIterable>();
+        QVERIFY(variant.canConvert<QMetaSequence::Iterable>());
+        QMetaSequence::Iterable asIterable = variant.view<QMetaSequence::Iterable>();
         QByteArray qba1 {"goodbye"};
         QByteArray qba2 { "moon" };
         void *mutableIterable = asIterable.mutableIterable();
@@ -5875,15 +5900,15 @@ void tst_QVariant::preferDirectConversionOverInterfaces()
     static bool calledCorrectConverter = false;
     calledCorrectConverter = false;
 
-    QMetaType::registerConverter<MyType, QSequentialIterable>([](const MyType &) {
-        return QSequentialIterable {};
+    QMetaType::registerConverter<MyType, QMetaSequence::Iterable>([](const MyType &) {
+        return QMetaSequence::Iterable {};
     });
     QMetaType::registerConverter<MyType, QVariantList>([&](const MyType &) {
         calledCorrectConverter = true;
         return QVariantList {};
     });
-    QMetaType::registerConverter<MyType, QAssociativeIterable>([](const MyType &) {
-        return QAssociativeIterable {};
+    QMetaType::registerConverter<MyType, QMetaAssociation::Iterable>([](const MyType &) {
+        return QMetaAssociation::Iterable {};
     });
     QMetaType::registerConverter<MyType, QVariantHash>([&](const MyType &) {
         calledCorrectConverter = true;
@@ -5895,9 +5920,9 @@ void tst_QVariant::preferDirectConversionOverInterfaces()
     });
     auto holder = QVariant::fromValue(MyType {});
 
-    QVERIFY(holder.canConvert<QSequentialIterable>());
+    QVERIFY(holder.canConvert<QMetaSequence::Iterable>());
     QVERIFY(holder.canConvert<QVariantList>());
-    QVERIFY(holder.canConvert<QAssociativeIterable>());
+    QVERIFY(holder.canConvert<QMetaAssociation::Iterable>());
     QVERIFY(holder.canConvert<QVariantHash>());
     QVERIFY(holder.canConvert<QVariantMap>());
 

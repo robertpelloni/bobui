@@ -175,12 +175,12 @@ qt_internal_add_module(Core
         kernel/qfunctions_p.h
         kernel/qiterable.cpp kernel/qiterable.h kernel/qiterable_impl.h
         kernel/qmath.cpp kernel/qmath.h
-        kernel/qmetaassociation.cpp
+        kernel/qmetaassociation.cpp kernel/qmetaassociation.h
         kernel/qmetacontainer.cpp kernel/qmetacontainer.h
         kernel/qmetaobject.cpp kernel/qmetaobject.h kernel/qmetaobject_p.h
         kernel/qmetaobject_moc_p.h
         kernel/qmetaobjectbuilder.cpp kernel/qmetaobjectbuilder_p.h
-        kernel/qmetasequence.cpp
+        kernel/qmetasequence.cpp kernel/qmetasequence.h
         kernel/qmetatype.cpp kernel/qmetatype.h kernel/qmetatype_p.h
         kernel/qmimedata.cpp kernel/qmimedata.h
         kernel/qtmetamacros.h kernel/qtmocconstants.h kernel/qtmochelpers.h

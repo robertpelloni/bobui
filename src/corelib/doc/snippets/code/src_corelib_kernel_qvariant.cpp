@@ -7,8 +7,8 @@
 #include <QVariant>
 #include <QColor>
 #include <QPalette>
-#include <QSequentialIterable>
-#include <QAssociativeIterable>
+#include <QMetaSequence>
+#include <QMetaAssociation>
 
 QString tr(const char *s)
 {
@@ -125,14 +125,14 @@ QVariant examples()
 
         QVariant variant = QVariant::fromValue(intList);
         if (variant.canConvert<QVariantList>()) {
-            QSequentialIterable iterable = variant.value<QSequentialIterable>();
+            QMetaSequence::Iterable iterable = variant.value<QMetaSequence::Iterable>();
             // Can use C++11 range-for:
             for (const QVariant &v : iterable) {
                 qDebug() << v;
             }
             // Can use iterators:
-            QSequentialIterable::const_iterator it = iterable.begin();
-            const QSequentialIterable::const_iterator end = iterable.end();
+            QMetaSequence::Iterable::const_iterator it = iterable.begin();
+            const QMetaSequence::Iterable::const_iterator end = iterable.end();
             for ( ; it != end; ++it) {
                 qDebug() << *it;
             }
@@ -149,14 +149,14 @@ QVariant examples()
 
         QVariant variant = QVariant::fromValue(mapping);
         if (variant.canConvert<QVariantHash>()) {
-            QAssociativeIterable iterable = variant.value<QAssociativeIterable>();
+            QMetaAssociation::Iterable iterable = variant.value<QMetaAssociation::Iterable>();
             // Can use C++11 range-for over the values:
             for (const QVariant &v : iterable) {
                 qDebug() << v;
             }
             // Can use iterators:
-            QAssociativeIterable::const_iterator it = iterable.begin();
-            const QAssociativeIterable::const_iterator end = iterable.end();
+            QMetaAssociation::Iterable::const_iterator it = iterable.begin();
+            const QMetaAssociation::Iterable::const_iterator end = iterable.end();
             for ( ; it != end; ++it) {
                 qDebug() << *it; // The current value
                 qDebug() << it.key();

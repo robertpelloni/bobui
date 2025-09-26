@@ -64,6 +64,8 @@ namespace QtPrivate {
             return m_pointer.tag() == Mutable ? reinterpret_cast<Type *>(m_pointer.data()) : nullptr;
         }
     };
+
+    Q_CORE_EXPORT void warnSynthesizedAccess(const char *text);
 }
 
 template<class Iterator, typename IteratorCategory>
@@ -499,6 +501,11 @@ public:
         const void *container = constIterable();
         if (m_metaContainer.hasSize())
             return m_metaContainer.size(container);
+
+        // ### Qt7: Return -1 here. We shouldn't second-guess the underlying container
+        QtPrivate::warnSynthesizedAccess(
+                "size() called on an iterable without native size accessor. This is slow");
+
         if (!m_metaContainer.hasConstIterator())
             return -1;
 
@@ -508,6 +515,11 @@ public:
         m_metaContainer.destroyConstIterator(begin);
         m_metaContainer.destroyConstIterator(end);
         return size;
+    }
+
+    void clear()
+    {
+        m_metaContainer.clear(mutableIterable());
     }
 
     Container metaContainer() const
