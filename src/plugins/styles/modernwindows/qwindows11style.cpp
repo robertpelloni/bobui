@@ -2262,10 +2262,17 @@ int QWindows11Style::pixelMetric(PixelMetric metric, const QStyleOption *option,
         res = contentItemHMargin;
         if (widget) {
             const int fontSize = widget->font().pointSize();
-            QFont f(d->assetFont);
-            f.setPointSize(qRound(fontSize * 0.9f)); // a little bit smaller
-            QFontMetrics fm(f);
-            res += fm.horizontalAdvance(ChevronDownMed);
+            auto it = m_fontPoint2ChevronDownMedWidth.find(fontSize);
+            if (it == m_fontPoint2ChevronDownMedWidth.end()) {
+                QFont f(d->assetFont);
+                f.setPointSize(qRound(fontSize * 0.9f)); // a little bit smaller
+                QFontMetrics fm(f);
+                const auto width = fm.horizontalAdvance(ChevronDownMed);
+                m_fontPoint2ChevronDownMedWidth.insert(fontSize, width);
+                res += width;
+            } else {
+                res += it.value();
+            }
         } else {
             res += 12;
         }

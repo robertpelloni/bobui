@@ -114,6 +114,8 @@ private:
 
     bool highContrastTheme = false;
     int colorSchemeIndex = 0;
+
+    mutable QVarLengthFlatMap<int, int, 8> m_fontPoint2ChevronDownMedWidth;
 };
 
 class QWindows11StylePrivate : public QWindowsVistaStylePrivate {
