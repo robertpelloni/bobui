@@ -220,6 +220,16 @@ void QRawFont::loadFromData(const QByteArray &fontData,
 }
 
 /*!
+   Returns the number of glyphs in this QRawFont.
+
+   \since 6.11
+*/
+int QRawFont::glyphCount() const
+{
+    return d->isValid() ? d->fontEngine->glyphCount() : 0;
+}
+
+/*!
    This function returns a rasterized image of the glyph at the given
    \a glyphIndex in the underlying font, using the \a transform specified.
    If the QRawFont is not valid, this function will return an invalid QImage.
