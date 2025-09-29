@@ -101,7 +101,7 @@ void QConnManInterface::propertyChanged(const QString &name, const QDBusVariant 
 
         QString type = findServiceType();
         if (type != m_type) {
-            m_type = type;
+            m_type = std::move(type);
             backend->onTypeChanged(m_type);
         }
     }
