@@ -1049,7 +1049,7 @@ class Locale (object):
                    # CLDR gives 'dddd, MMMM d, yyyy', 'M/d/yy', 'h:mm:ss Ap tttt',
                    # 'h:mm Ap' with non-breaking space before Ap.
                    longDateFormat='dddd, d MMMM yyyy', shortDateFormat='d MMM yyyy',
-                   longTimeFormat='HH:mm:ss t', shortTimeFormat='HH:mm:ss',
+                   longTimeFormat='HH:mm:ss t', shortTimeFormat='HH:mm',
                    # CLDR has US-$ and US-style formats:
                    currencyIsoCode='', currencySymbol='', currencyDisplayName='',
                    currencyDigits=2, currencyRounding=1,
