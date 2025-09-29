@@ -56,8 +56,10 @@ QConnManInterface::QConnManInterface(QObject *parent) : QConnManInterfaceBase(pa
     QDBusReply<QVariantMap> propertiesReply = call(QDBus::Block, "GetProperties"_L1);
     if (!propertiesReply.isValid()) {
         validDBusConnection = false;
-        if (auto error = propertiesReply.error(); error.type() != QDBusError::AccessDenied)
-            qWarning() << "Failed to query ConnMan properties:" << error.message();
+        if (propertiesReply.error().type() != QDBusError::AccessDenied) {
+            qWarning("Failed to query ConnMan properties: %ls",
+                     qUtf16Printable(propertiesReply.error().message()));
+        }
         return;
     }
     auto map = propertiesReply.value();
@@ -109,8 +111,10 @@ QString QConnManInterface::findServiceType()
 {
     QDBusReply<ConnmanServices> servicesReply = call(QDBus::Block, "GetServices"_L1);
     if (!servicesReply.isValid()) {
-        if (auto error = servicesReply.error(); error.type() != QDBusError::AccessDenied)
-            qWarning() << "Failed to query ConnMan services:" << error.message();
+        if (servicesReply.error().type() != QDBusError::AccessDenied) {
+            qWarning("Failed to query ConnMan services: %ls",
+                     qUtf16Printable(servicesReply.error().message()));
+        }
         return QString();
     }
 
