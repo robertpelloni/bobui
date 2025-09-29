@@ -1188,7 +1188,7 @@
     \sa hasNext(), next(), peekPrevious()
 */
 
-/*! \fn template <class Key, class T> QMutableMapIterator<Key, T>::Item QMutableMapIterator<Key, T>::peekNext() const
+/*!
     \fn template <class Key, class T> QMutableMultiMapIterator<Key, T>::Item QMutableMultiMapIterator<Key, T>::peekNext() const
 
     Returns a reference to the next item without moving the iterator.
