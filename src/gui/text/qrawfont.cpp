@@ -230,6 +230,19 @@ int QRawFont::glyphCount() const
 }
 
 /*!
+   Returns the name of the given \a glyphIndex.
+
+   If the glyph does not have an explicit name in the font
+   a name is synthesized based on its glyph index.
+
+   \since 6.11
+*/
+QString QRawFont::glyphName(quint32 glyphIndex) const
+{
+    return d->isValid() ? d->fontEngine->glyphName(glyphIndex) : QString();
+}
+
+/*!
    This function returns a rasterized image of the glyph at the given
    \a glyphIndex in the underlying font, using the \a transform specified.
    If the QRawFont is not valid, this function will return an invalid QImage.

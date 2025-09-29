@@ -94,6 +94,8 @@ public:
 
     qreal unitsPerEm() const;
 
+    QString glyphName(quint32 glyphIndex) const;
+
     void loadFromFile(const QString &fileName,
                       qreal pixelSize,
                       QFont::HintingPreference hintingPreference);
