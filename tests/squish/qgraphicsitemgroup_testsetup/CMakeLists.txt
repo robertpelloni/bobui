@@ -2,3 +2,4 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 add_subdirectory(suite_qgraphicsitemgroup)
+add_subdirectory(qgraphicsitemgroup)

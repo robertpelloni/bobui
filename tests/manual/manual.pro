@@ -16,7 +16,6 @@ network_stresstest \
 qcursor \
 qdesktopservices \
 qgraphicsitem \
-qgraphicsitemgroup \
 qgraphicslayout/flicker \
 qhttpnetworkconnection \
 qimagereader \
