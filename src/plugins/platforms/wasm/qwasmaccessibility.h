@@ -116,7 +116,7 @@ private:
     void setProperty(emscripten::val element, const std::string &attr, const char *val);
     void setProperty(emscripten::val element, const std::string &attr, bool val);
 
-    void addEventListener(emscripten::val element, const char *eventType);
+    void addEventListener(QAccessibleInterface *, emscripten::val element, const char *eventType);
 
 private:
     static QWasmAccessibility *s_instance;
