@@ -1416,7 +1416,7 @@ void tst_Moc::warnOnMultipleInheritance()
     QProcess proc;
     QStringList args;
     const QString header = m_sourceDirectory + QStringLiteral("/warn-on-multiple-qobject-subclasses.h");
-    args << "-I" << qtIncludePath + "/QtGui" << header;
+    args << "-I" << qtIncludePath << header;
     proc.start(m_moc, args);
     QVERIFY(proc.waitForFinished());
     QCOMPARE(proc.exitCode(), 0);
@@ -1424,7 +1424,7 @@ void tst_Moc::warnOnMultipleInheritance()
     QVERIFY(!mocOut.isEmpty());
     QString mocWarning = QString::fromLocal8Bit(proc.readAllStandardError());
     QCOMPARE(mocWarning, header +
-                QString(":18:1: warning: Class Bar inherits from two QObject subclasses QWindow and Foo. This is not supported!\n"));
+                QString(":24:1: warning: Class Baz inherits from two QObject subclasses Foo and Bar. This is not supported!\n"));
 #else
     QSKIP("Only tested on linux/gcc");
 #endif
