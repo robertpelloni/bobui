@@ -543,6 +543,7 @@ void QWasmAccessibility::linkToParent(QAccessibleInterface *iface)
 {
     emscripten::val element = getHtmlElement(iface);
     emscripten::val container = getElementContainer(iface);
+
     if (container.isUndefined() || element.isUndefined())
         return;
 
@@ -555,21 +556,21 @@ void QWasmAccessibility::linkToParent(QAccessibleInterface *iface)
 
     emscripten::val next = emscripten::val::undefined();
     const int thisIndex = iface->parent()->indexOfChild(iface);
-    Q_ASSERT(thisIndex >= 0 && thisIndex < iface->parent()->childCount());
-    for (int i = thisIndex + 1; i < iface->parent()->childCount(); ++i) {
-        const auto elementI = getHtmlElement(iface->parent()->child(i));
-        if (!elementI.isUndefined() &&
-            elementI["parentElement"] == container) {
-            next = elementI;
-            break;
+    if (thisIndex >= 0) {
+        Q_ASSERT(thisIndex < iface->parent()->childCount());
+        for (int i = thisIndex + 1; i < iface->parent()->childCount(); ++i) {
+            const auto elementI = getHtmlElement(iface->parent()->child(i));
+            if (!elementI.isUndefined() &&
+                elementI["parentElement"] == container) {
+                next = elementI;
+                break;
+            }
         }
+        if (next.isUndefined())
+            container.call<void>("appendChild", element);
+        else
+            container.call<void>("insertBefore", element, next);
     }
-    if (next.isUndefined()) {
-        container.call<void>("appendChild", element);
-    } else {
-        container.call<void>("insertBefore", element, next);
-    }
-
     const auto activeElementAfter = emscripten::val::take_ownership(
         getActiveElement_js(emscripten::val::undefined().as_handle()));
     if (activeElementBefore != activeElementAfter) {
