@@ -43,7 +43,7 @@
     practice to subclass widgets and add your own slots so that you
     can handle the signals that you are interested in.
 
-    \image abstract-connections.png
+    \image abstract-connections.svg "Connections between objects"
     \omit
     \caption An abstract view of some signals and slots connections
     \endomit
