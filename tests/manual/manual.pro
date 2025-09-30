@@ -20,7 +20,6 @@ qgraphicsitemgroup \
 qgraphicslayout/flicker \
 qhttpnetworkconnection \
 qimagereader \
-qlayout \
 qlocale \
 qmimedatabase \
 qnetworkaccessmanager/qget \
