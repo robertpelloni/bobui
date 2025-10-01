@@ -1573,8 +1573,8 @@ public:
             return;
         } else {
             using std::swap;
-            if constexpr (std::conjunction_v<std::is_same<LHS, RHS>, std::is_move_assignable<LHS>>)
-                org = std::move(copy);
+            if constexpr (std::is_assignable_v<LHS, RHS>)
+                org = std::forward<RHS>(copy);
             else
                 swap(org, copy);
         }
@@ -1582,7 +1582,7 @@ public:
     template <typename LHS, typename RHS>
     void updateTarget(LHS *org, RHS &&copy) noexcept
     {
-        updateTarget(*org, std::move(copy));
+        updateTarget(*org, std::forward<RHS>(copy));
     }
 
     bool setItemData(const QModelIndex &index, const QMap<int, QVariant> &data)
