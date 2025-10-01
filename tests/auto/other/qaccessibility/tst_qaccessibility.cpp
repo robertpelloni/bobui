@@ -1357,6 +1357,11 @@ void tst_QAccessibility::scrollBarTest()
     scrollBar->setMinimum(11);
     scrollBar->setMaximum(111);
 
+    QAccessibleAttributesInterface *attributesIface = scrollBarInterface->attributesInterface();
+    QVERIFY(attributesIface);
+    QVERIFY(attributesIface->attributeKeys().contains(QAccessible::Attribute::Orientation));
+    QCOMPARE(attributesIface->attributeValue(QAccessible::Attribute::Orientation), Qt::Horizontal);
+
     QAccessibleValueInterface *valueIface = scrollBarInterface->valueInterface();
     QVERIFY(valueIface != 0);
     QCOMPARE(valueIface->minimumValue().toInt(), scrollBar->minimum());
