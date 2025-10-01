@@ -1476,7 +1476,7 @@ void tst_Moc::forgottenQInterface()
     QProcess proc;
     QStringList args;
     const QString header = m_sourceDirectory + QStringLiteral("/forgotten-qinterface.h");
-    args << "-I" << qtIncludePath + "/QtCore" << header;
+    args << "-I" << qtIncludePath << "-I" << qtIncludePath + "/QtCore" << header;
     proc.start(m_moc, args);
     QVERIFY(proc.waitForFinished());
     QCOMPARE(proc.exitCode(), 0);
