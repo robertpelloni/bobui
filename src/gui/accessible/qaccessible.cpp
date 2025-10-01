@@ -458,6 +458,9 @@ Q_STATIC_LOGGING_CATEGORY(lcAccessibilityCore, "qt.accessibility.core");
                                 differs from the application's default locale, e.g. for documents
                                 or paragraphs within a document that use a language that differs
                                 from the application's user interface language.
+    \value [since 6.11] Orientation value type: \a Qt::Orientation
+                                Orientation of the element. This attribute conceptually matches
+                                the "aria-orientation" property in ARIA.
 
     \sa QAccessibleAttributesInterface
 */

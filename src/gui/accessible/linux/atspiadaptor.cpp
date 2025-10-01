@@ -1688,6 +1688,17 @@ bool AtSpiAdaptor::accessibleInterface(QAccessibleInterface *interface, const QS
         sendReply(connection, message, QVariant::fromValue(QDBusVariant(interface->text(QAccessible::Help))));
     } else if (function == "GetState"_L1) {
         quint64 spiState = spiStatesFromQState(interface->state());
+        if (QAccessibleAttributesInterface *attributesIface = interface->attributesInterface()) {
+            const QVariant orientationVariant =
+                    attributesIface->attributeValue(QAccessible::Attribute::Orientation);
+            if (orientationVariant.isValid()) {
+                Q_ASSERT(orientationVariant.canConvert<Qt::Orientation>());
+                const Qt::Orientation orientation = orientationVariant.value<Qt::Orientation>();
+                setSpiStateBit(&spiState,
+                               orientation == Qt::Horizontal ? ATSPI_STATE_HORIZONTAL
+                                                             : ATSPI_STATE_VERTICAL);
+            }
+        }
         if (interface->tableInterface()) {
             // For tables, setting manages_descendants should
             // indicate to the client that it cannot cache these

@@ -156,8 +156,6 @@ public:
 
         quint64 searchEdit : 1;
 
-        // quint64 horizontal : 1;
-        // quint64 vertical : 1;
         // quint64 invalidEntry : 1;
         // quint64 managesDescendants : 1;
         // quint64 singleLine : 1; // we have multi line, this is redundant.
@@ -380,6 +378,7 @@ public:
         Custom,
         Level,
         Locale,
+        Orientation,
     };
     Q_ENUM(Attribute)
 
