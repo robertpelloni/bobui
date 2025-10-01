@@ -384,13 +384,15 @@ void QWaylandGLContext::endFrame()
     if (!m_currentWindow)
         return;
 
+    QWaylandEglWindow *currentWindow = m_currentWindow;
+
     if (m_doneCurrentWorkAround) {
         doneCurrent();
         QOpenGLContextPrivate::setCurrentContext(nullptr);
     }
 
     if (m_supportNonBlockingSwap)
-        m_currentWindow->endFrame();
+        currentWindow->endFrame();
 }
 
 bool QWaylandGLContext::makeCurrent(QPlatformSurface *surface)
