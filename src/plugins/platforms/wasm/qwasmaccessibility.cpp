@@ -401,6 +401,7 @@ emscripten::val QWasmAccessibility::createHtmlElement(QAccessibleInterface *ifac
         case QAccessible::PageTabList:{
             element = document.call<emscripten::val>("createElement", std::string("div"));
             setAttribute(element, "role", "tablist");
+            setHtmlElementOrientation(element, iface);
 
             m_elements[iface] = element;
 
@@ -423,6 +424,7 @@ emscripten::val QWasmAccessibility::createHtmlElement(QAccessibleInterface *ifac
             element = document.call<emscripten::val>("createElement", std::string("div"));
             setAttribute(element, "role", "scrollbar");
             setAttribute(element, "aria-valuenow", valueString);
+            setHtmlElementOrientation(element, iface);
             addEventListener(iface, element, "change");
         } break;
 
@@ -437,6 +439,7 @@ emscripten::val QWasmAccessibility::createHtmlElement(QAccessibleInterface *ifac
             element = document.call<emscripten::val>("createElement", std::string("div"));
             setAttribute(element, "role", "toolbar");
             setAttribute(element, "title", text.toStdString());
+            setHtmlElementOrientation(element, iface);
             addEventListener(iface, element, "click");
         }break;
         case QAccessible::MenuItem:
@@ -453,6 +456,7 @@ emscripten::val QWasmAccessibility::createHtmlElement(QAccessibleInterface *ifac
             element = document.call<emscripten::val>("createElement", std::string("div"));
             setAttribute(element, "role", "menubar");
             setAttribute(element, "title", text.toStdString());
+            setHtmlElementOrientation(element, iface);
             m_elements[iface] = element;
 
             for (int i = 0; i < iface->childCount(); ++i) {
@@ -659,6 +663,21 @@ void QWasmAccessibility::setHtmlElementDisabled(QAccessibleInterface *iface)
 {
     auto element = getHtmlElement(iface);
     setAttribute(element, "aria-disabled", iface->state().disabled);
+}
+
+void QWasmAccessibility::setHtmlElementOrientation(emscripten::val element, QAccessibleInterface *iface)
+{
+    Q_ASSERT(iface);
+    if (QAccessibleAttributesInterface *attributesIface = iface->attributesInterface()) {
+        const QVariant orientationVariant =
+                attributesIface->attributeValue(QAccessible::Attribute::Orientation);
+        if (orientationVariant.isValid()) {
+            Q_ASSERT(orientationVariant.canConvert<Qt::Orientation>());
+            const Qt::Orientation orientation = orientationVariant.value<Qt::Orientation>();
+            const std::string value = orientation == Qt::Horizontal ? "horizontal" : "vertical";
+            setAttribute(element, "aria-orientation", value);
+        }
+    }
 }
 
 void QWasmAccessibility::handleStaticTextUpdate(QAccessibleEvent *event)

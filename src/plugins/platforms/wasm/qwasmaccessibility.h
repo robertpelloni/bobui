@@ -77,6 +77,7 @@ private:
     void setHtmlElementTextNameLE(QAccessibleInterface *iface);
     void setHtmlElementFocus(QAccessibleInterface *iface);
     void setHtmlElementDisabled(QAccessibleInterface *iface);
+    void setHtmlElementOrientation(emscripten::val element, QAccessibleInterface *iface);
 
     void handleStaticTextUpdate(QAccessibleEvent *event);
     void handleButtonUpdate(QAccessibleEvent *event);
