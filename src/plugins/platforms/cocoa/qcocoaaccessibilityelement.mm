@@ -714,6 +714,25 @@ static void convertLineOffset(QAccessibleTextInterface *text, int *line, int *of
         iface->setText(QAccessible::Description, QString::fromNSString(label));
 }
 
+- (NSAccessibilityOrientation)accessibilityOrientation {
+    QAccessibleInterface *iface = self.qtInterface;
+    if (!iface)
+        return NSAccessibilityOrientationUnknown;
+
+    NSAccessibilityOrientation nsOrientation = NSAccessibilityOrientationUnknown;
+    if (QAccessibleAttributesInterface *attributesIface = iface->attributesInterface()) {
+        const QVariant orientationVariant =
+                attributesIface->attributeValue(QAccessible::Attribute::Orientation);
+        if (orientationVariant.isValid()) {
+            Q_ASSERT(orientationVariant.canConvert<Qt::Orientation>());
+            const Qt::Orientation orientation = orientationVariant.value<Qt::Orientation>();
+            nsOrientation = orientation == Qt::Horizontal ? NSAccessibilityOrientationHorizontal
+                                                          : NSAccessibilityOrientationVertical;
+        }
+    }
+    return nsOrientation;
+}
+
 - (id) accessibilityValue {
     if (QAccessibleInterface *iface = self.qtInterface) {
         // VoiceOver asks for the value attribute for all elements. Return nil
