@@ -1176,12 +1176,11 @@ bool QAbstractSocketPrivate::readFromSocket()
         // Read from the socket, store data in the read buffer.
         char *ptr = buffer.reserve(bytesToRead);
         qint64 readBytes = socketEngine->read(ptr, bytesToRead);
+        buffer.chop(bytesToRead - (readBytes < 0 ? qint64(0) : readBytes));
         if (readBytes == -2) {
             // No bytes currently available for reading.
-            buffer.chop(bytesToRead);
             return true;
         }
-        buffer.chop(bytesToRead - (readBytes < 0 ? qint64(0) : readBytes));
 #if defined(QABSTRACTSOCKET_DEBUG)
         qDebug("QAbstractSocketPrivate::readFromSocket() got %lld bytes, buffer size = %lld",
                readBytes, buffer.size());
