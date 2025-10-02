@@ -654,6 +654,21 @@ HRESULT QWindowsUiaMainProvider::GetPropertyValue(PROPERTYID idProp, VARIANT *pR
         *pRetVal = QComVariant{ name }.release();
         break;
     }
+    case UIA_OrientationPropertyId: {
+        OrientationType orientationType = OrientationType_None;
+        if (QAccessibleAttributesInterface *attributesIface = accessible->attributesInterface()) {
+            const QVariant orientationVariant =
+                    attributesIface->attributeValue(QAccessible::Attribute::Orientation);
+            if (orientationVariant.isValid()) {
+                Q_ASSERT(orientationVariant.canConvert<Qt::Orientation>());
+                const Qt::Orientation orientation = orientationVariant.value<Qt::Orientation>();
+                orientationType = orientation == Qt::Horizontal ? OrientationType_Horizontal
+                                                                : OrientationType_Vertical;
+            }
+        }
+        *pRetVal = QComVariant{ long(orientationType) }.release();
+        break;
+    }
     case UIA_StyleIdAttributeId:
         setStyle(accessible, pRetVal);
         break;
