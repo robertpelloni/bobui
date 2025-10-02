@@ -2411,7 +2411,7 @@ void tst_QDateTime::springForward_data()
         QTest::newRow("PT from day after")
             << pacific << QDate(2015, 3, 8) << QTime(2, 30) << -1 << -420;
     }
-    if (const QTimeZone eastern("America/Ottawa"); eastern.isValid()) {
+    if (const QTimeZone eastern("America/Toronto"); eastern.isValid()) {
         QTest::newRow("ET from day before")
             << eastern << QDate(2015, 3, 8) << QTime(2, 30) << 1 << -300;
         QTest::newRow("ET from day after")
@@ -3500,11 +3500,11 @@ void tst_QDateTime::fromStringStringFormat_localTimeZone_data()
     QTest::newRow("local-timezone-ttt-with-zone:Etc/GMT+3")
             << "GMT"_ba << u"2008-10-13 Etc/GMT+3 11.50"_s << u"yyyy-MM-dd ttt hh.mm"_s << 1900
             << QDateTime(); // Zone name not valid when offset expected
-    QTimeZone gmtWithOffset("GMT-2");
+    QTimeZone gmtWithOffset("GMT-0");
     if (gmtWithOffset.isValid()) {
         lacksRows = false;
-        QTest::newRow("local-timezone-with-offset:GMT-2")
-                << "GMT"_ba << u"2008-10-13 GMT-2 11.50"_s << u"yyyy-MM-dd t hh.mm"_s << 1900
+        QTest::newRow("local-timezone-with-offset:GMT-0")
+                << "GMT"_ba << u"2008-10-13 GMT-0 11.50"_s << u"yyyy-MM-dd t hh.mm"_s << 1900
                 << QDateTime(QDate(2008, 10, 13), QTime(11, 50), gmtWithOffset);
     }
     QTimeZone gmt("GMT");

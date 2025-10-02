@@ -1887,12 +1887,14 @@ void tst_QTimeZone::roundtripDisplayNames_data()
         "UTC"_ba,
         // Those named overtly in tst_QDateTime - special cases first:
         "UTC-02:00"_ba, "UTC+02:00"_ba, "UTC+12:00"_ba,
-        "Etc/GMT+3"_ba, "GMT-2"_ba, "GMT"_ba,
+        "Etc/GMT+3"_ba, "GMT-0"_ba, "GMT"_ba,
         // ... then ordinary names in alphabetic order:
-        "America/New_York"_ba, "America/Sao_Paulo"_ba, "America/Vancouver"_ba,
-        "Asia/Kathmandu"_ba, "Asia/Singapore"_ba,
+        "America/Anchorage"_ba, "America/Metlakatla"_ba, "America/New_York"_ba,
+        "America/Sao_Paulo"_ba, "America/Toronto"_ba, "America/Vancouver"_ba,
+        "Asia/Kathmandu"_ba, "Asia/Manila"_ba, "Asia/Singapore"_ba,
         "Australia/Brisbane"_ba, "Australia/Eucla"_ba, "Australia/Sydney"_ba,
-        "Europe/Berlin"_ba, "Europe/Helsinki"_ba, "Europe/Rome"_ba, "Europe/Oslo"_ba,
+        "Europe/Berlin"_ba, "Europe/Helsinki"_ba, "Europe/Lisbon"_ba, "Europe/Oslo"_ba,
+        "Europe/Rome"_ba,
         "Pacific/Apia"_ba, "Pacific/Auckland"_ba, "Pacific/Kiritimati"_ba,
         "Vulcan/ShiKahr"_ba // Invalid: also worth testing.
     };
