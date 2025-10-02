@@ -5,7 +5,7 @@
 #include <QWidget>
 #include <stdio.h>
 
-using namespace Qt::Literals::StringLiterals;
+using namespace Qt::StringLiterals;
 
 class Widget : public QWidget
 {

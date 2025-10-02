@@ -8,7 +8,7 @@
 
 #include <QtCore/QVariant>
 
-using namespace Qt::Literals::StringLiterals;
+using namespace Qt::StringLiterals;
 
 class QtDynamicFeatureTest : public QObject
 {
