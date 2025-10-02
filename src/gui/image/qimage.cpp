@@ -3026,7 +3026,8 @@ bool QImage::isGrayscale() const
     given \a size according to the given \a aspectRatioMode and \a
     transformMode.
 
-    \image qimage-scaling.png
+    \image qimage-scaling.png {Illustration showing three different
+           ways to scale images with Aspect Ratio Mode}
 
     \list
     \li If \a aspectRatioMode is Qt::IgnoreAspectRatio, the image
