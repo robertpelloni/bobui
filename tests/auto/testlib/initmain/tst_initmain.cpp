@@ -19,6 +19,9 @@ private:
     static bool m_initMainCalled;
 };
 
+static_assert(QTest::Internals::HasInitMain<tst_InitMain>::value);
+static_assert(!QTest::Internals::HasInitMain<QObject>::value);
+
 bool tst_InitMain::m_initMainCalled = false;
 
 void tst_InitMain::testcase()

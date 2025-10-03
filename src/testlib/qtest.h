@@ -181,29 +181,17 @@ inline bool qCompare(quint32 const &t1, quint64 const &t2, const char *actual,
 }
 namespace Internal {
 
+template <typename T, typename = void>
+struct HasInitMain : std::false_type{};
+
 template <typename T>
-class HasInitMain // SFINAE test for the presence of initMain()
-{
-private:
-    using YesType = char[1];
-    using NoType = char[2];
-
-    template <typename C> static YesType& test( decltype(&C::initMain) ) ;
-    template <typename C> static NoType& test(...);
-
-public:
-    enum { value = sizeof(test<T>(nullptr)) == sizeof(YesType) };
-};
+struct HasInitMain<T, std::void_t<decltype(&T::initMain)>> : std::true_type {};
 
 template<typename T>
-typename std::enable_if<HasInitMain<T>::value, void>::type callInitMain()
+void callInitMain()
 {
-    T::initMain();
-}
-
-template<typename T>
-typename std::enable_if<!HasInitMain<T>::value, void>::type callInitMain()
-{
+    if constexpr (HasInitMain<T>::value)
+        T::initMain();
 }
 
 } // namespace Internal
