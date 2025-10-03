@@ -22,7 +22,7 @@ QT_BEGIN_NAMESPACE
 
 class QImageReader;
 
-class Q_GUI_EXPORT QPlatformPixmap
+class Q_GUI_EXPORT QPlatformPixmap : public QSharedData
 {
 public:
     enum PixelType {
@@ -113,10 +113,7 @@ private:
     friend class QPixmap;
     friend class QX11PlatformPixmap;
     friend class QImagePixmapCleanupHooks; // Needs to set is_cached
-    friend class QOpenGLTextureCache; //Needs to check the reference count
-    friend class QExplicitlySharedDataPointer<QPlatformPixmap>;
 
-    QAtomicInt ref;
     int detach_no;
 
     PixelType type;
