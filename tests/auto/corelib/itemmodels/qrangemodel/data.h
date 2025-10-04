@@ -254,7 +254,7 @@ public:
         return res;
     }
 
-    const tree_row *parentRow() const { return m_parent; }
+    tree_row *parentRow() const { return m_parent; }
     void setParentRow(tree_row *parent) { m_parent = parent; }
     const std::optional<value_tree> &childRows() const { return m_children; }
     std::optional<value_tree> &childRows() { return m_children; }
@@ -281,7 +281,7 @@ public:
     struct ProtocolWithChildrenVector {
         tree_row newRow() const { return tree_row{}; }
         void deleteRow(tree_row&& ) { }
-        const tree_row *parentRow(const tree_row &row) const { return row.m_parent; }
+        tree_row *parentRow(const tree_row &row) const { return row.m_parent; }
         void setParentRow(tree_row &row, tree_row *parent) { row.m_parent = parent; }
 
         const value_tree &childRows(const tree_row &row) const
@@ -312,7 +312,7 @@ public:
     struct ProtocolPointerImpl {
         tree_row *newRow() const { return new tree_row; }
         void deleteRow(tree_row *row) { delete row; }
-        const tree_row *parentRow(const tree_row &row) const { return row.m_parent; }
+        tree_row *parentRow(const tree_row &row) const { return row.m_parent; }
         void setParentRow(tree_row &row, tree_row *parent) { row.m_parent = parent; }
 
         const std::optional<pointer_tree> &childRows(const tree_row &row) const
