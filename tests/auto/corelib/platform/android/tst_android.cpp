@@ -295,11 +295,9 @@ void tst_Android::safeAreaWithWindowFlagsAndStates()
     }
 
     const bool runsOnCI = qgetenv("QTEST_ENVIRONMENT").split(' ').contains("ci");
-    if (sdkVersion == __ANDROID_API_V__ && runsOnCI) {
-        // However on CI, Android 15 doesn't enable edge-to-edge.
+    if (sdkVersion >= __ANDROID_API_V__ && runsOnCI) {
+        // However on CI, Android 15 and later doesn't enable edge-to-edge.
         edgeToEdge = false;
-        // Furthermore, it's not reporting camera cutout margins.
-        cameraCutout = false;
     }
 
     const bool expandedClientArea = windowFlags & Qt::ExpandedClientAreaHint;
