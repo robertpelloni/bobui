@@ -28,9 +28,9 @@
 
 bool runStripEnabled = true;
 bool alwaysOwerwriteEnabled = false;
-bool runCodesign = false;
+bool runCodesign = true;
 QStringList librarySearchPath;
-QString codesignIdentiy;
+QString codesignIdentiy = "-";
 QString extraEntitlements;
 bool hardenedRuntime = false;
 bool secureTimestamp = false;
