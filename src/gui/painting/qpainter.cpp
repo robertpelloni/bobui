@@ -7164,22 +7164,18 @@ void QPainter::setViewTransformEnabled(bool enable)
     d->updateMatrix();
 }
 
-void qt_format_text(const QFont &fnt, const QRectF &_r,
-                    int tf, const QString& str, QRectF *brect,
-                    int tabstops, int *ta, int tabarraylen,
+void qt_format_text(const QFont &fnt,
+                    const QRectF &_r,
+                    int tf,
+                    int alignment,
+                    const QTextOption *option,
+                    const QString& str,
+                    QRectF *brect,
+                    int tabstops,
+                    int *ta,
+                    int tabarraylen,
                     QPainter *painter)
 {
-    qt_format_text(fnt, _r,
-                    tf, nullptr, str, brect,
-                    tabstops, ta, tabarraylen,
-                    painter);
-}
-void qt_format_text(const QFont &fnt, const QRectF &_r,
-                    int tf, const QTextOption *option, const QString& str, QRectF *brect,
-                    int tabstops, int *ta, int tabarraylen,
-                    QPainter *painter)
-{
-
     Q_ASSERT( !((tf & ~Qt::TextDontPrint)!=0 && option!=nullptr) ); // we either have an option or flags
 
     if (_r.isEmpty() && !(tf & Qt::TextDontClip)) {
@@ -7190,7 +7186,7 @@ void qt_format_text(const QFont &fnt, const QRectF &_r,
     }
 
     if (option) {
-        tf |= option->alignment();
+        alignment |= option->alignment();
         if (option->wrapMode() != QTextOption::NoWrap)
             tf |= Qt::TextWordWrap;
 
@@ -7222,12 +7218,12 @@ void qt_format_text(const QFont &fnt, const QRectF &_r,
     else
         layout_direction = Qt::LeftToRight;
 
-    tf = QGuiApplicationPrivate::visualAlignment(layout_direction, QFlag(tf));
+    alignment = QGuiApplicationPrivate::visualAlignment(layout_direction, QFlag(alignment));
 
     bool isRightToLeft = layout_direction == Qt::RightToLeft;
     bool expandtabs = ((tf & Qt::TextExpandTabs) &&
-                        (((tf & Qt::AlignLeft) && !isRightToLeft) ||
-                          ((tf & Qt::AlignRight) && isRightToLeft)));
+                        (((alignment & Qt::AlignLeft) && !isRightToLeft) ||
+                          ((alignment & Qt::AlignRight) && isRightToLeft)));
 
     if (!painter)
         tf |= Qt::TextDontPrint;
@@ -7326,7 +7322,7 @@ start_lengthVariant:
     }
 
     engine.option.setTextDirection(layout_direction);
-    if (tf & Qt::AlignJustify)
+    if (alignment & Qt::AlignJustify)
         engine.option.setAlignment(Qt::AlignJustify);
     else
         engine.option.setAlignment(Qt::AlignLeft); // do not do alignment twice
@@ -7365,6 +7361,10 @@ start_lengthVariant:
 
             // Make sure lines are positioned on whole pixels
             height = qCeil(height);
+
+            if (alignment & Qt::AlignBaseline && l.lineNumber() == 0)
+                height -= l.ascent();
+
             l.setPosition(QPointF(0., height));
             height += textLayout.engine()->lines[l.lineNumber()].height().toReal();
             width = qMax(width, l.naturalTextWidth());
@@ -7376,14 +7376,14 @@ start_lengthVariant:
 
     qreal yoff = 0;
     qreal xoff = 0;
-    if (tf & Qt::AlignBottom)
+    if (alignment & Qt::AlignBottom)
         yoff = r.height() - height;
-    else if (tf & Qt::AlignVCenter)
+    else if (alignment & Qt::AlignVCenter)
         yoff = (r.height() - height)/2;
 
-    if (tf & Qt::AlignRight)
+    if (alignment & Qt::AlignRight)
         xoff = r.width() - width;
-    else if (tf & Qt::AlignHCenter)
+    else if (alignment & Qt::AlignHCenter)
         xoff = (r.width() - width)/2;
 
     QRectF bounds = QRectF(r.x() + xoff, r.y() + yoff, width, height);
@@ -7410,12 +7410,12 @@ start_lengthVariant:
 
             qreal advance = line.horizontalAdvance();
             xoff = 0;
-            if (tf & Qt::AlignRight) {
+            if (alignment & Qt::AlignRight) {
                 xoff = r.width() - advance -
                     eng->leadingSpaceWidth(eng->lines[line.lineNumber()]).toReal();
-            }
-            else if (tf & Qt::AlignHCenter)
+            } else if (alignment & Qt::AlignHCenter) {
                 xoff = (r.width() - advance) / 2;
+            }
 
             line.draw(painter, QPointF(r.x() + xoff, r.y() + yoff));
             eng->drawDecorations(painter);
@@ -7425,6 +7425,48 @@ start_lengthVariant:
             painter->restore();
         }
     }
+}
+
+void qt_format_text(const QFont &fnt, const QRectF &_r,
+                    int tf, const QString& str, QRectF *brect,
+                    int tabstops, int *ta, int tabarraylen,
+                    QPainter *painter)
+{
+    qt_format_text(fnt,
+                   _r,
+                   tf,
+                   tf & ~Qt::AlignBaseline, // Qt::AlignBaseline conflicts with Qt::TextSingleLine
+                   nullptr,
+                   str,
+                   brect,
+                   tabstops,
+                   ta,
+                   tabarraylen,
+                   painter);
+}
+
+void qt_format_text(const QFont &fnt,
+                    const QRectF &_r,
+                    int tf,
+                    const QTextOption *option,
+                    const QString& str,
+                    QRectF *brect,
+                    int tabstops,
+                    int *ta,
+                    int tabarraylen,
+                    QPainter *painter)
+{
+    qt_format_text(fnt,
+                   _r,
+                   tf,
+                   tf & ~Qt::AlignBaseline, // Qt::AlignBaseline conflicts with Qt::TextSingleLine
+                   option,
+                   str,
+                   brect,
+                   tabstops,
+                   ta,
+                   tabarraylen,
+                   painter);
 }
 
 /*!
