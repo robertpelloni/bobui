@@ -771,7 +771,8 @@ void QMenuPrivate::setCurrentAction(QAction *action, int popup, SelectionReason 
 #endif
             hideMenu(hideActiveMenu);
         } else if (!currentAction || !currentAction->menu()) {
-            sloppyState.startTimerIfNotRunning();
+            if (reason != SelectionReason::SelectedFromAPI)
+                sloppyState.startTimerIfNotRunning();
         }
     }
 }
@@ -2172,7 +2173,7 @@ void QMenu::hideTearOffMenu()
 void QMenu::setActiveAction(QAction *act)
 {
     Q_D(QMenu);
-    d->setCurrentAction(act, 0);
+    d->setCurrentAction(act, 0, QMenuPrivate::SelectionReason::SelectedFromAPI);
     if (d->scroll && act)
         d->scrollMenu(act, QMenuPrivate::QMenuScroller::ScrollCenter);
 }

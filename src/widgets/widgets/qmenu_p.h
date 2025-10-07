@@ -362,7 +362,8 @@ public:
     } delayState;
     enum SelectionReason {
         SelectedFromKeyboard,
-        SelectedFromElsewhere
+        SelectedFromAPI,
+        SelectedFromElsewhere,
     };
     enum class SelectionDirection {
         Up,
