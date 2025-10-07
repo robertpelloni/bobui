@@ -734,6 +734,7 @@
         "classes": [
             {
                 "className": "FinalTestClassQt",
+                "final": true,
                 "lineNumber": 15,
                 "object": true,
                 "qualifiedClassName": "FinalTestClassQt",
@@ -746,6 +747,7 @@
             },
             {
                 "className": "ExportedFinalTestClassQt",
+                "final": true,
                 "lineNumber": 24,
                 "object": true,
                 "qualifiedClassName": "ExportedFinalTestClassQt",
@@ -758,6 +760,7 @@
             },
             {
                 "className": "ExportedFinalTestClassQtX",
+                "final": true,
                 "lineNumber": 32,
                 "object": true,
                 "qualifiedClassName": "ExportedFinalTestClassQtX",
@@ -770,6 +773,7 @@
             },
             {
                 "className": "FinalTestClassCpp11",
+                "final": true,
                 "lineNumber": 40,
                 "object": true,
                 "qualifiedClassName": "FinalTestClassCpp11",
@@ -782,6 +786,7 @@
             },
             {
                 "className": "ExportedFinalTestClassCpp11",
+                "final": true,
                 "lineNumber": 48,
                 "object": true,
                 "qualifiedClassName": "ExportedFinalTestClassCpp11",
@@ -794,6 +799,7 @@
             },
             {
                 "className": "ExportedFinalTestClassCpp11X",
+                "final": true,
                 "lineNumber": 56,
                 "object": true,
                 "qualifiedClassName": "ExportedFinalTestClassCpp11X",
@@ -806,6 +812,7 @@
             },
             {
                 "className": "SealedTestClass",
+                "final": true,
                 "lineNumber": 64,
                 "object": true,
                 "qualifiedClassName": "SealedTestClass",
@@ -818,6 +825,7 @@
             },
             {
                 "className": "ExportedSealedTestClass",
+                "final": true,
                 "lineNumber": 72,
                 "object": true,
                 "qualifiedClassName": "ExportedSealedTestClass",
@@ -830,6 +838,7 @@
             },
             {
                 "className": "ExportedSealedTestClassX",
+                "final": true,
                 "lineNumber": 80,
                 "object": true,
                 "qualifiedClassName": "ExportedSealedTestClassX",

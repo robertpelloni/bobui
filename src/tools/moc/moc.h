@@ -207,6 +207,7 @@ struct ClassDef : BaseDef {
     bool hasQGadget = false;
     bool hasQNamespace = false;
     bool requireCompleteMethodTypes = false;
+    bool isFinal = false;
 
     QJsonObject toJson() const;
 };

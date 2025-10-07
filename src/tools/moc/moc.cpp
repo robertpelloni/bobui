@@ -68,6 +68,8 @@ bool Moc::parseClassHead(ClassDef *def)
         const QByteArrayView lex = lexemView();
         if (lex != "final" && lex != "sealed" && lex != "Q_DECL_FINAL")
             name = lexem();
+        else
+            def->isFinal = true;
     }
 
     def->qualified += name;
@@ -85,6 +87,8 @@ bool Moc::parseClassHead(ClassDef *def)
         const QByteArrayView lex = lexemView();
         if (lex != "final" && lex != "sealed" && lex != "Q_DECL_FINAL")
             return false;
+        else
+            def->isFinal = true;
     }
 
     if (test(COLON)) {
@@ -2055,6 +2059,8 @@ QJsonObject ClassDef::toJson() const
     cls["className"_L1] = QString::fromUtf8(classname.constData());
     cls["qualifiedClassName"_L1] = QString::fromUtf8(qualified.constData());
     cls["lineNumber"_L1] = lineNumber;
+    if (isFinal)
+        cls["final"_L1] = true;
 
     QJsonArray classInfos;
     for (const auto &info: std::as_const(classInfoList)) {
