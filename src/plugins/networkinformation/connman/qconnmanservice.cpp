@@ -15,6 +15,8 @@
 #include <QtDBus/QDBusReply>
 #include <QtDBus/QDBusObjectPath>
 
+#include <utility> // for std::pair
+
 #define CONNMAN_DBUS_SERVICE "net.connman"_L1
 #define CONNMAN_DBUS_INTERFACE "net.connman.Manager"
 #define CONNMAN_DBUS_INTERFACE_L1 CONNMAN_DBUS_INTERFACE ""_L1
@@ -25,7 +27,7 @@ QT_BEGIN_NAMESPACE
 using namespace Qt::StringLiterals;
 
 using ConnmanService = QMap<QString, QVariant>;
-using ConnmanServiceEntry = QPair<QDBusObjectPath, ConnmanService>;
+using ConnmanServiceEntry = std::pair<QDBusObjectPath, ConnmanService>;
 using ConnmanServices = QList<ConnmanServiceEntry>;
 
 namespace {
@@ -120,8 +122,7 @@ QString QConnManInterface::findServiceType()
 
     // The services list is sorted by connman and the first service matching
     // the current state is the most relevant.
-    for (const ConnmanServiceEntry &entry : servicesReply.value()) {
-        const ConnmanService &service = entry.second;
+    for (const auto &[_, service] : servicesReply.value()) {
         if (service.value(stateKey).toString() == m_state)
             return service.value(typeKey).toString();
     }
