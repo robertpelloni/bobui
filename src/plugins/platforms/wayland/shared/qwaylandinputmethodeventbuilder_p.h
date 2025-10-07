@@ -18,6 +18,8 @@
 #include <QInputMethodEvent>
 #include <private/qglobal_p.h>
 
+#include <utility> // for std::pair
+
 QT_BEGIN_NAMESPACE
 
 class QWaylandInputMethodEventBuilder
@@ -42,7 +44,7 @@ public:
 
     static int trimmedIndexFromWayland(const QString &text, int length, int base = 0);
 private:
-    QPair<int, int> replacementForDeleteSurrounding();
+    std::pair<int, int> replacementForDeleteSurrounding();
 
     int32_t m_anchor = 0;
     int32_t m_cursor = 0;
