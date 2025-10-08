@@ -1801,14 +1801,16 @@ bool QPainter::begin(QPaintDevice *pd)
         d->engine->setActive(begun);
     }
 
-    // Copy painter properties from original paint device,
-    // required for QPixmap::grabWidget()
-    if (d->original_device->devType() == QInternal::Widget) {
+    switch (d->original_device->devType()) {
+    case QInternal::Widget:
         d->initFrom(d->original_device);
-    } else {
+        break;
+
+    default:
         d->state->layoutDirection = Qt::LayoutDirectionAuto;
         // make sure we have a font compatible with the paintdevice
         d->state->deviceFont = d->state->font = QFont(d->state->deviceFont, device());
+        break;
     }
 
     QRect systemRect = d->engine->systemRect();
@@ -1833,6 +1835,15 @@ bool QPainter::begin(QPaintDevice *pd)
     ++d->device->painters;
 
     d->state->emulationSpecifier = 0;
+
+    switch (d->original_device->devType()) {
+    case QInternal::Widget:
+        // for widgets we've aleady initialized the painter above
+        break;
+    default:
+        d->initFrom(d->original_device);
+        break;
+    }
 
     return true;
 }
