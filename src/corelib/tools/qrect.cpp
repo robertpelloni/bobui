@@ -71,7 +71,7 @@ QT_BEGIN_NAMESPACE
                      highlighted. It's also showing how the width and
                      height of the highlighted area is determined with
                      r.intersect(s).width() and r.intersect(s).height().}
-    \li \inlineimage qrect-unite.png {Diagram showing two overlapped
+    \li \inlineimage qrect-unite.webp {Diagram showing two overlapped
                      rectangles r and s and their united size which is
                      determined with r.united(s).width() and
                      r.united(s).height().}
@@ -987,7 +987,7 @@ QRect QRect::operator|(const QRect &r) const noexcept
 
     Returns the bounding rectangle of this rectangle and the given \a rectangle.
 
-    \image qrect-unite.png {Diagram showing two overlapped rectangles r and s
+    \image qrect-unite.webp {Diagram showing two overlapped rectangles r and s
            and their united size which is determined with r.united(s).width and
            r.united(s).height().}
 
@@ -1353,7 +1353,7 @@ QDebug operator<<(QDebug dbg, const QRect &r)
                      highlighted. It's also showing how the width and
                      height of the highlighted area is determined with
                      r.intersect(s).width and r.intersect(s).height().}
-    \li \inlineimage qrect-unite.png {Diagram showing two overlapped
+    \li \inlineimage qrect-unite.webp {Diagram showing two overlapped
                      rectangles r and s and their united size which is
                      determined with r.united(s).width and
                      r.united(s).height()}
@@ -2197,7 +2197,7 @@ QRectF QRectF::operator|(const QRectF &r) const noexcept
     Returns the bounding rectangle of this rectangle and the given \a
     rectangle.
 
-    \image qrect-unite.png {Diagram showing two overlapped rectangles
+    \image qrect-unite.webp {Diagram showing two overlapped rectangles
            r and s and their united size which is determined with
            r.united(s).width and r.united(s).height()}
 
