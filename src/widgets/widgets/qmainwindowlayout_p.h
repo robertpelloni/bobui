@@ -644,6 +644,7 @@ private Q_SLOTS:
 #endif
 private:
 #if QT_CONFIG(tabbar)
+    void showTabBars();
     void updateTabBarShapes();
 #endif
     bool isInRestoreState = false;
