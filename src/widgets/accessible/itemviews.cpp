@@ -589,13 +589,6 @@ int QAccessibleTable::indexOfChild(const QAccessibleInterface *iface) const
     return -1;
 }
 
-QString QAccessibleTable::text(QAccessible::Text t) const
-{
-    if (t == QAccessible::Description)
-        return view()->accessibleDescription();
-    return view()->accessibleName();
-}
-
 QRect QAccessibleTable::rect() const
 {
     if (!view()->isVisible())

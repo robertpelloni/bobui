@@ -2994,6 +2994,9 @@ void tst_QAccessibility::listTest()
     listView->setModelColumn(1);
     listView->setSelectionMode(QAbstractItemView::ExtendedSelection);
     listView->resize(400,400);
+    listView->setAccessibleName(QLatin1String("list view's accessible name"));
+    listView->setToolTip(QLatin1String("This list view will be used to test accessibility"));
+    listView->setWhatsThis(QLatin1String("What's this list"));
     listView->show();
     QVERIFY(QTest::qWaitForWindowExposed(listView));
 
@@ -3001,6 +3004,10 @@ void tst_QAccessibility::listTest()
     QCOMPARE(verifyHierarchy(iface), 0);
 
     QCOMPARE((int)iface->role(), (int)QAccessible::List);
+    QCOMPARE(iface->text(QAccessible::Name), QLatin1String("list view's accessible name"));
+    QCOMPARE(iface->text(QAccessible::Description), QLatin1String("This list view will be used to test accessibility"));
+    QCOMPARE(iface->text(QAccessible::Help), QLatin1String("What's this list"));
+    QCOMPARE(iface->text(QAccessible::Value), QString());
     QCOMPARE(iface->childCount(), 3);
 
     {

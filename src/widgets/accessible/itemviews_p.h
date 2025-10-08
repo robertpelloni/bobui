@@ -41,7 +41,6 @@ public:
 
     QAccessible::Role role() const override;
     QAccessible::State state() const override;
-    QString text(QAccessible::Text t) const override;
     QRect rect() const override;
 
     QAccessibleInterface *childAt(int x, int y) const override;
