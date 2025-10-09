@@ -13144,11 +13144,22 @@ int QWidget::metric(PaintDeviceMetric m) const
 void QWidget::initPainter(QPainter *painter) const
 {
     const QPalette &pal = palette();
-    painter->d_func()->state->pen = QPen(pal.brush(foregroundRole()), 1);
-    painter->d_func()->state->bgBrush = pal.brush(backgroundRole());
+    QPainterPrivate *painterPrivate = QPainterPrivate::get(painter);
+
+    painterPrivate->state->pen = QPen(pal.brush(foregroundRole()), 1);
+    painterPrivate->state->bgBrush = pal.brush(backgroundRole());
     QFont f(font(), this);
-    painter->d_func()->state->deviceFont = f;
-    painter->d_func()->state->font = f;
+    painterPrivate->state->deviceFont = f;
+    painterPrivate->state->font = f;
+
+    painterPrivate->setEngineDirtyFlags({
+        QPaintEngine::DirtyPen,
+        QPaintEngine::DirtyBrush,
+        QPaintEngine::DirtyFont,
+    });
+
+    if (painterPrivate->extended)
+        painterPrivate->extended->penChanged();
 }
 
 /*!

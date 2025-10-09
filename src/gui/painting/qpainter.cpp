@@ -1527,14 +1527,14 @@ void QPainterPrivate::initFrom(const QPaintDevice *device)
 
     Q_Q(QPainter);
     device->initPainter(q);
+}
 
-    if (extended) {
-        extended->penChanged();
-    } else if (engine) {
-        engine->setDirty(QPaintEngine::DirtyPen);
-        engine->setDirty(QPaintEngine::DirtyBrush);
-        engine->setDirty(QPaintEngine::DirtyFont);
-    }
+void QPainterPrivate::setEngineDirtyFlags(QSpan<const QPaintEngine::DirtyFlags> flags)
+{
+    if (!engine)
+        return;
+    for (const QPaintEngine::DirtyFlags f : flags)
+        engine->setDirty(f);
 }
 
 /*!
