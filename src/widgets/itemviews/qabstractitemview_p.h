@@ -383,6 +383,7 @@ public:
 
     QString keyboardInput;
     QElapsedTimer keyboardInputTime;
+    Qt::MatchFlags keyboardSearchFlags = Qt::MatchStartsWith | Qt::MatchWrap;
 
     bool autoScroll;
     QBasicTimer autoScrollTimer;

@@ -3108,7 +3108,8 @@ void QAbstractItemView::keyboardSearch(const QString &search)
     QModelIndex startMatch;
     QModelIndexList previous;
     do {
-        match = d->model->match(current, Qt::DisplayRole, d->keyboardInput);
+        match = d->model->match(current, Qt::DisplayRole, d->keyboardInput, 1,
+                                d->keyboardSearchFlags);
         if (match == previous)
             break;
         firstMatch = match.value(0);
@@ -3248,6 +3249,30 @@ void QAbstractItemView::setUpdateThreshold(int threshold)
     if (d->updateThreshold == threshold)
         return;
     d->updateThreshold = threshold;
+}
+
+/*!
+    \property QAbstractItemView::keyboardSearchFlags
+    \since 6.11
+    This property determines how the default implementation of
+    keyboardSearch() matches the given string against the model's data.
+
+    The default value is \c{Qt::MatchStartsWith|Qt::MatchWrap}.
+
+    \sa keyboardSearch()
+    \sa QAbstractItemModel::match()
+*/
+
+Qt::MatchFlags QAbstractItemView::keyboardSearchFlags() const
+{
+    Q_D(const QAbstractItemView);
+    return d->keyboardSearchFlags;
+}
+
+void QAbstractItemView::setKeyboardSearchFlags(Qt::MatchFlags searchFlags)
+{
+    Q_D(QAbstractItemView);
+    d->keyboardSearchFlags = searchFlags;
 }
 
 /*!

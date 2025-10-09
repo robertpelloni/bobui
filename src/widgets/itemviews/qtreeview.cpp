@@ -1030,7 +1030,8 @@ void QTreeView::keyboardSearch(const QString &search)
                 searchFrom = searchFrom.sibling(searchFrom.row(), start.column());
             if (searchFrom.parent() == start.parent())
                 searchFrom = start;
-            QModelIndexList match = d->model->match(searchFrom, Qt::DisplayRole, searchString);
+            QModelIndexList match = d->model->match(searchFrom, Qt::DisplayRole, searchString, 1,
+                                                    keyboardSearchFlags());
             if (match.size()) {
                 int hitIndex = d->viewIndex(match.at(0));
                 if (hitIndex >= 0 && hitIndex < startIndex)
