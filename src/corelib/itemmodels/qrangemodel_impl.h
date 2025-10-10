@@ -1236,7 +1236,7 @@ public:
         if (row == index.row() && column == index.column())
             return index;
 
-        if (column < 0 || column >= this->itemModel().columnCount())
+        if (column < 0 || column >= this->columnCount({}))
             return {};
 
         if (row == index.row())
@@ -1974,8 +1974,8 @@ public:
             }
 
             if (sourceRow == destRow || sourceRow == destRow - 1 || count <= 0
-             || sourceRow < 0 || sourceRow + count - 1 >= this->itemModel().rowCount(sourceParent)
-             || destRow < 0 || destRow > this->itemModel().rowCount(destParent)) {
+             || sourceRow < 0 || sourceRow + count - 1 >= this->rowCount(sourceParent)
+             || destRow < 0 || destRow > this->rowCount(destParent)) {
                 return false;
             }
 
@@ -2760,7 +2760,7 @@ protected:
         // dynamically sized rows all have to have the same column count
         if constexpr (Base::dynamicColumns() && row_features::has_resize) {
             if (QRangeModelDetails::isValid(empty_row))
-                QRangeModelDetails::refTo(empty_row).resize(this->itemModel().columnCount());
+                QRangeModelDetails::refTo(empty_row).resize(this->columnCount({}));
         }
 
         return empty_row;
