@@ -1560,12 +1560,12 @@ public:
                         return setRangeModelDataRole();
                     return ItemAccess::writeRole(target, data, role);
                 } if constexpr (has_metaobject<value_type>) {
-                    if (role == Qt::RangeModelDataRole) {
-                        return setRangeModelDataRole();
-                    } else if (row_traits::fixed_size() <= 1) {
+                    if (row_traits::fixed_size() <= 1) { // multi-role value
+                        if (role == Qt::RangeModelDataRole)
+                            return setRangeModelDataRole();
                         return writeRole(role, QRangeModelDetails::pointerTo(target), data);
-                    } else if (column <= row_traits::fixed_size()
-                            && (role == Qt::DisplayRole || role == Qt::EditRole)) {
+                    } else if (column <= row_traits::fixed_size() // multi-column
+                            && (role == Qt::DisplayRole || role == Qt::EditRole || role == Qt::RangeModelDataRole)) {
                         return writeProperty(column, QRangeModelDetails::pointerTo(target), data);
                     }
                 } else if constexpr (multi_role::value) {
