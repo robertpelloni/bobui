@@ -20,7 +20,7 @@ QT_BEGIN_NAMESPACE
 
 class QCocoaIntegration;
 
-class QCocoaScreen : public QPlatformScreen
+class QCocoaScreen : public QPlatformScreen, public QNativeInterface::QCocoaScreen
 {
 public:
     ~QCocoaScreen();
@@ -47,7 +47,7 @@ public:
     // ----------------------------------------------------
 
     static NSScreen *nativeScreenForDisplayId(CGDirectDisplayID displayId);
-    NSScreen *nativeScreen() const;
+    NSScreen *nativeScreen() const override;
 
     bool requestUpdate();
     void deliverUpdateRequests();
