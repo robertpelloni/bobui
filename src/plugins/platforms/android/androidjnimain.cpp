@@ -359,20 +359,41 @@ namespace QtAndroid
 
 static bool initJavaReferences(QJniEnvironment &env);
 
-static void initializeBackends()
+static bool initAndroidQpaPlugin(JNIEnv *jenv, jobject object)
 {
+    Q_UNUSED(jenv)
+    Q_UNUSED(object)
+
+    // Init all the Java refs, if they haven't already been initialized. They get initialized
+    // when the library is loaded, but in case Qt is terminated, they are cleared, and in case
+    // Qt is then started again JNI_OnLoad will not be called again, since the library is already
+    // loaded - in that case we need to init again here, hence the check.
+    // TODO QTBUG-130614 QtCore also inits some Java references in qjnihelpers - we probably
+    // want to reset those, too.
+    QJniEnvironment qEnv;
+    if (!qEnv.isValid()) {
+        qCritical() << "Failed to initialize the JNI Environment";
+        return false;
+    }
+
+    if (!initJavaReferences(qEnv))
+        return false;
+
+    m_androidPlatformIntegration = nullptr;
+
     // File engine handler instantiation registers the handler
     m_androidAssetsFileEngineHandler = new AndroidAssetsFileEngineHandler();
     m_androidContentFileEngineHandler = new AndroidContentFileEngineHandler();
     m_androidApkFileEngineHandler = new QAndroidApkFileEngineHandler();
 
     m_backendRegister = new AndroidBackendRegister();
-}
 
-static bool initCleanupHandshakeSemaphores()
-{
-    return sem_init(&m_exitSemaphore, 0, 0) != -1
-        && sem_init(&m_stopQtSemaphore, 0, 0) != -1;
+    if (sem_init(&m_exitSemaphore, 0, 0) == -1 && sem_init(&m_stopQtSemaphore, 0, 0) == -1) {
+        qCritical() << "Failed to init Qt application cleanup semaphores";
+        return false;
+    }
+
+    return true;
 }
 
 static void startQtNativeApplication(JNIEnv *jenv, jobject object, jstring paramsString)
@@ -390,23 +411,6 @@ static void startQtNativeApplication(JNIEnv *jenv, jobject object, jstring param
         if (vm)
             vm->AttachCurrentThread(&env, &args);
     }
-
-    // Init all the Java refs, if they haven't already been initialized. They get initialized
-    // when the library is loaded, but in case Qt is terminated, they are cleared, and in case
-    // Qt is then started again JNI_OnLoad will not be called again, since the library is already
-    // loaded - in that case we need to init again here, hence the check.
-    // TODO QTBUG-130614 QtCore also inits some Java references in qjnihelpers - we probably
-    // want to reset those, too.
-    QJniEnvironment qEnv;
-    if (!qEnv.isValid()) {
-        qCritical() << "Failed to initialize the JNI Environment";
-        return;
-    }
-    if (!initJavaReferences(qEnv))
-        return;
-
-    m_androidPlatformIntegration = nullptr;
-    initializeBackends();
 
     const QStringList argsList = QProcess::splitCommand(QJniObject(paramsString).toString());
     const int argc = argsList.size();
@@ -444,11 +448,6 @@ static void startQtNativeApplication(JNIEnv *jenv, jobject object, jstring param
         return;
     }
 
-    if (!initCleanupHandshakeSemaphores()) {
-        qCritical() << "Failed to init Qt application cleanup semaphores";
-        return;
-    }
-
     // Register type for invokeMethod() calls.
     qRegisterMetaType<Qt::ScreenOrientation>("Qt::ScreenOrientation");
 
@@ -457,13 +456,6 @@ static void startQtNativeApplication(JNIEnv *jenv, jobject object, jstring param
         QResource::registerResource(QStringLiteral("assets:/android_rcc_bundle.rcc"));
 
     startQtAndroidPluginCalled.fetchAndAddRelease(1);
-
-    QtNative::callStaticMethod("setStarted", true);
-
-    // The service must wait until the QCoreApplication starts,
-    // otherwise onBind will be called too early.
-    if (QtAndroidPrivate::service().isValid() && QtAndroid::isQtApplication())
-        QtAndroidPrivate::waitForServiceSetup();
 
     const int ret = m_main(argc, argv.data());
     qInfo() << "main() returned" << ret;
@@ -538,6 +530,15 @@ static void clearJavaReferences(JNIEnv *env)
         env->DeleteGlobalRef(m_qtServiceClass);
         m_qtServiceClass = nullptr;
     }
+}
+
+static void waitForServiceSetup(JNIEnv *env, jclass /*clazz*/)
+{
+    Q_UNUSED(env);
+    // The service must wait until the QCoreApplication starts otherwise onBind will be
+    // called too early
+    if (QtAndroidPrivate::service().isValid() && QtAndroid::isQtApplication())
+        QtAndroidPrivate::waitForServiceSetup();
 }
 
 static void terminateQtNativeApplication(JNIEnv *env, jclass /*clazz*/)
@@ -730,8 +731,10 @@ static jobject onBind(JNIEnv */*env*/, jclass /*cls*/, jobject intent)
 }
 
 static JNINativeMethod methods[] = {
+    { "initAndroidQpaPlugin", "()Z", (void *)initAndroidQpaPlugin },
     { "startQtNativeApplication", "(Ljava/lang/String;)V", (void *)startQtNativeApplication },
     { "terminateQtNativeApplication", "()V", (void *)terminateQtNativeApplication },
+    { "waitForServiceSetup", "()V", (void *)waitForServiceSetup },
     { "updateApplicationState", "(I)V", (void *)updateApplicationState },
     { "onActivityResult", "(IILandroid/content/Intent;)V", (void *)onActivityResult },
     { "onNewIntent", "(Landroid/content/Intent;)V", (void *)onNewIntent },

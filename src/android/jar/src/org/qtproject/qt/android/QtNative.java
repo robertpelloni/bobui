@@ -361,8 +361,11 @@ public class QtNative
         if (m_stateDetails.isStarted)
             return;
 
+        getQtThread().run(() -> initAndroidQpaPlugin());
         final String qtParams = mainLib + " " + params;
         getQtThread().post(() -> { startQtNativeApplication(qtParams); });
+        waitForServiceSetup();
+        setStarted(true);
     }
 
     @UsedFromNativeCode
@@ -428,7 +431,9 @@ public class QtNative
     }
 
     // application methods
+    static native boolean initAndroidQpaPlugin();
     static native void startQtNativeApplication(String params);
+    static native void waitForServiceSetup();
     static native void terminateQtNativeApplication();
     static native boolean updateNativeActivity();
     // application methods
