@@ -201,7 +201,7 @@ void QWaylandXdgSurface::Toplevel::requestWindowFlags(Qt::WindowFlags flags)
             delete m_decoration;
             m_decoration = nullptr;
         } else {
-            m_decoration->unsetMode();
+            m_decoration->requestMode(QWaylandXdgToplevelDecorationV1::mode_server_side);
         }
     }
 }
