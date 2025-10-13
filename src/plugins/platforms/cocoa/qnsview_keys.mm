@@ -114,6 +114,9 @@ static bool sendAsShortcut(const KeyEvent &keyEvent, QWindow *window)
 
                     qCDebug(lcQpaKeys) << "Interpreting key event for focus object" << focusObject;
                     m_currentlyInterpretedKeyEvent = nsevent;
+                    // Asking the input context to handle the event will involve both
+                    // the current input method, as well as NSKeyBindingManager, which
+                    // may result in action callbacks to doCommandBySelector.
                     if (![self.inputContext handleEvent:nsevent]) {
                         qCDebug(lcQpaKeys) << "Input context did not consume event";
                         m_sendKeyEvent = true;
