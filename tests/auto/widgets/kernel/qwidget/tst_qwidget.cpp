@@ -11280,7 +11280,7 @@ void tst_QWidget::destroyBackingStore()
 #endif // QT_BUILD_INTERNAL
 
 // Helper function
-QWidgetRepaintManager* repaintManager(QWidget &widget)
+QWidgetRepaintManager* repaintManager([[maybe_unused]] QWidget &widget)
 {
     QWidgetRepaintManager *repaintManager = nullptr;
 #ifdef QT_BUILD_INTERNAL
