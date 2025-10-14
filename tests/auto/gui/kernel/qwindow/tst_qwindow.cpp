@@ -3250,6 +3250,7 @@ void tst_QWindow::enterLeaveOnWindowShowHide()
     ++expectedEnter;
     QTRY_COMPARE_WITH_TIMEOUT(window.numEnterEvents, expectedEnter, 250);
     QCOMPARE(window.enterPosition, window.mapFromGlobal(QCursor::pos()));
+    QCOMPARE(QGuiApplicationPrivate::lastCursorPosition, cursorPos);
 
     QWindow secondary;
     secondary.setFlag(windowType);

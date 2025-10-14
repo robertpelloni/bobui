@@ -2626,6 +2626,7 @@ void QGuiApplicationPrivate::processEnterEvent(QWindowSystemInterfacePrivate::En
     }
 
     currentMouseWindow = e->enter;
+    lastCursorPosition = e->globalPos;
 
     // TODO later: EnterEvent must report _which_ mouse entered the window; for now we assume primaryPointingDevice()
     QEnterEvent event(e->localPos, e->localPos, e->globalPos);
