@@ -1885,11 +1885,9 @@ void QTest::qInit(QObject *testObject, int argc, char **argv)
     if (!appNapDisabler)
         appNapDisabler.emplace();
 
-    if (qApp && (qstrcmp(qApp->metaObject()->className(), "QApplication") == 0)) {
-        IOPMAssertionCreateWithName(kIOPMAssertionTypeNoDisplaySleep,
-            kIOPMAssertionLevelOn, CFSTR("QtTest running tests"),
-            &macPowerSavingDisabled);
-    }
+    IOPMAssertionCreateWithName(kIOPMAssertionTypeNoDisplaySleep,
+                                kIOPMAssertionLevelOn, CFSTR("QtTest running tests"),
+                                &macPowerSavingDisabled);
 #endif
 
     QTestPrivate::parseBlackList();
