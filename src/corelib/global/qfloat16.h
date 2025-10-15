@@ -354,14 +354,14 @@ inline int qIntCast(qfloat16 f) noexcept
 { return int(static_cast<qfloat16::NearestFloat>(f)); }
 
 #if !defined(Q_QDOC) && !QFLOAT16_IS_NATIVE
-QT_WARNING_PUSH
-QT_WARNING_DISABLE_CLANG("-Wc99-extensions")
-QT_WARNING_DISABLE_GCC("-Wold-style-cast")
 inline qfloat16::qfloat16(float f) noexcept
 {
 #if defined(QT_COMPILER_SUPPORTS_F16C) && defined(__F16C__)
     __m128 packsingle = _mm_set_ss(f);
+    QT_WARNING_PUSH
+    QT_WARNING_DISABLE_GCC("-Wold-style-cast") // _mm_cvtps_ph() may be a macro using C-style casts
     __m128i packhalf = _mm_cvtps_ph(packsingle, 0);
+    QT_WARNING_POP
     b16 = quint16(_mm_extract_epi16(packhalf, 0));
 #elif defined (__ARM_FP16_FORMAT_IEEE)
     __fp16 f16 = __fp16(f);
@@ -393,7 +393,6 @@ inline qfloat16::qfloat16(float f) noexcept
     b16 = quint16(base + (mantissa >> shift));
 #endif
 }
-QT_WARNING_POP
 
 inline qfloat16::operator float() const noexcept
 {
