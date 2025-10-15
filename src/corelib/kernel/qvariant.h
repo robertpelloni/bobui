@@ -983,8 +983,13 @@ private:
 };
 }
 
-template<typename Pointer>
-class QVariantRef
+#if QT_DEPRECATED_SINCE(6, 13)
+QT_WARNING_PUSH
+QT_WARNING_DISABLE_DEPRECATED
+
+template<typename Pointer> class
+QT_DEPRECATED_VERSION_X_6_13("Use QVariant::Reference instead.")
+QVariantRef
 {
 private:
     const Pointer *m_pointer = nullptr;
@@ -1008,20 +1013,23 @@ public:
     }
 };
 
-class Q_CORE_EXPORT QVariantConstPointer
+class
+QT_DEPRECATED_VERSION_X_6_13("Use QVariant::ConstPointer instead.")
+QVariantConstPointer
 {
 private:
     QVariant m_variant;
 
 public:
-    explicit QVariantConstPointer(QVariant variant);
+    Q_CORE_EXPORT explicit QVariantConstPointer(QVariant variant);
 
-    QVariant operator*() const;
-    const QVariant *operator->() const;
+    Q_CORE_EXPORT QVariant operator*() const;
+    Q_CORE_EXPORT const QVariant *operator->() const;
 };
 
-template<typename Pointer>
-class QVariantPointer
+template<typename Pointer> class
+QT_DEPRECATED_VERSION_X_6_13("Use QVariant::Pointer instead.")
+QVariantPointer
 {
 private:
     const Pointer *m_pointer = nullptr;
@@ -1031,6 +1039,9 @@ public:
     QVariantRef<Pointer> operator*() const { return QVariantRef<Pointer>(m_pointer); }
     Pointer operator->() const { return *m_pointer; }
 };
+
+QT_WARNING_POP
+#endif // QT_DEPRECATED_SINCE(6, 13)
 
 QT_END_NAMESPACE
 

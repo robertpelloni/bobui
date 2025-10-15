@@ -2852,9 +2852,14 @@ const void *QtPrivate::QVariantTypeCoercer::coerce(const QVariant &value, const 
     return converted.constData();
 }
 
+#if QT_DEPRECATED_SINCE(6, 13)
+QT_WARNING_PUSH
+QT_WARNING_DISABLE_DEPRECATED
+
 /*!
     \class QVariantRef
     \since 6.0
+    \deprecated [6.13] Use QVariant::Reference instead.
     \inmodule QtCore
     \brief The QVariantRef acts as a non-const reference to a QVariant.
 
@@ -2909,6 +2914,7 @@ const void *QtPrivate::QVariantTypeCoercer::coerce(const QVariant &value, const 
 /*!
     \class QVariantConstPointer
     \since 6.0
+    \deprecated [6.13] Use QVariant::ConstPointer instead.
     \inmodule QtCore
     \brief Emulated const pointer to QVariant based on a pointer.
 
@@ -2946,6 +2952,7 @@ const QVariant *QVariantConstPointer::operator->() const
 /*!
     \class QVariantPointer
     \since 6.0
+    \deprecated [6.13] Use QVariant::Pointer instead.
     \inmodule QtCore
     \brief QVariantPointer is a template class that emulates a pointer to QVariant based on a pointer.
 
@@ -2973,6 +2980,9 @@ const QVariant *QVariantConstPointer::operator->() const
     Dereferences and returns the pointer. The pointer is expected to also
     implement operator->().
  */
+
+QT_WARNING_POP
+#endif // QT_DEPRECATED_SINCE(6, 13)
 
 /*!
     \class QVariant::ConstReference
