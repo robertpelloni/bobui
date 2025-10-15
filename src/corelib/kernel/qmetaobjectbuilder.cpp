@@ -558,6 +558,8 @@ QMetaPropertyBuilder QMetaObjectBuilder::addProperty(const QMetaProperty &protot
     property.setEnumOrFlag(prototype.isEnumType());
     property.setConstant(prototype.isConstant());
     property.setFinal(prototype.isFinal());
+    property.setVirtual(prototype.isVirtual());
+    property.setOverride(prototype.isOverride());
     property.setRevision(prototype.revision());
     if (prototype.hasNotifySignal()) {
         // Find an existing method for the notify signal, or add a new one.
@@ -2069,6 +2071,32 @@ bool QMetaPropertyBuilder::isFinal() const
 }
 
 /*!
+    Returns \c true if the property is virtual; otherwise returns \c false.
+    The default value is false.
+*/
+bool QMetaPropertyBuilder::isVirtual() const
+{
+    QMetaPropertyBuilderPrivate *d = d_func();
+    if (d)
+        return d->flag(Virtual);
+    else
+        return false;
+}
+
+/*!
+    Returns \c true if the property does override; otherwise returns \c false.
+    The default value is false.
+*/
+bool QMetaPropertyBuilder::isOverride() const
+{
+    QMetaPropertyBuilderPrivate *d = d_func();
+    if (d)
+        return d->flag(Override);
+    else
+        return false;
+}
+
+/*!
  * Returns \c true if the property is an alias.
  * The default value is false
  */
@@ -2237,6 +2265,30 @@ void QMetaPropertyBuilder::setFinal(bool value)
     QMetaPropertyBuilderPrivate *d = d_func();
     if (d)
         d->setFlag(Final, value);
+}
+
+/*!
+    Sets the \c VIRTUAL flag on this property to \a value.
+
+ \sa isFinal()
+*/
+void QMetaPropertyBuilder::setVirtual(bool value)
+{
+    QMetaPropertyBuilderPrivate *d = d_func();
+    if (d)
+        d->setFlag(Virtual, value);
+}
+
+/*!
+    Sets the \c OVERRIDE flag on this property to \a value.
+
+ \sa isOverride()
+*/
+void QMetaPropertyBuilder::setOverride(bool value)
+{
+    QMetaPropertyBuilderPrivate *d = d_func();
+    if (d)
+        d->setFlag(Override, value);
 }
 
 /*!

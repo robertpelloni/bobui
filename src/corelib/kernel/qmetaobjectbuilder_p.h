@@ -214,6 +214,8 @@ public:
     bool isEnumOrFlag() const;
     bool isConstant() const;
     bool isFinal() const;
+    bool isVirtual() const;
+    bool isOverride() const;
     bool isAlias() const;
     bool isBindable() const;
     bool isRequired() const;
@@ -229,6 +231,8 @@ public:
     void setEnumOrFlag(bool value);
     void setConstant(bool value);
     void setFinal(bool value);
+    void setVirtual(bool value);
+    void setOverride(bool value);
     void setAlias(bool value);
     void setBindable(bool value);
     void setRequired(bool value);

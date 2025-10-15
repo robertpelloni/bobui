@@ -77,6 +77,9 @@ class SomethingOfEverything : public QObject
     Q_PROPERTY(SomethingEnum eprop READ eprop)
     Q_PROPERTY(SomethingFlagEnum fprop READ fprop)
     Q_PROPERTY(QLocale::Language language READ language)
+    Q_PROPERTY(QString virtualP READ prop VIRTUAL)
+    // Doesn't override anything, used only to verify MOC handling of OVERRIDE keyword
+    Q_PROPERTY(QString overrideP READ prop OVERRIDE)
 public:
     Q_INVOKABLE SomethingOfEverything() {}
     ~SomethingOfEverything() {}
@@ -577,6 +580,8 @@ void tst_QMetaObjectBuilder::property()
     QVERIFY(!nullProp.isEnumOrFlag());
     QVERIFY(!nullProp.isConstant());
     QVERIFY(!nullProp.isFinal());
+    QVERIFY(!nullProp.isVirtual());
+    QVERIFY(!nullProp.isOverride());
     QCOMPARE(nullProp.index(), 0);
     QCOMPARE(nullProp.revision(), 0);
 
@@ -596,6 +601,8 @@ void tst_QMetaObjectBuilder::property()
     QVERIFY(!prop1.isEnumOrFlag());
     QVERIFY(!prop1.isConstant());
     QVERIFY(!prop1.isFinal());
+    QVERIFY(!prop1.isVirtual());
+    QVERIFY(!prop1.isOverride());
     QCOMPARE(prop1.revision(), 0);
     QCOMPARE(prop1.index(), 0);
     QCOMPARE(builder.propertyCount(), 1);
@@ -616,6 +623,8 @@ void tst_QMetaObjectBuilder::property()
     QVERIFY(!prop2.isEnumOrFlag());
     QVERIFY(!prop2.isConstant());
     QVERIFY(!prop2.isFinal());
+    QVERIFY(!prop2.isVirtual());
+    QVERIFY(!prop2.isOverride());
     QCOMPARE(prop2.revision(), 0);
     QCOMPARE(prop2.index(), 1);
     QCOMPARE(builder.propertyCount(), 2);
@@ -669,6 +678,8 @@ void tst_QMetaObjectBuilder::property()
     QVERIFY(!prop2.isEnumOrFlag());
     QVERIFY(!prop2.isConstant());
     QVERIFY(!prop2.isFinal());
+    QVERIFY(!prop2.isVirtual());
+    QVERIFY(!prop2.isOverride());
     QCOMPARE(prop2.revision(), 0);
 
     // Remove prop1 and check that prop2 becomes index 0.
@@ -686,6 +697,8 @@ void tst_QMetaObjectBuilder::property()
     QVERIFY(!prop2.isEnumOrFlag());
     QVERIFY(!prop2.isConstant());
     QVERIFY(!prop2.isFinal());
+    QVERIFY(!prop2.isVirtual());
+    QVERIFY(!prop2.isOverride());
     QCOMPARE(prop2.revision(), 0);
     QCOMPARE(prop2.index(), 0);
 
@@ -711,6 +724,8 @@ void tst_QMetaObjectBuilder::property()
             prop2.setEnumOrFlag(false); \
             prop2.setConstant(false); \
             prop2.setFinal(false); \
+            prop2.setVirtual(false); \
+            prop2.setOverride(false); \
             prop2.setBindable(false); \
             prop2.setRequired(false); \
         } while (0)
@@ -727,6 +742,8 @@ void tst_QMetaObjectBuilder::property()
             prop2.setEnumOrFlag(true); \
             prop2.setConstant(true); \
             prop2.setFinal(true); \
+            prop2.setVirtual(true); \
+            prop2.setOverride(true); \
             prop2.setBindable(true); \
             prop2.setRequired(true); \
         } while (0)
@@ -742,6 +759,8 @@ void tst_QMetaObjectBuilder::property()
          (prop2.isEnumOrFlag() ? 1 : 0) + \
          (prop2.isConstant() ? 1 : 0) + \
          (prop2.isFinal() ? 1 : 0) + \
+         (prop2.isVirtual() ? 1 : 0) + \
+         (prop2.isOverride() ? 1 : 0) + \
          (prop2.isBindable() ? 1 : 0) + \
          (prop2.isRequired() ? 1 : 0))
 #define CHECK_FLAG(setFunc,isFunc) \
@@ -766,6 +785,8 @@ void tst_QMetaObjectBuilder::property()
     CHECK_FLAG(setConstant, isConstant);
     CHECK_FLAG(setBindable, isBindable);
     CHECK_FLAG(setFinal, isFinal);
+    CHECK_FLAG(setVirtual, isVirtual);
+    CHECK_FLAG(setOverride, isOverride);
     CHECK_FLAG(setRequired, isRequired);
     SET_ALL_FLAGS();
     QCOMPARE(COUNT_FLAGS(), flagCounter);
@@ -782,6 +803,22 @@ void tst_QMetaObjectBuilder::property()
     QCOMPARE(prototypeProp.notifySignal().signature(), QByteArray("propChanged(QString)"));
     QCOMPARE(builder.methodCount(), 1);
     QCOMPARE(builder.method(0).signature(), QByteArray("propChanged(QString)"));
+
+    // virt specifiers
+    { //Q_PROPERTY(int virtualP READ prop VIRTUAL)
+        QMetaProperty prototype = SomethingOfEverything::staticMetaObject.property(7);
+        QMetaPropertyBuilder prototypeProp = builder.addProperty(prototype);
+        QCOMPARE(prototypeProp.isVirtual(), true);
+        QCOMPARE(prototypeProp.isOverride(), false);
+        QCOMPARE(prototypeProp.isFinal(), false);
+    }
+    { // Q_PROPERTY(int overrideP READ prop OVERRIDE)
+        QMetaProperty prototype = SomethingOfEverything::staticMetaObject.property(8);
+        QMetaPropertyBuilder prototypeProp = builder.addProperty(prototype);
+        QCOMPARE(prototypeProp.isVirtual(), false);
+        QCOMPARE(prototypeProp.isOverride(), true);
+        QCOMPARE(prototypeProp.isFinal(), false);
+    }
 }
 
 void tst_QMetaObjectBuilder::variantProperty()
