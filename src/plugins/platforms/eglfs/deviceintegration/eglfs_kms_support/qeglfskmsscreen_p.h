@@ -99,8 +99,6 @@ protected:
     QEglFSKmsInterruptHandler *m_interruptHandler;
 
     bool m_headless;
-
-    static QSet<QEglFSKmsScreen *> s_screens;
 };
 
 QT_END_NAMESPACE
