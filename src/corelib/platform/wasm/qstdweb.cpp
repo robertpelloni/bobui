@@ -177,15 +177,13 @@ Blob Blob::slice(uint32_t begin, uint32_t end) const
 
 ArrayBuffer Blob::arrayBuffer_sync() const
 {
-    QEventLoop loop;
     emscripten::val buffer;
-    qstdweb::Promise::make(m_blob, QStringLiteral("arrayBuffer"), {
-        .thenFunc = [&loop, &buffer](emscripten::val arrayBuffer) {
+    uint32_t handlerIndex = qstdweb::Promise::make(m_blob, QStringLiteral("arrayBuffer"), {
+        .thenFunc = [&buffer](emscripten::val arrayBuffer) {
             buffer = arrayBuffer;
-            loop.quit();
         }
     });
-    loop.exec();
+    Promise::suspendExclusive(handlerIndex);
     return ArrayBuffer(buffer);
 }
 
@@ -443,7 +441,7 @@ EventCallback::EventCallback(emscripten::val element, const std::string &name,
 
 }
 
-void Promise::adoptPromise(emscripten::val promise, PromiseCallbacks callbacks)
+uint32_t Promise::adoptPromise(emscripten::val promise, PromiseCallbacks callbacks)
 {
     Q_ASSERT_X(!!callbacks.catchFunc || !!callbacks.finallyFunc || !!callbacks.thenFunc,
         "Promise::adoptPromise", "must provide at least one callback function");
@@ -499,13 +497,23 @@ void Promise::adoptPromise(emscripten::val promise, PromiseCallbacks callbacks)
 
     promise = promise.call<emscripten::val>("finally",
                                             suspendResume->jsEventHandlerAt(*finallyIndex));
+
+    return *finallyIndex;
+}
+
+void Promise::suspendExclusive(uint32_t handlerIndex)
+{
+    QWasmSuspendResumeControl *suspendResume = QWasmSuspendResumeControl::get();
+    Q_ASSERT(suspendResume);
+    suspendResume->suspendExclusive(handlerIndex);
+    suspendResume->sendPendingEvents();
 }
 
 void Promise::all(std::vector<emscripten::val> promises, PromiseCallbacks callbacks)
 {
     auto arr = emscripten::val::array(promises);
     auto all = val::global("Promise").call<emscripten::val>("all", arr);
-    return adoptPromise(all, callbacks);
+    adoptPromise(all, callbacks);
 }
 
 //  Asyncify and thread blocking: Normally, it's not possible to block the main
