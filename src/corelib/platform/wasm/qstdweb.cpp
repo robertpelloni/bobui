@@ -638,6 +638,249 @@ qint64 Uint8ArrayIODevice::writeData(const char *data, qint64 maxSize)
     return size;
 }
 
+FileSystemWritableFileStreamIODevice::FileSystemWritableFileStreamIODevice(FileSystemWritableFileStream stream)
+    : m_stream(std::move(stream))
+{
+}
+
+bool FileSystemWritableFileStreamIODevice::open(QIODevice::OpenMode mode)
+{
+    if (mode.testFlag(QIODevice::ReadOnly))
+        return false;
+    return QIODevice::open(mode);
+}
+
+void FileSystemWritableFileStreamIODevice::close()
+{
+    if (!isOpen()) {
+        QIODevice::close();
+        return;
+    }
+
+    uint32_t handlerIndex = Promise::make(m_stream.val(), QStringLiteral("close"), {
+        .thenFunc = [](emscripten::val) {
+        }
+    });
+    Promise::suspendExclusive(handlerIndex);
+
+    QIODevice::close();
+}
+
+bool FileSystemWritableFileStreamIODevice::isSequential() const
+{
+    return false;
+}
+
+qint64 FileSystemWritableFileStreamIODevice::size() const
+{
+    return m_size;
+}
+
+bool FileSystemWritableFileStreamIODevice::seek(qint64 pos)
+{
+    bool success = false;
+
+    emscripten::val seekParams = emscripten::val::object();
+    seekParams.set("type", std::string("seek"));
+    seekParams.set("position", static_cast<double>(pos));
+    uint32_t handlerIndex = Promise::make(m_stream.val(), QStringLiteral("write"), {
+        .thenFunc = [&success](emscripten::val) {
+            success = true;
+        },
+        .catchFunc = [](emscripten::val) {
+        }
+    }, seekParams);
+    Promise::suspendExclusive(handlerIndex);
+
+    if (!success)
+        return false;
+
+    return QIODevice::seek(pos);
+}
+
+qint64 FileSystemWritableFileStreamIODevice::readData(char *, qint64)
+{
+    Q_UNREACHABLE();
+}
+
+qint64 FileSystemWritableFileStreamIODevice::writeData(const char *data, qint64 size)
+{
+    bool success = false;
+
+    Uint8Array array = Uint8Array::copyFrom(data, size);
+    uint32_t handlerIndex = Promise::make(m_stream.val(), QStringLiteral("write"), {
+        .thenFunc = [&success](emscripten::val) {
+            success = true;
+        },
+        .catchFunc = [](emscripten::val) {
+        }
+    }, array.val());
+    Promise::suspendExclusive(handlerIndex);
+
+    if (success) {
+        qint64 newPos = pos() + size;
+        m_size = std::max(m_size, newPos);
+        return size;
+    }
+    return -1;
+}
+
+FileSystemWritableFileStream::FileSystemWritableFileStream(const emscripten::val &writableStream)
+    : m_writableStream(writableStream)
+{
+}
+
+emscripten::val FileSystemWritableFileStream::val() const
+{
+    return m_writableStream;
+}
+
+FileSystemFileHandle::FileSystemFileHandle(const emscripten::val &fileHandle)
+    : m_fileHandle(fileHandle)
+{
+}
+
+std::string FileSystemFileHandle::name() const
+{
+    return m_fileHandle["name"].as<std::string>();
+}
+
+std::string FileSystemFileHandle::kind() const
+{
+    return m_fileHandle["kind"].as<std::string>();
+}
+
+emscripten::val FileSystemFileHandle::val() const
+{
+    return m_fileHandle;
+}
+
+FileSystemFileIODevice::FileSystemFileIODevice(FileSystemFileHandle fileHandle)
+    : m_fileHandle(fileHandle)
+{
+}
+
+bool FileSystemFileIODevice::open(QIODevice::OpenMode mode)
+{
+    if (isOpen())
+        return false;
+
+    // Read mode: get the File and create a BlobIODevice
+    if (mode & QIODevice::ReadOnly) {
+        File file;
+        bool success = false;
+
+        uint32_t handlerIndex = Promise::make(m_fileHandle.val(), QStringLiteral("getFile"), {
+            .thenFunc = [&file, &success](emscripten::val fileVal) {
+                file = File(fileVal);
+                success = true;
+            },
+            .catchFunc = [](emscripten::val) {
+            }
+        });
+        Promise::suspendExclusive(handlerIndex);
+
+        if (success) {
+            m_blobDevice = std::make_unique<BlobIODevice>(file.slice(0, file.size()));
+            m_size = file.size();
+
+            if (!m_blobDevice->open(mode))
+                return false;
+        } else {
+            return false;
+        }
+    }
+
+    // Write mode: create a writable stream
+    if (mode & QIODevice::WriteOnly) {
+        FileSystemWritableFileStream writableStream;
+        bool success = false;
+
+        uint32_t handlerIndex = Promise::make(m_fileHandle.val(), QStringLiteral("createWritable"), {
+            .thenFunc = [&writableStream, &success](emscripten::val writable) {
+                writableStream = FileSystemWritableFileStream(writable);
+                success = true;
+            },
+            .catchFunc = [](emscripten::val) {
+            }
+        });
+        Promise::suspendExclusive(handlerIndex);
+
+        if (success) {
+            m_writableDevice = std::make_unique<FileSystemWritableFileStreamIODevice>(writableStream);
+            if (!m_writableDevice->open(mode))
+                return false;
+        } else {
+            return false;
+        }
+    }
+
+    return QIODevice::open(mode);
+}
+
+void FileSystemFileIODevice::close()
+{
+    if (!isOpen()) {
+        QIODevice::close();
+        return;
+    }
+
+    if (m_writableDevice) {
+        m_writableDevice->close();
+        m_writableDevice.reset();
+    }
+    if (m_blobDevice) {
+        m_blobDevice->close();
+        m_blobDevice.reset();
+    }
+
+    QIODevice::close();
+}
+
+bool FileSystemFileIODevice::isSequential() const
+{
+    return false;
+}
+
+qint64 FileSystemFileIODevice::size() const
+{
+    return m_size;
+}
+
+bool FileSystemFileIODevice::seek(qint64 pos)
+{
+    if (m_blobDevice) {
+        if (!m_blobDevice->seek(pos))
+            return false;
+    }
+    if (m_writableDevice) {
+        if (!m_writableDevice->seek(pos))
+            return false;
+    }
+    return QIODevice::seek(pos);
+}
+
+qint64 FileSystemFileIODevice::readData(char *data, qint64 maxSize)
+{
+    if (!m_blobDevice)
+        return -1;
+
+    return m_blobDevice->read(data, maxSize);
+}
+
+qint64 FileSystemFileIODevice::writeData(const char *data, qint64 size)
+{
+    if (!m_writableDevice)
+        return -1;
+
+    qint64 written = m_writableDevice->write(data, size);
+    if (written > 0) {
+        qint64 newPos = pos() + written;
+        m_size = std::max(m_size, newPos);
+    }
+    return written;
+}
+
 } // namespace qstdweb
 
 QT_END_NAMESPACE

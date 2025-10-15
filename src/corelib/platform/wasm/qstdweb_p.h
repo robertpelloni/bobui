@@ -195,6 +195,30 @@ namespace qstdweb {
         emscripten::val m_uint8Array = emscripten::val::undefined();
     };
 
+    class Q_CORE_EXPORT FileSystemWritableFileStream {
+    public:
+        FileSystemWritableFileStream() = default;
+        explicit FileSystemWritableFileStream(const emscripten::val &writableStream);
+        emscripten::val val() const;
+
+    private:
+        emscripten::val m_writableStream = emscripten::val::undefined();
+    };
+
+    class Q_CORE_EXPORT FileSystemFileHandle {
+    public:
+        FileSystemFileHandle() = default;
+        explicit FileSystemFileHandle(const emscripten::val &fileHandle);
+
+        std::string name() const;
+        std::string kind() const;
+
+        emscripten::val val() const;
+
+    private:
+        emscripten::val m_fileHandle = emscripten::val::undefined();
+    };
+
     // EventCallback here for source compatibility; prefer using QWasmEventHandler directly
     class Q_CORE_EXPORT EventCallback : public QWasmEventHandler
     {
@@ -273,6 +297,46 @@ namespace qstdweb {
 
     private:
         Uint8Array m_array;
+    };
+
+    class Q_CORE_EXPORT FileSystemWritableFileStreamIODevice: public QIODevice
+    {
+    public:
+        FileSystemWritableFileStreamIODevice(FileSystemWritableFileStream stream);
+        bool open(QIODevice::OpenMode mode) override;
+        void close() override;
+        bool isSequential() const override;
+        qint64 size() const override;
+        bool seek(qint64 pos) override;
+
+    protected:
+        qint64 readData(char *data, qint64 maxSize) override;
+        qint64 writeData(const char *data, qint64 size) override;
+
+    private:
+        FileSystemWritableFileStream m_stream;
+        qint64 m_size = 0;
+    };
+
+    class Q_CORE_EXPORT FileSystemFileIODevice: public QIODevice
+    {
+    public:
+        FileSystemFileIODevice(FileSystemFileHandle fileHandle);
+        bool open(QIODevice::OpenMode mode) override;
+        void close() override;
+        bool isSequential() const override;
+        qint64 size() const override;
+        bool seek(qint64 pos) override;
+
+    protected:
+        qint64 readData(char *data, qint64 maxSize) override;
+        qint64 writeData(const char *data, qint64 size) override;
+
+    private:
+        FileSystemFileHandle m_fileHandle;
+        std::unique_ptr<BlobIODevice> m_blobDevice;
+        std::unique_ptr<FileSystemWritableFileStreamIODevice> m_writableDevice;
+        qint64 m_size = 0;
     };
 
     inline emscripten::val window()
