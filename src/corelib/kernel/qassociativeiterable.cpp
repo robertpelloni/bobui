@@ -8,6 +8,11 @@
 QT_BEGIN_NAMESPACE
 
 /*!
+    \class QAssociativeIterator
+    \internal
+ */
+
+/*!
     Returns the key this iterator points to.
 */
 QVariant QAssociativeIterator::key() const
@@ -47,6 +52,11 @@ QVariantPointer<QAssociativeIterator> QAssociativeIterator::operator->() const
 {
     return QVariantPointer<QAssociativeIterator>(this);
 }
+
+/*!
+    \class QAssociativeConstIterator
+    \internal
+ */
 
 /*!
     Returns the key this iterator points to.

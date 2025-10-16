@@ -178,6 +178,11 @@ void QSequentialIterable::set(qsizetype idx, const QVariant &value)
 */
 
 /*!
+    \class QSequentialIterator
+    \internal
+ */
+
+/*!
     Returns the current item, converted to a QVariantRef.
 */
 QVariantRef<QSequentialIterator> QSequentialIterator::operator*() const
@@ -192,6 +197,11 @@ QVariantPointer<QSequentialIterator> QSequentialIterator::operator->() const
 {
     return QVariantPointer<QSequentialIterator>(this);
 }
+
+/*!
+    \class QSequentialConstIterator
+    \internal
+ */
 
 /*!
     Returns the current item, converted to a QVariant.
