@@ -16,6 +16,8 @@
 
 #include <qt_windows.h>
 #include <psapi.h>
+#include <io.h>
+#include <fcntl.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -140,6 +142,11 @@ QString QLockFilePrivate::processNameByPid(qint64 pid)
     if (i >= 0)
         name.truncate(i);
     return name;
+}
+
+int QLockFilePrivate::openNewFileDescriptor(const QString &fileName)
+{
+    return _open(fileName.toLocal8Bit().constData(), _O_RDONLY);
 }
 
 void QLockFile::unlock()
