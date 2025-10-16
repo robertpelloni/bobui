@@ -585,6 +585,10 @@ QT_BEGIN_NAMESPACE
 #define GL_PROGRAM                        0x82E2
 #endif
 
+#ifndef GL_DEPTH_CLAMP
+#define GL_DEPTH_CLAMP                    0x864F
+#endif
+
 /*!
     Constructs a new QRhiGles2InitParams.
 
@@ -996,6 +1000,13 @@ bool QRhiGles2::create(QRhi::Flags flags)
         f->glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &caps.maxThreadGroupsY);
         f->glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 2, &caps.maxThreadGroupsZ);
     }
+
+    if (caps.gles)
+        caps.depthClamp = false;
+    else
+        caps.depthClamp = caps.ctxMajor > 3 || (caps.ctxMajor == 3 && caps.ctxMinor >= 2); // Desktop 3.2
+    if (!caps.depthClamp)
+        caps.depthClamp = ctx->hasExtension("GL_EXT_depth_clamp") || ctx->hasExtension("GL_ARB_depth_clamp");
 
     if (caps.gles)
         caps.textureCompareMode = caps.ctxMajor >= 3; // ES 3.0
@@ -4094,6 +4105,15 @@ void QRhiGles2::executeBindGraphicsPipeline(QGles2CommandBuffer *cbD, QGles2Grap
     if (forceUpdate || depthWrite != state.depthWrite) {
         state.depthWrite = depthWrite;
         f->glDepthMask(depthWrite);
+    }
+
+    const bool depthClamp = psD->m_depthClamp;
+    if (caps.depthClamp && (forceUpdate || depthClamp != state.depthClamp)) {
+        state.depthClamp = depthClamp;
+        if (depthClamp)
+            f->glEnable(GL_DEPTH_CLAMP);
+        else
+            f->glDisable(GL_DEPTH_CLAMP);
     }
 
     const GLenum depthFunc = toGlCompareOp(psD->m_depthOp);

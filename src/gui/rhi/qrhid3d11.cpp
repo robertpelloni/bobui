@@ -4673,7 +4673,7 @@ bool QD3D11GraphicsPipeline::create()
     rastDesc.FrontCounterClockwise = m_frontFace == CCW;
     rastDesc.DepthBias = m_depthBias;
     rastDesc.SlopeScaledDepthBias = m_slopeScaledDepthBias;
-    rastDesc.DepthClipEnable = true;
+    rastDesc.DepthClipEnable = m_depthClamp ? FALSE : TRUE;
     rastDesc.ScissorEnable = m_flags.testFlag(UsesScissor);
     rastDesc.MultisampleEnable = rhiD->effectiveSampleDesc(m_sampleCount).Count > 1;
     HRESULT hr = rhiD->dev->CreateRasterizerState(&rastDesc, &rastState);

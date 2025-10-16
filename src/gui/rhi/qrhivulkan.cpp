@@ -949,6 +949,8 @@ bool QRhiVulkan::create(QRhi::Flags flags)
     // elsewhere states that the minimum bufferOffset is 4...
     texbufAlign = qMax<VkDeviceSize>(4, physDevProperties.limits.optimalBufferCopyOffsetAlignment);
 
+    caps.depthClamp = physDevFeatures.depthClamp;
+
     caps.wideLines = physDevFeatures.wideLines;
 
     caps.texture3DSliceAs2D = caps.apiVersion >= QVersionNumber(1, 1);
@@ -8402,6 +8404,8 @@ bool QVkGraphicsPipeline::create()
 
     VkPipelineRasterizationStateCreateInfo rastInfo = {};
     rastInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    if (m_depthClamp && rhiD->caps.depthClamp)
+        rastInfo.depthClampEnable = m_depthClamp;
     rastInfo.cullMode = toVkCullMode(m_cullMode);
     rastInfo.frontFace = toVkFrontFace(m_frontFace);
     if (m_depthBias != 0 || !qFuzzyIsNull(m_slopeScaledDepthBias)) {

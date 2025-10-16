@@ -936,6 +936,7 @@ public:
 
     struct {
         bool compute = false;
+        bool depthClamp = false;
         bool wideLines = false;
         bool debugUtils = false;
         bool vertexAttribDivisor = false;

@@ -593,6 +593,7 @@ struct QGles2CommandBuffer : public QRhiCommandBuffer
         } blend[16];
         bool depthTest;
         bool depthWrite;
+        bool depthClamp;
         GLenum depthFunc;
         bool stencilTest;
         GLuint stencilReadMask;
@@ -1075,6 +1076,7 @@ public:
         uint baseVertex : 1;
         uint compute : 1;
         uint textureCompareMode : 1;
+        uint depthClamp : 1;
         uint properMapBuffer : 1;
         uint nonBaseLevelFramebufferTexture : 1;
         uint texelFetch : 1;

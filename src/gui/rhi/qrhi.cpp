@@ -7186,6 +7186,26 @@ QRhiResource::Type QRhiGraphicsPipeline::resourceType() const
  */
 
 /*!
+    \fn bool QRhiGraphicsPipeline::hasDepthClamp() const
+    \return true if depth clamp is enabled.
+
+    \since 6.11
+ */
+
+/*!
+    \fn void QRhiGraphicsPipeline::setDepthClamp(bool enable)
+
+    Enables depth clamping when \a enable is true. When depth clamping is
+    enabled, primitives that would otherwise be clipped by the near or far
+    clip plane are rasterized and their depth values are clamped to the
+    depth range. When disabled (the default), such primitives are clipped.
+
+    \note This setting is ignored on OpenGL ES.
+
+    \since 6.11
+ */
+
+/*!
     \fn QRhiGraphicsPipeline::CompareOp QRhiGraphicsPipeline::depthOp() const
     \return the depth comparison function.
  */

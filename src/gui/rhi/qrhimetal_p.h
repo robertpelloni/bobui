@@ -299,6 +299,7 @@ struct QMetalCommandBuffer : public QRhiCommandBuffer
     QRhiCommandBuffer::IndexFormat currentIndexFormat;
     int currentCullMode;
     int currentTriangleFillMode;
+    int currentDepthClipMode;
     int currentFrontFaceWinding;
     std::pair<float, float> currentDepthBiasValues;
 
