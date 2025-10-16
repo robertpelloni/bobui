@@ -73,34 +73,34 @@ public:
     ReadSpans &getReadSpans()
     {
         Q_ASSERT(containsReadSpans());
-        return std::get<ReadSpans>(data);
+        return *std::get_if<ReadSpans>(&data);
     }
     const ReadSpans &getReadSpans() const
     {
         Q_ASSERT(containsReadSpans());
-        return std::get<ReadSpans>(data);
+        return *std::get_if<ReadSpans>(&data);
     }
 
     WriteSpans &getWriteSpans()
     {
         Q_ASSERT(containsWriteSpans());
-        return std::get<WriteSpans>(data);
+        return *std::get_if<WriteSpans>(&data);
     }
     const WriteSpans &getWriteSpans() const
     {
         Q_ASSERT(containsWriteSpans());
-        return std::get<WriteSpans>(data);
+        return *std::get_if<WriteSpans>(&data);
     }
 
     QByteArray &getByteArray()
     {
         Q_ASSERT(containsByteArray());
-        return std::get<QByteArray>(data);
+        return *std::get_if<QByteArray>(&data);
     }
     const QByteArray &getByteArray() const
     {
         Q_ASSERT(containsByteArray());
-        return std::get<QByteArray>(data);
+        return *std::get_if<QByteArray>(&data);
     }
 
     // Potentially can be extended to return a QVariant::value<T>().
