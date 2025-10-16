@@ -58,7 +58,7 @@ struct QArrayData
     /// Returns true if sharing took place
     bool ref() noexcept
     {
-        ref_.ref();
+        ref_.refRelaxed(); // suffices for ref-counting
         return true;
     }
 

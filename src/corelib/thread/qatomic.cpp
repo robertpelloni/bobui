@@ -316,6 +316,19 @@
 */
 
 /*!
+    \fn template <typename T> void QAtomicInteger<T>::refRelaxed()
+    \internal
+    Atomically increments the value of this QAtomicInteger.
+
+    In contrast to ref(), this uses relaxed semantics, which is
+    all that is needed for reference counting (together with deref's
+    acquire-release semantics).
+    It also doesn't return anything.
+
+    \sa deref(), operator++()
+*/
+
+/*!
     \fn template <typename T> T QAtomicInteger<T>::operator++()
     \since 5.3
 
