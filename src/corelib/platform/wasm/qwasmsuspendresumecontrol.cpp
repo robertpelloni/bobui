@@ -232,8 +232,8 @@ int QWasmSuspendResumeControl::sendPendingEvents()
         // Grab one event (handler and arg), and call it
         emscripten::val event = pendingEvents.call<val>("shift");
         auto it = m_eventHandlers.find(event["index"].as<int>());
-        Q_ASSERT(it != m_eventHandlers.end());
-        it->second(event["arg"]);
+        if (it != m_eventHandlers.end())
+            it->second(event["arg"]);
         ++count;
     }
     return count;
