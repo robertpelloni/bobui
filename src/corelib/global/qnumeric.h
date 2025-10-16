@@ -27,6 +27,8 @@
 #  include <QtCore/qstdlibdetection.h>
 #  if defined(Q_CC_GNU_ONLY) && (defined(Q_STL_LIBCPP) || Q_CC_GNU_ONLY < 1500)
 //   broken - https://gcc.gnu.org/bugzilla/show_bug.cgi?id=121811
+#  elif defined(Q_OS_FREEBSD) && __FreeBSD_version <= 1500000
+//   broken - https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=290299
 #  else
 #    include <stdckdint.h>
 #  endif
