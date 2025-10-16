@@ -132,6 +132,7 @@ private:
 
     bool m_skipUnsupportedIPv6Tests;
     bool m_workaroundLinuxKernelBug;
+    int loopbackInterface = 0;      // unknown by default
     QList<QHostAddress> allAddresses;
     QHostAddress multicastGroup4, multicastGroup6;
     QList<QHostAddress> linklocalMulticastGroups;
@@ -246,7 +247,23 @@ void tst_QUdpSocket::initTestCase()
     if (!QtNetworkSettings::verifyTestNetworkSettings())
         QSKIP("No network test server available");
 #endif
-    allAddresses = QNetworkInterface::allAddresses();
+
+    allAddresses.clear();
+    for (const QNetworkInterface &iface : QNetworkInterface::allInterfaces()) {
+        if (!iface.flags().testAnyFlags(QNetworkInterface::IsUp))
+            continue;
+        if (iface.flags().testAnyFlags(QNetworkInterface::IsLoopBack))
+            loopbackInterface = iface.index();
+
+        // add this interface's addresses
+        const QList<QNetworkAddressEntry> addresses = iface.addressEntries();
+        for (const QNetworkAddressEntry &entry : addresses) {
+            allAddresses += entry.ip();
+            if (!loopbackInterface && entry.ip().isLoopback())
+                loopbackInterface = iface.index();
+        }
+    }
+
     m_skipUnsupportedIPv6Tests = shouldSkipIpv6TestsForBrokenSetsockopt();
 
     // Create a pair of random multicast groups so we avoid clashing with any
@@ -754,6 +771,11 @@ void tst_QUdpSocket::loop()
         QCOMPARE(paulDatagram.destinationAddress(), makeNonAny(paul.localAddress()));
         QVERIFY(peterDatagram.destinationAddress().isEqual(makeNonAny(peter.localAddress())));
         QVERIFY(paulDatagram.destinationAddress().isEqual(makeNonAny(paul.localAddress())));
+
+        if (loopbackInterface) {
+            QCOMPARE(peterDatagram.interfaceIndex(), loopbackInterface);
+            QCOMPARE(paulDatagram.interfaceIndex(), loopbackInterface);
+        }
     }
 }
 
@@ -820,6 +842,11 @@ void tst_QUdpSocket::ipv6Loop()
     QCOMPARE(paulDatagram.destinationAddress(), makeNonAny(paul.localAddress()));
     QCOMPARE(peterDatagram.destinationPort(), peterPort);
     QCOMPARE(paulDatagram.destinationPort(), paulPort);
+
+    if (loopbackInterface) {
+        QCOMPARE(peterDatagram.interfaceIndex(), loopbackInterface);
+        QCOMPARE(paulDatagram.interfaceIndex(), loopbackInterface);
+    }
 }
 
 void tst_QUdpSocket::dualStack()
@@ -895,6 +922,8 @@ void tst_QUdpSocket::dualStack()
     if (dgram.destinationPort() != -1) {
         QCOMPARE(dgram.destinationPort(), int(v4Sock.localPort()));
         QCOMPARE(dgram.destinationAddress(), makeNonAny(v4Sock.localAddress(), QHostAddress::LocalHost));
+        if (loopbackInterface)
+            QCOMPARE(dgram.interfaceIndex(), loopbackInterface);
     }
 }
 

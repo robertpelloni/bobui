@@ -142,10 +142,6 @@ static void convertToLevelAndOption(QNativeSocketEngine::SocketOption opt,
             level = IPPROTO_IP;
 #ifdef IP_PKTINFO
             n = IP_PKTINFO;
-#elif defined(IP_RECVDSTADDR)
-            // variant found in QNX and FreeBSD; it will get us only the
-            // destination address, not the interface; we need IP_RECVIF for that.
-            n = IP_RECVDSTADDR;
 #endif
         }
         break;
@@ -359,6 +355,18 @@ bool QNativeSocketEnginePrivate::setOption(QNativeSocketEngine::SocketOption opt
     }
     case QNativeSocketEngine::BindExclusively:
         return true;
+
+    case QNativeSocketEngine::ReceivePacketInformation:
+        if (socketProtocol == QAbstractSocket::IPv4Protocol) {
+#if !defined(IP_PKTINFO) && defined(IP_RECVDSTADDR) && defined(IP_RECVIF)
+            // Seen on FreeBSD and QNX. We need both to get the information we want.
+            int r = 0;
+            r += ::setsockopt(socketDescriptor, IPPROTO_IP, IP_RECVDSTADDR, &v, sizeof(v));
+            r += ::setsockopt(socketDescriptor, IPPROTO_IP, IP_RECVIF, &v, sizeof(v));
+            return r == 0;
+#endif
+        }
+        break;
 
     case QNativeSocketEngine::MaxStreamsSocketOption: {
 #ifndef QT_NO_SCTP
