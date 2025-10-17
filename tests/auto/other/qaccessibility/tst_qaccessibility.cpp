@@ -3582,6 +3582,22 @@ void tst_QAccessibility::tableTest()
         tableView->horizontalHeader()->setVisible(false);
 
     }
+    {
+        QTestAccessibility::clearEvents();
+        auto cell0 = table2->cellAt(0, 2);
+        auto cell1 = table2->cellAt(1, 2);
+        auto cell2 = table2->cellAt(2, 2);
+        auto cell3 = table2->cellAt(3, 2);
+        QAccessibleObjectDestroyedEvent event0(cell0);
+        QAccessibleObjectDestroyedEvent event1(cell1);
+        QAccessibleObjectDestroyedEvent event2(cell2);
+        QAccessibleObjectDestroyedEvent event3(cell3);
+        tableView->removeColumn(2);
+        QVERIFY_EVENT(&event0);
+        QVERIFY_EVENT(&event1);
+        QVERIFY_EVENT(&event2);
+        QVERIFY_EVENT(&event3);
+    }
     tvHolder.reset();
     QVERIFY(!QAccessible::accessibleInterface(id00));
     QTestAccessibility::clearEvents();
