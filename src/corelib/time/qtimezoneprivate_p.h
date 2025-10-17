@@ -162,7 +162,7 @@ public:
         QByteArray ianaId;
         qsizetype nameLength = 0;
         QTimeZone::TimeType timeType = QTimeZone::GenericTime;
-        operator bool() { return nameLength > 0; }
+        operator bool() const { return nameLength > 0; }
     };
     static NamePrefixMatch findLongNamePrefix(QStringView text, const QLocale &locale,
                                               std::optional<qint64> atEpochMillis = std::nullopt);
