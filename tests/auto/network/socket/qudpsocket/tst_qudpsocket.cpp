@@ -141,6 +141,16 @@ private:
     QUdpSocket *m_asyncReceiver;
 };
 
+// Unlike for IPv6 with IPV6_PKTINFO, IPv4 has no standardized way of obtaining
+// the packet's destination addresses. This means the destinationAddress() be
+// empty, so whitelist the OSes for which we know we have an implementation.
+// That's currently all of them, which means there probably is code in this
+// test that assumes this works without checking this variable.
+//
+// Note: this applies to single-stack operations; dual stack implementations
+// appear to be buggy or not present at all in some OSes.
+static constexpr bool HasWorkingIPv4DestinationAddress = true;
+
 #ifdef SHOULD_CHECK_SYSCALL_SUPPORT
 bool tst_QUdpSocket::ipv6SetsockoptionMissing(int level, int optname)
 {
@@ -585,12 +595,12 @@ void tst_QUdpSocket::broadcasting()
                     QVERIFY2(allAddresses.contains(dgram.senderAddress()),
                              dgram.senderAddress().toString().toLatin1());
                 QCOMPARE(dgram.senderPort(), int(broadcastSocket.localPort()));
-                if (!dgram.destinationAddress().isNull()) {
+                if (HasWorkingIPv4DestinationAddress) {
                     QVERIFY2(dgram.destinationAddress() == QHostAddress::Broadcast
                             || broadcastAddresses.contains(dgram.destinationAddress()),
                              dgram.destinationAddress().toString().toLatin1());
-                    QCOMPARE(dgram.destinationPort(), int(serverSocket.localPort()));
                 }
+                QCOMPARE(dgram.destinationPort(), int(serverSocket.localPort()));
 
                 int ttl = dgram.hopLimit();
                 if (ttl != -1)
@@ -755,15 +765,7 @@ void tst_QUdpSocket::loop()
     QCOMPARE(paulDatagram.senderPort(), int(peter.localPort()));
     QCOMPARE(peterDatagram.senderPort(), int(paul.localPort()));
 
-    // Unlike for IPv6 with IPV6_PKTINFO, IPv4 has no standardized way of
-    // obtaining the packet's destination addresses. The destinationAddress and
-    // destinationPort calls could fail, so whitelist the OSes for which we
-    // know we have an implementation.
-#if defined(Q_OS_LINUX) || defined(Q_OS_BSD4) || defined(Q_OS_WIN)
-    QVERIFY(peterDatagram.destinationPort() != -1);
-    QVERIFY(paulDatagram.destinationPort() != -1);
-#endif
-    if (peterDatagram.destinationPort() == -1) {
+    if (!HasWorkingIPv4DestinationAddress) {
         QCOMPARE(peterDatagram.destinationAddress().protocol(), QAbstractSocket::UnknownNetworkLayerProtocol);
         QCOMPARE(paulDatagram.destinationAddress().protocol(), QAbstractSocket::UnknownNetworkLayerProtocol);
     } else {
@@ -877,6 +879,8 @@ void tst_QUdpSocket::dualStack()
         QCOMPARE(dgram.destinationPort(), int(dualSock.localPort()));
         QVERIFY(dgram.destinationAddress().isEqual(makeNonAny(dualSock.localAddress(), QHostAddress::LocalHost)));
     } else {
+        // Observed on QNX: the IPV6_PKTINFO ancillary data appears to be
+        // missing if the sender is IPv4.
         qInfo("Getting IPv4 destination address failed.");
     }
 
@@ -916,11 +920,8 @@ void tst_QUdpSocket::dualStack()
     QCOMPARE(dgram.data(), dualData);
     QCOMPARE(dgram.senderPort(), int(dualSock.localPort()));
     QCOMPARE(dgram.senderAddress(), makeNonAny(dualSock.localAddress(), QHostAddress::LocalHost));
-#if defined(Q_OS_LINUX) || defined(Q_OS_BSD4) || defined(Q_OS_WIN)
-    QVERIFY(dgram.destinationPort() != -1);
-#endif
-    if (dgram.destinationPort() != -1) {
-        QCOMPARE(dgram.destinationPort(), int(v4Sock.localPort()));
+    QCOMPARE(dgram.destinationPort(), int(v4Sock.localPort()));
+    if (HasWorkingIPv4DestinationAddress) {
         QCOMPARE(dgram.destinationAddress(), makeNonAny(v4Sock.localAddress(), QHostAddress::LocalHost));
         if (loopbackInterface)
             QCOMPARE(dgram.interfaceIndex(), loopbackInterface);
@@ -1777,10 +1778,10 @@ void tst_QUdpSocket::multicast()
         QVERIFY2(allAddresses.contains(dgram.senderAddress()),
                 dgram.senderAddress().toString().toLatin1());
         QCOMPARE(dgram.senderPort(), int(sender.localPort()));
-        if (!dgram.destinationAddress().isNull()) {
+        if (HasWorkingIPv4DestinationAddress) {
             QCOMPARE(dgram.destinationAddress(), groupAddress);
-            QCOMPARE(dgram.destinationPort(), int(receiver.localPort()));
         }
+        QCOMPARE(dgram.destinationPort(), int(receiver.localPort()));
 
         int ttl = dgram.hopLimit();
         if (ttl != -1)
@@ -1991,19 +1992,12 @@ void tst_QUdpSocket::linkLocalIPv4()
         QCOMPARE(dgram.data().size(), testData.size());
         QCOMPARE(dgram.data(), testData);
 
-        // Unlike for IPv6 with IPV6_PKTINFO, IPv4 has no standardized way of
-        // obtaining the packet's destination addresses. The destinationAddress
-        // and destinationPort calls could fail, so whitelist the OSes we know
-        // we have an implementation.
-#if defined(Q_OS_LINUX) || defined(Q_OS_BSD4) || defined(Q_OS_WIN)
-        QVERIFY(dgram.destinationPort() != -1);
-#endif
-        if (dgram.destinationPort() == -1) {
+        if (!HasWorkingIPv4DestinationAddress) {
             QCOMPARE(dgram.destinationAddress().protocol(), QAbstractSocket::UnknownNetworkLayerProtocol);
         } else {
             QCOMPARE(dgram.destinationAddress(), s->localAddress());
-            QCOMPARE(dgram.destinationPort(), int(neutral.localPort()));
         }
+        QCOMPARE(dgram.destinationPort(), int(neutral.localPort()));
 
         QVERIFY(neutral.writeDatagram(dgram.makeReply(testData)));
         QVERIFY2(s->waitForReadyRead(10000), QtNetworkSettings::msgSocketError(*s).constData());
