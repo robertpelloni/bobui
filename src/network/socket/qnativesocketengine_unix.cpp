@@ -33,7 +33,7 @@
 #include <sys/socket.h>
 #include <netinet/sctp.h>
 #endif
-#ifdef Q_OS_BSD4
+#ifdef AF_LINK
 #  include <net/if_dl.h>
 #endif
 
@@ -923,7 +923,7 @@ qint64 QNativeSocketEnginePrivate::nativeReceiveDatagram(char *data, qint64 maxS
 {
     // we use quintptr to force the alignment
     quintptr cbuf[(CMSG_SPACE(sizeof(struct in6_pktinfo)) + CMSG_SPACE(sizeof(int))
-#if !defined(IP_PKTINFO) && defined(IP_RECVIF) && defined(Q_OS_BSD4)
+#if !defined(IP_PKTINFO) && defined(IP_RECVIF) && defined(AF_LINK)
                    + CMSG_SPACE(sizeof(sockaddr_dl))
 #endif
 #ifndef QT_NO_SCTP
@@ -1015,7 +1015,7 @@ qint64 QNativeSocketEnginePrivate::nativeReceiveDatagram(char *data, qint64 maxS
                 header->destinationAddress.setAddress(ntohl(addr->s_addr));
             }
 #  endif
-#  if defined(IP_RECVIF) && defined(Q_OS_BSD4)
+#  if defined(IP_RECVIF) && defined(AF_LINK)
             if (cmsgptr->cmsg_level == IPPROTO_IP && cmsgptr->cmsg_type == IP_RECVIF
                     && cmsgptr->cmsg_len >= CMSG_LEN(sizeof(sockaddr_dl))) {
                 sockaddr_dl *sdl = reinterpret_cast<sockaddr_dl *>(CMSG_DATA(cmsgptr));
