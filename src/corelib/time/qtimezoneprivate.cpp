@@ -955,7 +955,7 @@ QTimeZonePrivate::findLongNamePrefix(QStringView text, const QLocale &locale,
 }
 
 QTimeZonePrivate::NamePrefixMatch
-QTimeZonePrivate::findNarrowOffsetPrefix(QStringView, const QLocale &, QLocale::FormatType)
+QTimeZonePrivate::findNarrowOffsetPrefix(QStringView, const QLocale &)
 {
     // Seemingly only needed in the timezonelocale case.
     return {};

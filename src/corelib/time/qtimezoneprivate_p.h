@@ -166,8 +166,7 @@ public:
     };
     static NamePrefixMatch findLongNamePrefix(QStringView text, const QLocale &locale,
                                               std::optional<qint64> atEpochMillis = std::nullopt);
-    static NamePrefixMatch findNarrowOffsetPrefix(QStringView text, const QLocale &locale,
-                                                  QLocale::FormatType scale);
+    static NamePrefixMatch findNarrowOffsetPrefix(QStringView text, const QLocale &locale);
     // Match the unlocalized long form of QUtcTimeZonePrivate:
     static NamePrefixMatch findLongUtcPrefix(QStringView text);
 

@@ -1245,7 +1245,7 @@ static auto findZoneByLongName(QStringView str, const QLocale &locale, const QDa
     // (We don't want offset format to match 'tttt', so do need to limit this.)
     // The final fall-back for QTZL's localeName() is a zoneOffsetFormat(,,NarrowFormat,,):
     if (!pfx)
-        pfx = QTimeZonePrivate::findNarrowOffsetPrefix(str, locale, QLocale::NarrowFormat);
+        pfx = QTimeZonePrivate::findNarrowOffsetPrefix(str, locale);
     if (!pfx)
         pfx = QTimeZonePrivate::findLongUtcPrefix(str);
     if (pfx) {

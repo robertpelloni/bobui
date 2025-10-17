@@ -980,10 +980,10 @@ QTimeZonePrivate::findLongNamePrefix(QStringView text, const QLocale &locale,
 }
 
 QTimeZonePrivate::NamePrefixMatch
-QTimeZonePrivate::findNarrowOffsetPrefix(QStringView text, const QLocale &locale,
-                                         QLocale::FormatType scale)
+QTimeZonePrivate::findNarrowOffsetPrefix(QStringView text, const QLocale &locale)
 {
-    if (auto match = matchOffsetFormat(text, locale, locale.d->m_index, scale)) {
+    // NB: uses QLocale::FormatType with non-canonical meaning !
+    if (auto match = matchOffsetFormat(text, locale, locale.d->m_index, QLocale::NarrowFormat)) {
         // Check offset is sane:
         if (QTimeZone::MinUtcOffsetSecs <= match.offset
             && match.offset <= QTimeZone::MaxUtcOffsetSecs) {
