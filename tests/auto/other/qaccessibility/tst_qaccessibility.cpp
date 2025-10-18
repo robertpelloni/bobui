@@ -1793,6 +1793,15 @@ void tst_QAccessibility::spinBoxTest()
     QAccessibleTextInterface *textIface = interface->textInterface();
     QVERIFY(textIface);
 
+    QVERIFY(!spinBox->isReadOnly());
+    QVERIFY(interface->state().editable);
+    QVERIFY(!interface->state().readOnly);
+
+    spinBox->setReadOnly(true);
+    QVERIFY(spinBox->isReadOnly());
+    QVERIFY(!interface->state().editable);
+    QVERIFY(interface->state().readOnly);
+
     QTestAccessibility::clearEvents();
 }
 
