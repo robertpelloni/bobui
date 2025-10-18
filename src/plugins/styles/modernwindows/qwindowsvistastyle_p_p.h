@@ -189,11 +189,13 @@ public:
     QString key() const override;
     QIconEngine *clone() const override;
     QString string() const override;
+    void setScale(double scale);
     void paint(QPainter *painter, const QRect &rect, QIcon::Mode mode, QIcon::State state) override;
 
 protected:
     QFont m_font;
     QChar m_glyph;
+    double m_scale = 0.7;
 };
 
 QT_END_NAMESPACE

@@ -4968,6 +4968,11 @@ QString WinFontIconEngine::string() const
     return m_glyph;
 }
 
+void WinFontIconEngine::setScale(double scale)
+{
+    m_scale = scale;
+}
+
 void WinFontIconEngine::paint(QPainter *painter, const QRect &rect, QIcon::Mode mode,
                               QIcon::State)
 {
@@ -4994,7 +4999,7 @@ void WinFontIconEngine::paint(QPainter *painter, const QRect &rect, QIcon::Mode 
         break;
     }
     QFont renderFont(m_font);
-    renderFont.setPixelSize(rect.height() * 0.7f);
+    renderFont.setPixelSize(rect.height() * m_scale);
     painter->save();
     painter->setFont(renderFont);
     painter->setPen(color);

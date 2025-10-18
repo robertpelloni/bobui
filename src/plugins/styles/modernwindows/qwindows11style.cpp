@@ -107,6 +107,7 @@ inline ControlState calcControlState(const QStyleOption *option)
 #define ChromeRestore     u"\uE923"_s
 #define ChromeClose       u"\uE8BB"_s
 
+#define More              u"\uE712"_s
 #define Help              u"\uE897"_s
 
 template <typename R, typename P, typename B>
@@ -2223,6 +2224,14 @@ int QWindows11Style::pixelMetric(PixelMetric metric, const QStyleOption *option,
     case QStyle::PM_TitleBarButtonSize:
         res = 32;
         break;
+#if QT_CONFIG(toolbar)
+    case PM_ToolBarExtensionExtent:
+        res = int(QStyleHelper::dpiScaled(32., option));
+        break;
+    case PM_ToolBarHandleExtent:
+        res = int(QStyleHelper::dpiScaled(8., option));
+        break;
+#endif // QT_CONFIG(toolbar)
     case QStyle::PM_ScrollBarExtent:
         res = 12;
         break;
@@ -2459,6 +2468,44 @@ void QWindows11Style::polish(QPalette& result)
     d->m_titleBarMaxIcon = QIcon();
     d->m_titleBarCloseIcon = QIcon();
     d->m_titleBarNormalIcon = QIcon();
+    d->m_toolbarExtensionButton = QIcon();
+}
+
+QPixmap QWindows11Style::standardPixmap(StandardPixmap standardPixmap,
+                                        const QStyleOption *option,
+                                        const QWidget *widget) const
+{
+    switch (standardPixmap) {
+    case SP_ToolBarHorizontalExtensionButton:
+    case SP_ToolBarVerticalExtensionButton: {
+        const int size = proxy()->pixelMetric(PM_ToolBarExtensionExtent, option, widget);
+        return standardIcon(standardPixmap, option, widget).pixmap(size);
+    }
+    default:
+        break;
+    }
+    return QWindowsVistaStyle::standardPixmap(standardPixmap, option, widget);
+}
+
+QIcon QWindows11Style::standardIcon(StandardPixmap standardIcon,
+                                    const QStyleOption *option,
+                                    const QWidget *widget) const
+{
+    auto *d = const_cast<QWindows11StylePrivate*>(d_func());
+    switch (standardIcon) {
+    case SP_ToolBarHorizontalExtensionButton:
+    case SP_ToolBarVerticalExtensionButton: {
+        if (d->m_toolbarExtensionButton.isNull()) {
+            auto e = new WinFontIconEngine(More.at(0), d->assetFont);
+            e->setScale(1.0);
+            d->m_toolbarExtensionButton = QIcon(e);
+        }
+        return d->m_toolbarExtensionButton;
+    }
+    default:
+        break;
+    }
+    return QWindowsVistaStyle::standardIcon(standardIcon, option, widget);
 }
 
 QColor QWindows11Style::calculateAccentColor(const QStyleOption *option) const

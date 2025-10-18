@@ -85,6 +85,10 @@ public:
                     const QWidget *widget = nullptr) const override;
     void polish(QPalette &pal) override;
     void unpolish(QWidget *widget) override;
+    QPixmap standardPixmap(StandardPixmap standardPixmap, const QStyleOption *option = nullptr,
+                           const QWidget *widget = nullptr) const override;
+    QIcon standardIcon(StandardPixmap standardIcon, const QStyleOption *option = nullptr,
+                       const QWidget *widget = nullptr) const override;
 protected:
     QWindows11Style(QWindows11StylePrivate &dd);
 
@@ -114,6 +118,9 @@ private:
 
 class QWindows11StylePrivate : public QWindowsVistaStylePrivate {
     Q_DECLARE_PUBLIC(QWindows11Style)
+
+protected:
+    QIcon m_toolbarExtensionButton;
 };
 
 QT_END_NAMESPACE
