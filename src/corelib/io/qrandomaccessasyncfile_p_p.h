@@ -39,7 +39,7 @@ class QRandomAccessAsyncFilePrivate : public QObjectPrivate
     Q_DECLARE_PUBLIC(QRandomAccessAsyncFile)
     Q_DISABLE_COPY_MOVE(QRandomAccessAsyncFilePrivate)
 public:
-    QRandomAccessAsyncFilePrivate(decltype(QObjectPrivateVersion) version = QObjectPrivateVersion);
+    QRandomAccessAsyncFilePrivate();
     ~QRandomAccessAsyncFilePrivate() override;
 
     static QRandomAccessAsyncFilePrivate *get(QRandomAccessAsyncFile *file)

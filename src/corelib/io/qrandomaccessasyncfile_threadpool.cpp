@@ -64,8 +64,8 @@ static SharedThreadPool asyncFileThreadPool;
 
 } // anonymous namespace
 
-QRandomAccessAsyncFilePrivate::QRandomAccessAsyncFilePrivate(decltype(QObjectPrivateVersion) version) :
-    QObjectPrivate(version)
+QRandomAccessAsyncFilePrivate::QRandomAccessAsyncFilePrivate() :
+    QObjectPrivate()
 {
     asyncFileThreadPool.ref();
 }
