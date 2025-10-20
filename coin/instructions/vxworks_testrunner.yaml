@@ -7,7 +7,7 @@ instructions:
       #!/bin/bash
 
       # Seconds of serial silence before triggering an SSH probe; also the cadence for repeated probes
-      EMPTY_READ_GRACE=20
+      EMPTY_READ_GRACE=60
 
       # Maximum time (s) with no output while waiting; exceeding this triggers a timeout failure
       MAX_WAIT_TIME=700
@@ -15,8 +15,10 @@ instructions:
       quoted_args=`python3 -c 'import sys, shlex; print(shlex.join(sys.argv[2:]))' "$@"`
 
       ssh_cmd() {
-      LD_LIBRARY_PATH=/usr/lib ssh -n -q \
+      LD_LIBRARY_PATH=/usr/lib ssh -n -q -T \
           -o BatchMode=yes -o ConnectTimeout=1 -o HostKeyAlgorithms=+ssh-rsa \
+          -o PreferredAuthentications=publickey \
+          -o NumberOfPasswordPrompts=0 \
           ${VXWORKS_SSH} "$@" </dev/null
       }
 
@@ -90,13 +92,12 @@ instructions:
           echo $line
       done < /tmp/guest.out
 
-      echo "cmd cd $testdir" > /tmp/guest.in
-      sleep 1
+      echo "cmd cd $testdir; echo done" > /tmp/guest.in
 
       # Empty line before result of cd
       read -t 1 line_cmd </tmp/guest.out
 
-      if read -t 5 cdline </tmp/guest.out; then
+      if read -t 1 cdline </tmp/guest.out; then
           cdline_clean=$(printf '%s' "$cdline" | tr -d '\r')
           if printf '%s' "$cdline_clean" | /usr/bin/grep -Eq 'error\s*='; then
               printf 'entering %s: %s\n' "$testdir" "$cdline_clean"
@@ -139,10 +140,6 @@ instructions:
               read -t 1 line</tmp/guest.out
               echo "$line"
               exitcode=$(echo "$line" | sed -nr 's/qtest_in_vxworks_complete: (-?[0-9]+)/\1/gp' | tr -d '\r')
-              probe="$(ssh_probe_status)"
-              if [[ "$probe" != "FINISHED" ]]; then
-                  echo "final SSH probe: ${probe}"
-              fi
               exit $exitcode
           fi
 
