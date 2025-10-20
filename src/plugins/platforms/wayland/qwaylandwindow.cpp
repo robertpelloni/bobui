@@ -62,6 +62,7 @@ QWaylandWindow::QWaylandWindow(QWindow *window, QWaylandDisplay *display)
             mFrameCallbackTimeout = frameCallbackTimeout;
     }
 
+    mSurfaceFormat.setColorSpace(QColorSpace{});
     initializeWlSurface();
     mFlags = window->flags();
 
@@ -214,7 +215,7 @@ void QWaylandWindow::setPendingImageDescription()
     mColorManagementSurface->setImageDescription(mPendingImageDescription.get());
 }
 
-void QWaylandWindow::initializeWlSurface()
+void QWaylandWindow::initializeWlSurface(bool colorSpace)
 {
     Q_ASSERT(!mSurface);
     {
@@ -242,6 +243,13 @@ void QWaylandWindow::initializeWlSurface()
         mViewport.reset(new QWaylandViewport(display()->createViewport(this)));
     }
 
+    if (colorSpace) {
+        initializeColorSpace();
+    }
+}
+
+void QWaylandWindow::initializeColorSpace()
+{
     QColorSpace requestedColorSpace = window()->requestedFormat().colorSpace();
     if (requestedColorSpace != QColorSpace{} && mDisplay->colorManager()) {
         // TODO try a similar (same primaries + supported transfer function) color space if this fails?
