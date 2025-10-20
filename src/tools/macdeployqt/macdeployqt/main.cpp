@@ -77,7 +77,7 @@ int main(int argc, char **argv)
     QStringList qmlDirs;
     QStringList qmlImportPaths;
     extern bool runCodesign;
-    extern QString codesignIdentiy;
+    QString codesignIdentity = QStringLiteral("-");
     extern bool hardenedRuntime;
     bool noCodesignExplicit = false;
     extern bool appstoreCompliant;
@@ -166,7 +166,7 @@ int main(int argc, char **argv)
                 return 1;
             } else {
                 runCodesign = true;
-                codesignIdentiy = argument.mid(index+1);
+                codesignIdentity = argument.mid(index + 1);
             }
         } else if (argument.startsWith(QByteArray("-sign-for-notarization"))) {
             LogDebug() << "Argument found:" << argument;
@@ -182,7 +182,7 @@ int main(int argc, char **argv)
                 runCodesign = true;
                 hardenedRuntime = true;
                 secureTimestamp = true;
-                codesignIdentiy = argument.mid(index+1);
+                codesignIdentity = argument.mid(index + 1);
             }
         } else if (argument.startsWith(QByteArray("-hardened-runtime"))) {
             LogDebug() << "Argument found:" << argument;
@@ -273,7 +273,7 @@ int main(int argc, char **argv)
         stripAppBinary(appBundlePath);
 
     if (runCodesign)
-        codesign(codesignIdentiy, appBundlePath);
+        codesign(codesignIdentity, appBundlePath);
 
     if (dmg) {
         LogNormal();
