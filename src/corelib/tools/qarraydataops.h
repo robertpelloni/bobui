@@ -916,8 +916,10 @@ public:
     void assign(InputIterator first, InputIterator last, Projection proj = {})
     {
         // This function only provides the basic exception guarantee.
-        using Category = typename std::iterator_traits<InputIterator>::iterator_category;
-        constexpr bool IsFwdIt = std::is_convertible_v<Category, std::forward_iterator_tag>;
+        constexpr bool IsFwdIt = std::is_convertible_v<
+                typename std::iterator_traits<InputIterator>::iterator_category,
+                std::forward_iterator_tag>;
+        constexpr bool IsIdentity = std::is_same_v<Projection, q20::identity>;
 
         const qsizetype n = IsFwdIt ? std::distance(first, last) : 0;
         bool undoPrependOptimization = true;
@@ -993,61 +995,32 @@ public:
             }
         }
 
-        assign_impl(first, last, dst, dend, proj, Category{});
-    }
-
-    template <typename InputIterator, typename Projection>
-    void assign_impl(InputIterator first, InputIterator last, T *dst, T *dend, Projection proj,
-                     std::input_iterator_tag)
-    {
         while (true) {
             if (first == last) {    // ran out of elements to assign
                 std::destroy(dst, dend);
                 break;
             }
             if (dst == dend) {      // ran out of existing elements to overwrite
-                do {
-                    this->emplace(this->size, std::invoke(proj, *first));
-                } while (++first != last);
-                return;         // size() is already correct (and dst invalidated)!
+                if constexpr (IsFwdIt && IsIdentity) {
+                    dst = std::uninitialized_copy(first, last, dst);
+                    break;
+                } else if constexpr (IsFwdIt && !IsIdentity
+                           && std::is_nothrow_constructible_v<T, decltype(std::invoke(proj, *first))>) {
+                    for (; first != last; ++dst, ++first)   // uninitialized_copy with projection
+                        q20::construct_at(dst, std::invoke(proj, *first));
+                    break;
+                } else {
+                    do {
+                        this->emplace(this->size, std::invoke(proj, *first));
+                    } while (++first != last);
+                    return;         // size() is already correct (and dst invalidated)!
+                }
             }
             *dst = std::invoke(proj, *first);    // overwrite existing element
             ++dst;
             ++first;
         }
         this->size = dst - this->begin();
-    }
-
-    template <typename InputIterator, typename Projection>
-    void assign_impl(InputIterator first, InputIterator last, T *dst, T *, Projection proj,
-                     std::forward_iterator_tag)
-    {
-        constexpr bool IsIdentity = std::is_same_v<Projection, q20::identity>;
-        const qsizetype n = std::distance(first, last);
-        if constexpr (IsIdentity && !QTypeInfo<T>::isComplex) {
-            // For non-complex types, we prefer a single std::copy() -> memcpy()
-            // call. We can do that because either the default constructor is
-            // trivial (so the lifetime has started) or the copy constructor is
-            // (and won't care what the stored value is).
-            std::copy(first, last, dst);
-        } else {
-            // overwrite existing elements and create new
-            qsizetype i = 0;
-            qsizetype size = this->size;
-            for ( ; i < size; ++i) {
-                *dst = std::invoke(proj, *first);    // overwrite existing element
-                ++first;
-                ++dst;
-            }
-            for ( ; i < n; ++i) {
-                q20::construct_at(dst, std::invoke(proj, *first));
-                ++first;
-                ++dst;
-            }
-            if (i < size)
-                std::destroy_n(dst, size - i);
-        }
-        this->size = n;
     }
 };
 
