@@ -479,12 +479,7 @@ function(qt6_android_add_apk_target target)
     endif()
     # Use genex to get path to the deployment settings, the above check only to confirm that
     # qt6_android_add_apk_target is called on an android executable target.
-    string(JOIN "" deployment_file
-        "$<GENEX_EVAL:"
-            "$<TARGET_PROPERTY:${target},QT_ANDROID_DEPLOYMENT_SETTINGS_FILE>"
-        ">"
-    )
-
+    _qt_internal_android_get_deployment_settings_file_genex(deployment_file)
     _qt_internal_android_get_deployment_tool(deployment_tool)
 
     # No need to use genex for the BINARY_DIR since it's read-only.
@@ -1820,12 +1815,7 @@ function(_qt_internal_android_add_aux_deployment target)
     cmake_parse_arguments(arg "" "OUTPUT_TARGET_NAME;DEPLOYMENT_DIRECTORY" "EXTRA_ARGS" ${ARGN})
     _qt_internal_validate_all_args_are_parsed(arg)
 
-    string(JOIN "" deployment_file
-        "$<GENEX_EVAL:"
-            "$<TARGET_PROPERTY:${target},QT_ANDROID_DEPLOYMENT_SETTINGS_FILE>"
-        ">"
-    )
-
+    _qt_internal_android_get_deployment_settings_file_genex(deployment_file)
     _qt_internal_android_get_deployment_tool(deployment_tool)
     if(arg_DEPLOYMENT_DIRECTORY)
         set(deployment_dir "${arg_DEPLOYMENT_DIRECTORY}")
@@ -2043,6 +2033,17 @@ function(_qt_internal_android_find_asan_wrap_sh out_wrap_sh_path)
         message(WARNING "Address Sanitizer: the wrap script not found at ${ndk_wrap_sh_path}.")
         set(${out_wrap_sh_path} "" PARENT_SCOPE)
     endif()
+endfunction()
+
+# Returns path to the android deployment settings
+function(_qt_internal_android_get_deployment_settings_file_genex out_var)
+    string(JOIN "" deployment_file
+        "$<GENEX_EVAL:"
+            "$<TARGET_PROPERTY:${target},QT_ANDROID_DEPLOYMENT_SETTINGS_FILE>"
+        ">"
+    )
+
+    set(${out_var} "${deployment_file}" PARENT_SCOPE)
 endfunction()
 
 set(QT_INTERNAL_ANDROID_TARGET_BUILD_DIR_SUPPORT ON CACHE INTERNAL
