@@ -916,10 +916,8 @@ public:
     void assign(InputIterator first, InputIterator last, Projection proj = {})
     {
         // This function only provides the basic exception guarantee.
-        constexpr bool IsFwdIt = std::is_convertible_v<
-                typename std::iterator_traits<InputIterator>::iterator_category,
-                std::forward_iterator_tag>;
-        constexpr bool IsIdentity = std::is_same_v<Projection, q20::identity>;
+        using Category = typename std::iterator_traits<InputIterator>::iterator_category;
+        constexpr bool IsFwdIt = std::is_convertible_v<Category, std::forward_iterator_tag>;
 
         const qsizetype n = IsFwdIt ? std::distance(first, last) : 0;
         bool undoPrependOptimization = true;
@@ -957,19 +955,20 @@ public:
         const auto dend = this->end();
         T *dst = this->begin();
         T *capacityBegin = dst;
-        qsizetype offset = 0;
         if (undoPrependOptimization) {
             capacityBegin = Data::dataStart(this->d, alignof(typename Data::AlignmentDummy));
-            offset = dst - capacityBegin;
+            this->setBegin(capacityBegin); // undo prepend optimization
         }
-        if constexpr (!QTypeInfo<T>::isComplex) {
-            this->setBegin(capacityBegin); // undo prepend optimization
-            dst = capacityBegin;
 
-            // there's nothing to destroy or overwrite
-        } else if (offset) { // avoids dead stores
+        assign_impl(first, last, capacityBegin, dst, dend, proj, Category{});
+    }
+
+    template <typename InputIterator, typename Projection>
+    void assign_impl(InputIterator first, InputIterator last, T *capacityBegin, T *dst, T *dend,
+                     Projection proj, std::input_iterator_tag)
+    {
+        if (qsizetype offset = dst - capacityBegin) {
             T *prependBufferEnd = dst;
-            this->setBegin(capacityBegin); // undo prepend optimization
             dst = capacityBegin;
 
             // By construction, the following loop is nothrow!
@@ -994,33 +993,70 @@ public:
                 ++first;
             }
         }
-
         while (true) {
             if (first == last) {    // ran out of elements to assign
                 std::destroy(dst, dend);
                 break;
             }
             if (dst == dend) {      // ran out of existing elements to overwrite
-                if constexpr (IsFwdIt && IsIdentity) {
-                    dst = std::uninitialized_copy(first, last, dst);
-                    break;
-                } else if constexpr (IsFwdIt && !IsIdentity
-                           && std::is_nothrow_constructible_v<T, decltype(std::invoke(proj, *first))>) {
-                    for (; first != last; ++dst, ++first)   // uninitialized_copy with projection
-                        q20::construct_at(dst, std::invoke(proj, *first));
-                    break;
-                } else {
-                    do {
-                        this->emplace(this->size, std::invoke(proj, *first));
-                    } while (++first != last);
-                    return;         // size() is already correct (and dst invalidated)!
-                }
+                do {
+                    this->emplace(this->size, std::invoke(proj, *first));
+                } while (++first != last);
+                return;         // size() is already correct (and dst invalidated)!
             }
             *dst = std::invoke(proj, *first);    // overwrite existing element
             ++dst;
             ++first;
         }
         this->size = dst - this->begin();
+    }
+
+    template <typename InputIterator, typename Projection>
+    void assign_impl(InputIterator first, InputIterator last, T *capacityBegin, T *dst, T *dend,
+                     Projection proj, std::forward_iterator_tag)
+    {
+        constexpr bool IsIdentity = std::is_same_v<Projection, q20::identity>;
+        const qsizetype n = std::distance(first, last);
+        if constexpr (IsIdentity && !QTypeInfo<T>::isComplex) {
+            // For non-complex types, we prefer a single std::copy() -> memcpy()
+            // call. We can do that because either the default constructor is
+            // trivial (so the lifetime has started) or the copy constructor is
+            // (and won't care what the stored value is).
+            std::copy(first, last, capacityBegin);
+        } else {
+            // There are two possibilities:
+            // 1) fewer elements than the current allocated space
+            //    | prepend buffer | array |  destroy  |
+            // 2) more elements than the current allocated space
+            //    | prepend buffer | array | construct |
+            //
+            // Both the prepend buffer and the current array may be empty.
+
+            // construct elements in the prepend buffer
+            while (first != last && capacityBegin != dst) {
+                q20::construct_at(capacityBegin, std::invoke(proj, *first));
+                ++first;
+                ++capacityBegin;
+            }
+
+            // overwrite elements in the existing array
+            while (first != last && dst != dend) {
+                *dst = std::invoke(proj, *first);    // overwrite existing element
+                ++first;
+                ++dst;
+            }
+
+            // construct new elements in the append buffer
+            while (first != last) {
+                q20::construct_at(dst, std::invoke(proj, *first));
+                ++first;
+                ++dst;
+            }
+            // or destroy elements from the existing array
+            if (dst < dend)
+                std::destroy(dst, dend);
+        }
+        this->size = n;
     }
 };
 

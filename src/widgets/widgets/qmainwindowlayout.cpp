@@ -572,6 +572,8 @@ bool QDockWidgetGroupWindow::hasNativeDecos() const
 #endif
 }
 
+QT_WARNING_PUSH
+QT_WARNING_DISABLE_GCC("-Waggressive-loop-optimizations")
 /*
     The given widget is hovered over this floating group.
     This function will save the state and create a gap in the actual state.
@@ -623,6 +625,7 @@ bool QDockWidgetGroupWindow::hover(QLayoutItem *widgetItem, const QPoint &mouseP
     layoutInfo()->apply(opts & QMainWindow::AnimatedDocks);
     return true;
 }
+QT_WARNING_POP
 
 void QDockWidgetGroupWindow::updateCurrentGapRect()
 {
