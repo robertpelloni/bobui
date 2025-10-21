@@ -229,7 +229,7 @@ void QWaylandShmBackingStore::endPaint()
 // Inspired by QCALayerBackingStore.
 bool QWaylandShmBackingStore::scroll(const QRegion &region, int dx, int dy)
 {
-    if (Q_UNLIKELY(!mBackBuffer || !mFrontBuffer))
+    if (Q_UNLIKELY(!mBackBuffer))
         return false;
 
     const qreal devicePixelRatio = waylandWindow()->scale();
@@ -241,6 +241,8 @@ bool QWaylandShmBackingStore::scroll(const QRegion &region, int dx, int dy)
         return false;
 
     recreateBackBufferIfNeeded();
+    if (!mFrontBuffer)
+        return false;
 
     const QPoint scrollDelta(dx, dy);
     const QMargins margins = windowDecorationMargins();
