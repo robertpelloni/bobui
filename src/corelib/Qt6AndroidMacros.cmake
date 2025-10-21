@@ -1821,16 +1821,12 @@ function(_qt_internal_expose_android_package_source_dir_to_ide target)
 endfunction()
 
 function(_qt_internal_android_add_aux_deployment target)
-    cmake_parse_arguments(arg "" "OUTPUT_TARGET_NAME;DEPLOYMENT_DIRECTORY" "EXTRA_ARGS" ${ARGN})
+    cmake_parse_arguments(arg "" "OUTPUT_TARGET_NAME" "EXTRA_ARGS" ${ARGN})
     _qt_internal_validate_all_args_are_parsed(arg)
 
     _qt_internal_android_get_deployment_settings_file_genex(deployment_file)
     _qt_internal_android_get_deployment_tool(deployment_tool)
-    if(arg_DEPLOYMENT_DIRECTORY)
-        set(deployment_dir "${arg_DEPLOYMENT_DIRECTORY}")
-    else()
-        _qt_internal_android_get_target_deployment_dir(deployment_dir ${target})
-    endif()
+    _qt_internal_android_get_target_deployment_dir(deployment_dir ${target})
 
     cmake_policy(PUSH)
     if(POLICY CMP0116)
