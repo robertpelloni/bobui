@@ -7,8 +7,10 @@
 
 #include "qiosdocumentpickercontroller.h"
 
+#include <QtCore/qpointer.h>
+
 @implementation QIOSDocumentPickerController {
-    QIOSFileDialog *m_fileDialog;
+    QPointer<QIOSFileDialog> m_fileDialog;
 }
 
 - (instancetype)initWithQIOSFileDialog:(QIOSFileDialog *)fileDialog
@@ -61,6 +63,9 @@
 {
     Q_UNUSED(controller);
 
+    if (!m_fileDialog)
+        return;
+
     QList<QUrl> files;
     for (NSURL* url in urls)
         files.append(QUrl::fromNSURL(url));
@@ -71,12 +76,18 @@
 
 - (void)documentPickerWasCancelled:(UIDocumentPickerViewController *)controller
 {
+    if (!m_fileDialog)
+        return;
+
     Q_UNUSED(controller);
     emit m_fileDialog->reject();
 }
 
 - (void)presentationControllerDidDismiss:(UIPresentationController *)presentationController
 {
+    if (!m_fileDialog)
+        return;
+
     Q_UNUSED(presentationController);
 
     // "Called on the delegate when the user has taken action to dismiss the
