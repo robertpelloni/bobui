@@ -1888,7 +1888,7 @@ void AtSpiAdaptor::addMatchingDescendants(QList<QAccessibleInterface *> &matches
                                           const QSpiMatchRuleMatcher &matcher, bool invert,
                                           int count, bool traverse)
 {
-    if (!accessible || matches.size() >= count)
+    if (!accessible || (count != 0 && matches.size() >= count))
         return;
 
     const int childCount = accessible->childCount();
@@ -1900,7 +1900,7 @@ void AtSpiAdaptor::addMatchingDescendants(QList<QAccessibleInterface *> &matches
             if (traverse)
                 addMatchingDescendants(matches, child, matcher, invert, count, traverse);
 
-            if (matches.size() >= count)
+            if (count != 0 && matches.size() >= count)
                 return;
         }
     }
