@@ -925,8 +925,8 @@ public:
         bool undoPrependOptimization = true;
         bool needCapacity = n > this->constAllocatedCapacity();
         if (needCapacity || this->needsDetach()) {
-            bool wasLastRef = !this->deref();
             qsizetype newCapacity = this->detachCapacity(n);
+            bool wasLastRef = !this->deref();
             if (wasLastRef && needCapacity) {
                 // free memory we can't reuse
                 this->destroyAll();
