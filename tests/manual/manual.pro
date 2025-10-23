@@ -2,7 +2,6 @@ TEMPLATE=subdirs
 QT_FOR_CONFIG += network-private gui-private
 
 SUBDIRS = \
-assets \
 filetest \
 embeddedintoforeignwindow \
 foreignwindows \
