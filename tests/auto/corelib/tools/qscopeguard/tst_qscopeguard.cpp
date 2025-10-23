@@ -26,6 +26,8 @@ private Q_SLOTS:
     void optionalGuard();
     void leavingScope();
     void exceptions();
+
+    void init();
 };
 
 void func()
@@ -169,7 +171,6 @@ void tst_QScopeGuard::leavingScope()
 
 void tst_QScopeGuard::exceptions()
 {
-    s_globalState = 0;
     bool caught = false;
     QT_TRY
     {
@@ -185,6 +186,11 @@ void tst_QScopeGuard::exceptions()
 
     QVERIFY((caught && s_globalState == 1) || (!caught && s_globalState == 101));
 
+}
+
+void tst_QScopeGuard::init()
+{
+    s_globalState = 0;
 }
 
 QTEST_MAIN(tst_QScopeGuard)
