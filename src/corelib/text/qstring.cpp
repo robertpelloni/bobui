@@ -3687,7 +3687,7 @@ QString &QString::remove(QChar ch, Qt::CaseSensitivity cs)
   and there isn't enough capacity, create a new string, copy characters to it
   as needed, then swap it with "str".
 */
-static void replace_with_copy(QString &str, QSpan<size_t> indices, qsizetype blen,
+static void replace_with_copy(QString &str, QSpan<qsizetype> indices, qsizetype blen,
                               QStringView after)
 {
     const qsizetype alen = after.size();
@@ -3710,7 +3710,7 @@ static void replace_with_copy(QString &str, QSpan<size_t> indices, qsizetype ble
 }
 
 // No detaching or reallocation is needed
-static void replace_in_place(QString &str, QSpan<size_t> indices,
+static void replace_in_place(QString &str, QSpan<qsizetype> indices,
                              qsizetype blen, QStringView after)
 {
     const qsizetype alen = after.size();
@@ -3754,7 +3754,7 @@ static void replace_in_place(QString &str, QSpan<size_t> indices,
     }
 }
 
-static void replace_helper(QString &str, QSpan<size_t> indices, qsizetype blen, QStringView after)
+static void replace_helper(QString &str, QSpan<qsizetype> indices, qsizetype blen, QStringView after)
 {
     const qsizetype oldSize = str.data_ptr().size;
     const qsizetype adjust = indices.size() * (after.size() - blen);
@@ -3811,8 +3811,8 @@ QString &QString::replace(qsizetype pos, qsizetype len, const QChar *after, qsiz
     if (len > this->size() - pos)
         len = this->size() - pos;
 
-    size_t index = pos;
-    replace_helper(*this, QSpan(&index, 1), len, QStringView{after, alen});
+    qsizetype indices[] = {pos};
+    replace_helper(*this, indices, len, QStringView{after, alen});
     return *this;
 }
 
@@ -3890,7 +3890,7 @@ QString &QString::replace(const QChar *before, qsizetype blen,
 
     qsizetype index = 0;
 
-    QVarLengthArray<size_t> indices;
+    QVarLengthArray<qsizetype> indices;
     while ((index = matcher.indexIn(*this, index)) != -1) {
         indices.push_back(index);
         if (blen) // Step over before:
@@ -3925,7 +3925,7 @@ QString& QString::replace(QChar ch, const QString &after, Qt::CaseSensitivity cs
 
     const char16_t cc = (cs == Qt::CaseSensitive ? ch.unicode() : ch.toCaseFolded().unicode());
 
-    QVarLengthArray<size_t> indices;
+    QVarLengthArray<qsizetype> indices;
     if (cs == Qt::CaseSensitive) {
         const char16_t *begin = d.begin();
         const char16_t *end = d.end();
