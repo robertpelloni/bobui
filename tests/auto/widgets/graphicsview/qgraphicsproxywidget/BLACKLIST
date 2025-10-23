@@ -9,6 +9,3 @@ android
 android
 [windowOpacity]
 macos # QTBUG-139950
-[clickFocus]
-windows-10 # QTBUG-141386
-
