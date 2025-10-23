@@ -45,6 +45,20 @@ public:
     void setDirectWriteFallback(bool enabled);
     bool directWriteFallback() const;
 
+#if QT_CONFIG(cxx17_filesystem) || defined(Q_QDOC)
+    Q_WEAK_OVERLOAD QSaveFile(const std::filesystem::path &path, QObject *parent = nullptr)
+        : QSaveFile(QtPrivate::fromFilesystemPath(path), parent)
+    {
+    }
+
+    std::filesystem::path filesystemFileName() const
+    { return QtPrivate::toFilesystemPath(fileName()); }
+    Q_WEAK_OVERLOAD void setFileName(const std::filesystem::path &name)
+    {
+        setFileName(QtPrivate::fromFilesystemPath(name));
+    }
+#endif // QT_CONFIG(cxx17_filesystem)
+
 protected:
     qint64 writeData(const char *data, qint64 len) override;
 
