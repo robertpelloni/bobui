@@ -27,10 +27,11 @@ class Q_CORE_EXPORT QSaveFile : public QFileDevice
     Q_DECLARE_PRIVATE(QSaveFile)
 
 public:
-
+#if QT_CORE_REMOVED_SINCE(6, 11)
     explicit QSaveFile(const QString &name);
+#endif
     explicit QSaveFile(QObject *parent = nullptr);
-    explicit QSaveFile(const QString &name, QObject *parent);
+    explicit QSaveFile(const QString &name, QObject *parent = nullptr);
     ~QSaveFile();
 
     QString fileName() const override;

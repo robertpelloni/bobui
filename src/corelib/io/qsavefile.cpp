@@ -72,16 +72,6 @@ QSaveFilePrivate::~QSaveFilePrivate()
 */
 
 /*!
-    Constructs a new file object to represent the file with the given \a name.
-*/
-QSaveFile::QSaveFile(const QString &name)
-    : QFileDevice(*new QSaveFilePrivate, nullptr)
-{
-    Q_D(QSaveFile);
-    d->fileName = name;
-}
-
-/*!
     Constructs a new file object with the given \a parent.
     You need to call setFileName() before open().
 */

@@ -1516,6 +1516,13 @@ void QReadWriteLock::unlock()
 }
 #endif // QT_CONFIG(thread)
 
+#include "qsavefile.h"
+
+QSaveFile::QSaveFile(const QString &name)
+    : QSaveFile(name, nullptr)
+{
+}
+
 #include "qtimer.h"
 
 void QTimer::singleShotImpl(int msec, Qt::TimerType timerType,
