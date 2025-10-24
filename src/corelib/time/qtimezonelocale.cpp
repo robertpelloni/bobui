@@ -611,6 +611,27 @@ QString QTimeZonePrivate::localeName(qint64 atMSecsSinceEpoch, int offsetFromUtc
             // Custom zone with perverse m_id ?
             return;
         }
+        const auto isMixedCaseAbbrev = [tail](char ch) {
+            // cv-RU and en-GU abbreviate Chamorro as ChST
+            // scn-IT abbreviates Cuba as CuT/CuST/CuDT
+            // blo-BJ abbreviates GMT as Gk
+            switch (tail.size()) {
+            case 2: return tail == "Gk";
+            case 3: return tail == "CuT";
+            case 4:
+                if (tail[0] == 'C' && tail[1] == ch && tail[3] == 'T') {
+                    switch (ch) {
+                    case 'h': return tail[2] == 'S';
+                    case 'u': return tail[2] == 'S' || tail[2] == 'D';
+                    default: break;
+                    }
+                }
+                return false;
+            default:
+                break;
+            }
+            return false;
+        };
 
         // Even if it is abbr or city name, we don't care if we've found one before.
         bool maybeAbbr = ianaAbbrev.isEmpty(), maybeCityName = ianaTail.isEmpty(), inword = false;
@@ -632,7 +653,7 @@ QString QTimeZonePrivate::localeName(qint64 atMSecsSinceEpoch, int offsetFromUtc
                     maybeCityName = false;
                 inword = false;
             } else if (QChar::isLower(ch)) {
-                maybeAbbr = false;
+                maybeAbbr = isMixedCaseAbbrev(ch);
                 // Dar_es_Salaam shows both cases as word starts
                 inword = true;
             } else if (QChar::isUpper(ch)) {
