@@ -5737,22 +5737,24 @@ void tst_QVariant::sequentialIterableAppend()
 void tst_QVariant::preferDirectConversionOverInterfaces()
 {
     using namespace QtMetaTypePrivate;
-    bool calledCorrectConverter = false;
+    static bool calledCorrectConverter = false;
+    calledCorrectConverter = false;
+
     QMetaType::registerConverter<MyType, QSequentialIterable>([](const MyType &) {
         return QSequentialIterable {};
     });
-    QMetaType::registerConverter<MyType, QVariantList>([&calledCorrectConverter](const MyType &) {
+    QMetaType::registerConverter<MyType, QVariantList>([&](const MyType &) {
         calledCorrectConverter = true;
         return QVariantList {};
     });
     QMetaType::registerConverter<MyType, QAssociativeIterable>([](const MyType &) {
         return QAssociativeIterable {};
     });
-    QMetaType::registerConverter<MyType, QVariantHash>([&calledCorrectConverter](const MyType &) {
+    QMetaType::registerConverter<MyType, QVariantHash>([&](const MyType &) {
         calledCorrectConverter = true;
         return QVariantHash {};
     });
-    QMetaType::registerConverter<MyType, QVariantMap>([&calledCorrectConverter](const MyType &) {
+    QMetaType::registerConverter<MyType, QVariantMap>([&](const MyType &) {
         calledCorrectConverter = true;
         return QVariantMap {};
     });
@@ -5783,6 +5785,11 @@ struct MyTypeView
 
 void tst_QVariant::mutableView()
 {
+    static bool calledOnce = false;
+    if (calledOnce)
+        QSKIP("This test can only be run once per test execution because of QMetaType registration");
+    calledOnce = true;
+
     bool calledView = false;
     const bool success = QMetaType::registerMutableView<MyType, MyTypeView>([&](MyType &data) {
         calledView = true;
@@ -5906,6 +5913,11 @@ void tst_QVariant::moveOperations()
 class NoMetaObject : public QObject {};
 void tst_QVariant::equalsWithoutMetaObject()
 {
+    static bool calledOnce = false;
+    if (calledOnce)
+        QSKIP("This test can only be run once per test execution because of QMetaType registration");
+    calledOnce = true;
+
     using T = NoMetaObject*;
     QtPrivate::QMetaTypeInterface d = {
         /*.revision=*/ 0,
@@ -6021,6 +6033,12 @@ void tst_QVariant::constructFromIncompatibleMetaType()
 
 void tst_QVariant::constructFromQtLT65MetaType()
 {
+    static bool calledOnce = false;
+    if (calledOnce)
+        QSKIP("This test can only be run once per test execution because of QMetaType registration");
+    calledOnce = true;
+
+
    auto qsizeIface = QtPrivate::qMetaTypeInterfaceForType<QSize>();
 
    QtPrivate::QMetaTypeInterface qsize64Iface = {
