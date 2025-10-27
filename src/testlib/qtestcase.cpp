@@ -410,7 +410,7 @@ public:
     static QMetaMethod findMethod(const QObject *obj, const char *signature);
 
 private:
-    bool invokeTest(int index, QLatin1StringView tag, std::optional<WatchDog> &watchDog) const;
+    void invokeTest(int index, QLatin1StringView tag, std::optional<WatchDog> &watchDog) const;
     void invokeTestOnData(int index) const;
 
     QMetaMethod m_initTestCaseMethod; // might not exist, check isValid().
@@ -1315,11 +1315,8 @@ static void printUnknownDataTagError(QLatin1StringView name, QLatin1StringView t
 
     Call slot_data(), init(), slot(), cleanup(), init(), slot(), cleanup(), ...
     If data is set then it is the only test that is performed
-
-    If the function was successfully called, true is returned, otherwise
-    false.
 */
-bool TestMethods::invokeTest(int index, QLatin1StringView tag, std::optional<WatchDog> &watchDog) const
+void TestMethods::invokeTest(int index, QLatin1StringView tag, std::optional<WatchDog> &watchDog) const
 {
     QBenchmarkTestMethodData benchmarkData;
     QBenchmarkTestMethodData::current = &benchmarkData;
@@ -1422,8 +1419,6 @@ bool TestMethods::invokeTest(int index, QLatin1StringView tag, std::optional<Wat
     QTestResult::finishedCurrentTestFunction();
     QTestResult::setSkipCurrentTest(false);
     QTestResult::setBlacklistCurrentTest(false);
-
-    return true;
 }
 
 void *fetchData(QTestData *data, const char *tagName, int typeId)
@@ -1743,10 +1738,8 @@ void TestMethods::invokeTests(QObject *testObject) const
                 const char *data = nullptr;
                 if (i < QTest::testTags.size() && !QTest::testTags.at(i).isEmpty())
                     data = qstrdup(QTest::testTags.at(i).toLatin1().constData());
-                const bool ok = invokeTest(i, QLatin1StringView(data), watchDog);
+                invokeTest(i, QLatin1StringView(data), watchDog);
                 delete [] data;
-                if (!ok)
-                    break;
             }
         }
 
