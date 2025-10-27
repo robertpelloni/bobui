@@ -586,14 +586,7 @@ void QWasmAccessibility::linkToParent(QAccessibleInterface *iface)
 void QWasmAccessibility::setHtmlElementVisibility(QAccessibleInterface *iface, bool visible)
 {
     emscripten::val element = getHtmlElement(iface);
-
-    if (visible) {
-        setAttribute(element, "aria-hidden", false);
-        setAttribute(element, "tabindex", "");
-    } else {
-        setAttribute(element, "aria-hidden", true); // aria-hidden mean completely hidden; maybe some sort of soft-hidden should be used.
-        setAttribute(element, "tabindex", "-1");
-    }
+    setAttribute(element, "aria-hidden", !visible);
 }
 
 void QWasmAccessibility::setHtmlElementGeometry(QAccessibleInterface *iface)
