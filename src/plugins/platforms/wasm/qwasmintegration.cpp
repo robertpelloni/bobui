@@ -200,7 +200,7 @@ QWasmWindow *QWasmIntegration::createWindow(QWindow *window, WId nativeHandle) c
 {
     auto *wasmScreen = QWasmScreen::get(window->screen());
     QWasmCompositor *compositor = wasmScreen->compositor();
-    return new QWasmWindow(window, wasmScreen->deadKeySupport(), compositor,
+    return new QWasmWindow(window, compositor,
                            m_backingStores.value(window), nativeHandle);
 }
 

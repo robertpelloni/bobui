@@ -112,7 +112,7 @@ bool Event::isTargetedForQtElement() const
     return topElementClassName.startsWith("qt-"); // .e.g. qt-window-canvas
 }
 
-KeyEvent::KeyEvent(EventType type, emscripten::val event, QWasmDeadKeySupport *deadKeySupport) : Event(type, event)
+KeyEvent::KeyEvent(EventType type, emscripten::val event) : Event(type, event)
 {
     const auto code = event["code"].as<std::string>();
     const auto webKey = event["key"].as<std::string>();
@@ -137,8 +137,6 @@ KeyEvent::KeyEvent(EventType type, emscripten::val event, QWasmDeadKeySupport *d
 
     if (key == Qt::Key_Tab)
         text = "\t";
-
-    deadKeySupport->applyDeadKeyTranslations(this);
 }
 
 MouseEvent::MouseEvent(EventType type, emscripten::val event) : Event(type, event)

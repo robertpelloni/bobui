@@ -31,7 +31,6 @@ class EventCallback;
 
 struct KeyEvent;
 struct PointerEvent;
-class QWasmDeadKeySupport;
 struct WheelEvent;
 
 Q_DECLARE_LOGGING_CATEGORY(qLcQpaWasmInputContext)
@@ -41,7 +40,7 @@ class QWasmWindow final : public QPlatformWindow,
                           public QNativeInterface::Private::QWasmWindow
 {
 public:
-    QWasmWindow(QWindow *w, QWasmDeadKeySupport *deadKeySupport, QWasmCompositor *compositor,
+    QWasmWindow(QWindow *w, QWasmCompositor *compositor,
                 QWasmBackingStore *backingStore, WId nativeHandle);
     ~QWasmWindow() final;
 
@@ -159,7 +158,6 @@ private:
 
     QWasmCompositor *m_compositor = nullptr;
     QWasmBackingStore *m_backingStore = nullptr;
-    QWasmDeadKeySupport *m_deadKeySupport;
     QRect m_normalGeometry {0, 0, 0 ,0};
 
     emscripten::val m_document;

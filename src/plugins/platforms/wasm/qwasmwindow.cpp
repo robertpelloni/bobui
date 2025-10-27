@@ -40,13 +40,12 @@ QT_BEGIN_NAMESPACE
 
 Q_GUI_EXPORT int qt_defaultDpiX();
 
-QWasmWindow::QWasmWindow(QWindow *w, QWasmDeadKeySupport *deadKeySupport,
+QWasmWindow::QWasmWindow(QWindow *w,
                          QWasmCompositor *compositor, QWasmBackingStore *backingStore,
                          WId nativeHandle)
     : QPlatformWindow(w),
       m_compositor(compositor),
       m_backingStore(backingStore),
-      m_deadKeySupport(deadKeySupport),
       m_document(dom::document()),
       m_decoratedWindow(m_document.call<emscripten::val>("createElement", emscripten::val("div"))),
       m_window(m_document.call<emscripten::val>("createElement", emscripten::val("div"))),
@@ -216,9 +215,9 @@ void QWasmWindow::registerEventHandlers()
         [this](emscripten::val event) { this->handleWheelEvent(event); });
 
     m_keyDownCallback = QWasmEventHandler(m_window, "keydown",
-        [this](emscripten::val event) { this->handleKeyEvent(KeyEvent(EventType::KeyDown, event, m_deadKeySupport)); });
+        [this](emscripten::val event) { this->handleKeyEvent(KeyEvent(EventType::KeyDown, event)); });
     m_keyUpCallback =QWasmEventHandler(m_window, "keyup",
-        [this](emscripten::val event) {this->handleKeyEvent(KeyEvent(EventType::KeyUp, event, m_deadKeySupport)); });
+        [this](emscripten::val event) {this->handleKeyEvent(KeyEvent(EventType::KeyUp, event)); });
 
     m_inputCallback = QWasmEventHandler(m_window, "input",
         [this](emscripten::val event){ handleInputEvent(event); });

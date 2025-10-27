@@ -17,8 +17,6 @@
 #include <emscripten/val.h>
 
 QT_BEGIN_NAMESPACE
-
-class QWasmDeadKeySupport;
 class QWindow;
 
 enum class EventType {
@@ -65,7 +63,7 @@ struct Event
 
 struct KeyEvent : public Event
 {
-    KeyEvent(EventType type, emscripten::val webEvent, QWasmDeadKeySupport *deadKeySupport);
+    KeyEvent(EventType type, emscripten::val webEvent);
 
     Qt::Key key;
     QFlags<Qt::KeyboardModifier> modifiers;
