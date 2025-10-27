@@ -845,8 +845,8 @@ void tst_QComboBox::virtualAutocompletion()
 
     QKeyEvent kp3(QEvent::KeyPress, Qt::Key_R, {}, "r");
     QKeyEvent kr3(QEvent::KeyRelease, Qt::Key_R, {}, "r");
-    QTest::qWait(QApplication::keyboardInputInterval());
     QApplication::sendEvent(testWidget, &kp3);
+    QTest::qWait(QApplication::keyboardInputInterval());
     QApplication::sendEvent(testWidget, &kr3);
     QTRY_COMPARE(testWidget->currentIndex(), 3);
 
