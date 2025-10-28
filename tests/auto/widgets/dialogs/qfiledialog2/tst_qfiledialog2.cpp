@@ -47,6 +47,7 @@ Q_GUI_EXPORT void qt_test_resetFetchedRoot();
 QT_END_NAMESPACE
 #endif
 
+[[maybe_unused]]
 static QByteArray msgDoesNotExist(const QString &name)
 {
     return (QLatin1Char('"') + QDir::toNativeSeparators(name)
