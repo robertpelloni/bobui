@@ -2166,7 +2166,8 @@ QString QFont::key() const
       \li Word spacing
       \li Stretch
       \li Style strategy
-      \li Font style (omitted when unavailable)
+      \li Font style
+      \li Font features
     \endlist
 
     \sa fromString()
@@ -2189,11 +2190,16 @@ QString QFont::toString() const
         QString::number(letterSpacing()) + comma +
         QString::number(wordSpacing()) + comma +
         QString::number(stretch()) + comma +
-        QString::number((int)styleStrategy());
+        QString::number((int)styleStrategy()) + comma +
+        styleName();
 
-    QString fontStyle = styleName();
-    if (!fontStyle.isEmpty())
-        fontDescription += comma + fontStyle;
+    QMap<Tag, quint32> sortedFeatures;
+    for (const auto &[tag, value] : std::as_const(d->features).asKeyValueRange())
+        sortedFeatures.insert(tag, value);
+
+    fontDescription += comma + QString::number(sortedFeatures.size());
+    for (const auto &[tag, value] : std::as_const(sortedFeatures).asKeyValueRange())
+        fontDescription += comma + tag.toString() + u'=' + QString::number(value);
 
     return fontDescription;
 }
@@ -2208,6 +2214,23 @@ size_t qHash(const QFont &font, size_t seed) noexcept
     return qHash(QFontPrivate::get(font)->request, seed);
 }
 
+static std::optional<std::pair<QFont::Tag, quint32>> tagAndValueFromString(QStringView view)
+{
+    const int separator = view.indexOf(u'=');
+    if (separator == -1)
+        return std::nullopt;
+
+    const std::optional<QFont::Tag> tag = QFont::Tag::fromString(view.sliced(0, separator));
+    if (!tag)
+        return std::nullopt;
+
+    bool valueOk = false;
+    const quint32 value = view.sliced(separator + 1).toUInt(&valueOk);
+    if (!valueOk)
+        return std::nullopt;
+
+    return std::make_pair(*tag, value);
+}
 
 /*!
     Sets this font to match the description \a descrip. The description
@@ -2221,7 +2244,7 @@ bool QFont::fromString(const QString &descrip)
     const auto sr = QStringView(descrip).trimmed();
     const auto l = sr.split(u',');
     const int count = l.size();
-    if (!count || (count > 2 && count < 9) || count == 9 || count > 17 ||
+    if (!count || (count > 2 && count < 9) || count == 9 ||
         l.first().isEmpty()) {
         qWarning("QFont::fromString: Invalid description '%s'",
                  descrip.isEmpty() ? "(empty)" : descrip.toLatin1().data());
@@ -2257,10 +2280,24 @@ bool QFont::fromString(const QString &descrip)
             setStretch(l[14].toInt());
             setStyleStrategy((StyleStrategy)l[15].toInt());
         }
-        if (count == 11 || count == 17)
-            d->request.styleName = l[count - 1].toString();
+
+        if (count == 11)
+            d->request.styleName = l[10].toString();
+        else if (count >= 17)
+            d->request.styleName = l[16].toString();
         else
             d->request.styleName.clear();
+
+        clearFeatures();
+        if (count >= 18) {
+            const int featureCount = l[17].toInt();
+            if (count >= featureCount + 18) {
+                for (int i = 0; i < featureCount; ++i) {
+                    if (const auto feature = tagAndValueFromString(l[18 + i]))
+                        setFeature(feature->first, feature->second);
+                }
+            }
+        }
     }
 
     if (count >= 9 && !d->request.fixedPitch) // assume 'false' fixedPitch equals default
