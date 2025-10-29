@@ -49,6 +49,7 @@
 #  include <QtCore/private/qfactorycacheregistration_p.h>
 #endif
 #include <QtCore/private/qsystemerror_p.h>
+#include <QtCore/private/quniquehandle_types_windows_p.h>
 
 #include <QtGui/private/qwindowsguieventdispatcher_p.h>
 #include <QtGui/private/qwindowsthemecache_p.h>
@@ -139,7 +140,7 @@ struct QWindowsContextPrivate {
     unsigned m_systemInfo = 0;
     QSet<QString> m_registeredWindowClassNames;
     QWindowsContext::HandleBaseWindowHash m_windows;
-    HDC m_displayContext = nullptr;
+    QUniqueHDCHandle m_displayContext;
     int m_defaultDPI = 96;
     QWindowsKeyMapper m_keyMapper;
     QWindowsPointerHandler m_pointerHandler;
@@ -164,8 +165,8 @@ QWindowsContextPrivate::QWindowsContextPrivate()
 {
     if (m_pointerHandler.touchDevice())
         m_systemInfo |= QWindowsContext::SI_SupportsTouch;
-    m_displayContext = GetDC(nullptr);
-    m_defaultDPI = GetDeviceCaps(m_displayContext, LOGPIXELSY);
+    m_displayContext.reset(GetDC(nullptr));
+    m_defaultDPI = GetDeviceCaps(m_displayContext.get(), LOGPIXELSY);
     if (useRTL_Extensions()) {
         m_systemInfo |= QWindowsContext::SI_RTL_Extensions;
         m_keyMapper.setUseRTLExtensions(true);
@@ -208,8 +209,6 @@ QWindowsContext::~QWindowsContext()
     }
 
     d->m_screenManager.clearScreens(); // Order: Potentially calls back to the windows.
-    if (d->m_displayContext)
-        ReleaseDC(nullptr, d->m_displayContext);
     m_instance = nullptr;
 }
 
@@ -494,7 +493,7 @@ int QWindowsContext::defaultDPI() const
 
 HDC QWindowsContext::displayContext() const
 {
-    return d->m_displayContext;
+    return d->m_displayContext.get();
 }
 
 QWindow *QWindowsContext::keyGrabber() const
@@ -659,7 +658,7 @@ void QWindowsContext::unregisterWindowClasses()
 
 int QWindowsContext::screenDepth() const
 {
-    return GetDeviceCaps(d->m_displayContext, BITSPIXEL);
+    return GetDeviceCaps(d->m_displayContext.get(), BITSPIXEL);
 }
 
 void QWindowsContext::addWindow(HWND hwnd, QWindowsWindow *w)
