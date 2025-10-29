@@ -773,6 +773,7 @@ endif()
 qt_internal_extend_target(Widgets CONDITION QT_FEATURE_accessibility
     SOURCES
         accessible/complexwidgets.cpp accessible/complexwidgets_p.h
+        accessible/qaccessiblecolorwell.cpp accessible/qaccessiblecolorwell_p.h
         accessible/qaccessiblemenu.cpp accessible/qaccessiblemenu_p.h
         accessible/qaccessiblewidget.cpp accessible/qaccessiblewidget.h
         accessible/qaccessiblewidgetfactory.cpp accessible/qaccessiblewidgetfactory_p.h

@@ -4,6 +4,9 @@
 
 #include "qcolordialog.h"
 
+#if QT_CONFIG(accessibility)
+#include "qaccessible.h"
+#endif
 #include "qapplication.h"
 #include "qdrawutil.h"
 #include "qevent.h"
@@ -304,6 +307,7 @@ void QWellArray::setCurrent(int row, int col)
     updateCell(curRow, curCol);
 
     emit currentChanged(curRow, curCol);
+    sendAccessibleChildFocusEvent();
 }
 
 /*
@@ -338,6 +342,7 @@ void QWellArray::focusInEvent(QFocusEvent*)
 {
     updateCell(curRow, curCol);
     emit currentChanged(curRow, curCol);
+    sendAccessibleChildFocusEvent();
 }
 
 
@@ -383,6 +388,21 @@ void QWellArray::keyPressEvent(QKeyEvent* e)
         e->ignore();                        // we don't accept the event
         return;
     }
+}
+
+void QWellArray::sendAccessibleChildFocusEvent()
+{
+#if QT_CONFIG(accessibility)
+    if (!QAccessible::isActive())
+        return;
+
+    if (hasFocus() && curRow >= 0 && curCol >= 0) {
+        const int itemIndex = index(curRow, curCol);
+        QAccessibleEvent event(this, QAccessible::Focus);
+        event.setChild(itemIndex);
+        QAccessible::updateAccessibility(&event);
+    }
+#endif
 }
 
 //////////// QWellArray END

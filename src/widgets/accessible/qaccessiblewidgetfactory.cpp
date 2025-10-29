@@ -1,6 +1,7 @@
 // Copyright (C) 2016 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
+#include "qaccessiblecolorwell_p.h"
 #include "qaccessiblewidgets_p.h"
 #include "qaccessiblemenu_p.h"
 #include "private/qwidget_p.h"
@@ -192,7 +193,10 @@ QAccessibleInterface *qAccessibleFactory(const QString &classname, QObject *obje
     } else if (classname == "QDockWidget"_L1) {
         iface = new QAccessibleDockWidget(widget);
 #endif
-
+#if QT_CONFIG(colordialog)
+    } else if (classname == "QColorWell"_L1) {
+        iface = new QAccessibleColorWell(widget);
+#endif
     } else if (classname == "QWidget"_L1) {
         iface = new QAccessibleWidgetV2(widget);
     } else if (classname == "QWindowContainer"_L1) {

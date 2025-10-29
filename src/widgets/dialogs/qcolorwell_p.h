@@ -32,6 +32,9 @@ public:
     QWellArray(int rows, int cols, QWidget *parent = nullptr);
     ~QWellArray() { }
 
+    int currentColumn() const { return curCol; }
+    int currentRow() const { return curRow; }
+
     int selectedColumn() const { return selCol; }
     int selectedRow() const { return selRow; }
 
@@ -66,6 +69,8 @@ public:
 
     inline int numCols() const { return ncols; }
 
+    inline int index(int row, int col) { return col * nrows + row; }
+
     inline QRect cellRect() const { return QRect(0, 0, cellw, cellh); }
 
     inline QSize gridSize() const { return QSize(ncols * cellw, nrows * cellh); }
@@ -96,6 +101,8 @@ protected:
     void focusOutEvent(QFocusEvent *) override;
     void paintEvent(QPaintEvent *) override;
 
+    void sendAccessibleChildFocusEvent();
+
 private:
     Q_DISABLE_COPY(QWellArray)
 
@@ -111,12 +118,15 @@ private:
 
 class QColorWell : public QWellArray
 {
+    Q_OBJECT
 public:
     QColorWell(QWidget *parent, int r, int c, const QRgb *vals)
         : QWellArray(r, c, parent), values(vals), mousePressed(false), oldCurrent(-1, -1)
     {
         setSizePolicy(QSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum));
     }
+
+    const QRgb *rgbValues() { return values; }
 
 protected:
     void paintCellContents(QPainter *, int row, int col, const QRect &) override;
