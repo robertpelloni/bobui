@@ -90,6 +90,10 @@ macro(qt_examples_build_begin)
             add_link_options(${active_linker_flags})
         endif()
 
+        if(QT_EXTRA_EXAMPLE_TARGET_DEFINES)
+            add_compile_definitions(${QT_EXTRA_EXAMPLE_TARGET_DEFINES})
+        endif()
+
         # Marker for warnings_as_errors.
         set(QT_INTERNAL_IS_EXAMPLE_IN_TREE_BUILD ON)
     endif()
@@ -528,6 +532,18 @@ function(qt_internal_add_example_external_project subdir)
         foreach(item_type EXE MODULE SHARED)
             list(APPEND var_defs
                 "-DCMAKE_${item_type}_LINKER_FLAGS_INIT:STRING=${active_linker_flags}")
+        endforeach()
+    endif()
+    if(QT_EXTRA_EXAMPLE_TARGET_DEFINES)
+        unset(extra_args)
+        foreach(def IN LISTS QT_EXTRA_EXAMPLE_TARGET_DEFINES)
+            list(APPEND extra_args "-D${def}")
+        endforeach()
+        list(JOIN extra_args " " extra_defines_str)
+
+        foreach(language IN ITEMS C CXX OBJC OBJCXX)
+            list(APPEND var_defs
+                "-DCMAKE_${language}_FLAGS_INIT:STRING=${extra_defines_str}")
         endforeach()
     endif()
 
