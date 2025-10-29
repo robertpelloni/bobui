@@ -173,7 +173,6 @@ class QWellArray : public QWidget
 public:
     QWellArray(int rows, int cols, QWidget* parent=nullptr);
     ~QWellArray() {}
-    QString cellContent(int row, int col) const;
 
     int selectedColumn() const { return selCol; }
     int selectedRow() const { return selRow; }
