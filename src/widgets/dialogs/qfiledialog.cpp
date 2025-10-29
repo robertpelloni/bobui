@@ -3008,7 +3008,6 @@ void QFileDialogPrivate::createWidgets()
     qFileDialogUi->lookInCombo->setDuplicatesEnabled(false);
 
     // filename
-    qFileDialogUi->fileNameEdit->setFileDialogPrivate(this);
 #ifndef QT_NO_SHORTCUT
     qFileDialogUi->fileNameLabel->setBuddy(qFileDialogUi->fileNameEdit);
 #endif
