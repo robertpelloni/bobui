@@ -681,6 +681,7 @@ qt_internal_extend_target(Widgets CONDITION MACOS AND (QT_FEATURE_menu OR QT_FEA
 qt_internal_extend_target(Widgets CONDITION QT_FEATURE_colordialog
     SOURCES
         dialogs/qcolordialog.cpp dialogs/qcolordialog.h
+        dialogs/qcolorwell_p.h
 )
 
 qt_internal_extend_target(Widgets CONDITION QT_FEATURE_dialog

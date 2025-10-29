@@ -39,6 +39,7 @@
 #include "qwindow.h"
 
 #include "private/qdialog_p.h"
+#include "private/qcolorwell_p.h"
 
 #include <qpa/qplatformintegration.h>
 #include <qpa/qplatformservices.h>
@@ -56,16 +57,12 @@ namespace QtPrivate {
 class QColorLuminancePicker;
 class QColorPicker;
 class QColorShower;
-class QWellArray;
-class QColorWell;
 class QColorPickingEventFilter;
 } // namespace QtPrivate
 
 using QColorLuminancePicker = QtPrivate::QColorLuminancePicker;
 using QColorPicker = QtPrivate::QColorPicker;
 using QColorShower = QtPrivate::QColorShower;
-using QWellArray = QtPrivate::QWellArray;
-using QColorWell = QtPrivate::QColorWell;
 using QColorPickingEventFilter = QtPrivate::QColorPickingEventFilter;
 
 class QColorDialogPrivate : public QDialogPrivate
@@ -161,95 +158,6 @@ private:
 };
 
 //////////// QWellArray BEGIN
-
-namespace QtPrivate {
-
-class QWellArray : public QWidget
-{
-    Q_OBJECT
-    Q_PROPERTY(int selectedColumn READ selectedColumn)
-    Q_PROPERTY(int selectedRow READ selectedRow)
-
-public:
-    QWellArray(int rows, int cols, QWidget* parent=nullptr);
-    ~QWellArray() {}
-
-    int selectedColumn() const { return selCol; }
-    int selectedRow() const { return selRow; }
-
-    virtual void setCurrent(int row, int col);
-    virtual void setSelected(int row, int col);
-
-    QSize sizeHint() const override;
-
-    inline int cellWidth() const
-        { return cellw; }
-
-    inline int cellHeight() const
-        { return cellh; }
-
-    inline int rowAt(int y) const
-        { return y / cellh; }
-
-    inline int columnAt(int x) const
-        { if (isRightToLeft()) return ncols - (x / cellw) - 1; return x / cellw; }
-
-    inline int rowY(int row) const
-        { return cellh * row; }
-
-    inline int columnX(int column) const
-        { if (isRightToLeft()) return cellw * (ncols - column - 1); return cellw * column; }
-
-    inline int numRows() const
-        { return nrows; }
-
-    inline int numCols() const
-        {return ncols; }
-
-    inline QRect cellRect() const
-        { return QRect(0, 0, cellw, cellh); }
-
-    inline QSize gridSize() const
-        { return QSize(ncols * cellw, nrows * cellh); }
-
-    QRect cellGeometry(int row, int column)
-        {
-            QRect r;
-            if (row >= 0 && row < nrows && column >= 0 && column < ncols)
-                r.setRect(columnX(column), rowY(row), cellw, cellh);
-            return r;
-        }
-
-    inline void updateCell(int row, int column) { update(cellGeometry(row, column)); }
-
-signals:
-    void selected(int row, int col);
-    void currentChanged(int row, int col);
-    void colorChanged(int index, QRgb color);
-
-protected:
-    virtual void paintCell(QPainter *, int row, int col, const QRect&);
-    virtual void paintCellContents(QPainter *, int row, int col, const QRect&);
-
-    void mousePressEvent(QMouseEvent*) override;
-    void mouseReleaseEvent(QMouseEvent*) override;
-    void keyPressEvent(QKeyEvent*) override;
-    void focusInEvent(QFocusEvent*) override;
-    void focusOutEvent(QFocusEvent*) override;
-    void paintEvent(QPaintEvent *) override;
-
-private:
-    Q_DISABLE_COPY(QWellArray)
-
-    int nrows;
-    int ncols;
-    int cellw;
-    int cellh;
-    int curRow;
-    int curCol;
-    int selRow;
-    int selCol;
-};
 
 void QWellArray::paintEvent(QPaintEvent *e)
 {
@@ -475,10 +383,11 @@ void QWellArray::keyPressEvent(QKeyEvent* e)
         e->ignore();                        // we don't accept the event
         return;
     }
-
-} // namespace QtPrivate
+}
 
 //////////// QWellArray END
+
+namespace QtPrivate {
 
 // Event filter to be installed on the dialog while in color-picking mode.
 class QColorPickingEventFilter : public QObject {
@@ -510,7 +419,7 @@ private:
     QColorDialogPrivate *m_dp;
 };
 
-} // unnamed namespace
+} // namespace QtPrivate
 
 /*!
     Returns the number of custom colors supported by QColorDialog. All
@@ -569,35 +478,6 @@ static inline void rgb2hsv(QRgb rgb, int &h, int &s, int &v)
     c.setRgb(rgb);
     c.getHsv(&h, &s, &v);
 }
-
-namespace QtPrivate {
-
-class QColorWell : public QWellArray
-{
-public:
-    QColorWell(QWidget *parent, int r, int c, const QRgb *vals)
-        :QWellArray(r, c, parent), values(vals), mousePressed(false), oldCurrent(-1, -1)
-    { setSizePolicy(QSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum)); }
-
-protected:
-    void paintCellContents(QPainter *, int row, int col, const QRect&) override;
-    void mousePressEvent(QMouseEvent *e) override;
-    void mouseMoveEvent(QMouseEvent *e) override;
-    void mouseReleaseEvent(QMouseEvent *e) override;
-#if QT_CONFIG(draganddrop)
-    void dragEnterEvent(QDragEnterEvent *e) override;
-    void dragLeaveEvent(QDragLeaveEvent *e) override;
-    void dragMoveEvent(QDragMoveEvent *e) override;
-    void dropEvent(QDropEvent *e) override;
-#endif
-
-private:
-    const QRgb *values;
-    bool mousePressed;
-    QPoint pressPos;
-    QPoint oldCurrent;
-
-};
 
 void QColorWell::paintCellContents(QPainter *p, int row, int col, const QRect &r)
 {
@@ -685,6 +565,8 @@ void QColorWell::mouseReleaseEvent(QMouseEvent *e)
     QWellArray::mouseReleaseEvent(e);
     mousePressed = false;
 }
+
+namespace QtPrivate {
 
 class QColorPicker : public QFrame
 {
