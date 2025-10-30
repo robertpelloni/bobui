@@ -1292,11 +1292,15 @@ QString QUtcTimeZonePrivate::displayName(QTimeZone::TimeType timeType,
         if (!(name.startsWith("GMT"_L1) || name.startsWith("UTC"_L1)) || name.size() < 5)
             return false;
         // Fallback drops trailing ":00" minute:
-        QStringView tail{avoid};
+        QStringView tail{avoid}; // TODO: deal with sign earlier !  Also: invisible Unicode !
         tail = tail.sliced(3);
-        if (tail.endsWith(":00"_L1))
-            tail = tail.chopped(3);
         if (name.sliced(3) == tail)
+            return true;
+        while (tail.endsWith(":00"_L1))
+            tail = tail.chopped(3);
+        while (name.endsWith(":00"_L1))
+            name = name.chopped(3);
+        if (name == tail)
             return true;
         // Accept U+2212 as minus sign:
         const QChar sign = name[3] == u'\u2212' ? u'-' : name[3];
