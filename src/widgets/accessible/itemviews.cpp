@@ -99,6 +99,21 @@ QHeaderView *QAccessibleTable::verticalHeader() const
     return header;
 }
 
+// Normally cellAt takes row/column in the range
+//   [0 .. rowCount())
+//   [0 .. columnCount())
+//
+// As an extension we allow clients to ask for headers
+//
+// * Has both vertical and horizontal headers:
+//      (-1,-1)      -> corner button
+// * Has column headers:
+//      (-1, column) -> column header for column \a column
+// * has row headers
+//      (row, -1)    -> row header for row \a row
+//
+// If asking for a header that does not exist, The invalid
+// index warning is logged, and nullptr is returned.
 QAccessibleInterface *QAccessibleTable::cellAt(int row, int column) const
 {
     const QAbstractItemView *theView = view();
@@ -107,6 +122,22 @@ QAccessibleInterface *QAccessibleTable::cellAt(int row, int column) const
         return nullptr;
     Q_ASSERT(role() != QAccessible::List);
     Q_ASSERT(role() != QAccessible::Tree);
+
+    const int vHeader = verticalHeader() ? 1 : 0;
+    const int hHeader = horizontalHeader() ? 1 : 0;
+
+    const int doHHeader = ((row == -1) && hHeader);
+    const int doVHeader = ((column == -1) && vHeader);
+
+    if (doVHeader && doHHeader)
+        return child(0);
+
+    if (doVHeader)
+        return child((row + hHeader) * (columnCount() + vHeader) + (column + vHeader));
+
+    if (doHHeader)
+        return child((row + hHeader) * (columnCount() + vHeader) + (column + vHeader));
+
     QModelIndex index = theModel->index(row, column, theView->rootIndex());
     if (Q_UNLIKELY(!index.isValid())) {
         qWarning() << "QAccessibleTable::cellAt: invalid index: " << index << " for " << theView;
