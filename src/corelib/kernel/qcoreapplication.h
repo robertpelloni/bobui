@@ -119,7 +119,7 @@ public:
 
     static QString applicationDirPath();
     static QString applicationFilePath();
-    Q_DECL_CONST_FUNCTION static qint64 applicationPid();
+    Q_DECL_CONST_FUNCTION static qint64 applicationPid() noexcept;
 
 #if QT_CONFIG(permissions) || defined(Q_QDOC)
     Qt::PermissionStatus checkPermission(const QPermission &permission);
