@@ -109,6 +109,7 @@ inline ControlState calcControlState(const QStyleOption *option)
 
 #define More              u"\uE712"_s
 #define Help              u"\uE897"_s
+#define Clear             u"\uE894"_s
 
 template <typename R, typename P, typename B>
 static inline void drawRoundedRect(QPainter *p, R &&rect, P &&pen, B &&brush)
@@ -2557,6 +2558,7 @@ void QWindows11Style::polish(QPalette& result)
     d->m_titleBarCloseIcon = QIcon();
     d->m_titleBarNormalIcon = QIcon();
     d->m_toolbarExtensionButton = QIcon();
+    d->m_lineEditClearButton = QIcon();
 }
 
 QPixmap QWindows11Style::standardPixmap(StandardPixmap standardPixmap,
@@ -2581,6 +2583,13 @@ QIcon QWindows11Style::standardIcon(StandardPixmap standardIcon,
 {
     auto *d = const_cast<QWindows11StylePrivate*>(d_func());
     switch (standardIcon) {
+    case SP_LineEditClearButton: {
+        if (d->m_lineEditClearButton.isNull()) {
+            auto e = new WinFontIconEngine(Clear.at(0), d->assetFont);
+            d->m_lineEditClearButton = QIcon(e);
+        }
+        return d->m_lineEditClearButton;
+    }
     case SP_ToolBarHorizontalExtensionButton:
     case SP_ToolBarVerticalExtensionButton: {
         if (d->m_toolbarExtensionButton.isNull()) {

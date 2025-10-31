@@ -123,6 +123,7 @@ class QWindows11StylePrivate : public QWindowsVistaStylePrivate {
 
 protected:
     QIcon m_toolbarExtensionButton;
+    QIcon m_lineEditClearButton;
 };
 
 QT_END_NAMESPACE
