@@ -47,6 +47,9 @@
 
 #include <memory>
 
+#define QT_XFORM_TYPE_MSBFIRST 0
+#define QT_XFORM_TYPE_LSBFIRST 1
+
 QT_BEGIN_NAMESPACE
 class QCmyk32;
 
@@ -4447,6 +4450,8 @@ int QImage::metric(PaintDeviceMetric metric) const
                         trigx += m11;                                                      \
                         trigy += m12;
         // END OF MACRO
+
+static
 bool qt_xForm_helper(const QTransform &trueMat, int xoffset, int type, int depth,
                      uchar *dptr, qsizetype dbpl, int p_inc, int dHeight,
                      const uchar *sptr, qsizetype sbpl, int sWidth, int sHeight)

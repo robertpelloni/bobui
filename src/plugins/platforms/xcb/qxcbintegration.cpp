@@ -37,11 +37,6 @@
 #include <X11/Xlib.h>
 #undef register
 #endif
-#if QT_CONFIG(xcb_native_painting)
-#include "qxcbnativepainting.h"
-#include "qpixmap_x11_p.h"
-#include "qbackingstore_x11_p.h"
-#endif
 
 #include <qpa/qplatforminputcontextfactory_p.h>
 #include <private/qgenericunixtheme_p.h>
@@ -180,13 +175,6 @@ QXcbIntegration::QXcbIntegration(const QStringList &parameters, int &argc, char 
     m_services->setConnection(m_connection);
 
     m_fontDatabase.reset(new QGenericUnixFontDatabase());
-
-#if QT_CONFIG(xcb_native_painting)
-    if (nativePaintingEnabled()) {
-        qCDebug(lcQpaXcb, "QXCB USING NATIVE PAINTING");
-        qt_xcb_native_x11_info_init(connection());
-    }
-#endif
 }
 
 QXcbIntegration::~QXcbIntegration()
@@ -198,11 +186,6 @@ QXcbIntegration::~QXcbIntegration()
 
 QPlatformPixmap *QXcbIntegration::createPlatformPixmap(QPlatformPixmap::PixelType type) const
 {
-#if QT_CONFIG(xcb_native_painting)
-    if (nativePaintingEnabled())
-        return new QX11PlatformPixmap(type);
-#endif
-
     return QPlatformIntegration::createPlatformPixmap(type);
 }
 
@@ -281,10 +264,6 @@ QPlatformBackingStore *QXcbIntegration::createPlatformBackingStore(QWindow *wind
     const bool isTrayIconWindow = QXcbWindow::isTrayIconWindow(window);
     if (isTrayIconWindow) {
         backingStore = new QXcbSystemTrayBackingStore(window);
-#if QT_CONFIG(xcb_native_painting)
-    } else if (nativePaintingEnabled()) {
-        backingStore = new QXcbNativeBackingStore(window);
-#endif
     } else {
         backingStore = new QXcbBackingStore(window);
     }
@@ -574,16 +553,6 @@ void QXcbIntegration::beep() const
     xcb_connection_t *connection = static_cast<QXcbScreen *>(screen)->xcb_connection();
     xcb_bell(connection, 0);
     xcb_flush(connection);
-}
-
-bool QXcbIntegration::nativePaintingEnabled() const
-{
-#if QT_CONFIG(xcb_native_painting)
-    static bool enabled = qEnvironmentVariableIsSet("QT_XCB_NATIVE_PAINTING");
-    return enabled;
-#else
-    return false;
-#endif
 }
 
 #if QT_CONFIG(vulkan)

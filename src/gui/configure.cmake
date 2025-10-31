@@ -1217,17 +1217,6 @@ qt_feature("xcb-egl-plugin" PRIVATE
     CONDITION QT_FEATURE_egl AND QT_FEATURE_opengl
     EMIT_IF QT_FEATURE_xcb
 )
-qt_feature("xcb-native-painting" PRIVATE
-    LABEL "Native painting (experimental)"
-    AUTODETECT OFF
-    CONDITION QT_FEATURE_xcb_xlib AND QT_FEATURE_fontconfig AND XRender_FOUND
-    EMIT_IF QT_FEATURE_xcb
-)
-qt_feature("xrender" PRIVATE
-    LABEL "XRender for native painting"
-    CONDITION QT_FEATURE_xcb_native_painting
-    EMIT_IF QT_FEATURE_xcb AND QT_FEATURE_xcb_native_painting
-)
 qt_feature("xcb-xlib" PRIVATE
     LABEL "XCB Xlib"
     CONDITION QT_FEATURE_xlib AND X11_XCB_FOUND
