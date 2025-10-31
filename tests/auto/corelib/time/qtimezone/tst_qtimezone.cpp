@@ -1249,7 +1249,7 @@ void tst_QTimeZone::utcTest()
 
     tz = QTimeZone(15 * 3600); // no IANA ID, so uses minimal id, skipping :00 minutes
     QVERIFY(tz.isValid());
-    QCOMPARE(tz.id(), "UTC+15");
+    QCOMPARE(tz.id(), "UTC+15:00");
     QCOMPARE(tz.offsetFromUtc(now), 15 * 3600);
     QCOMPARE(tz.standardTimeOffset(now), 15 * 3600);
     QCOMPARE(tz.daylightTimeOffset(now), 0);

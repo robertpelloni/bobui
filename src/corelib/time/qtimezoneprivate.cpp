@@ -1177,7 +1177,7 @@ QUtcTimeZonePrivate::QUtcTimeZonePrivate(qint32 offsetSeconds)
         }
         Q_ASSERT(!name.isEmpty());
     } else { // Fall back to a UTC-offset name:
-        name = isoOffsetFormat(offsetSeconds, QTimeZone::ShortName);
+        name = isoOffsetFormat(offsetSeconds, QTimeZone::OffsetName);
         id = name.toUtf8();
     }
     init(id, offsetSeconds, name, name, QLocale::AnyTerritory, name);
