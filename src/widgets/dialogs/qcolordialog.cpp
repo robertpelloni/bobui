@@ -590,13 +590,15 @@ protected:
     void resizeEvent(QResizeEvent *) override;
 
 private:
-    int hue;
-    int sat;
+    QPoint m_pos;
 
-    QPoint colPt();
-    int huePt(const QPoint &pt);
-    int satPt(const QPoint &pt);
-    void setCol(const QPoint &pt);
+    QPixmap createColorsPixmap();
+    QPoint colPt(int hue, int sat);
+    int huePt(const QPoint &pt, const QSize &widgetSize);
+    int huePt(const QPoint &pt) { return huePt(pt, size()); }
+    int satPt(const QPoint &pt, const QSize &widgetSize);
+    int satPt(const QPoint &pt) { return satPt(pt, size()); }
+    void setCol(const QPoint &pt, bool notify = true);
 
     QPixmap pix;
     bool crossVisible;
@@ -737,39 +739,52 @@ void QColorLuminancePicker::setCol(int h, int s , int v)
     repaint();
 }
 
-QPoint QColorPicker::colPt()
+QPoint QColorPicker::colPt(int hue, int sat)
 {
     QRect r = contentsRect();
     return QPoint((360 - hue) * (r.width() - 1) / 360, (255 - sat) * (r.height() - 1) / 255);
 }
 
-int QColorPicker::huePt(const QPoint &pt)
+int QColorPicker::huePt(const QPoint &pt, const QSize &widgetSize)
 {
-    QRect r = contentsRect();
-    return 360 - pt.x() * 360 / (r.width() - 1);
+    QRect r = QRect(QPoint(0, 0), widgetSize) - contentsMargins();
+    return std::clamp(360 - pt.x() * 360 / (r.width() - 1), 0, 359);
 }
 
-int QColorPicker::satPt(const QPoint &pt)
+int QColorPicker::satPt(const QPoint &pt, const QSize &widgetSize)
 {
-    QRect r = contentsRect();
-    return 255 - pt.y() * 255 / (r.height() - 1);
+    QRect r = QRect(QPoint(0, 0), widgetSize) - contentsMargins();
+    return std::clamp(255 - pt.y() * 255 / (r.height() - 1), 0, 255);
 }
 
-void QColorPicker::setCol(const QPoint &pt)
+void QColorPicker::setCol(const QPoint &pt, bool notify)
 {
-    setCol(huePt(pt), satPt(pt));
-    emit newCol(hue, sat);
+    if (pt == m_pos)
+        return;
+
+    QRect r(m_pos, QSize(20, 20));
+    m_pos.setX(std::clamp(pt.x(), 0, pix.width() - 1));
+    m_pos.setY(std::clamp(pt.y(), 0, pix.height() - 1));
+    r = r.united(QRect(m_pos, QSize(20, 20)));
+    r.translate(contentsRect().x() - 9, contentsRect().y() - 9);
+    //    update(r);
+    repaint(r);
+
+    if (notify)
+        emit newCol(huePt(m_pos), satPt(m_pos));
 }
 
 QColorPicker::QColorPicker(QWidget* parent)
     : QFrame(parent)
     , crossVisible(true)
 {
-    hue = 0; sat = 0;
-    setCol(150, 255);
-
     setAttribute(Qt::WA_NoSystemBackground);
     setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed) );
+    adjustSize();
+
+    pix = createColorsPixmap();
+
+    setCol(150, 255);
 }
 
 QColorPicker::~QColorPicker()
@@ -793,15 +808,10 @@ void QColorPicker::setCol(int h, int s)
 {
     int nhue = qMin(qMax(0,h), 359);
     int nsat = qMin(qMax(0,s), 255);
-    if (nhue == hue && nsat == sat)
+    if (nhue == huePt(m_pos) && nsat == satPt(m_pos))
         return;
 
-    QRect r(colPt(), QSize(20,20));
-    hue = nhue; sat = nsat;
-    r = r.united(QRect(colPt(), QSize(20,20)));
-    r.translate(contentsRect().x()-9, contentsRect().y()-9);
-    //    update(r);
-    repaint(r);
+    setCol(colPt(nhue, nsat), false);
 }
 
 void QColorPicker::mouseMoveEvent(QMouseEvent *m)
@@ -829,7 +839,7 @@ void QColorPicker::paintEvent(QPaintEvent* )
     p.drawPixmap(r.topLeft(), pix);
 
     if (crossVisible) {
-        QPoint pt = colPt() + r.topLeft();
+        QPoint pt = m_pos + r.topLeft();
         p.setPen(Qt::black);
         p.fillRect(pt.x()-9, pt.y(), 20, 2, Qt::black);
         p.fillRect(pt.x(), pt.y()-9, 2, 20, Qt::black);
@@ -840,6 +850,21 @@ void QColorPicker::resizeEvent(QResizeEvent *ev)
 {
     QFrame::resizeEvent(ev);
 
+    pix = createColorsPixmap();
+
+    const QSize &oldSize = ev->oldSize();
+    if (!oldSize.isValid())
+        return;
+
+    // calculate hue/saturation based on previous widget size
+    // and update position accordingly
+    const int hue = huePt(m_pos, oldSize);
+    const int sat = satPt(m_pos, oldSize);
+    setCol(hue, sat);
+}
+
+QPixmap QColorPicker::createColorsPixmap()
+{
     int w = width() - frameWidth() * 2;
     int h = height() - frameWidth() * 2;
     QImage img(w, h, QImage::Format_RGB32);
@@ -857,9 +882,8 @@ void QColorPicker::resizeEvent(QResizeEvent *ev)
             ++x;
         }
     }
-    pix = QPixmap::fromImage(img);
+    return QPixmap::fromImage(img);
 }
-
 
 class QColSpinBox : public QSpinBox
 {
