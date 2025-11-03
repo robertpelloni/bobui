@@ -585,6 +585,7 @@ signals:
 protected:
     QSize sizeHint() const override;
     void paintEvent(QPaintEvent*) override;
+    void keyPressEvent(QKeyEvent *event) override;
     void mouseMoveEvent(QMouseEvent *) override;
     void mousePressEvent(QMouseEvent *) override;
     void resizeEvent(QResizeEvent *) override;
@@ -779,6 +780,7 @@ QColorPicker::QColorPicker(QWidget* parent)
     , crossVisible(true)
 {
     setAttribute(Qt::WA_NoSystemBackground);
+    setFocusPolicy(Qt::StrongFocus);
     setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed) );
     adjustSize();
 
@@ -812,6 +814,27 @@ void QColorPicker::setCol(int h, int s)
         return;
 
     setCol(colPt(nhue, nsat), false);
+}
+
+void QColorPicker::keyPressEvent(QKeyEvent *event)
+{
+    switch (event->key()) {
+    case Qt::Key_Down:
+        setCol(m_pos + QPoint(0, 1));
+        break;
+    case Qt::Key_Left:
+        setCol(m_pos + QPoint(-1, 0));
+        break;
+    case Qt::Key_Right:
+        setCol(m_pos + QPoint(1, 0));
+        break;
+    case Qt::Key_Up:
+        setCol(m_pos + QPoint(0, -1));
+        break;
+    default:
+        QFrame::keyPressEvent(event);
+        break;
+    }
 }
 
 void QColorPicker::mouseMoveEvent(QMouseEvent *m)
