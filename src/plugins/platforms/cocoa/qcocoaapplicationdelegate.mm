@@ -25,6 +25,8 @@
 #include <qpa/qwindowsysteminterface.h>
 #include <qwindowdefs.h>
 
+#include <QtCore/private/qdarwinsecurityscopedfileengine_p.h>
+
 QT_USE_NAMESPACE
 
 @implementation QCocoaApplicationDelegate {
@@ -209,7 +211,8 @@ QT_USE_NAMESPACE
             if (qApp->arguments().contains(qtFileName))
                 continue;
         }
-        QWindowSystemInterface::handleFileOpenEvent(qtFileName);
+        QUrl url = qt_apple_urlFromPossiblySecurityScopedURL([NSURL fileURLWithPath:fileName]);
+        QWindowSystemInterface::handleFileOpenEvent(url);
     }
 
     if ([reflectionDelegate respondsToSelector:_cmd])

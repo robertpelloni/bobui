@@ -8,6 +8,7 @@
 #include "qiosdocumentpickercontroller.h"
 
 #include <QtCore/qpointer.h>
+#include <QtCore/private/qdarwinsecurityscopedfileengine_p.h>
 
 @implementation QIOSDocumentPickerController {
     QPointer<QIOSFileDialog> m_fileDialog;
@@ -28,19 +29,6 @@
         docTypes = [self computeAllowedFileTypes:results];
     }
 
-    // FIXME: Handle security scoped URLs instead of copying resource
-    bool asCopy = [&]{
-        switch (fileDialog->options()->fileMode()) {
-        case QFileDialogOptions::AnyFile:
-        case QFileDialogOptions::ExistingFile:
-        case QFileDialogOptions::ExistingFiles:
-            return true;
-        default:
-            // Folders can't be imported
-            return false;
-        }
-    }();
-
     if (!docTypes.count) {
         switch (fileDialog->options()->fileMode()) {
         case QFileDialogOptions::AnyFile:
@@ -58,7 +46,7 @@
         }
     }
 
-    if (self = [super initForOpeningContentTypes:docTypes asCopy:asCopy]) {
+    if (self = [super initForOpeningContentTypes:docTypes asCopy:NO]) {
         m_fileDialog = fileDialog;
         self.modalPresentationStyle = UIModalPresentationFormSheet;
         self.delegate = self;
@@ -81,7 +69,7 @@
 
     QList<QUrl> files;
     for (NSURL* url in urls)
-        files.append(QUrl::fromNSURL(url));
+        files.append(qt_apple_urlFromPossiblySecurityScopedURL(url));
 
     m_fileDialog->selectedFilesChanged(files);
     emit m_fileDialog->accept();

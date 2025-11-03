@@ -701,6 +701,7 @@ qt_internal_extend_target(Core CONDITION APPLE
         kernel/qcore_mac.mm kernel/qcore_mac_p.h
         kernel/qcoreapplication_mac.cpp
         kernel/qeventdispatcher_cf.mm kernel/qeventdispatcher_cf_p.h
+        platform/darwin/qdarwinsecurityscopedfileengine.mm platform/darwin/qdarwinsecurityscopedfileengine_p.h
     LIBRARIES
         ${FWCoreFoundation}
         ${FWFoundation}

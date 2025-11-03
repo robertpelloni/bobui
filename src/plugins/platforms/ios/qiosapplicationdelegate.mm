@@ -16,6 +16,8 @@
 
 #include <QtCore/QtCore>
 
+#include <QtCore/private/qdarwinsecurityscopedfileengine_p.h>
+
 @interface QIOSWindowSceneDelegate : NSObject<UIWindowSceneDelegate>
 @property (nullable, nonatomic, strong) UIWindow *window;
 @end
@@ -112,7 +114,7 @@
     QIOSServices *iosServices = static_cast<QIOSServices *>(iosIntegration->services());
 
     for (UIOpenURLContext *urlContext in URLContexts) {
-        QUrl url = QUrl::fromNSURL(urlContext.URL);
+        QUrl url = qt_apple_urlFromPossiblySecurityScopedURL(urlContext.URL);
         if (url.isLocalFile())
             QWindowSystemInterface::handleFileOpenEvent(url);
         else

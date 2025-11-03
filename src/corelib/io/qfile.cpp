@@ -592,6 +592,10 @@ QFile::rename(const QString &newName)
         return false;
     }
 
+    // Keep engine for target alive during the operation
+    // FIXME: Involve the target engine in the operation
+    auto targetEngine = QFileSystemEngine::createLegacyEngine(newName);
+
     // If the file exists and it is a case-changing rename ("foo" -> "Foo"),
     // compare Ids to make sure it really is a different file.
     // Note: this does not take file engines into account.
@@ -738,6 +742,11 @@ QFile::link(const QString &linkName)
         qWarning("QFile::link: Empty or null file name");
         return false;
     }
+
+    // Keep engine for target alive during the operation
+    // FIXME: Involve the target engine in the operation
+    auto targetEngine = QFileSystemEngine::createLegacyEngine(linkName);
+
     QFileInfo fi(linkName);
     if (d->engine()->link(fi.absoluteFilePath())) {
         unsetError();
@@ -770,6 +779,10 @@ bool QFilePrivate::copy(const QString &newName)
     Q_Q(QFile);
     Q_ASSERT(error == QFile::NoError);
     Q_ASSERT(!q->isOpen());
+
+    // Keep engine for target alive during the operation
+    // FIXME: Involve the target engine in the operation
+    auto targetEngine = QFileSystemEngine::createLegacyEngine(newName);
 
     // Some file engines can perform this copy more efficiently (e.g., Windows
     // calling CopyFile).
