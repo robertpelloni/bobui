@@ -758,6 +758,7 @@ int QColorPicker::satPt(const QPoint &pt)
 void QColorPicker::setCol(const QPoint &pt)
 {
     setCol(huePt(pt), satPt(pt));
+    emit newCol(hue, sat);
 }
 
 QColorPicker::QColorPicker(QWidget* parent)
@@ -811,14 +812,12 @@ void QColorPicker::mouseMoveEvent(QMouseEvent *m)
         return;
     }
     setCol(p);
-    emit newCol(hue, sat);
 }
 
 void QColorPicker::mousePressEvent(QMouseEvent *m)
 {
     QPoint p = m->position().toPoint() - contentsRect().topLeft();
     setCol(p);
-    emit newCol(hue, sat);
 }
 
 void QColorPicker::paintEvent(QPaintEvent* )
