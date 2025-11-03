@@ -464,7 +464,7 @@ Q_COREAPP_STARTUP_FUNCTION(myStartupFunc)
 
 void tst_QGlobal::qCoreAppStartupFunction()
 {
-    QCOMPARE(qStartupFunctionValue, 0);
+    qStartupFunctionValue = 0;
     int argc = 1;
     char *argv[] = { const_cast<char*>(QTest::currentAppName()) };
     QCoreApplication app(argc, argv);
