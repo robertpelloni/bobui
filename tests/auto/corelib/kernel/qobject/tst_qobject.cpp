@@ -8736,6 +8736,9 @@ QT_END_NAMESPACE
 void tst_QObject::emitToDestroyedClass()
 {
     using namespace EmitToDestroyedClass;
+    assertionCallCount = 0;
+    wouldHaveAssertedCount = 0;
+
     std::unique_ptr ptr = std::make_unique<Derived>();
     QObject::connect(ptr.get(), &Base::theSignal, ptr.get(), &Derived::doNothing);
     QCOMPARE(assertionCallCount, 0);
