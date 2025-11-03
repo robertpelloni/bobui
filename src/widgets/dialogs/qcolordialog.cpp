@@ -628,6 +628,7 @@ signals:
 
 protected:
     void paintEvent(QPaintEvent*) override;
+    void keyPressEvent(QKeyEvent *event) override;
     void mouseMoveEvent(QMouseEvent *) override;
     void mousePressEvent(QMouseEvent *) override;
 
@@ -663,11 +664,27 @@ QColorLuminancePicker::QColorLuminancePicker(QWidget* parent)
     hue = 100; val = 100; sat = 100;
     pix = nullptr;
     //    setAttribute(WA_NoErase, true);
+    setFocusPolicy(Qt::StrongFocus);
 }
 
 QColorLuminancePicker::~QColorLuminancePicker()
 {
     delete pix;
+}
+
+void QColorLuminancePicker::keyPressEvent(QKeyEvent *event)
+{
+    switch (event->key()) {
+    case Qt::Key_Down:
+        setVal(std::clamp(val - 1, 0, 255));
+        break;
+    case Qt::Key_Up:
+        setVal(std::clamp(val + 1, 0, 255));
+        break;
+    default:
+        QWidget::keyPressEvent(event);
+        break;
+    }
 }
 
 void QColorLuminancePicker::mouseMoveEvent(QMouseEvent *m)
