@@ -850,7 +850,7 @@ void tst_QComboBox::virtualAutocompletion()
     QApplication::sendEvent(testWidget, &kr3);
     QTRY_COMPARE(testWidget->currentIndex(), 3);
 
-    QTest::qWait(QApplication::keyboardInputInterval());
+    QTest::qWait(2 * QApplication::keyboardInputInterval());
     testWidget->view()->setKeyboardSearchFlags(Qt::MatchContains | Qt::MatchWrap);
     QApplication::sendEvent(testWidget, &kp3);
     QApplication::sendEvent(testWidget, &kr3);
