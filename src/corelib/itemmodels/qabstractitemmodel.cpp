@@ -2867,7 +2867,7 @@ bool QAbstractItemModel::decodeData(int row, int column, const QModelIndex &pare
 
     \table 80%
     \row
-        \li  \inlineimage modelview-begin-insert-rows.png Inserting rows
+        \li  \inlineimage modelview-begin-insert-rows.svg Inserting rows
         \li  Specify the first and last row numbers for the span of rows you
             want to insert into an item in a model.
 
@@ -2878,7 +2878,7 @@ bool QAbstractItemModel::decodeData(int row, int column, const QModelIndex &pare
 
             This inserts the three new rows as rows 2, 3, and 4.
     \row
-        \li  \inlineimage modelview-begin-append-rows.png Appending rows
+        \li  \inlineimage modelview-begin-append-rows.svg Appending rows
         \li  To append rows, insert them after the last row.
 
             For example, as shown in the diagram, we append two rows to a
@@ -2934,7 +2934,7 @@ void QAbstractItemModel::endInsertRows()
 
     \table 80%
     \row
-        \li  \inlineimage modelview-begin-remove-rows.png Removing rows
+        \li  \inlineimage modelview-begin-remove-rows.svg Removing rows
         \li  Specify the first and last row numbers for the span of rows you
             want to remove from an item in a model.
 
@@ -3176,7 +3176,7 @@ void QAbstractItemModel::endMoveRows()
 
     \table 80%
     \row
-        \li  \inlineimage modelview-begin-insert-columns.png Inserting columns
+        \li  \inlineimage modelview-begin-insert-columns.svg Inserting columns
         \li  Specify the first and last column numbers for the span of columns
             you want to insert into an item in a model.
 
@@ -3187,7 +3187,7 @@ void QAbstractItemModel::endMoveRows()
 
             This inserts the three new columns as columns 4, 5, and 6.
     \row
-        \li  \inlineimage modelview-begin-append-columns.png Appending columns
+        \li  \inlineimage modelview-begin-append-columns.svg Appending columns
         \li  To append columns, insert them after the last column.
 
             For example, as shown in the diagram, we append three columns to a
@@ -3245,7 +3245,7 @@ void QAbstractItemModel::endInsertColumns()
 
     \table 80%
     \row
-        \li  \inlineimage modelview-begin-remove-columns.png Removing columns
+        \li  \inlineimage modelview-begin-remove-columns.svg Removing columns
         \li  Specify the first and last column numbers for the span of columns
             you want to remove from an item in a model.
 
