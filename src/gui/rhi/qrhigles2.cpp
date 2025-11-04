@@ -3959,6 +3959,7 @@ void QRhiGles2::executeCommandBuffer(QRhiCommandBuffer *cb)
             break;
         case QGles2CommandBuffer::Command::InvalidateFramebuffer:
             if (caps.gles && caps.ctxMajor >= 3) {
+                f->glBindFramebuffer(GL_FRAMEBUFFER, cmd.args.invalidateFramebuffer.fbo);
                 f->glInvalidateFramebuffer(GL_DRAW_FRAMEBUFFER,
                                            cmd.args.invalidateFramebuffer.attCount,
                                            cmd.args.invalidateFramebuffer.att);
@@ -4881,6 +4882,7 @@ void QRhiGles2::endPass(QRhiCommandBuffer *cb, QRhiResourceUpdateBatch *resource
         if (mayDiscardDepthStencil) {
             QGles2CommandBuffer::Command &cmd(cbD->commands.get());
             cmd.cmd = QGles2CommandBuffer::Command::InvalidateFramebuffer;
+            cmd.args.invalidateFramebuffer.fbo = rtTex->framebuffer;
             if (caps.needsDepthStencilCombinedAttach) {
                 cmd.args.invalidateFramebuffer.attCount = 1;
                 cmd.args.invalidateFramebuffer.att[0] = GL_DEPTH_STENCIL_ATTACHMENT;

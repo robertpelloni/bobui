@@ -547,6 +547,7 @@ struct QGles2CommandBuffer : public QRhiCommandBuffer
                 GLbitfield barriers;
             } barrier;
             struct {
+                GLuint fbo;
                 int attCount;
                 GLenum att[3];
             } invalidateFramebuffer;
