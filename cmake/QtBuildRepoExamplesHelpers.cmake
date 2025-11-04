@@ -200,8 +200,11 @@ function(qt_internal_add_example subdir)
     # Don't show warnings for examples that were added via qt_internal_add_example.
     # Those that are added via add_subdirectory will see the warning, due to the parent scope
     # having the variable set to TRUE.
-    if(QT_FEATURE_developer_build AND NOT QT_NO_WARN_ABOUT_EXAMPLE_ADD_SUBDIRECTORY_WARNING)
-        set(QT_WARN_ABOUT_EXAMPLE_ADD_SUBDIRECTORY FALSE)
+    if(QT_FEATURE_developer_build)
+        set(QT_LINT_EXAMPLES ON)
+        if(NOT QT_NO_WARN_ABOUT_EXAMPLE_ADD_SUBDIRECTORY_WARNING)
+            set(QT_WARN_ABOUT_EXAMPLE_ADD_SUBDIRECTORY FALSE)
+        endif()
     endif()
 
     # Pre-compute unique example name based on the subdir, in case of target name clashes.
@@ -354,6 +357,10 @@ function(qt_internal_add_example_external_project subdir)
 
     cmake_parse_arguments(PARSE_ARGV 1 arg "${options}" "${singleOpts}" "${multiOpts}")
 
+    if(QT_FEATURE_developer_build)
+        set(QT_LINT_EXAMPLES ON)
+    endif()
+
     _qt_internal_get_build_vars_for_external_projects(
         CMAKE_DIR_VAR qt_cmake_dir
         PREFIXES_VAR qt_prefixes
@@ -368,6 +375,10 @@ function(qt_internal_add_example_external_project subdir)
         list(APPEND var_defs
             -DCMAKE_TOOLCHAIN_FILE:FILEPATH=${qt_cmake_dir}/qt.toolchain.cmake
         )
+        if(QT_LINT_EXAMPLES)
+            list(APPEND var_defs -DQT_LINT_EXAMPLES=ON)
+        endif()
+
     else()
         list(PREPEND CMAKE_PREFIX_PATH ${qt_prefixes})
 
