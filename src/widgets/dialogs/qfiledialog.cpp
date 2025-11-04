@@ -3764,6 +3764,9 @@ void QFileDialogPrivate::enterDirectory(const QModelIndex &index)
     QModelIndex sourceIndex = index.model() == proxyModel ? mapToSource(index) : index;
     QString path = sourceIndex.data(QFileSystemModel::FilePathRole).toString();
     if (path.isEmpty() || model->isDir(sourceIndex)) {
+        if (q->directory().path() == path)
+            return;
+
         const QFileDialog::FileMode fileMode = q->fileMode();
         q->setDirectory(path);
         emit q->directoryEntered(path);
