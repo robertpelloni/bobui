@@ -60,7 +60,7 @@ int QAccessibleTable::logicalIndex(const QModelIndex &index) const
 }
 
 QAccessibleTable::QAccessibleTable(QWidget *w)
-    : QAccessibleObject(w)
+    : QAccessibleWidgetV2(w)
 {
     Q_ASSERT(view());
 
@@ -677,7 +677,7 @@ void *QAccessibleTable::interface_cast(QAccessible::InterfaceType t)
        return static_cast<QAccessibleSelectionInterface*>(this);
     if (t == QAccessible::TableInterface)
        return static_cast<QAccessibleTableInterface*>(this);
-   return nullptr;
+    return QAccessibleWidgetV2::interface_cast(t);
 }
 
 void QAccessibleTable::modelChange(QAccessibleTableModelChangeEvent *event)

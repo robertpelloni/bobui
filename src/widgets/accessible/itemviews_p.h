@@ -31,7 +31,9 @@ QT_BEGIN_NAMESPACE
 class QAccessibleTableCell;
 class QAccessibleTableHeaderCell;
 
-class QAccessibleTable :public QAccessibleTableInterface, public QAccessibleSelectionInterface, public QAccessibleObject
+class QAccessibleTable : public QAccessibleTableInterface,
+                         public QAccessibleSelectionInterface,
+                         public QAccessibleWidgetV2
 {
 public:
     explicit QAccessibleTable(QWidget *w);
