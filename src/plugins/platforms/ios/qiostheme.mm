@@ -202,6 +202,12 @@ void QIOSTheme::requestColorScheme(Qt::ColorScheme scheme)
 #endif
 }
 
+Qt::ContrastPreference QIOSTheme::contrastPreference() const
+{
+    return UIAccessibilityDarkerSystemColorsEnabled() ? Qt::ContrastPreference::HighContrast : Qt::ContrastPreference::NoPreference;
+}
+
+
 void QIOSTheme::applyTheme(UIWindow *window)
 {
     const UIUserInterfaceStyle style = []{
