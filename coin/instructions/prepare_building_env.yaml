@@ -487,15 +487,16 @@ instructions:
           property: host.os
           contains_value: Windows
 
-  # Enable warnings are errors
+  # Enable warnings are errors, including qml linting warnings for examples that should not regress
+  # in qmllint warnings
   - type: Group
     instructions:
       - type: AppendToEnvironmentVariable
         variableName: COMMON_CMAKE_ARGS
-        variableValue: " -DWARNINGS_ARE_ERRORS=ON"
+        variableValue: " -DWARNINGS_ARE_ERRORS=ON -DQT_LINT_EXAMPLES=ON"
       - type: AppendToEnvironmentVariable
         variableName: COMMON_TARGET_CMAKE_ARGS
-        variableValue: " -DWARNINGS_ARE_ERRORS=ON"
+        variableValue: " -DWARNINGS_ARE_ERRORS=ON -DQT_LINT_EXAMPLES=ON"
     enable_if:
       condition: property
       property: features
