@@ -377,15 +377,23 @@ emscripten::val QWasmAccessibility::createHtmlElement(QAccessibleInterface *ifac
             addEventListener(iface, element, "click");
         } break;
 
+        case QAccessible::Grouping:
         case QAccessible::CheckBox: {
-            // QGroupBox uses both CheckBox, and a group with subwidgets
-            element = document.call<emscripten::val>("createElement", std::string("input"));
-            setAttribute(element, "type", "checkbox");
-            setAttribute(element, "checked", iface->state().checked);
-            setProperty(element, "indeterminate", iface->state().checkStateMixed);
-            addEventListener(iface, element, "change");
-            if (iface->childCount() > 0) {
-                auto checkbox = element;
+            // Three cases:
+            // 1) role=CheckBox, childCount() == 0 -> Checkbox
+            // 2) role=CheckBox, childCount() >  0 -> GroupBox w/checkbox
+            // 3) role=Grouping                    -> GroupBox w/label
+
+            emscripten::val checkbox = emscripten::val::undefined();
+            if (iface->role() == QAccessible::CheckBox) {
+                checkbox = document.call<emscripten::val>("createElement", std::string("input"));
+                setAttribute(checkbox, "type", "checkbox");
+                setAttribute(checkbox, "checked", iface->state().checked);
+                setProperty(checkbox, "indeterminate", iface->state().checkStateMixed);
+                addEventListener(iface, checkbox, "change");
+            }
+
+            if (iface->childCount() > 0 || iface->role() == QAccessible::Grouping) {
                 auto label = document.call<emscripten::val>("createElement", std::string("span"));
 
                 const std::string id = QString::asprintf("lbid%p", iface).toStdString();
@@ -393,11 +401,16 @@ emscripten::val QWasmAccessibility::createHtmlElement(QAccessibleInterface *ifac
 
                 element = document.call<emscripten::val>("createElement", std::string("div"));
                 element.call<void>("appendChild", label);
-                element.call<void>("appendChild", checkbox);
 
                 setAttribute(element, "role", "group");
                 setAttribute(element, "aria-labelledby", id);
-                addEventListener(iface, checkbox, "focus");
+
+                if (!checkbox.isUndefined()) {
+                    element.call<void>("appendChild", checkbox);
+                    addEventListener(iface, checkbox, "focus");
+                }
+            } else {
+                element = checkbox;
             }
         } break;
 
@@ -800,19 +813,25 @@ void QWasmAccessibility::handleCheckBoxUpdate(QAccessibleEvent *event)
 void QWasmAccessibility::handleGroupBoxUpdate(QAccessibleEvent *event)
 {
     QAccessibleInterface *iface = event->accessibleInterface();
-    const emscripten::val parent = getHtmlElement(iface);
-    const emscripten::val label = parent["children"][0];
-    const emscripten::val checkbox = parent["children"][1];
+
+    emscripten::val parent = getHtmlElement(iface);
+    emscripten::val label = parent["children"][0];
+    emscripten::val checkbox = emscripten::val::undefined();
+    if (iface->role() == QAccessible::CheckBox)
+        checkbox = parent["children"][1];
 
     switch (event->type()) {
     case QAccessible::Focus:
     case QAccessible::NameChanged: {
         setProperty(label, "innerText", iface->text(QAccessible::Name).toStdString());
-        setAttribute(checkbox, "aria-label", iface->text(QAccessible::Name).toStdString());
+        if (!checkbox.isUndefined())
+            setAttribute(checkbox, "aria-label", iface->text(QAccessible::Name).toStdString());
     } break;
     case QAccessible::StateChanged: {
-        setAttribute(checkbox, "checked", iface->state().checked);
-        setProperty(checkbox, "indeterminate", iface->state().checkStateMixed);
+        if (!checkbox.isUndefined()) {
+            setAttribute(checkbox, "checked", iface->state().checked);
+            setProperty(checkbox, "indeterminate", iface->state().checkStateMixed);
+        }
     } break;
     default:
         qCDebug(lcQpaAccessibility) << "TODO: implement handleCheckBoxUpdate for event" << event->type();
@@ -1308,6 +1327,9 @@ void QWasmAccessibility::handleUpdateByInterfaceRole(QAccessibleEvent *event)
     break;
     case QAccessible::ScrollBar:
         handleScrollBarUpdate(event);
+    break;
+    case QAccessible::Grouping:
+        handleGroupBoxUpdate(event);
     break;
     default:
         qCDebug(lcQpaAccessibility) << "TODO: implement notifyAccessibilityUpdate for role" << iface->role();
