@@ -641,6 +641,8 @@ void QAccessibleGroupBox::doAction(const QString &actionName)
 {
     if (actionName == QAccessibleActionInterface::toggleAction())
         groupBox()->setChecked(!groupBox()->isChecked());
+    else
+        QAccessibleWidgetV2::doAction(actionName);
 }
 
 QStringList QAccessibleGroupBox::keyBindingsForAction(const QString &) const
