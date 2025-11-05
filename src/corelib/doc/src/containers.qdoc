@@ -275,7 +275,7 @@
     The diagram below shows the valid iterator positions as red
     arrows for a list containing four items:
 
-    \image stliterators1.png
+    \image stliterators1.svg STL-style iterators point to items
 
     Iterating backward with an STL-style iterator is done with reverse iterators:
 
