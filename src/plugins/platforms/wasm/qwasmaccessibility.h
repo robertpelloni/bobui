@@ -73,8 +73,6 @@ private:
     void setHtmlElementVisibility(QAccessibleInterface *iface, bool visible);
     void setHtmlElementGeometry(QAccessibleInterface *iface);
     void setHtmlElementGeometry(emscripten::val element, QRect geometry);
-    void setHtmlElementTextName(QAccessibleInterface *iface);
-    void setHtmlElementTextNameLE(QAccessibleInterface *iface);
     void setHtmlElementFocus(QAccessibleInterface *iface);
     void setHtmlElementDisabled(QAccessibleInterface *iface);
     void setHtmlElementOrientation(emscripten::val element, QAccessibleInterface *iface);
@@ -105,6 +103,9 @@ private:
     void relinkParentForChildren(QAccessibleInterface *iface);
 
     void notifyAccessibilityUpdate(QAccessibleEvent *event) override;
+    bool handleUpdateByEventType(QAccessibleEvent *event);
+    void handleUpdateByInterfaceRole(QAccessibleEvent *event);
+
     void setRootObject(QObject *o) override;
     void initialize() override;
     void cleanup() override;
@@ -117,7 +118,11 @@ private:
     void setProperty(emscripten::val element, const std::string &attr, const char *val);
     void setProperty(emscripten::val element, const std::string &attr, bool val);
 
+    void setNamedAttribute(QAccessibleInterface *iface, const std::string &attribute, QAccessible::Text text);
+    void setNamedProperty(QAccessibleInterface *iface, const std::string &property, QAccessible::Text text);
+
     void addEventListener(QAccessibleInterface *, emscripten::val element, const char *eventType);
+    void sendEvent(QAccessibleInterface *iface, QAccessible::Event eventType);
 
 private:
     static QWasmAccessibility *s_instance;

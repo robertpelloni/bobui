@@ -322,6 +322,16 @@ void QWasmAccessibility::setProperty(emscripten::val element, const std::string 
     element.set(property, val);
 }
 
+void QWasmAccessibility::setNamedAttribute(QAccessibleInterface *iface, const std::string &attribute, QAccessible::Text text)
+{
+    const emscripten::val element = getHtmlElement(iface);
+    setAttribute(element, attribute, iface->text(text).toStdString());
+}
+void QWasmAccessibility::setNamedProperty(QAccessibleInterface *iface, const std::string &property, QAccessible::Text text)
+{
+    const emscripten::val element = getHtmlElement(iface);
+    setProperty(element, property, iface->text(text).toStdString());
+}
 
 void QWasmAccessibility::addEventListener(QAccessibleInterface *iface, emscripten::val element, const char *eventType)
 {
@@ -329,6 +339,17 @@ void QWasmAccessibility::addEventListener(QAccessibleInterface *iface, emscripte
     element.call<void>("addEventListener", emscripten::val(eventType),
                        QWasmSuspendResumeControl::get()->jsEventHandlerAt(m_eventHandlerIndex),
                        true);
+}
+
+void QWasmAccessibility::sendEvent(QAccessibleInterface *iface, QAccessible::Event eventType)
+{
+    if (iface->object()) {
+        QAccessibleEvent event(iface->object(), eventType);
+        handleUpdateByInterfaceRole(&event);
+    } else {
+        QAccessibleEvent event(iface, eventType);
+        handleUpdateByInterfaceRole(&event);
+    }
 }
 
 emscripten::val QWasmAccessibility::createHtmlElement(QAccessibleInterface *iface)
@@ -484,11 +505,11 @@ emscripten::val QWasmAccessibility::createHtmlElement(QAccessibleInterface *ifac
     m_elements[iface] = element;
 
     setHtmlElementGeometry(iface);
-    setHtmlElementTextName(iface);
     setHtmlElementDisabled(iface);
     setHtmlElementVisibility(iface, !iface->state().invisible);
     handleIdentifierUpdate(iface);
     handleDescriptionChanged(iface);
+    sendEvent(iface, QAccessible::NameChanged);
 
     linkToParent(iface);
     // Link in child elements
@@ -624,28 +645,6 @@ void QWasmAccessibility::setHtmlElementGeometry(emscripten::val element, QRect g
     style.set("height", std::to_string(geometry.height()) + "px");
 }
 
-void QWasmAccessibility::setHtmlElementTextName(QAccessibleInterface *iface)
-{
-    const emscripten::val element = getHtmlElement(iface);
-    const QString name = iface->text(QAccessible::Name);
-    const QString value = iface->text(QAccessible::Value);
-
-    // A <div> cannot contain aria-label
-    if (iface->role() == QAccessible::StaticText)
-        setProperty(element, "innerText", name.toStdString());
-    else if (iface->role() == QAccessible::EditableText)
-        setProperty(element, "value", value.toStdString());
-    else
-        setAttribute(element, "aria-label", name.toStdString());
-}
-
-void QWasmAccessibility::setHtmlElementTextNameLE(QAccessibleInterface *iface)
-{
-    const emscripten::val element = getHtmlElement(iface);
-    QString value = iface->text(QAccessible::Value);
-    setProperty(element, "value", value.toStdString());
-}
-
 void QWasmAccessibility::setHtmlElementFocus(QAccessibleInterface *iface)
 {
     const auto element = getHtmlElement(iface);
@@ -677,7 +676,8 @@ void QWasmAccessibility::handleStaticTextUpdate(QAccessibleEvent *event)
 {
     switch (event->type()) {
     case QAccessible::NameChanged: {
-        setHtmlElementTextName(event->accessibleInterface());
+        // StaticText is a div
+        setNamedProperty(event->accessibleInterface(), "innerText", QAccessible::Name);
     } break;
     default:
         qCDebug(lcQpaAccessibility) << "TODO: implement handleStaticTextUpdate for event" << event->type();
@@ -698,7 +698,7 @@ void QWasmAccessibility::handleLineEditUpdate(QAccessibleEvent *event)
             setProperty(element, "type", "text");
     } break;
     case QAccessible::NameChanged: {
-        setHtmlElementTextName(event->accessibleInterface());
+        setNamedProperty(event->accessibleInterface(), "value", QAccessible::Value);
     } break;
     case QAccessible::ObjectShow:
     case QAccessible::Focus: {
@@ -711,12 +711,12 @@ void QWasmAccessibility::handleLineEditUpdate(QAccessibleEvent *event)
             else
                 setProperty(element, "type", "text");
         }
-        setHtmlElementTextNameLE(iface);
+        setNamedProperty(event->accessibleInterface(), "value", QAccessible::Value);
     } break;
     case QAccessible::TextRemoved:
     case QAccessible::TextInserted:
     case QAccessible::TextCaretMoved: {
-        setHtmlElementTextNameLE(event->accessibleInterface());
+        setNamedProperty(event->accessibleInterface(), "value", QAccessible::Value);
     } break;
     default:
         qCDebug(lcQpaAccessibility) << "TODO: implement handleLineEditUpdate for event" << event->type();
@@ -751,7 +751,15 @@ void QWasmAccessibility::handleEventFromHtmlElement(const emscripten::val event)
 
 void QWasmAccessibility::handleButtonUpdate(QAccessibleEvent *event)
 {
-    qCDebug(lcQpaAccessibility) << "TODO: implement handleButtonUpdate for event" << event->type();
+    switch (event->type()) {
+    case QAccessible::Focus:
+    case QAccessible::NameChanged: {
+        setNamedAttribute(event->accessibleInterface(), "aria-label", QAccessible::Name);
+    } break;
+    default:
+        qCDebug(lcQpaAccessibility) << "TODO: implement handleCheckBoxUpdate for event" << event->type();
+    break;
+    }
 }
 
 void QWasmAccessibility::handleCheckBoxUpdate(QAccessibleEvent *event)
@@ -759,7 +767,7 @@ void QWasmAccessibility::handleCheckBoxUpdate(QAccessibleEvent *event)
     switch (event->type()) {
     case QAccessible::Focus:
     case QAccessible::NameChanged: {
-        setHtmlElementTextName(event->accessibleInterface());
+        setNamedAttribute(event->accessibleInterface(), "aria-label", QAccessible::Name);
     } break;
     case QAccessible::StateChanged: {
         QAccessibleInterface *accessible = event->accessibleInterface();
@@ -778,7 +786,8 @@ void QWasmAccessibility::handleSwitchUpdate(QAccessibleEvent *event)
     switch (event->type()) {
     case QAccessible::Focus:
     case QAccessible::NameChanged: {
-        setHtmlElementTextName(event->accessibleInterface());
+        /* A switch is like a button in this regard */
+        setNamedAttribute(event->accessibleInterface(), "aria-label", QAccessible::Name);
     } break;
     case QAccessible::StateChanged: {
         QAccessibleInterface *accessible = event->accessibleInterface();
@@ -841,7 +850,7 @@ void QWasmAccessibility::handleDialogUpdate(QAccessibleEvent *event) {
     case QAccessible::Focus:
     case QAccessible::DialogStart:
     case QAccessible::StateChanged: {
-      setHtmlElementTextName(event->accessibleInterface());
+      setNamedAttribute(event->accessibleInterface(), "aria-label", QAccessible::Name);
     } break;
     default:
       qCDebug(lcQpaAccessibility) << "TODO: implement handleLineEditUpdate for event" << event->type();
@@ -869,10 +878,10 @@ void QWasmAccessibility::populateAccessibilityTree(QAccessibleInterface *iface)
             linkToParent(iface);
             setHtmlElementVisibility(iface, !iface->state().invisible);
             setHtmlElementGeometry(iface);
-            setHtmlElementTextName(iface);
             setHtmlElementDisabled(iface);
             handleIdentifierUpdate(iface);
             handleDescriptionChanged(iface);
+            sendEvent(iface, QAccessible::NameChanged);
         }
     }
     for (int i = 0; i < iface->childCount(); ++i)
@@ -884,7 +893,7 @@ void QWasmAccessibility::handleRadioButtonUpdate(QAccessibleEvent *event)
     switch (event->type()) {
     case QAccessible::Focus:
     case QAccessible::NameChanged: {
-        setHtmlElementTextName(event->accessibleInterface());
+        setNamedAttribute(event->accessibleInterface(), "aria-label", QAccessible::Name);
     } break;
     case QAccessible::StateChanged: {
         QAccessibleInterface *accessible = event->accessibleInterface();
@@ -905,7 +914,7 @@ void QWasmAccessibility::handleSpinBoxUpdate(QAccessibleEvent *event)
     } break;
     case QAccessible::Focus:
     case QAccessible::NameChanged: {
-        setHtmlElementTextName(event->accessibleInterface());
+        setNamedAttribute(event->accessibleInterface(), "aria-label", QAccessible::Name);
     } break;
     case QAccessible::ValueChanged: {
         QAccessibleInterface *accessible = event->accessibleInterface();
@@ -927,7 +936,7 @@ void QWasmAccessibility::handleSliderUpdate(QAccessibleEvent *event)
     } break;
     case QAccessible::Focus:
     case QAccessible::NameChanged: {
-        setHtmlElementTextName(event->accessibleInterface());
+        setNamedAttribute(event->accessibleInterface(), "aria-label", QAccessible::Name);
     } break;
     case QAccessible::ValueChanged: {
         QAccessibleInterface *accessible = event->accessibleInterface();
@@ -946,7 +955,7 @@ void QWasmAccessibility::handleScrollBarUpdate(QAccessibleEvent *event)
     switch (event->type()) {
     case QAccessible::Focus:
     case QAccessible::NameChanged: {
-        setHtmlElementTextName(event->accessibleInterface());
+        setNamedAttribute(event->accessibleInterface(), "aria-label", QAccessible::Name);
     } break;
     case QAccessible::ValueChanged: {
         QAccessibleInterface *accessible = event->accessibleInterface();
@@ -965,10 +974,10 @@ void QWasmAccessibility::handlePageTabUpdate(QAccessibleEvent *event)
 {
     switch (event->type()) {
     case QAccessible::NameChanged: {
-        setHtmlElementTextName(event->accessibleInterface());
+        setNamedAttribute(event->accessibleInterface(), "aria-label", QAccessible::Name);
     } break;
     case QAccessible::Focus: {
-        setHtmlElementTextName(event->accessibleInterface());
+        setNamedAttribute(event->accessibleInterface(), "aria-label", QAccessible::Name);
     } break;
     default:
         qDebug() << "TODO: implement handlePageTabUpdate for event" << event->type();
@@ -980,10 +989,10 @@ void QWasmAccessibility::handlePageTabListUpdate(QAccessibleEvent *event)
 {
     switch (event->type()) {
     case QAccessible::NameChanged: {
-        setHtmlElementTextName(event->accessibleInterface());
+        setNamedAttribute(event->accessibleInterface(), "aria-label", QAccessible::Name);
     } break;
     case QAccessible::Focus: {
-        setHtmlElementTextName(event->accessibleInterface());
+        setNamedAttribute(event->accessibleInterface(), "aria-label", QAccessible::Name);
     } break;
     default:
         qDebug() << "TODO: implement handlePageTabUpdate for event" << event->type();
@@ -1106,13 +1115,19 @@ void QWasmAccessibility::relinkParentForChildren(QAccessibleInterface *iface)
 
 void QWasmAccessibility::notifyAccessibilityUpdate(QAccessibleEvent *event)
 {
+    if (handleUpdateByEventType(event))
+        handleUpdateByInterfaceRole(event);
+}
+
+bool QWasmAccessibility::handleUpdateByEventType(QAccessibleEvent *event)
+{
     if (!m_accessibilityEnabled)
-        return;
+        return false;
 
     QAccessibleInterface *iface = event->accessibleInterface();
     if (!iface) {
-        qWarning() << "notifyAccessibilityUpdate with null a11y interface" << event->type() << event->object();
-        return;
+        qWarning() << "handleUpdateByEventType with null a11y interface" << event->type() << event->object();
+        return false;
     }
 
     // Handle event types that creates/removes objects.
@@ -1120,13 +1135,13 @@ void QWasmAccessibility::notifyAccessibilityUpdate(QAccessibleEvent *event)
     case QAccessible::ObjectCreated:
         // Do nothing, there are too many changes to the interface
         // before ObjectShow is called
-        return;
+        return false;
 
     case QAccessible::ObjectDestroyed:
         // The object might  be under destruction, and the interface is not valid
         // but we can look at the pointer,
         removeObject(iface);
-        return;
+        return false;
 
     case QAccessible::ObjectShow: // We do not get ObjectCreated from widgets, we get ObjectShow
         createObject(iface);
@@ -1142,7 +1157,7 @@ void QWasmAccessibility::notifyAccessibilityUpdate(QAccessibleEvent *event)
     };
 
     if (getHtmlElement(iface).isUndefined())
-        return;
+        return false;
 
     // Handle some common event types. See
     // https://doc.qt.io/qt-5/qaccessible.html#Event-enum
@@ -1155,7 +1170,7 @@ void QWasmAccessibility::notifyAccessibilityUpdate(QAccessibleEvent *event)
 
     case QAccessible::DescriptionChanged:
         handleDescriptionChanged(iface);
-        return;
+        return false;
 
     case QAccessible::Focus:
         // We do not get all callbacks for the geometry
@@ -1166,7 +1181,7 @@ void QWasmAccessibility::notifyAccessibilityUpdate(QAccessibleEvent *event)
 
     case QAccessible::IdentifierChanged:
         handleIdentifierUpdate(iface);
-        return;
+        return false;
 
     case QAccessible::ObjectShow:
         linkToParent(iface);
@@ -1174,22 +1189,36 @@ void QWasmAccessibility::notifyAccessibilityUpdate(QAccessibleEvent *event)
 
         // Sync up properties on show;
         setHtmlElementGeometry(iface);
-        setHtmlElementTextName(iface);
+        sendEvent(iface, QAccessible::NameChanged);
         break;
 
     case QAccessible::ObjectHide:
         linkToParent(iface);
         setHtmlElementVisibility(iface, false);
-        return;
+        return false;
 
     case QAccessible::LocationChanged:
         setHtmlElementGeometry(iface);
-        return;
+        return false;
 
     // TODO: maybe handle more types here
     default:
         break;
     };
+
+    return true;
+}
+
+void QWasmAccessibility::handleUpdateByInterfaceRole(QAccessibleEvent *event)
+{
+    if (!m_accessibilityEnabled)
+        return;
+
+    QAccessibleInterface *iface = event->accessibleInterface();
+    if (!iface) {
+        qWarning() << "handleUpdateByInterfaceRole with null a11y interface" << event->type() << event->object();
+        return;
+    }
 
     // Switch on interface role, see
     // https://doc.qt.io/qt-5/qaccessibleinterface.html#role
@@ -1198,7 +1227,7 @@ void QWasmAccessibility::notifyAccessibilityUpdate(QAccessibleEvent *event)
         handleStaticTextUpdate(event);
     break;
     case QAccessible::Button:
-        handleStaticTextUpdate(event);
+        handleButtonUpdate(event);
     break;
     case QAccessible::CheckBox:
         handleCheckBoxUpdate(event);
