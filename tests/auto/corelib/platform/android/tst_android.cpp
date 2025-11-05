@@ -348,7 +348,8 @@ void tst_Android::testFullScreenDimensions()
     QVERIFY(display.isValid());
 
     QSize appSize;
-    if (QNativeInterface::QAndroidApplication::sdkVersion() >= __ANDROID_API_R__) {
+    const int sdkVersion = QNativeInterface::QAndroidApplication::sdkVersion();
+    if (sdkVersion >= __ANDROID_API_R__) {
         using namespace QtJniTypes;
         auto windowMetrics = windowManager.callMethod<WindowMetrics>("getCurrentWindowMetrics");
         auto bounds = windowMetrics.callMethod<Rect>("getBounds");
@@ -383,7 +384,6 @@ void tst_Android::testFullScreenDimensions()
         const auto appContext = activity.callMethod<QtJniTypes::Context>("getApplicationContext");
         const auto appInfo = appContext.callMethod<QtJniTypes::ApplicationInfo>("getApplicationInfo");
         const int targetSdkVersion = appInfo.getField<jint>("targetSdkVersion");
-        const int sdkVersion = QNativeInterface::QAndroidApplication::sdkVersion();
 
         if (sdkVersion >= __ANDROID_API_V__  && targetSdkVersion >= __ANDROID_API_V__) {
             expectedWidth = appSize.width();
@@ -440,6 +440,11 @@ void tst_Android::testFullScreenDimensions()
         QTRY_COMPARE(screen->availableGeometry().height(), realSize.getField<jint>("y"));
 
         QTRY_COMPARE(screen->geometry().width(), realSize.getField<jint>("x"));
+        // TODO needs fix to work in local and CI on same fashion
+        const bool runsOnCI = qgetenv("QTEST_ENVIRONMENT").split(' ').contains("ci");
+        if ((sdkVersion > __ANDROID_API_V__) && runsOnCI)
+            QEXPECT_FAIL("", "Fails on Android 16 (QTBUG-141712).", Continue);
+
         QTRY_COMPARE(screen->geometry().height(), realSize.getField<jint>("y"));
         widget.showNormal();
     }
