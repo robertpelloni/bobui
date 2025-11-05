@@ -10290,7 +10290,7 @@ void tst_QNetworkReply::requestWithTimeout()
     QSignalSpy spy(reply.data(), &QNetworkReply::errorOccurred);
     QCOMPARE(waitForFinish(reply), int(Failure));
     QCOMPARE(spy.size(), 1);
-    QCOMPARE(reply->error(), QNetworkReply::OperationCanceledError);
+    QCOMPARE(reply->error(), QNetworkReply::TimeoutError);
 }
 #endif
 
