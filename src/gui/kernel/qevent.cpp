@@ -1146,6 +1146,33 @@ Q_IMPL_POINTER_EVENT(QHoverEvent)
 */
 
 /*!
+    \property QWheelEvent::device
+    \brief the device from which the wheel event originated
+
+    \sa pointingDevice()
+*/
+
+/*!
+    \property QWheelEvent::inverted
+    \since 5.7
+    \brief whether the delta values delivered with the event are inverted
+
+    Normally, a vertical wheel will produce a QWheelEvent with positive delta
+    values if the top of the wheel is rotating away from the hand operating it.
+    Similarly, a horizontal wheel movement will produce a QWheelEvent with
+    positive delta values if the top of the wheel is moved to the left.
+
+    However, on some platforms this is configurable, so that the same
+    operations described above will produce negative delta values (but with the
+    same magnitude). With the inverted property a wheel event consumer can
+    choose to always follow the direction of the wheel, regardless of the
+    system settings, but only for specific widgets.
+
+    \note Many platforms provide no such information. On such platforms
+    \l inverted always returns false.
+*/
+
+/*!
     \fn bool QWheelEvent::inverted() const
     \since 5.7
 
@@ -1236,6 +1263,24 @@ bool QWheelEvent::isEndEvent() const
 #endif // QT_CONFIG(wheelevent)
 
 /*!
+    \property QWheelEvent::pixelDelta
+    \brief the scrolling distance in pixels on screen
+
+    This value is provided on platforms that support high-resolution
+    pixel-based delta values, such as \macos. The value should be used
+    directly to scroll content on screen.
+
+    \note On platforms that support scrolling \l{phase()}{phases}, the delta
+    may be null when scrolling is about to begin (Qt::ScrollBegin) or has
+    ended (Qt::ScrollEnd).
+
+    \note On X11 this value is driver-specific and unreliable, use
+    angleDelta() instead.
+
+    \sa angleDelta()
+*/
+
+/*!
     \fn QPoint QWheelEvent::pixelDelta() const
 
     Returns the scrolling distance in pixels on screen. This value is
@@ -1253,6 +1298,27 @@ bool QWheelEvent::isEndEvent() const
     \li or scrolling has ended and the distance did not change anymore (Qt::ScrollEnd).
     \endlist
     \note On X11 this value is driver-specific and unreliable, use angleDelta() instead.
+*/
+
+/*!
+    \property QWheelEvent::angleDelta
+    \brief the relative amount that the wheel was rotated, in eighths of a degree
+
+    A positive value indicates that the wheel was rotated forwards away from the
+    user; a negative value indicates that the wheel was rotated backwards toward
+    the user. \c angleDelta().y() provides the angle through which the common
+    vertical mouse wheel was rotated since the previous event. \c angleDelta().x()
+    provides the angle through which the horizontal mouse wheel was rotated, if
+    the mouse has a horizontal wheel; otherwise it stays at zero.
+
+    Most mouse types work in steps of 15 degrees, in which case the delta value
+    is a multiple of 120; i.e., 120 units * 1/8 = 15 degrees.
+
+    \note On platforms that support scrolling \l{phase()}{phases}, the delta
+    may be null when scrolling is about to begin (Qt::ScrollBegin) or has
+    ended (Qt::ScrollEnd).
+
+    \sa pixelDelta()
 */
 
 /*!
@@ -1291,6 +1357,15 @@ bool QWheelEvent::isEndEvent() const
     \endlist
 
     \sa pixelDelta()
+*/
+
+/*!
+    \property QWheelEvent::phase
+    \since 5.2
+    \brief the scrolling phase of this wheel event
+
+    \note The Qt::ScrollBegin and Qt::ScrollEnd phases are currently
+    supported only on \macos.
 */
 
 /*!

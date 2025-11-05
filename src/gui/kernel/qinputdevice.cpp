@@ -187,6 +187,11 @@ QString QInputDevice::name() const
 }
 
 /*!
+    \property QInputDevice::type
+    \brief the device type
+*/
+
+/*!
     Returns the device type.
 */
 QInputDevice::DeviceType QInputDevice::type() const
