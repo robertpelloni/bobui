@@ -3055,7 +3055,7 @@ void QAbstractItemModelPrivate::executePendingOperations() const { }
 
     \table 80%
     \row
-        \li  \inlineimage modelview-move-rows-1.png Moving rows to another parent
+        \li  \inlineimage modelview-move-rows-1.svg Moving rows to another parent
         \li  Specify the first and last row numbers for the span of rows in
             the source parent you want to move in the model. Also specify
             the row in the destination parent to move the span to.
@@ -3069,7 +3069,7 @@ void QAbstractItemModelPrivate::executePendingOperations() const { }
             This moves the three rows rows 2, 3, and 4 in the source to become 2, 3 and 4 in
             the destination. Other affected siblings are displaced accordingly.
     \row
-        \li  \inlineimage modelview-move-rows-2.png Moving rows to append to another parent
+        \li  \inlineimage modelview-move-rows-2.svg Moving rows to append to another parent
         \li  To append rows to another parent, move them to after the last row.
 
             For example, as shown in the diagram, we move three rows to a
@@ -3079,7 +3079,7 @@ void QAbstractItemModelPrivate::executePendingOperations() const { }
 
             This moves the target rows to the end of the target parent as 6, 7 and 8.
     \row
-        \li  \inlineimage modelview-move-rows-3.png Moving rows in the same parent up
+        \li  \inlineimage modelview-move-rows-3.svg Moving rows in the same parent up
         \li  To move rows within the same parent, specify the row to move them to.
 
             For example, as shown in the diagram, we move one item from row 2 to row 0,
@@ -3094,7 +3094,7 @@ void QAbstractItemModelPrivate::executePendingOperations() const { }
             it is already)
 
     \row
-        \li  \inlineimage modelview-move-rows-4.png Moving rows in the same parent down
+        \li  \inlineimage modelview-move-rows-4.svg Moving rows in the same parent down
         \li  To move rows within the same parent, specify the row to move them to.
 
             For example, as shown in the diagram, we move one item from row 2 to row 4,
