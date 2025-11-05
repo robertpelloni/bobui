@@ -4959,8 +4959,7 @@ QIcon QWindowsVistaStyle::standardIcon(StandardPixmap standardIcon,
     return QWindowsStyle::standardIcon(standardIcon, option, widget);
 }
 
-
-WinFontIconEngine::WinFontIconEngine(const QChar &glyph, const QFont &font)
+WinFontIconEngine::WinFontIconEngine(const QString &glyph, const QFont &font)
     : QFontIconEngine({}, font)
     , m_font(font)
     , m_glyph(glyph)

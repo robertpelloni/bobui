@@ -184,7 +184,7 @@ private:
 class WinFontIconEngine : public QFontIconEngine
 {
 public:
-    WinFontIconEngine(const QChar &glyph, const QFont &font);
+    WinFontIconEngine(const QString &glyph, const QFont &font);
 
     QString key() const override;
     QIconEngine *clone() const override;
@@ -194,7 +194,7 @@ public:
 
 protected:
     QFont m_font;
-    QChar m_glyph;
+    QString m_glyph;
     double m_scale = 0.7;
 };
 

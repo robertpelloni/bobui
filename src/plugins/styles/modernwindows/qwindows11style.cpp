@@ -2621,7 +2621,7 @@ QIcon QWindows11Style::standardIcon(StandardPixmap standardIcon,
     case SP_ToolBarHorizontalExtensionButton:
     case SP_ToolBarVerticalExtensionButton: {
         if (d->m_toolbarExtensionButton.isNull()) {
-            auto e = new WinFontIconEngine(More.at(0), d->assetFont);
+            auto e = new WinFontIconEngine(More, d->assetFont);
             e->setScale(1.0);
             d->m_toolbarExtensionButton = QIcon(e);
         }
