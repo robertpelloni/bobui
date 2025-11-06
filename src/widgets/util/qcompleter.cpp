@@ -931,9 +931,13 @@ void QCompleterPrivate::showPopup(const QRect& rect)
         popup->createWinId();
         if (auto waylandWindow = dynamic_cast<QNativeInterface::Private::QWaylandWindow*>(popup->windowHandle()->handle())) {
             popup->windowHandle()->setTransientParent(widget->window()->windowHandle());
-            const QRect controlGeometry = QRect(widget->mapTo(widget->topLevelWidget(), QPoint(0,0)), widget->size());
-            waylandWindow->setParentControlGeometry(controlGeometry);
-            waylandWindow->setExtendedWindowType(QNativeInterface::Private::QWaylandWindow::ComboBox);
+            if (!rect.isValid()) { // Automatically positioned popup
+                const QRect controlGeometry = QRect(
+                        widget->mapTo(widget->topLevelWidget(), QPoint(0, 0)), widget->size());
+                waylandWindow->setParentControlGeometry(controlGeometry);
+                waylandWindow->setExtendedWindowType(
+                        QNativeInterface::Private::QWaylandWindow::ComboBox);
+            }
         }
 #endif
         popup->show();
