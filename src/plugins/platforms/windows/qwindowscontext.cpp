@@ -179,9 +179,6 @@ QWindowsContextPrivate::QWindowsContextPrivate()
 QWindowsContext::QWindowsContext() :
     d(new QWindowsContextPrivate)
 {
-#ifdef Q_CC_MSVC
-#    pragma warning( disable : 4996 )
-#endif
     m_instance = this;
 }
 
