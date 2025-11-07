@@ -165,6 +165,7 @@ private:
     // the members below should only be accessed with the mutex
     OperationId m_opToCancel = kInvalidOperationId;
     QSet<OperationId> m_runningOps;
+    qsizetype m_numChannelsToClose = 0;
     QWaitCondition m_cancellationCondition;
 
     static OperationId getNextId();
@@ -172,6 +173,7 @@ private:
     template <typename Operation, typename ...Args>
     Operation *addOperation(QIOOperation::Type type, qint64 offset, Args &&...args);
 
+    void notifyIfOperationsAreCompleted();
     dispatch_io_t createMainChannel(int fd);
     dispatch_io_t duplicateIoChannel(OperationId opId);
     void closeIoChannel(dispatch_io_t channel);

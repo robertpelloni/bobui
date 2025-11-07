@@ -95,8 +95,13 @@ void QRandomAccessAsyncFilePrivate::close()
     // cancel all operations
     m_mutex.lock();
     m_opToCancel = kAllOperationIds;
-    for (const auto &op : m_operations)
-        closeIoChannel(op.channel);
+    m_numChannelsToClose = m_ioChannel ? 1 : 0;
+    for (const auto &op : m_operations) {
+        if (op.channel) {
+            ++m_numChannelsToClose;
+            closeIoChannel(op.channel);
+        }
+    }
     closeIoChannel(m_ioChannel);
     // we're not interested in any results anymore
     if (!m_runningOps.isEmpty() || m_ioChannel)
@@ -204,16 +209,24 @@ QRandomAccessAsyncFilePrivate::writeFrom(qint64 offset, QSpan<const QSpan<const 
     return addOperation<QIOVectoredWriteOperation>(QIOOperation::Type::Write, offset, buffers);
 }
 
+void QRandomAccessAsyncFilePrivate::notifyIfOperationsAreCompleted()
+{
+    QMutexLocker locker(&m_mutex);
+    if (m_opToCancel == kAllOperationIds) {
+        --m_numChannelsToClose;
+        if (m_numChannelsToClose == 0 && m_runningOps.isEmpty())
+            m_cancellationCondition.wakeOne();
+    }
+}
+
 dispatch_io_t QRandomAccessAsyncFilePrivate::createMainChannel(int fd)
 {
     auto sharedThis = this;
     return dispatch_io_create(DISPATCH_IO_RANDOM, fd,
-                               dispatch_get_global_queue(QOS_CLASS_USER_INTERACTIVE, 0),
-                               ^(int /*error*/) {
-                                   // Notify that the file descriptor can be closed
-                                   QMutexLocker locker(&sharedThis->m_mutex);
-                                   sharedThis->m_cancellationCondition.wakeOne();
-                               });
+                              dispatch_get_global_queue(QOS_CLASS_USER_INTERACTIVE, 0),
+                              ^(int /*error*/) {
+                                  sharedThis->notifyIfOperationsAreCompleted();
+                              });
 }
 
 dispatch_io_t QRandomAccessAsyncFilePrivate::duplicateIoChannel(OperationId opId)
@@ -223,12 +236,13 @@ dispatch_io_t QRandomAccessAsyncFilePrivate::duplicateIoChannel(OperationId opId
     // We need to create a new channel for each operation, because the only way
     // to cancel an operation is to call dispatch_io_close() with
     // DISPATCH_IO_STOP flag.
-    // We do not care about the callback in this case, because we have the
-    // callback from the "main" io channel to do all the proper cleanup
+    auto sharedThis = this;
     auto channel =
             dispatch_io_create_with_io(DISPATCH_IO_RANDOM, m_ioChannel,
                                        dispatch_get_global_queue(QOS_CLASS_USER_INTERACTIVE, 0),
-                                       ^(int){ /* empty callback */ });
+                                       ^(int /*error*/){
+                                           sharedThis->notifyIfOperationsAreCompleted();
+                                       });
 
     if (channel) {
         QMutexLocker locker(&m_mutex);
@@ -500,8 +514,14 @@ void QRandomAccessAsyncFilePrivate::executeFlush(OperationInfo &opInfo)
         sharedThis->m_runningOps.remove(opId);
         const auto cancelId = sharedThis->m_opToCancel;
         if (cancelId == kAllOperationIds || cancelId == opId) {
-            if (cancelId == opId)
+            if (cancelId == opId) {
                 sharedThis->m_cancellationCondition.wakeOne();
+            } else { /* kAllOperationIds */
+                if (sharedThis->m_numChannelsToClose == 0
+                    && sharedThis->m_runningOps.isEmpty()) {
+                    sharedThis->m_cancellationCondition.wakeOne();
+                }
+            }
         } else {
             auto context = sharedThis->q_ptr;
             const OperationResult res = { opId, 0LL, err };
@@ -571,15 +591,16 @@ void QRandomAccessAsyncFilePrivate::executeOpen(OperationInfo &opInfo)
                            // only executing operation.
                            // Also, the main IO channel is not created yet.
                            // So we need to notify the condition variable in
-                           // any both cases.
+                           // both cases.
                            Q_ASSERT(sharedThis->m_runningOps.isEmpty());
                            sharedThis->m_cancellationCondition.wakeOne();
                        } else {
                            auto context = sharedThis->q_ptr;
                            const OperationResult res = { opId, qint64(fd), err };
-                           QMetaObject::invokeMethod(context, [sharedThis](const OperationResult &r) {
-                               sharedThis->handleOperationComplete(r);
-                           }, Qt::QueuedConnection, res);
+                           QMetaObject::invokeMethod(context,
+                               [sharedThis](const OperationResult &r) {
+                                   sharedThis->handleOperationComplete(r);
+                               }, Qt::QueuedConnection, res);
                        }
                    });
 }
@@ -647,13 +668,27 @@ void QRandomAccessAsyncFilePrivate::readOneBufferHelper(OperationId opId, dispat
                              });
                          }
 
+                         // We're interested in handling the results only when
+                         // the operation is done. This can mean either
+                         // successful completion or an error (including
+                         // cancellation).
+                         if (!done)
+                             return;
+
+
                          QMutexLocker locker(&sharedThis->m_mutex);
                          const auto cancelId = sharedThis->m_opToCancel;
                          if (cancelId == kAllOperationIds || cancelId == opId) {
                              sharedThis->m_runningOps.remove(opId);
-                             if (cancelId == opId)
+                             if (cancelId == opId) {
                                  sharedThis->m_cancellationCondition.wakeOne();
-                         } else if (done) {
+                             } else { /* kAllOperationIds */
+                                 if (sharedThis->m_numChannelsToClose == 0
+                                     && sharedThis->m_runningOps.isEmpty()) {
+                                     sharedThis->m_cancellationCondition.wakeOne();
+                                 }
+                             }
+                         } else {
                              sharedThis->m_runningOps.remove(opId);
                              auto context = sharedThis->q_ptr;
                              // if error, or last buffer, or read less than expected,
@@ -686,17 +721,28 @@ void QRandomAccessAsyncFilePrivate::writeHelper(OperationId opId, dispatch_io_t 
     dispatch_io_write(channel, offset, dataToWrite,
                       dispatch_get_global_queue(QOS_CLASS_USER_INTERACTIVE, 0),
                       ^(bool done, dispatch_data_t data, int error) {
-                          // Either an error or complete write.
-                          // If there's an error, return the amount that we have
-                          // written so far
+                          // We're interested in handling the results only when
+                          // the operation is done. This can mean either
+                          // successful completion or an error (including
+                          // cancellation). In case of an error return the
+                          // amount that we have written so far.
+                          if (!done)
+                              return;
+
                           QMutexLocker locker(&sharedThis->m_mutex);
                           const auto cancelId = sharedThis->m_opToCancel;
                           if (cancelId == kAllOperationIds || cancelId == opId) {
                               // Operation is canceled - do nothing
                               sharedThis->m_runningOps.remove(opId);
-                              if (cancelId == opId)
+                              if (cancelId == opId) {
                                   sharedThis->m_cancellationCondition.wakeOne();
-                          } else if (done) {
+                              } else { /* kAllOperationIds */
+                                  if (sharedThis->m_numChannelsToClose == 0
+                                      && sharedThis->m_runningOps.isEmpty()) {
+                                      sharedThis->m_cancellationCondition.wakeOne();
+                                  }
+                              }
+                          } else {
                               sharedThis->m_runningOps.remove(opId);
                               // if no error, an attempt to access the data will
                               // crash, because it seems to have no buffer
