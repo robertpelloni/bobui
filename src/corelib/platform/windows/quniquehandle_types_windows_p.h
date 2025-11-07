@@ -15,11 +15,11 @@
 // We mean it.
 //
 
-#if defined(Q_OS_WIN) || defined(Q_QDOC)
-
 #include <QtCore/qnamespace.h>
 #include <QtCore/qt_windows.h>
 #include <QtCore/private/quniquehandle_p.h>
+
+#if defined(Q_OS_WIN) || defined(Q_QDOC)
 
 QT_BEGIN_NAMESPACE
 
