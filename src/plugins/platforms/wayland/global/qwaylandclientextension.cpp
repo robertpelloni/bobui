@@ -40,6 +40,11 @@ void QWaylandClientExtensionPrivate::globalRemoved(const RegistryGlobal &global)
     }
 }
 
+/*!
+    \class QWaylandClientExtension
+    \internal
+*/
+
 void QWaylandClientExtension::initialize()
 {
     Q_D(QWaylandClientExtension);
