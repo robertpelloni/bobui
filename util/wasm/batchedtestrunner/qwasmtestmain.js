@@ -70,8 +70,14 @@ Object.defineProperty(StandardArg, 'isKnown', {
     })();
 
     const resourceLocator = new ResourceLocator('');
+
+    // Get or create container elements
+    const testOutputContainer = document.querySelector('#test-output-container') || document.querySelector('body');
+    const qtGuiContainer = document.querySelector('#qt-gui-container');
+
     const testRunner = new BatchedTestRunner(
         new ModuleLoader(new ResourceFetcher(resourceLocator), resourceLocator),
+        qtGuiContainer ? [qtGuiContainer] : undefined
     );
     window.qtTestRunner = testRunner;
 
@@ -84,7 +90,7 @@ Object.defineProperty(StandardArg, 'isKnown', {
     }
     if (outputInPage) {
         const scanner = ScannerFactory.createScannerForFormat(testOutputFormat);
-        const ui = new UI(document.querySelector('body'), !!scanner);
+        const ui = new UI(testOutputContainer, !!scanner);
         const adapter =
             new VisualOutputProducer(ui.outputArea, ui.counters, scanner, testRunner);
         adapter.run();
