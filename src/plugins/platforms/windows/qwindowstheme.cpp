@@ -14,6 +14,7 @@
 #endif
 #include "qwindowsscreen.h"
 #include "qwindowswindow.h"
+#include "qwindowswindowclassregistry.h"
 #include <commctrl.h>
 #include <objbase.h>
 #include <commoncontrols.h>
@@ -547,8 +548,8 @@ QWindowsTheme::QWindowsTheme()
     refresh();
     refreshIconPixmapSizes();
 
-    auto className = QWindowsContext::instance()->registerWindowClass(
-        QWindowsContext::classNamePrefix() + QLatin1String("ThemeChangeObserverWindow"),
+    auto className = QWindowsWindowClassRegistry::instance()->registerWindowClass(
+        QWindowsWindowClassRegistry::classNamePrefix() + QLatin1String("ThemeChangeObserverWindow"),
         qThemeChangeObserverWndProc);
     // HWND_MESSAGE windows do not get the required theme events,
     // so we use a real top-level window that we never show.

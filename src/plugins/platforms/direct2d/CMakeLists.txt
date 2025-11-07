@@ -33,6 +33,7 @@ qt_internal_add_plugin(QWindowsDirect2DIntegrationPlugin
         ../windows/qwindowstheme.cpp ../windows/qwindowstheme.h
         ../windows/qwindowsthreadpoolrunner.h
         ../windows/qwindowswindow.cpp ../windows/qwindowswindow.h
+        ../windows/qwindowswindowclassregistry.cpp ../windows/qwindowswindowclassregistry.h
         qwindowsdirect2dbackingstore.cpp qwindowsdirect2dbackingstore.h
         qwindowsdirect2dbitmap.cpp qwindowsdirect2dbitmap.h
         qwindowsdirect2dcontext.cpp qwindowsdirect2dcontext.h

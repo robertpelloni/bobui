@@ -7,6 +7,7 @@
 #include "qwindowsintegration.h"
 #include "qwindowscursor.h"
 #include "qwindowstheme.h"
+#include "qwindowswindowclassregistry.h"
 
 #include <QtCore/qt_windows.h>
 
@@ -702,8 +703,8 @@ void QWindowsScreenManager::initialize()
 {
     qCDebug(lcQpaScreen) << "Initializing screen manager";
 
-    auto className = QWindowsContext::instance()->registerWindowClass(
-        QWindowsContext::classNamePrefix() + QLatin1String("ScreenChangeObserverWindow"),
+    auto className = QWindowsWindowClassRegistry::instance()->registerWindowClass(
+        QWindowsWindowClassRegistry::classNamePrefix() + QLatin1String("ScreenChangeObserverWindow"),
         qDisplayChangeObserverWndProc);
 
     // HWND_MESSAGE windows do not get WM_DISPLAYCHANGE, so we need to create
