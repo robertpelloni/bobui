@@ -993,7 +993,8 @@ void QWindows11Style::drawPrimitive(PrimitiveElement element, const QStyleOption
 
             const bool isMouseOver = state & State_MouseOver;
             const bool hasFocus = state & State_HasFocus;
-            if (isMouseOver && !hasFocus && !highContrastTheme)
+            const bool isEnabled = state & State_Enabled;
+            if (isMouseOver && isEnabled && hasFocus && !highContrastTheme)
                 drawRoundedRect(painter, frameRect, Qt::NoPen, winUI3Color(subtleHighlightColor));
         }
         break;
@@ -2715,7 +2716,7 @@ void QWindows11Style::drawLineEditFrame(QPainter *p, const QRectF &rect, const Q
             : winUI3Color(frameColorLight);
     drawRoundedRect(p, rect, frameCol, Qt::NoBrush);
 
-    if (!isEditable)
+    if (!isEditable || StyleOptionHelper::isDisabled(o))
         return;
 
     QPainterStateGuard psg(p);
