@@ -457,7 +457,7 @@
 
     Returns the number of items associated with key \a key.
 
-    \sa contains(), QMultiMap::count()
+    \sa contains(), QMultiMap::count(const Key &key, const T &value)
 */
 
 /*! \fn template <class Key, class T> qsizetype QMultiMap<Key, T>::count(const Key &key, const T &value) const

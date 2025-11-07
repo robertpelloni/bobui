@@ -699,7 +699,7 @@ inline QRandomGenerator::SystemGenerator &QRandomGenerator::SystemGenerator::sel
 
     Returns the minimum value that QRandomGenerator may ever generate. That is, 0.
 
-    \sa max(), QRandomGenerator64::min()
+    \sa max()
  */
 
 /*!
@@ -708,7 +708,7 @@ inline QRandomGenerator::SystemGenerator &QRandomGenerator::SystemGenerator::sel
     Returns the maximum value that QRandomGenerator may ever generate. That is,
     \c {std::numeric_limits<result_type>::max()}.
 
-    \sa min(), QRandomGenerator64::max()
+    \sa min()
  */
 
 /*!
