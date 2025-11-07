@@ -40,7 +40,7 @@ function(_qt_internal_wasm_add_target_helpers target)
         if(is_test AND NOT is_manual_test)
             # Keep in sync with testrunner_files in testlib/CMakeLists.txt
             configure_file("${WASM_BUILD_DIR}/libexec/batchedtestrunner.html"
-                           "${target_output_directory}/${_target_output_name}.html" COPYONLY)
+                           "${target_output_directory}/${_target_output_name}.html" @ONLY)
             configure_file("${WASM_BUILD_DIR}/libexec/qtestoutputreporter.css"
                            "${target_output_directory}/qtestoutputreporter.css" COPYONLY)
             configure_file("${WASM_BUILD_DIR}/libexec/batchedtestrunner.js"

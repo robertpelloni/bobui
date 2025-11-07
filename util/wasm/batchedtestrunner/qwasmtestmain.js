@@ -40,9 +40,18 @@ Object.defineProperty(StandardArg, 'isKnown', {
     }
 
     const parsed = parseQuery(location.search);
-    const outputInPage = parsed.has(StandardArg.qVisualOutput);
-    const testName = parsed.get(StandardArg.qTestName);
+
+    // Get test name from data attribute or query parameter
+    const getTestNameFromDataAttribute = () => {
+        const scriptTag = document.querySelector('script[data-qtestname]');
+        return scriptTag?.dataset?.qtestname;
+    };
+
     const isBatch = parsed.has(StandardArg.qBatchedTest);
+    const testName = parsed.get(StandardArg.qTestName) ??
+                     (isBatch ? undefined : getTestNameFromDataAttribute());
+    const outputInPage = parsed.has(StandardArg.qVisualOutput) ||
+                         (!parsed.has(StandardArg.qUseEmrun) && testName !== undefined);
     const useEmrun = parsed.has(StandardArg.qUseEmrun);
     const functions = [...parsed.keys()].filter(arg => !StandardArg.isKnown(arg));
 
