@@ -8,6 +8,8 @@
 
 #include <QDebug>
 
+#include <private/qhighdpiscaling_p.h>
+
 #include <errno.h>
 
 QT_BEGIN_NAMESPACE
@@ -82,7 +84,7 @@ void QQnxRasterWindow::post(const QRegion &dirty)
             m_currentBufferIndex = 0;
 
         // Save modified region and clear scrolled region
-        m_previousDirty = QRect(QPoint(0, 0), window()->size());
+        m_previousDirty = QRect(QPoint(0, 0), QHighDpi::toNativePixels(window()->size(), window()));
         m_scrolled = QRegion();
 
         windowPosted();
@@ -138,7 +140,7 @@ void QQnxRasterWindow::setParent(const QPlatformWindow *wnd)
 
 void QQnxRasterWindow::adjustBufferSize()
 {
-    const QSize windowSize = window()->size();
+    const QSize windowSize = QHighDpi::toNativePixels(window()->size(), window());
 
     if (windowSize != bufferSize())
         setBufferSize(windowSize);
