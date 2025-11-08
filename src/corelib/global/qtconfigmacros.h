@@ -174,7 +174,10 @@ namespace QT_NAMESPACE {}
 #endif
 
 /*
-    Strict mode
+    Strict mode.
+
+    If you add a macro to the list, make sure to update the table at
+    https://doc.qt.io/qt-6/qtglobal.html#QT_ENABLE_STRICT_MODE_UP_TO
 */
 #ifdef QT_ENABLE_STRICT_MODE_UP_TO
 #ifndef QT_DISABLE_DEPRECATED_UP_TO
