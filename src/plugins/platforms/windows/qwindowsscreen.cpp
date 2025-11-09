@@ -704,7 +704,7 @@ void QWindowsScreenManager::initialize()
     qCDebug(lcQpaScreen) << "Initializing screen manager";
 
     auto className = QWindowsWindowClassRegistry::instance()->registerWindowClass(
-        QWindowsWindowClassRegistry::classNamePrefix() + QLatin1String("ScreenChangeObserverWindow"),
+        QLatin1String("ScreenChangeObserverWindow"),
         qDisplayChangeObserverWndProc);
 
     // HWND_MESSAGE windows do not get WM_DISPLAYCHANGE, so we need to create

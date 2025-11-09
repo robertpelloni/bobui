@@ -22,6 +22,7 @@ struct QWindowsWindowClassDescription
     unsigned int style{ 0 };
     HBRUSH brush{ nullptr };
     bool hasIcon{ false };
+    bool shouldAddPrefix{ true };
 };
 
 QT_END_NAMESPACE

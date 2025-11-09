@@ -27,13 +27,13 @@ public:
 
     static QWindowsWindowClassRegistry *instance();
 
-    static QString classNamePrefix();
-
     QString registerWindowClass(const QWindowsWindowClassDescription &description);
     QString registerWindowClass(const QWindow *window);
     QString registerWindowClass(QString name, WNDPROC procedure);
 
 private:
+    static QString classNamePrefix();
+
     void unregisterWindowClasses();
 
     static QWindowsWindowClassRegistry *m_instance;

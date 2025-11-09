@@ -59,6 +59,9 @@ QString QWindowsWindowClassRegistry::registerWindowClass(const QWindowsWindowCla
 {
     QString className = description.name;
 
+    if (description.shouldAddPrefix)
+        className = classNamePrefix() + className;
+
     // since multiple Qt versions can be used in one process
     // each one has to have window class names with a unique name
     // The first instance gets the unmodified name; if the class

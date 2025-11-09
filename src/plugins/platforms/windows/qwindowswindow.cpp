@@ -887,9 +887,12 @@ QWindowsWindowData
     const auto appinst = reinterpret_cast<HINSTANCE>(GetModuleHandle(nullptr));
 
     const QString windowClassName = QWindowsWindowClassRegistry::instance()->registerWindowClass(w);
-    const QString windowTitlebarName = QWindowsWindowClassRegistry::instance()->registerWindowClass({
-        QStringLiteral("_q_titlebar"), DefWindowProc, CS_VREDRAW | CS_HREDRAW
-    });
+
+    QWindowsWindowClassDescription windowTitlebarDescription;
+    windowTitlebarDescription.name = QStringLiteral("_q_titlebar");
+    windowTitlebarDescription.style = CS_VREDRAW | CS_HREDRAW;
+    windowTitlebarDescription.shouldAddPrefix = false;
+    const QString windowTitlebarName = QWindowsWindowClassRegistry::instance()->registerWindowClass(windowTitlebarDescription);
 
     const QScreen *screen{};
     const QRect rect = QPlatformWindow::initialGeometry(w, data.geometry,

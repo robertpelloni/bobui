@@ -49,8 +49,7 @@ QWindowsWindowClassDescription QWindowsWindowClassDescription::fromWindow(const 
             break;
     }
     // Create a unique name for the flag combination
-    description.name = QWindowsWindowClassRegistry::classNamePrefix();
-    description.name += "QWindow"_L1;
+    description.name = "QWindow"_L1;
     switch (type) {
         case Qt::Tool:
             description.name += "Tool"_L1;

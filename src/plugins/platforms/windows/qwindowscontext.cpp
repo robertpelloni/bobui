@@ -696,7 +696,7 @@ HWND QWindowsContext::createDummyWindow(const QString &classNameIn,
 {
     if (!wndProc)
         wndProc = DefWindowProc;
-    QString className = d->m_windowClassRegistry.registerWindowClass(QWindowsWindowClassRegistry::classNamePrefix() + classNameIn, wndProc);
+    QString className = d->m_windowClassRegistry.registerWindowClass(classNameIn, wndProc);
     return CreateWindowEx(0, reinterpret_cast<LPCWSTR>(className.utf16()),
                           windowName, style,
                           CW_USEDEFAULT, CW_USEDEFAULT,
