@@ -90,12 +90,14 @@ public:
         GHI,
         JKL = 10
     };
+    Q_ENUM(SomethingEnum)
 
     enum SomethingEnum64 : qint64
     {
         MNO = -1,
         PQR = 0x1'2345'5678,
     };
+    Q_ENUM(SomethingEnum64)
 
     enum SomethingFlagEnum
     {
