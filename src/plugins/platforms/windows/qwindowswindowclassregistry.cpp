@@ -6,9 +6,9 @@
 
 #include <QtCore/qlibraryinfo.h>
 #include <QtCore/quuid.h>
-#include <QtGui/qwindow.h>
 
 #include "qwindowscontext.h"
+#include "qwindowswindowclassdescription.h"
 
 QT_BEGIN_NAMESPACE
 
@@ -55,64 +55,10 @@ QString QWindowsWindowClassRegistry::classNamePrefix()
     return result;
 }
 
-QString QWindowsWindowClassRegistry::registerWindowClass(const QWindow *w)
+QString QWindowsWindowClassRegistry::registerWindowClass(const QWindowsWindowClassDescription &description)
 {
-    Q_ASSERT(w);
-    const Qt::WindowFlags flags = w->flags();
-    const Qt::WindowFlags type = flags & Qt::WindowType_Mask;
-    // Determine style and icon.
-    uint style = CS_DBLCLKS;
-    bool icon = true;
-    // The following will not set CS_OWNDC for any widget window, even if it contains a
-    // QOpenGLWidget or QQuickWidget later on. That cannot be detected at this stage.
-    if (w->surfaceType() == QSurface::OpenGLSurface || (flags & Qt::MSWindowsOwnDC))
-        style |= CS_OWNDC;
-    if (!(flags & Qt::NoDropShadowWindowHint)
-        && (type == Qt::Popup || w->property("_q_windowsDropShadow").toBool())) {
-        style |= CS_DROPSHADOW;
-    }
-    switch (type) {
-        case Qt::Tool:
-        case Qt::ToolTip:
-        case Qt::Popup:
-            style |= CS_SAVEBITS; // Save/restore background
-            icon = false;
-            break;
-        case Qt::Dialog:
-            if (!(flags & Qt::WindowSystemMenuHint))
-                icon = false; // QTBUG-2027, dialogs without system menu.
-            break;
-    }
-    // Create a unique name for the flag combination
-    QString cname = classNamePrefix();
-    cname += "QWindow"_L1;
-    switch (type) {
-        case Qt::Tool:
-            cname += "Tool"_L1;
-            break;
-        case Qt::ToolTip:
-            cname += "ToolTip"_L1;
-            break;
-        case Qt::Popup:
-            cname += "Popup"_L1;
-            break;
-        default:
-            break;
-    }
-    if (style & CS_DROPSHADOW)
-        cname += "DropShadow"_L1;
-    if (style & CS_SAVEBITS)
-        cname += "SaveBits"_L1;
-    if (style & CS_OWNDC)
-        cname += "OwnDC"_L1;
-    if (icon)
-        cname += "Icon"_L1;
+    QString className = description.name;
 
-    return registerWindowClass(cname, m_proc, style, nullptr, icon);
-}
-
-QString QWindowsWindowClassRegistry::registerWindowClass(QString cname, WNDPROC proc, unsigned style, HBRUSH brush, bool icon)
-{
     // since multiple Qt versions can be used in one process
     // each one has to have window class names with a unique name
     // The first instance gets the unmodified name; if the class
@@ -122,52 +68,63 @@ QString QWindowsWindowClassRegistry::registerWindowClass(QString cname, WNDPROC 
     // Note: GetClassInfo() returns != 0 when a class exists.
     const auto appInstance = static_cast<HINSTANCE>(GetModuleHandle(nullptr));
     WNDCLASS wcinfo;
-    const bool classExists = GetClassInfo(appInstance, reinterpret_cast<LPCWSTR>(cname.utf16()), &wcinfo) != FALSE
-        && wcinfo.lpfnWndProc != proc;
+    const bool classExists = GetClassInfo(appInstance, reinterpret_cast<LPCWSTR>(className.utf16()), &wcinfo) != FALSE
+        && wcinfo.lpfnWndProc != description.procedure;
 
     if (classExists)
-        cname += QUuid::createUuid().toString();
+        className += QUuid::createUuid().toString();
 
-    if (m_registeredWindowClassNames.contains(cname))        // already registered in our list
-        return cname;
+    if (m_registeredWindowClassNames.contains(className))        // already registered in our list
+        return className;
 
     WNDCLASSEX wc;
     wc.cbSize = sizeof(WNDCLASSEX);
-    wc.style = style;
-    wc.lpfnWndProc = proc;
+    wc.style = description.style;
+    wc.lpfnWndProc = description.procedure;
     wc.cbClsExtra = 0;
     wc.cbWndExtra = 0;
     wc.hInstance = appInstance;
     wc.hCursor = nullptr;
-    wc.hbrBackground = brush;
-    if (icon) {
+    wc.hbrBackground = description.brush;
+    if (description.hasIcon) {
         wc.hIcon = static_cast<HICON>(LoadImage(appInstance, L"IDI_ICON1", IMAGE_ICON, 0, 0, LR_DEFAULTSIZE));
         if (wc.hIcon) {
             int sw = GetSystemMetrics(SM_CXSMICON);
             int sh = GetSystemMetrics(SM_CYSMICON);
             wc.hIconSm = static_cast<HICON>(LoadImage(appInstance, L"IDI_ICON1", IMAGE_ICON, sw, sh, 0));
-        } else {
+        }
+        else {
             wc.hIcon = static_cast<HICON>(LoadImage(nullptr, IDI_APPLICATION, IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_SHARED));
             wc.hIconSm = nullptr;
         }
-    } else {
+    }
+    else {
         wc.hIcon = nullptr;
         wc.hIconSm = nullptr;
     }
 
     wc.lpszMenuName = nullptr;
-    wc.lpszClassName = reinterpret_cast<LPCWSTR>(cname.utf16());
+    wc.lpszClassName = reinterpret_cast<LPCWSTR>(className.utf16());
     ATOM atom = RegisterClassEx(&wc);
-    if (!atom) {
+    if (!atom)
         qErrnoWarning("QApplication::regClass: Registering window class '%s' failed.",
-                      qPrintable(cname));
-    }
+            qPrintable(className));
 
-    m_registeredWindowClassNames.insert(cname);
-    qCDebug(lcQpaWindowClass).nospace() << __FUNCTION__ << ' ' << cname
-        << " style=0x" << Qt::hex << style << Qt::dec
-        << " brush=" << brush << " icon=" << icon << " atom=" << atom;
-    return cname;
+    m_registeredWindowClassNames.insert(className);
+    qCDebug(lcQpaWindowClass).nospace() << __FUNCTION__ << ' ' << className
+        << " style=0x" << Qt::hex << description.style << Qt::dec
+        << " brush=" << description.brush << " icon=" << description.hasIcon << " atom=" << atom;
+    return className;
+}
+
+QString QWindowsWindowClassRegistry::registerWindowClass(const QWindow *window)
+{
+    return registerWindowClass(QWindowsWindowClassDescription::fromWindow(window, m_proc));
+}
+
+QString QWindowsWindowClassRegistry::registerWindowClass(QString name, WNDPROC procedure)
+{
+    return registerWindowClass(QWindowsWindowClassDescription::fromName(name, procedure));
 }
 
 void QWindowsWindowClassRegistry::unregisterWindowClasses()

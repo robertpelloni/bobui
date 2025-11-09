@@ -16,6 +16,7 @@ QT_BEGIN_NAMESPACE
 Q_DECLARE_LOGGING_CATEGORY(lcQpaWindowClass)
 
 class QWindow;
+struct QWindowsWindowClassDescription;
 
 class QWindowsWindowClassRegistry
 {
@@ -28,8 +29,9 @@ public:
 
     static QString classNamePrefix();
 
-    QString registerWindowClass(const QWindow *w);
-    QString registerWindowClass(QString cname, WNDPROC proc, unsigned style = 0, HBRUSH brush = nullptr, bool icon = false);
+    QString registerWindowClass(const QWindowsWindowClassDescription &description);
+    QString registerWindowClass(const QWindow *window);
+    QString registerWindowClass(QString name, WNDPROC procedure);
 
 private:
     void unregisterWindowClasses();

@@ -23,6 +23,7 @@
 #ifdef QT_NO_CURSOR
 #  include "qwindowscursor.h"
 #endif
+#include "qwindowswindowclassdescription.h"
 #include "qwindowswindowclassregistry.h"
 
 #include <QtGui/qguiapplication.h>
@@ -886,7 +887,9 @@ QWindowsWindowData
     const auto appinst = reinterpret_cast<HINSTANCE>(GetModuleHandle(nullptr));
 
     const QString windowClassName = QWindowsWindowClassRegistry::instance()->registerWindowClass(w);
-    const QString windowTitlebarName = QWindowsWindowClassRegistry::instance()->registerWindowClass(QStringLiteral("_q_titlebar"), DefWindowProc, CS_VREDRAW|CS_HREDRAW, nullptr, false);
+    const QString windowTitlebarName = QWindowsWindowClassRegistry::instance()->registerWindowClass({
+        QStringLiteral("_q_titlebar"), DefWindowProc, CS_VREDRAW | CS_HREDRAW
+    });
 
     const QScreen *screen{};
     const QRect rect = QPlatformWindow::initialGeometry(w, data.geometry,

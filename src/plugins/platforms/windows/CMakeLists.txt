@@ -38,6 +38,7 @@ qt_internal_add_plugin(QWindowsIntegrationPlugin
         qwindowstheme.cpp qwindowstheme.h
         qwindowsthreadpoolrunner.h
         qwindowswindow.cpp qwindowswindow.h
+        qwindowswindowclassdescription.cpp qwindowswindowclassdescription.h
         qwindowswindowclassregistry.cpp qwindowswindowclassregistry.h
     NO_UNITY_BUILD_SOURCES
         qwindowspointerhandler.cpp
