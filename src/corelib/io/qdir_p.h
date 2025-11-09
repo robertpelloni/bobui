@@ -35,7 +35,6 @@ public:
         RemotePath = 0x02,
     };
     Q_DECLARE_FLAGS(PathNormalizations, PathNormalization)
-    Q_FLAGS(PathNormalizations)
 
     explicit QDirPrivate(const QString &path, const QStringList &nameFilters_ = QStringList(),
                          QDir::SortFlags sort_ = QDir::SortFlags(QDir::Name | QDir::IgnoreCase),
