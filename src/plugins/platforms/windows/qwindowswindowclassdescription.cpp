@@ -75,4 +75,14 @@ QWindowsWindowClassDescription QWindowsWindowClassDescription::fromWindow(const 
     return description;
 }
 
+QDebug operator<<(QDebug dbg, const QWindowsWindowClassDescription &description)
+{
+    dbg << description.name
+        << " style=0x" << Qt::hex << description.style << Qt::dec
+        << " brush=" << description.brush
+        << " hasIcon=" << description.hasIcon;
+
+    return dbg;
+}
+
 QT_END_NAMESPACE

@@ -23,6 +23,9 @@ struct QWindowsWindowClassDescription
     HBRUSH brush{ nullptr };
     bool hasIcon{ false };
     bool shouldAddPrefix{ true };
+
+private:
+    friend QDebug operator<<(QDebug dbg, const QWindowsWindowClassDescription &description);
 };
 
 QT_END_NAMESPACE

@@ -114,9 +114,9 @@ QString QWindowsWindowClassRegistry::registerWindowClass(const QWindowsWindowCla
             qPrintable(className));
 
     m_registeredWindowClassNames.insert(className);
-    qCDebug(lcQpaWindowClass).nospace() << __FUNCTION__ << ' ' << className
-        << " style=0x" << Qt::hex << description.style << Qt::dec
-        << " brush=" << description.brush << " icon=" << description.hasIcon << " atom=" << atom;
+
+    qCDebug(lcQpaWindowClass).nospace() << __FUNCTION__ << ' ' << className << ' ' << description << " atom=" << atom;
+
     return className;
 }
 
