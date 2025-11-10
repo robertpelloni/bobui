@@ -110,8 +110,8 @@ QString QWindowsWindowClassRegistry::registerWindowClass(const QWindowsWindowCla
     wc.lpszClassName = reinterpret_cast<LPCWSTR>(className.utf16());
     ATOM atom = RegisterClassEx(&wc);
     if (!atom)
-        qErrnoWarning("QApplication::regClass: Registering window class '%s' failed.",
-            qPrintable(className));
+        qCWarning(lcQpaWindowClass) << "Failed to register window class" << className
+            << "(" << qt_error_string(-1) << ")";
 
     m_registeredWindowClassNames.insert(className);
 
@@ -136,7 +136,8 @@ void QWindowsWindowClassRegistry::unregisterWindowClasses()
 
     for (const QString &name : std::as_const(m_registeredWindowClassNames)) {
         if (!UnregisterClass(reinterpret_cast<LPCWSTR>(name.utf16()), appInstance) && QWindowsContext::verbose)
-            qErrnoWarning("UnregisterClass failed for '%s'", qPrintable(name));
+            qCWarning(lcQpaWindowClass) << "Failed to unregister window class" << name
+                << "(" << qt_error_string(-1) << ")";
     }
     m_registeredWindowClassNames.clear();
 }
