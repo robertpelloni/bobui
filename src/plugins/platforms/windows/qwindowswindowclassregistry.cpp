@@ -80,14 +80,11 @@ QString QWindowsWindowClassRegistry::registerWindowClass(const QWindowsWindowCla
     if (m_registeredWindowClassNames.contains(className))        // already registered in our list
         return className;
 
-    WNDCLASSEX wc;
+    WNDCLASSEX wc{};
     wc.cbSize = sizeof(WNDCLASSEX);
     wc.style = description.style;
     wc.lpfnWndProc = description.procedure;
-    wc.cbClsExtra = 0;
-    wc.cbWndExtra = 0;
     wc.hInstance = appInstance;
-    wc.hCursor = nullptr;
     wc.hbrBackground = description.brush;
     if (description.hasIcon) {
         wc.hIcon = static_cast<HICON>(LoadImage(appInstance, L"IDI_ICON1", IMAGE_ICON, 0, 0, LR_DEFAULTSIZE));
@@ -98,15 +95,9 @@ QString QWindowsWindowClassRegistry::registerWindowClass(const QWindowsWindowCla
         }
         else {
             wc.hIcon = static_cast<HICON>(LoadImage(nullptr, IDI_APPLICATION, IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_SHARED));
-            wc.hIconSm = nullptr;
         }
     }
-    else {
-        wc.hIcon = nullptr;
-        wc.hIconSm = nullptr;
-    }
 
-    wc.lpszMenuName = nullptr;
     wc.lpszClassName = reinterpret_cast<LPCWSTR>(className.utf16());
     ATOM atom = RegisterClassEx(&wc);
     if (!atom)
