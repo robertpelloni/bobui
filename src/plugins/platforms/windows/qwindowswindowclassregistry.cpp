@@ -18,8 +18,8 @@ Q_LOGGING_CATEGORY(lcQpaWindowClass, "qt.qpa.windowclass")
 
 QWindowsWindowClassRegistry *QWindowsWindowClassRegistry::m_instance = nullptr;
 
-QWindowsWindowClassRegistry::QWindowsWindowClassRegistry(WNDPROC proc)
-    : m_proc(proc)
+QWindowsWindowClassRegistry::QWindowsWindowClassRegistry(WNDPROC defaultProcedure)
+    : m_defaultProcedure(defaultProcedure)
 {
     m_instance = this;
 }
@@ -122,7 +122,7 @@ QString QWindowsWindowClassRegistry::registerWindowClass(const QWindowsWindowCla
 
 QString QWindowsWindowClassRegistry::registerWindowClass(const QWindow *window)
 {
-    return registerWindowClass(QWindowsWindowClassDescription::fromWindow(window, m_proc));
+    return registerWindowClass(QWindowsWindowClassDescription::fromWindow(window, m_defaultProcedure));
 }
 
 QString QWindowsWindowClassRegistry::registerWindowClass(QString name, WNDPROC procedure)

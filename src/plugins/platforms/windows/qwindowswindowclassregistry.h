@@ -22,7 +22,7 @@ class QWindowsWindowClassRegistry
 {
     Q_DISABLE_COPY_MOVE(QWindowsWindowClassRegistry)
 public:
-    QWindowsWindowClassRegistry(WNDPROC proc);
+    QWindowsWindowClassRegistry(WNDPROC defaultProcedure);
     ~QWindowsWindowClassRegistry();
 
     static QWindowsWindowClassRegistry *instance();
@@ -38,7 +38,7 @@ private:
 
     static QWindowsWindowClassRegistry *m_instance;
 
-    WNDPROC m_proc;
+    WNDPROC m_defaultProcedure;
     QSet<QString> m_registeredWindowClassNames;
 };
 
