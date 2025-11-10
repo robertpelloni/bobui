@@ -65,6 +65,9 @@ public:
         MaxStreamsSocketOption,
         PathMtuInformation,
         BindInterfaceIndex,
+        KeepAliveIdleOption,
+        KeepAliveIntervalOption,
+        KeepAliveCountOption,
     };
 
     enum PacketHeaderOption {

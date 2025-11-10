@@ -360,6 +360,21 @@
     allow setting the MTU for transmission.
     This enum value was introduced in Qt 5.11.
 
+    \value KeepAliveIdleOption The time in seconds the connection needs to
+    remain idle before TCP starts sending keepalive probes if
+    KeepAliveOption is enabled.
+    This enum value was introduced in Qt 6.11.
+
+    \value KeepAliveIntervalOption The time in seconds between individual
+    keepalive probes, if KeepAliveOption is enabled. This option is not
+    supported in all OSes.
+    This enum value was introduced in Qt 6.11.
+
+    \value KeepAliveCountOption The maximum number of keepalive probes to
+    send before TCP drops the connection, if KeepAliveOption is enabled.
+    This option is not supported in all OSes.
+    This enum value was introduced in Qt 6.11.
+
     Possible values for \e{TypeOfServiceOption} are:
 
     \table
@@ -1973,6 +1988,18 @@ void QAbstractSocket::setSocketOption(QAbstractSocket::SocketOption option, cons
         case PathMtuSocketOption:
             d_func()->socketEngine->setOption(QAbstractSocketEngine::PathMtuInformation, value.toInt());
             break;
+
+        case KeepAliveIdleOption:
+            d_func()->socketEngine->setOption(QAbstractSocketEngine::KeepAliveIdleOption, value.toInt());
+            break;
+
+        case KeepAliveIntervalOption:
+            d_func()->socketEngine->setOption(QAbstractSocketEngine::KeepAliveIntervalOption, value.toInt());
+            break;
+
+        case KeepAliveCountOption:
+            d_func()->socketEngine->setOption(QAbstractSocketEngine::KeepAliveCountOption, value.toInt());
+            break;
     }
 }
 
@@ -2019,6 +2046,18 @@ QVariant QAbstractSocket::socketOption(QAbstractSocket::SocketOption option)
         case PathMtuSocketOption:
                 ret = d_func()->socketEngine->option(QAbstractSocketEngine::PathMtuInformation);
                 break;
+
+        case KeepAliveIdleOption:
+            ret = d_func()->socketEngine->option(QAbstractSocketEngine::KeepAliveIdleOption);
+            break;
+
+        case KeepAliveIntervalOption:
+            ret = d_func()->socketEngine->option(QAbstractSocketEngine::KeepAliveIntervalOption);
+            break;
+
+        case KeepAliveCountOption:
+            ret = d_func()->socketEngine->option(QAbstractSocketEngine::KeepAliveCountOption);
+            break;
     }
     if (ret == -1)
         return QVariant();

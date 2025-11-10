@@ -108,7 +108,10 @@ public:
         TypeOfServiceOption, //IP_TOS
         SendBufferSizeSocketOption,    //SO_SNDBUF
         ReceiveBufferSizeSocketOption,  //SO_RCVBUF
-        PathMtuSocketOption // IP_MTU
+        PathMtuSocketOption, // IP_MTU
+        KeepAliveIdleOption, // TCP_KEEPIDLE
+        KeepAliveIntervalOption, // TCP_KEEPINTVL
+        KeepAliveCountOption // TCP_KEEPCNT
     };
     Q_ENUM(SocketOption)
     enum BindFlag {

@@ -170,6 +170,26 @@ static void convertToLevelAndOption(QNativeSocketEngine::SocketOption opt,
 #endif
         }
         break;
+    case QNativeSocketEngine::KeepAliveIdleOption:
+        level = IPPROTO_TCP;
+#ifdef TCP_KEEPALIVE
+        n = TCP_KEEPALIVE;
+#else
+        n = TCP_KEEPIDLE;
+#endif
+        break;
+    case QNativeSocketEngine::KeepAliveIntervalOption:
+#ifdef TCP_KEEPINTVL
+        level = IPPROTO_TCP;
+        n = TCP_KEEPINTVL;
+#endif
+        break;
+    case QNativeSocketEngine::KeepAliveCountOption:
+#ifdef TCP_KEEPCNT
+        level = IPPROTO_TCP;
+        n = TCP_KEEPCNT;
+#endif
+        break;
     }
 }
 
