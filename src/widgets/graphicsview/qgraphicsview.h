@@ -24,7 +24,7 @@ class QGraphicsViewPrivate;
 class Q_WIDGETS_EXPORT QGraphicsView : public QAbstractScrollArea
 {
     Q_OBJECT
-    Q_FLAGS(QPainter::RenderHints CacheMode OptimizationFlags)
+    Q_FLAGS(CacheMode OptimizationFlags)
     Q_PROPERTY(QBrush backgroundBrush READ backgroundBrush WRITE setBackgroundBrush)
     Q_PROPERTY(QBrush foregroundBrush READ foregroundBrush WRITE setForegroundBrush)
     Q_PROPERTY(bool interactive READ isInteractive WRITE setInteractive)
