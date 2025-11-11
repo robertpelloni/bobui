@@ -480,10 +480,15 @@ void tst_LargeFile::mapFile()
         uchar *address = largeFile.map(position + offset, blockSize - offset);
 
         QVERIFY( address );
-        if ( !std::equal(block.begin() + offset, block.end(), reinterpret_cast<char*>(address)) ) {
-            qDebug() << "Expected:" << block.toHex();
-            qDebug() << "Actual  :" << QByteArray(reinterpret_cast<char*>(address), blockSize).toHex();
-            QVERIFY(false);
+        {
+            auto report = qScopeGuard([block, address, blkSz = blockSize]() {
+                qDebug() << "Expected:" << block.toHex();
+                qDebug() << "Actual  :"
+                         << QByteArray(reinterpret_cast<char *>(address), blkSz).toHex();
+            });
+            QVERIFY(std::equal(block.begin() + offset, block.end(),
+                               reinterpret_cast<char *>(address)));
+            report.dismiss();
         }
 
         QVERIFY( largeFile.unmap( address ) );
