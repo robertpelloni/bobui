@@ -529,13 +529,17 @@ void tst_LargeFile::mapOffsetOverflow()
         uchar *address = 0;
         qint64 offset = Q_INT64_C(1) << i;
 
-        if (succeeds)
-            QTest::ignoreMessage(QtWarningMsg, "QFSFileEngine::map: Mapping a file beyond its size is not portable");
+        if (succeeds) {
+            QTest::ignoreMessage(QtWarningMsg, "QFSFileEngine::map: "
+                                 "Mapping a file beyond its size is not portable");
+        }
         address = largeFile.map(offset, blockSize);
         QCOMPARE(!!address, succeeds);
 
-        if (succeeds)
-            QTest::ignoreMessage(QtWarningMsg, "QFSFileEngine::map: Mapping a file beyond its size is not portable");
+        if (succeeds) {
+            QTest::ignoreMessage(QtWarningMsg, "QFSFileEngine::map: "
+                                 "Mapping a file beyond its size is not portable");
+        }
         address = largeFile.map(offset + blockSize, blockSize);
         QCOMPARE(!!address, succeeds);
     }
@@ -543,4 +547,3 @@ void tst_LargeFile::mapOffsetOverflow()
 
 QTEST_APPLESS_MAIN(tst_LargeFile)
 #include "tst_largefile.moc"
-
