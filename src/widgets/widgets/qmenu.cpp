@@ -2543,14 +2543,16 @@ void QMenuPrivate::popup(const QPoint &p, QAction *atAction, PositionFunction po
     q->create();
     if (auto waylandWindow = dynamic_cast<QNativeInterface::Private::QWaylandWindow*>(q->windowHandle()->handle())) {
         if (causedButton) {
+            const QRect controlGeometry(causedButton->mapTo(causedButton->window(), QPoint(0, 0)), causedButton->size());
+            waylandWindow->setParentControlGeometry(controlGeometry);
             waylandWindow->setExtendedWindowType(QNativeInterface::Private::QWaylandWindow::Menu);
-            waylandWindow->setParentControlGeometry(causedButton->geometry());
         } else if (caused) {
-            waylandWindow->setExtendedWindowType(QNativeInterface::Private::QWaylandWindow::SubMenu);
             waylandWindow->setParentControlGeometry(caused->d_func()->actionRect(caused->d_func()->currentAction));
+            waylandWindow->setExtendedWindowType(QNativeInterface::Private::QWaylandWindow::SubMenu);
         } else if (auto menubar = qobject_cast<QMenuBar*>(causedPopup.widget)) {
+            QPoint menuBarWindowPosition = menubar->mapTo(menubar->window(), QPoint(0, 0));
+            waylandWindow->setParentControlGeometry(menubar->actionGeometry(causedPopup.action).translated(menuBarWindowPosition));
             waylandWindow->setExtendedWindowType(QNativeInterface::Private::QWaylandWindow::Menu);
-            waylandWindow->setParentControlGeometry(menubar->actionGeometry(causedPopup.action));
         }
     }
 #endif
