@@ -133,6 +133,9 @@ bool QWaylandIntegration::hasCapability(QPlatformIntegration::Capability cap) co
         return true;
     case ScreenWindowGrabbing: // whether QScreen::grabWindow() is supported
         return false;
+    case OffscreenSurface:
+        return mDisplay->clientBufferIntegration()
+                && mDisplay->clientBufferIntegration()->canCreatePlatformOffscreenSurface();
     default: return QPlatformIntegration::hasCapability(cap);
     }
 }

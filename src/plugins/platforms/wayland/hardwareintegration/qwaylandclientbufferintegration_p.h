@@ -52,6 +52,7 @@ public:
 
     virtual QWaylandWindow *createEglWindow(QWindow *window) = 0;
     virtual QPlatformOpenGLContext *createPlatformOpenGLContext(const QSurfaceFormat &glFormat, QPlatformOpenGLContext *share) const = 0;
+    virtual bool canCreatePlatformOffscreenSurface() const { return false; }
 #if QT_CONFIG(opengl)
     virtual QOpenGLContext *createOpenGLContext(EGLContext context, EGLDisplay contextDisplay, QOpenGLContext *shareContext) const = 0;
     virtual QPlatformOffscreenSurface *createPlatformOffscreenSurface(QOffscreenSurface *surface) const { Q_UNUSED(surface); return nullptr; }

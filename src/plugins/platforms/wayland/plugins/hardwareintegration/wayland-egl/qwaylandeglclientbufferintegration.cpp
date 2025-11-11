@@ -135,6 +135,11 @@ QOpenGLContext *QWaylandEglClientBufferIntegration::createOpenGLContext(EGLConte
     return QEGLPlatformContext::createFrom<QWaylandGLContext>(context, contextDisplay, m_eglDisplay, shareContext);
 }
 
+bool QWaylandEglClientBufferIntegration::canCreatePlatformOffscreenSurface() const
+{
+    return true;
+}
+
 QPlatformOffscreenSurface *QWaylandEglClientBufferIntegration::createPlatformOffscreenSurface(QOffscreenSurface *surface) const
 {
     return new QEGLPbuffer(m_eglDisplay, surface->requestedFormat(), surface);
