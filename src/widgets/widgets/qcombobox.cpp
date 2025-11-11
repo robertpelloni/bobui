@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 // Qt-Security score:significant reason:default
 
-#include "qcombobox.h"
+#include "qcombobox_p.h"
 
 #include <qstylepainter.h>
 #include <qpa/qplatformtheme.h>
@@ -37,7 +37,6 @@
 #include <private/qguiapplication_p.h>
 #include <private/qhighdpiscaling_p.h>
 #include <private/qapplication_p.h>
-#include <private/qcombobox_p.h>
 #include <private/qabstractitemmodel_p.h>
 #include <private/qabstractscrollarea_p.h>
 #include <private/qlineedit_p.h>
@@ -49,14 +48,18 @@
 # include <private/qeffects_p.h>
 #endif
 #include <private/qstyle_p.h>
+
 #if QT_CONFIG(accessibility)
 #include "qaccessible.h"
 #endif
+#include <QtWidgets/qstyleoption.h>
 
-#include <array>
+#include <QtGui/qstandarditemmodel.h>
+#include <QtGui/qpainter.h>
 
 #include <QtCore/qpointer.h>
 
+#include <array>
 #include <chrono>
 
 QT_BEGIN_NAMESPACE
