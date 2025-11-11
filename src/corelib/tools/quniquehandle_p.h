@@ -193,7 +193,11 @@ public:
     static_assert(noexcept(std::declval<Type>() >= std::declval<Type>()));
 
     template <if_default_constructible<Deleter> = true>
-    explicit QUniqueHandle(const Type& handle = HandleTraits::invalidValue()) noexcept
+    QUniqueHandle() noexcept
+    {}
+
+    template <if_default_constructible<Deleter> = true>
+    explicit QUniqueHandle(const Type &handle) noexcept
         : m_handle{ handle }
     {}
 
