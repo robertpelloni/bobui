@@ -30,37 +30,36 @@ class tst_LargeFile
 {
     Q_OBJECT
 
+    // Member constants:
+    static constexpr int blockSize = 1 << 12;
+#if defined(Q_OS_DARWIN)
+    // HFS+ does not support sparse files, so we limit file size for the test on Mac OS.
+    static constexpr int maxAllowedSizeBits = 24; // 16 MiB
+#elif defined(Q_OS_QNX)
+    // Many of the filesystems that QNX supports use a 32-bit format.
+    // This means that files are limited to 2 GiB − 1 bytes.
+    // Limit max size to 256MiB
+    static constexpr int maxAllowedSizeBits = 28; // 256 MiB
+#elif defined(Q_OS_VXWORKS)
+    // VxWorks doesn't support sparse files, also, default /tmp directory is a RAM-disk which
+    // limits its capacity.
+    static constexpr int maxAllowedSizeBits = 28; // 256 MiB
+#elif defined (Q_OS_WASM)
+    static constexpr int maxAllowedSizeBits = 28; // 256 MiB
+#elif defined(QT_LARGEFILE_SUPPORT)
+    static constexpr int maxAllowedSizeBits = 36; // 64 GiB
+#  define MUST_SET_MAX_SIZE_BITS
+#else
+    static constexpr int maxAllowedSizeBits = 24; // 16 MiB
+#endif
+
 public:
     tst_LargeFile()
-        : blockSize(1 << 12)
-        , maxSizeBits()
-        , fd_(-1)
-        , stream_(0)
+#ifdef MUST_SET_MAX_SIZE_BITS
+        // QEMU only supports < 4GiB files (and maxSizeBits must be a multiple of 4)
+        : maxSizeBits(QTestPrivate::isRunningArmOnX86() ? 28 : maxAllowedSizeBits)
+#endif
     {
-    #if defined(Q_OS_DARWIN)
-        // HFS+ does not support sparse files, so we limit file size for the test
-        // on Mac OS.
-        maxSizeBits = 24; // 16 MiB
-    #elif defined(Q_OS_QNX)
-        // Many of the filesystems that QNX supports use a 32-bit format.
-        // This means that files are limited to 2 GB − 1 bytes.
-        // Limit max size to 256MB
-        maxSizeBits = 28; // 256 MiB
-    #elif defined(Q_OS_VXWORKS)
-        // VxWorks doesn't support sparse files, also, default /tmp directory is a RAM-disk which
-        // limits its capacity.
-        maxSizeBits = 28; // 256 MiB
-    #elif defined (Q_OS_WASM)
-        maxSizeBits = 28; // 256 MiB
-    #elif defined(QT_LARGEFILE_SUPPORT)
-        maxSizeBits = 36; // 64 GiB
-    #else
-        maxSizeBits = 24; // 16 MiB
-    #endif
-
-        // QEMU only supports < 4GB files
-        if (QTestPrivate::isRunningArmOnX86())
-            maxSizeBits = qMin(maxSizeBits, 28);
     }
 
 private:
@@ -108,15 +107,16 @@ private slots:
     void mapFile_data() { sparseFileData(); }
 
 private:
-    const int blockSize;
-    int maxSizeBits;
+    // Member variables:
 
+    // May be revised down by tests (implying order-dependencies among tests):
+    int maxSizeBits = maxAllowedSizeBits;
     QFile largeFile;
 
     QByteArrayList generatedBlocks;
 
-    int fd_;
-    FILE *stream_;
+    int fd_ = -1;
+    FILE *stream_ = nullptr;
 
     QSharedPointer<QTemporaryDir> m_tempDir;
     QString m_previousCurrent;
