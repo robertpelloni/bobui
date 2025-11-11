@@ -491,9 +491,22 @@ OffsetFormatMatch matchOffsetFormat(QStringView text, const QLocale &locale, qsi
             const QStringView gmtPrefix = offsetFormat.first(cut);
             const QStringView gmtSuffix = offsetFormat.sliced(cut + 2); // After %0
             const qsizetype gmtSize = cut + gmtSuffix.size();
+            const auto crossMatch = [gmtPrefix, text]
+                (QLatin1StringView lhs, QLatin1StringView rhs) {
+                const qsizetype len = lhs.size();
+                Q_ASSERT(len == rhs.size());
+                if (!gmtPrefix.startsWith(lhs) || !text.startsWith(rhs))
+                    return false;
+                if (gmtPrefix.size() == len)
+                    return true;
+                return text.sliced(len).startsWith(gmtPrefix.sliced(len));
+            };
             // Cheap pre-test: check suffix does appear after prefix, albeit we must
             // later check it actually appears right after the offset text:
-            if ((gmtPrefix.isEmpty() || text.startsWith(gmtPrefix))
+            if ((gmtPrefix.isEmpty() || text.startsWith(gmtPrefix)
+                 // Treat GMT and UTC as matches for one another to match
+                 // QUtcTimeZonePrivate::displayName()'s kludges:
+                 || crossMatch("GMT"_L1, "UTC"_L1) || crossMatch("UTC"_L1, "GMT"_L1))
                 && (gmtSuffix.isEmpty() || text.sliced(cut).indexOf(gmtSuffix) >= 0)) {
                 if (auto match = matchOffsetText(text.sliced(cut), posHourForm, locale, scale)) {
                     if (text.sliced(cut + match.size).startsWith(gmtSuffix)) // too sliced ?
