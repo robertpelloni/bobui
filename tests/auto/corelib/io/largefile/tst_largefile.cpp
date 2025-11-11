@@ -506,24 +506,22 @@ void tst_LargeFile::mapFile()
 //VxWorks: memory-mapping beyond EOF is not allowed
 void tst_LargeFile::mapOffsetOverflow()
 {
-    enum {
 #if defined(Q_OS_WIN)
-        Succeeds = false,
-        MaxOffset = 63
+    constexpr bool Succeeds = false;
+    constexpr int MaxOffset = 63;
 #elif defined(Q_OS_WASM)
-        Succeeds = true,
-        MaxOffset = sizeof(QT_OFF_T) > 4 ? 43 : 30
+    constexpr bool Succeeds = true;
+    constexpr int MaxOffset = sizeof(QT_OFF_T) > 4 ? 43 : 30;
 #elif (defined(Q_OS_LINUX) || defined(Q_OS_ANDROID)) && (Q_PROCESSOR_WORDSIZE == 4)
-        Succeeds = true,
-        MaxOffset = sizeof(QT_OFF_T) > 4 ? 43 : 30
+    constexpr bool Succeeds = true;
+    constexpr int MaxOffset = sizeof(QT_OFF_T) > 4 ? 43 : 30;
 #elif defined(Q_OS_VXWORKS)
-        Succeeds = false,
-        MaxOffset = 8 * sizeof(QT_OFF_T) - 1
+    constexpr bool Succeeds = false;
+    constexpr int MaxOffset = 8 * sizeof(QT_OFF_T) - 1;
 #else
-        Succeeds = true,
-        MaxOffset = 8 * sizeof(QT_OFF_T) - 1
+    constexpr bool Succeeds = true;
+    constexpr int MaxOffset = 8 * sizeof(QT_OFF_T) - 1;
 #endif
-    };
 
     QByteArray zeroPage(blockSize, '\0');
     for (int i = maxSizeBits + 1; i < 63; ++i) {
