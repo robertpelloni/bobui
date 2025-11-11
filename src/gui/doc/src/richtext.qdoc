@@ -874,6 +874,9 @@
     \row    \li \c dd
             \li Definition data
             \li
+    \row    \li \c del
+            \li Deleted
+            \li Same as \c s. Since Qt 6.11
     \row    \li \c dfn
             \li Definition
             \li Same as \c i.

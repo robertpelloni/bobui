@@ -365,6 +365,7 @@ static const QTextHtmlElement elements[Html_NumElements]= {
     { "cite",       Html_cite,       QTextHtmlElement::DisplayInline },
     { "code",       Html_code,       QTextHtmlElement::DisplayInline },
     { "dd",         Html_dd,         QTextHtmlElement::DisplayBlock },
+    { "del",        Html_del,        QTextHtmlElement::DisplayInline },
     { "dfn",        Html_dfn,        QTextHtmlElement::DisplayInline },
     { "div",        Html_div,        QTextHtmlElement::DisplayBlock },
     { "dl",         Html_dl,         QTextHtmlElement::DisplayBlock },
@@ -2133,6 +2134,7 @@ QList<QCss::Declaration> standardDeclarationForNode(const QTextHtmlParserNode &n
         decl.d->inheritable = true;
         decls << decl;
         break;
+    case Html_del:
     case Html_s:
         decl = QCss::Declaration();
         decl.d->property = "text-decoration"_L1;
