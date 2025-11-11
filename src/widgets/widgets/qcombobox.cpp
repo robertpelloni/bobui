@@ -157,7 +157,7 @@ void QComboBoxPrivateScroller::leaveEvent(QEvent *)
 
 void QComboBoxPrivateScroller::timerEvent(QTimerEvent *e)
 {
-    if (e->timerId() == timer.timerId()) {
+    if (e->matches(timer)) {
         emit doScroll(sliderAction);
         if (fast) {
             emit doScroll(sliderAction);
