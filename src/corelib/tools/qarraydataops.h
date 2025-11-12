@@ -941,7 +941,9 @@ public:
             }
         }
 
-        if constexpr (!std::is_nothrow_constructible_v<T, decltype(std::invoke(proj, *first))>) {
+        if constexpr (!std::is_nothrow_constructible_v<T, decltype(std::invoke(proj, *first))>
+                      || !std::is_nothrow_invocable_v<Projection, decltype(*first)>)
+        {
             // If construction can throw, and we have freeSpaceAtBegin(),
             // it's easiest to just clear the container and start fresh.
             // The alternative would be to keep track of two active, disjoint ranges.
