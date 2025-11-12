@@ -166,12 +166,12 @@ private:
     template <size_t... Is>
     static void callImpl(size_t index, Subclass &subclass, void *ret, void *args, std::index_sequence<Is...>)
     {
-        // TODO: come up with more sophisticated check if methods count becomes more than 64
-        static constexpr std::uint64_t methodIndexMask = ((uint64_t(1)
-                                                      << interfaceMethodIndex<Is>()) | ...);
-        static_assert(sizeof...(Is) == std::tuple_size_v<Methods<Interface>>,
-                      "Base and overridden methods count are different");
-        static_assert(methodIndexMask == (uint64_t(1) << sizeof...(Is)) - 1,
+        constexpr auto methodIndexMask = []() {
+            std::array<bool, sizeof...(Is)> result = {};
+            (static_cast<void>(std::get<interfaceMethodIndex<Is>()>(result) = true), ...);
+            return result;
+        }();
+        static_assert((methodIndexMask[Is] && ...),
                       "Mapping between base and overridden methods is not unique");
 
         auto doInvoke = [&](auto idxConstant) {
