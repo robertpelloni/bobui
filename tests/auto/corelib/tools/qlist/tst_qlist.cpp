@@ -771,12 +771,20 @@ void tst_QList::assignFromInitializerList() const
     QList<T> v1 = {};
     QCOMPARE(v1.size(), 0);
 
+    v1 = {};
+    QCOMPARE(v1.size(), 0);
+
     v1 = {val1, val2, val3};
     QCOMPARE(v1, QList<T>() << val1 << val2 << val3);
     QCOMPARE(v1, (QList<T> {val1, val2, val3}));
+    qsizetype oldCapacity = v1.capacity();
 
     v1 = {};
     QCOMPARE(v1.size(), 0);
+    QCOMPARE(v1.capacity(), oldCapacity);
+
+    v1 = {val1, val2, val3};
+    QCOMPARE(v1, (QList<T> {val1, val2, val3}));
 
     // repeat, but make v1 shared before we assign
     QList v2 = {val3, val1, val2};
@@ -784,9 +792,14 @@ void tst_QList::assignFromInitializerList() const
     v1 = {val1, val2, val3};
     QCOMPARE(v1, QList<T>() << val1 << val2 << val3);
     QCOMPARE(v1, (QList<T> {val1, val2, val3}));
+    oldCapacity = v1.capacity();
     v1 = v2;
     v1 = {};
     QCOMPARE(v1.size(), 0);
+    QCOMPARE(v1.capacity(), oldCapacity);
+    v1 = v2;
+    v1 = {val1, val2, val3};
+    QCOMPARE(v1, (QList<T> {val1, val2, val3}));
 
     // repeat again, but now detached copies
     v1 = v2;
