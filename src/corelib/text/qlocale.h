@@ -389,6 +389,8 @@ public:
         Kuvi = 344,
         KaraKalpak = 345,
         SwampyCree = 346,
+        Ladin = 347,
+        Shan = 348,
 
         Afan = Oromo,
         Bengali = Bangla,
@@ -410,7 +412,7 @@ public:
         Uigur = Uyghur,
         Walamo = Wolaytta,
 
-        LastLanguage = SwampyCree
+        LastLanguage = Shan
     };
 
     enum Script : ushort {
