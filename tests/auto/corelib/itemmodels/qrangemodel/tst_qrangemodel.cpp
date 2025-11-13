@@ -83,6 +83,7 @@ private slots:
 
     void tree_data();
     void tree();
+    void gadgetTree();
     void treeModifyBranch_data() { tree_data(); }
     void treeModifyBranch();
     void treeCreateBranch_data() { tree_data(); }
@@ -1731,6 +1732,17 @@ void tst_QRangeModel::tree()
 #if QT_CONFIG(itemmodeltester)
     QAbstractItemModelTester modelTest(model.get());
 #endif
+}
+
+void tst_QRangeModel::gadgetTree()
+{
+    GadgetTree tree;
+    QRangeModel model(&tree);
+    QCOMPARE(model.columnCount(), GadgetTreeItem::staticMetaObject.propertyCount());
+    for (int c = 0; c < model.columnCount(); ++c) {
+        QCOMPARE(model.headerData(c, Qt::Horizontal),
+                 GadgetTreeItem::staticMetaObject.property(c).name());
+    }
 }
 
 void tst_QRangeModel::treeModifyBranch()
