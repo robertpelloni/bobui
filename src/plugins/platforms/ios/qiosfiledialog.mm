@@ -49,14 +49,10 @@ bool QIOSFileDialog::show(Qt::WindowFlags windowFlags, Qt::WindowModality window
     // when converted to QUrl, it becames a scheme.
     const QString scheme = initialDir.scheme();
 
-    if (acceptOpen) {
-        if (directory.startsWith("assets-library:"_L1) || scheme == "assets-library"_L1)
-            return showImagePickerDialog(parent);
-        else
-            return showNativeDocumentPickerDialog(parent);
-    }
+    if (acceptOpen && (directory.startsWith("assets-library:"_L1) || scheme == "assets-library"_L1))
+        return showImagePickerDialog(parent);
 
-    return false;
+    return showNativeDocumentPickerDialog(parent);
 }
 
 void QIOSFileDialog::showImagePickerDialog_helper(QWindow *parent)
