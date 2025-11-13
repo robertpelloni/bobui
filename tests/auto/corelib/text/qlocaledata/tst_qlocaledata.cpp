@@ -263,7 +263,7 @@ void tst_QLocaleData::numericData_data()
     QTest::newRow("gsw-Latn-CH/exp") // Right single quote for grouping:
         << LOCALE_DATA_PTR(SwissGerman, LatinScript, Switzerland)
         << QLocaleData::DoubleScientificMode
-        << u"."_s << u"\u2019"_s << u"\u2212"_s << u"+"_s << u"E"_s
+        << u"."_s << u"'"_s << u"\u2212"_s << u"+"_s << u"E"_s
         << GS(1, 3, 3) << U'0' << false;
 
     QTest::newRow("fr-Latn-FR/exp") // Narrow non-breaking space (as in BIPM) for grouping:
