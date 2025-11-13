@@ -92,16 +92,15 @@ qt_commandline_option(stack-clash-protection TYPE boolean NAME stack_clash_prote
 qt_commandline_option(libstdcpp-assertions TYPE boolean NAME libstdcpp_assertions)
 qt_commandline_option(libcpp-hardening TYPE boolean NAME libcpp_hardening)
 qt_commandline_option(relro-now-linker TYPE boolean NAME relro_now_linker)
-qt_commandline_option(make TYPE addString VALUES examples libs tests tools
-                      benchmarks manual-tests minimal-static-tests doc-snippets)
+set(allowed_build_parts examples tests benchmarks manual-tests minimal-static-tests doc-snippets)
+qt_commandline_option(make TYPE addString VALUES ${allowed_build_parts})
+qt_commandline_option(nomake TYPE addString VALUES ${allowed_build_parts})
 qt_commandline_option(install-examples-sources
     TYPE boolean
     CMAKE_VARIABLE QT_INSTALL_EXAMPLES_SOURCES
 )
 qt_commandline_option(mips_dsp TYPE boolean)
 qt_commandline_option(mips_dspr2 TYPE boolean)
-qt_commandline_option(nomake TYPE addString VALUES examples tests tools benchmarks
-                      manual-tests minimal-static-tests doc-snippets)
 qt_commandline_option(opensource TYPE void NAME commercial VALUE no)
 qt_commandline_option(optimize-debug TYPE boolean NAME optimize_debug)
 qt_commandline_option(optimize-size TYPE boolean NAME optimize_size)

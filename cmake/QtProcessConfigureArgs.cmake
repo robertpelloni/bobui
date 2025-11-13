@@ -1002,20 +1002,10 @@ function(check_qt_build_parts type)
         set(buildFlag "FALSE")
     endif()
 
-    list(APPEND knownParts "tests" "examples" "benchmarks" "manual-tests"
-        "minimal-static-tests" "doc-snippets")
-
     foreach(part ${${input}})
-        if(part IN_LIST knownParts)
-            qt_feature_normalize_name("${part}" partUpperCase)
-            string(TOUPPER "${partUpperCase}" partUpperCase)
-            push("-DQT_BUILD_${partUpperCase}=${buildFlag}")
-            continue()
-        elseif("${part}" STREQUAL "tools" AND "${type}" STREQUAL "make")
-            # default true ignored
-            continue()
-        endif()
-        qtConfAddWarning("'-${type} ${part}' is not implemented yet.")
+        qt_feature_normalize_name("${part}" partUpperCase)
+        string(TOUPPER "${partUpperCase}" partUpperCase)
+        push("-DQT_BUILD_${partUpperCase}=${buildFlag}")
     endforeach()
     set(cmake_args "${cmake_args}" PARENT_SCOPE)
 endfunction()
