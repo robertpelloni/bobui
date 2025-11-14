@@ -106,6 +106,27 @@ function(qt6_add_android_dynamic_features target)
     endif()
 endfunction()
 
+
+function(qt_add_android_dynamic_feature_java_source_dirs)
+    qt6_add_android_dynamic_feature_java_source_dirs(${ARGV})
+endfunction()
+
+# Add java source directories for dynamic feature. Intermediate solution until java library
+# support exists.
+function(qt6_add_android_dynamic_feature_java_source_dirs target)
+
+    set(opt_args "")
+    set(single_args "")
+    set(multi_args
+        SOURCE_DIRS
+    )
+    cmake_parse_arguments(PARSE_ARGV 1 arg "${opt_args}" "${single_args}" "${multi_args}")
+    if(arg_SOURCE_DIRS)
+        set_property(TARGET ${target} APPEND PROPERTY
+                     _qt_android_gradle_java_source_dirs ${arg_SOURCE_DIRS})
+    endif()
+endfunction()
+
 # Generate the deployment settings json file for a cmake target.
 function(qt6_android_generate_deployment_settings target)
     # Information extracted from mkspecs/features/android/android_deployment_settings.prf
