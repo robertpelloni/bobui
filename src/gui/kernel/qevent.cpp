@@ -3711,23 +3711,27 @@ Q_IMPL_EVENT_COMMON(QShowEvent)
     File open events will be sent to the QApplication::instance()
     when the operating system requests that a file or URL should be opened.
     This is a high-level event that can be caused by different user actions
-    depending on the user's desktop environment; for example, double
-    clicking on an file icon in the Finder on \macos.
+    depending on the platform; for example, double clicking on an file in the
+    Finder or dragging a file to the application's Dock icon on \macos,
+    or sharing a file from another application on iOS.
 
     This event is only used to notify the application of a request.
-    It may be safely ignored.
+    It may be safely ignored if the file should not be opened.
 
-    \note This class is currently supported for \macos only.
+    \section1 Apple platforms
 
-    \section1 \macos Example
-
-    In order to trigger the event on \macos, the application must be configured
-    to let the OS know what kind of file(s) it should react on.
+    In order to trigger the event on Apple platforms, the application must be
+    configured to let the OS know what kind of file(s) it should react on.
 
     For example, the following \c Info.plist file declares that the application
-    can act as a viewer for files with a PNG extension:
+    can act as a viewer for PNG files:
 
     \snippet qfileopenevent/Info.plist Custom Info.plist
+
+    The following key is also necessary on iOS for the application to
+    show up as an "Open With" action in e.g. the Files application:
+
+    \snippet qfileopenevent/Info.plist iOS
 
     The following implementation of a QApplication subclass shows how to handle
     QFileOpenEvent to open the file that was, for example, dropped on the Dock

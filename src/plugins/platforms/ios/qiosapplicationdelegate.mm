@@ -111,8 +111,13 @@
 
     QIOSServices *iosServices = static_cast<QIOSServices *>(iosIntegration->services());
 
-    for (UIOpenURLContext *urlContext in URLContexts)
-        iosServices->handleUrl(QUrl::fromNSURL(urlContext.URL));
+    for (UIOpenURLContext *urlContext in URLContexts) {
+        QUrl url = QUrl::fromNSURL(urlContext.URL);
+        if (url.isLocalFile())
+            QWindowSystemInterface::handleFileOpenEvent(url);
+        else
+            iosServices->handleUrl(url);
+    }
 }
 
 - (void)scene:(UIScene *)scene continueUserActivity:(NSUserActivity *)userActivity
