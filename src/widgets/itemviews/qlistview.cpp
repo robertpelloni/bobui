@@ -1007,7 +1007,6 @@ void QListView::paintEvent(QPaintEvent *e)
     const bool focus = (hasFocus() || d->viewport->hasFocus()) && current.isValid();
     const bool alternate = d->alternatingColors;
     const QStyle::State state = option.state;
-    const QAbstractItemView::State viewState = this->state();
     const bool enabled = (state & QStyle::State_Enabled) != 0;
 
     bool alternateBase = false;
@@ -1040,11 +1039,8 @@ void QListView::paintEvent(QPaintEvent *e)
             }
             option.palette.setCurrentColorGroup(cg);
         }
-        if (focus && current == *it) {
+        if (focus && current == *it)
             option.state |= QStyle::State_HasFocus;
-            if (viewState == EditingState)
-                option.state |= QStyle::State_Editing;
-        }
         option.state.setFlag(QStyle::State_MouseOver, *it == hover);
 
         if (alternate) {

@@ -722,7 +722,7 @@ void QStyle::drawItemPixmap(QPainter *painter, const QRect &rect, int alignment,
     \value State_AutoRaise Used to indicate if auto-raise appearance should be used on a tool button.
     \value State_Children Used to indicate if an item view branch has children.
     \value State_DownArrow Used to indicate if a down arrow should be visible on the widget.
-    \value State_Editing Used to indicate if an editor is opened on the widget.
+    \value State_Editing Deprecated. No longer used as the editor is drawn over the itemview cell.
     \value State_Enabled Used to indicate if the widget is enabled.
     \value State_HasEditFocus Used to indicate if the widget currently has edit focus.
     \value State_HasFocus Used to indicate if the widget has focus.

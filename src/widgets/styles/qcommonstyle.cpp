@@ -2315,11 +2315,6 @@ void QCommonStyle::drawControl(ControlElement element, const QStyleOption *opt,
                 } else {
                     p->setPen(vopt->palette.color(cg, QPalette::Text));
                 }
-                if (vopt->state & QStyle::State_Editing) {
-                    p->setPen(vopt->palette.color(cg, QPalette::Text));
-                    p->drawRect(textRect.adjusted(0, 0, -1, -1));
-                }
-
                 d->viewItemDrawText(p, vopt, textRect);
             }
 

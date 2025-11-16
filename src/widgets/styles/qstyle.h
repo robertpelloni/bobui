@@ -87,7 +87,9 @@ public:
         State_Children =            0x00080000,
         State_Item =                0x00100000,
         State_Sibling =             0x00200000,
-        State_Editing =             0x00400000,
+#if QT_DEPRECATED_SINCE(6, 11)
+        State_Editing Q_DECL_ENUMERATOR_DEPRECATED_X("Not used and no effect since Qt 5") =  0x00400000,
+#endif
         State_KeyboardFocusChange = 0x00800000,
 #ifdef QT_KEYPAD_NAVIGATION
         State_HasEditFocus =        0x01000000,
