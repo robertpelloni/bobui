@@ -1002,7 +1002,6 @@ void QListView::paintEvent(QPaintEvent *e)
 
     const QModelIndex current = currentIndex();
     const QModelIndex hover = d->hover;
-    const QAbstractItemModel *itemModel = d->model;
     const QItemSelectionModel *selections = d->selectionModel;
     const bool focus = (hasFocus() || d->viewport->hasFocus()) && current.isValid();
     const bool alternate = d->alternatingColors;
@@ -1016,35 +1015,25 @@ void QListView::paintEvent(QPaintEvent *e)
         ? qMax(viewport()->size().width(), d->contentsSize().width()) - 2 * d->spacing()
         : qMax(viewport()->size().height(), d->contentsSize().height()) - 2 * d->spacing();
 
-    QList<QModelIndex>::const_iterator end = toBeRendered.constEnd();
-    for (QList<QModelIndex>::const_iterator it = toBeRendered.constBegin(); it != end; ++it) {
-        Q_ASSERT((*it).isValid());
-        option.rect = visualRect(*it);
+    for (const QModelIndex &index : toBeRendered) {
+        Q_ASSERT(index.isValid());
+        option.rect = visualRect(index);
 
         if (flow() == TopToBottom)
             option.rect.setWidth(qMin(maxSize, option.rect.width()));
         else
             option.rect.setHeight(qMin(maxSize, option.rect.height()));
 
+        const bool itemIsEnabled = enabled && !index.flags().testFlag(Qt::ItemIsEnabled);
         option.state = state;
-        if (selections && selections->isSelected(*it))
-            option.state |= QStyle::State_Selected;
-        if (enabled) {
-            QPalette::ColorGroup cg;
-            if ((itemModel->flags(*it) & Qt::ItemIsEnabled) == 0) {
-                option.state &= ~QStyle::State_Enabled;
-                cg = QPalette::Disabled;
-            } else {
-                cg = QPalette::Normal;
-            }
-            option.palette.setCurrentColorGroup(cg);
-        }
-        if (focus && current == *it)
-            option.state |= QStyle::State_HasFocus;
-        option.state.setFlag(QStyle::State_MouseOver, *it == hover);
+        option.state.setFlag(QStyle::State_Selected, selections && selections->isSelected(index));
+        option.state.setFlag(QStyle::State_Enabled, itemIsEnabled);
+        option.state.setFlag(QStyle::State_HasFocus, focus && current == index);
+        option.state.setFlag(QStyle::State_MouseOver, index == hover);
+        option.palette.setCurrentColorGroup(itemIsEnabled ? QPalette::Normal : QPalette::Disabled);
 
         if (alternate) {
-            int row = (*it).row();
+            int row = index.row();
             if (row != previousRow + 1) {
                 // adjust alternateBase according to rows in the "gap"
                 if (!d->hiddenRows.isEmpty()) {
@@ -1069,7 +1058,7 @@ void QListView::paintEvent(QPaintEvent *e)
             previousRow = row;
         }
 
-        itemDelegateForIndex(*it)->paint(&painter, option, *it);
+        itemDelegateForIndex(index)->paint(&painter, option, index);
     }
 
 #if QT_CONFIG(draganddrop)
