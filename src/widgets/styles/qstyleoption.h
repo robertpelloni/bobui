@@ -337,7 +337,10 @@ public:
     enum StyleOptionType { Type = SO_MenuItem };
     enum StyleOptionVersion { Version = 1 };
 
-    enum MenuItemType { Normal, DefaultItem, Separator, SubMenu, Scroller, TearOff, Margin,
+    enum MenuItemType { Normal, DefaultItem, Separator, SubMenu, Scroller, TearOff,
+#if QT_DEPRECATED_SINCE(6, 11)
+                        Margin Q_DECL_ENUMERATOR_DEPRECATED_X("Not used anywhere"),
+#endif
                         EmptyArea };
     enum CheckType { NotCheckable, Exclusive, NonExclusive };
 
