@@ -306,7 +306,6 @@ function(qt_internal_add_plugin target)
             ${arg_DEFINES}
         PUBLIC_DEFINES
             ${arg_PUBLIC_DEFINES}
-        FEATURE_DEPENDENCIES ${arg_FEATURE_DEPENDENCIES}
         DBUS_ADAPTOR_SOURCES ${arg_DBUS_ADAPTOR_SOURCES}
         DBUS_ADAPTOR_FLAGS ${arg_DBUS_ADAPTOR_FLAGS}
         DBUS_INTERFACE_SOURCES ${arg_DBUS_INTERFACE_SOURCES}
