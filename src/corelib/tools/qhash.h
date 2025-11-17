@@ -215,10 +215,9 @@ struct MultiNode
 };
 
 template<typename  Node>
-constexpr bool isRelocatable()
-{
-    return QTypeInfo<typename Node::KeyType>::isRelocatable && QTypeInfo<typename Node::ValueType>::isRelocatable;
-}
+inline constexpr bool isRelocatable_v =
+        QTypeInfo<typename Node::KeyType>::isRelocatable &&
+        QTypeInfo<typename Node::ValueType>::isRelocatable;
 
 struct SpanConstants {
     static constexpr size_t SpanShift = 7;
@@ -359,7 +358,7 @@ struct Span {
         fromSpan.offsets[fromIndex] = SpanConstants::UnusedEntry;
         Entry &fromEntry = fromSpan.entries[fromOffset];
 
-        if constexpr (isRelocatable<Node>()) {
+        if constexpr (isRelocatable_v<Node>) {
             memcpy(&toEntry, &fromEntry, sizeof(Entry));
         } else {
             new (&toEntry.node()) Node(std::move(fromEntry.node()));
@@ -396,7 +395,7 @@ struct Span {
         Entry *newEntries = new Entry[alloc];
         // we only add storage if the previous storage was fully filled, so
         // simply copy the old data over
-        if constexpr (isRelocatable<Node>()) {
+        if constexpr (isRelocatable_v<Node>) {
             if (allocated)
                 memcpy(newEntries, entries, allocated * sizeof(Entry));
         } else {
