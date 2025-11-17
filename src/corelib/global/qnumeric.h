@@ -20,20 +20,6 @@
 #include <limits>
 #include <QtCore/q20type_traits.h>
 
-#if __has_include(<stdckdint.h>)
-// This was added by C23 and C++26, defining __STDC_VERSION_STDCKDINT_H__ when
-// usable. Its provided functions are in the global namespace even in C++ (not
-// std::) because they are sometimes macros.
-#  include <QtCore/qstdlibdetection.h>
-#  if defined(Q_CC_GNU_ONLY) && (defined(Q_STL_LIBCPP) || Q_CC_GNU_ONLY < 1500)
-//   broken - https://gcc.gnu.org/bugzilla/show_bug.cgi?id=121811
-#  elif defined(Q_OS_FREEBSD) && __FreeBSD_version <= 1500000
-//   broken - https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=290299
-#  else
-#    include <stdckdint.h>
-#  endif
-#endif
-
 // min() and max() may be #defined by windows.h if that is included before, but we need them
 // for std::numeric_limits below. You should not use the min() and max() macros, so we just #undef.
 #ifdef min
@@ -278,9 +264,7 @@ typename std::enable_if_t<std::is_unsigned_v<T>, bool>
 qAddOverflow(T v1, T v2, T *r)
 {
     static_assert(!std::is_same_v<T, char>, "Template must be an integral other than plain 'char'");
-#if defined(__STDC_VERSION_STDCKDINT_H__)
-    return ckd_add(r, v1, v2);
-#elif defined(Q_NUMERIC_USE_GCC_OVERFLOW_BUILTINS)
+#if defined(Q_NUMERIC_USE_GCC_OVERFLOW_BUILTINS)
     return __builtin_add_overflow(v1, v2, r);
 #else
     if (q20::is_constant_evaluated())
@@ -302,7 +286,7 @@ qAddOverflow(T v1, T v2, T *r)
     }
 # endif // defined(Q_HAVE_ADDCARRY)
     return QtPrivate::qAddOverflowGeneric(v1, v2, r);
-#endif
+#endif // defined(Q_NUMERIC_USE_GCC_OVERFLOW_BUILTINS)
 }
 
 template <typename T>
@@ -311,9 +295,7 @@ typename std::enable_if_t<std::is_signed_v<T>, bool>
 qAddOverflow(T v1, T v2, T *r)
 {
     static_assert(!std::is_same_v<T, char>, "Template must be an integral other than plain 'char'");
-#if defined(__STDC_VERSION_STDCKDINT_H__)
-    return ckd_add(r, v1, v2);
-#elif defined(Q_NUMERIC_USE_GCC_OVERFLOW_BUILTINS)
+#if defined(Q_NUMERIC_USE_GCC_OVERFLOW_BUILTINS)
     return __builtin_add_overflow(v1, v2, r);
 #else
     // Here's how we calculate the overflow:
@@ -334,7 +316,7 @@ qAddOverflow(T v1, T v2, T *r)
     // (x ^ z) & (y ^ z)  is negative if x and z have different signs
     //                    AND y and z have different signs
     return ((v1 ^ *r) & (v2 ^ *r)) < 0;
-#endif
+#endif // defined(Q_NUMERIC_USE_GCC_OVERFLOW_BUILTINS)
 }
 
 template <typename T>
@@ -343,9 +325,7 @@ typename std::enable_if_t<std::is_unsigned_v<T>, bool>
 qSubOverflow(T v1, T v2, T *r)
 {
     static_assert(!std::is_same_v<T, char>, "Template must be an integral other than plain 'char'");
-#if defined(__STDC_VERSION_STDCKDINT_H__)
-    return ckd_sub(r, v1, v2);
-#elif defined(Q_NUMERIC_USE_GCC_OVERFLOW_BUILTINS)
+#if defined(Q_NUMERIC_USE_GCC_OVERFLOW_BUILTINS)
     return __builtin_sub_overflow(v1, v2, r);
 #else
     // unsigned subtractions are well-defined
@@ -360,9 +340,7 @@ typename std::enable_if_t<std::is_signed_v<T>, bool>
 qSubOverflow(T v1, T v2, T *r)
 {
     static_assert(!std::is_same_v<T, char>, "Template must be an integral other than plain 'char'");
-#if defined(__STDC_VERSION_STDCKDINT_H__)
-    return ckd_sub(r, v1, v2);
-#elif defined(Q_NUMERIC_USE_GCC_OVERFLOW_BUILTINS)
+#if defined(Q_NUMERIC_USE_GCC_OVERFLOW_BUILTINS)
     return __builtin_sub_overflow(v1, v2, r);
 #else
     // See above for explanation. This is the same with some signs reversed.
@@ -373,7 +351,7 @@ qSubOverflow(T v1, T v2, T *r)
     *r = T(U(v1) - U(v2));
 
     return ((v1 ^ *r) & (~v2 ^ *r)) < 0;
-#endif
+#endif // defined(Q_NUMERIC_USE_GCC_OVERFLOW_BUILTINS)
 }
 
 template <typename T>
@@ -382,9 +360,7 @@ typename std::enable_if_t<std::is_unsigned_v<T> || std::is_signed_v<T>, bool>
 qMulOverflow(T v1, T v2, T *r)
 {
     static_assert(!std::is_same_v<T, char>, "Template must be an integral other than plain 'char'");
-#if defined(__STDC_VERSION_STDCKDINT_H__)
-    return ckd_mul(r, v1, v2);
-#elif defined(Q_NUMERIC_USE_GCC_OVERFLOW_BUILTINS)
+#if defined(Q_NUMERIC_USE_GCC_OVERFLOW_BUILTINS)
 # if defined(Q_INTRINSIC_MUL_OVERFLOW64)
     return __builtin_mul_overflow(v1, v2, r);
 # else
@@ -417,7 +393,7 @@ qMulOverflow(T v1, T v2, T *r)
 # endif // defined(Q_INTRINSIC_MUL_OVERFLOW64)
 
     return QtPrivate::qMulOverflowGeneric(v1, v2, r);
-#endif
+#endif // defined(Q_NUMERIC_USE_GCC_OVERFLOW_BUILTINS)
 }
 
 #undef Q_HAVE_ADDCARRY
