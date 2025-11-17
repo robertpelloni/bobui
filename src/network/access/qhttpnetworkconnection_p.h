@@ -36,6 +36,7 @@
 #include <private/http2protocol_p.h>
 
 #include <private/qhttpnetworkconnectionchannel_p.h>
+#include <private/qtcpkeepaliveconfiguration_p.h>
 
 #include <utility>
 
@@ -97,6 +98,9 @@ public:
 
     QHttp2Configuration http2Parameters() const;
     void setHttp2Parameters(const QHttp2Configuration &params);
+
+    QTcpKeepAliveConfiguration tcpKeepAliveParameters() const;
+    void setTcpKeepAliveParameters(QTcpKeepAliveConfiguration config);
 
 #ifndef QT_NO_SSL
     void setSslConfiguration(const QSslConfiguration &config);
@@ -254,6 +258,8 @@ public:
     QHttp2Configuration http2Parameters;
 
     QString peerVerifyName;
+
+    QTcpKeepAliveConfiguration tcpKeepAliveConfiguration;
 
     friend class QHttpNetworkConnectionChannel;
 };

@@ -1485,6 +1485,18 @@ void QHttpNetworkConnection::setHttp2Parameters(const QHttp2Configuration &param
     d->http2Parameters = params;
 }
 
+QTcpKeepAliveConfiguration QHttpNetworkConnection::tcpKeepAliveParameters() const
+{
+    Q_D(const QHttpNetworkConnection);
+    return d->tcpKeepAliveConfiguration;
+}
+
+void QHttpNetworkConnection::setTcpKeepAliveParameters(QTcpKeepAliveConfiguration config)
+{
+    Q_D(QHttpNetworkConnection);
+    d->tcpKeepAliveConfiguration = config;
+}
+
 // SSL support below
 #ifndef QT_NO_SSL
 void QHttpNetworkConnection::setSslConfiguration(const QSslConfiguration &config)

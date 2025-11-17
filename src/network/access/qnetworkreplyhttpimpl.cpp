@@ -896,6 +896,9 @@ void QNetworkReplyHttpImplPrivate::postRequest(const QNetworkRequest &newHttpReq
     // Propagate Http/2 settings:
     delegate->http2Parameters = request.http2Configuration();
     delegate->http1Parameters = request.http1Configuration();
+    delegate->tcpKeepAliveParameters.idleTimeBeforeProbes = request.tcpKeepAliveIdleTimeBeforeProbes();
+    delegate->tcpKeepAliveParameters.intervalBetweenProbes = request.tcpKeepAliveIntervalBetweenProbes();
+    delegate->tcpKeepAliveParameters.probeCount = request.tcpKeepAliveProbeCount();
 
     if (request.attribute(QNetworkRequest::ConnectionCacheExpiryTimeoutSecondsAttribute).isValid())
         delegate->connectionCacheExpiryTimeoutSeconds = request.attribute(QNetworkRequest::ConnectionCacheExpiryTimeoutSecondsAttribute).toInt();

@@ -34,6 +34,7 @@
 #include "qnetworkaccessauthenticationmanager_p.h"
 #include <QtNetwork/private/http2protocol_p.h>
 #include <QtNetwork/qhttpheaders.h>
+#include "qtcpkeepaliveconfiguration_p.h"
 
 #ifndef QT_NO_SSL
 #include <memory>
@@ -91,6 +92,7 @@ public:
     QString incomingErrorDetail;
     QHttp1Configuration http1Parameters;
     QHttp2Configuration http2Parameters;
+    QTcpKeepAliveConfiguration tcpKeepAliveParameters;
 
 protected:
     // The zerocopy download buffer, if used:

@@ -327,6 +327,8 @@ void QHttpThreadDelegate::startRequest()
             || connectionType == QHttpNetworkConnection::ConnectionTypeHTTP2Direct) {
             httpConnection->setHttp2Parameters(http2Parameters);
         }
+
+        httpConnection->setTcpKeepAliveParameters(tcpKeepAliveParameters);
 #ifndef QT_NO_SSL
         // Set the QSslConfiguration from this QNetworkRequest.
         if (ssl)
