@@ -2576,6 +2576,26 @@ void tst_Moc::warnings_data()
         << QString()
         << u"standard input:2:1: error: Parse error at \"NONSENSE\""_s;
 
+    QTest::newRow("VIRTUAL FINAL property")
+            << "class X { \n Q_PROPERTY(int p READ p VIRTUAL FINAL) \n };"_ba << QStringList() << 1
+            << QString()
+            << u"standard input:2:1: error: Issue with property declaration p: "
+               u"The VIRTUAL cannot be combined with FINAL, as these attributes are mutually exclusive"_s;
+
+    QTest::newRow("FINAL OVERRIDE property")
+            << "class X { \n Q_PROPERTY(int p READ p FINAL OVERRIDE) \n };"_ba << QStringList() << 1
+            << QString()
+            << u"standard input:2:1: error: Issue with property declaration p: "
+               u"OVERRIDE is redundant when property is marked FINAL"_s;
+
+    QTest::newRow("VIRTUAL OVERRIDE property")
+            << "class X { \n Q_PROPERTY(int p READ p VIRTUAL OVERRIDE) \n };"_ba << QStringList()
+            << 1 << QString()
+            << u"standard input:2:1: error: Issue with property declaration p: VIRTUAL is "
+               u"redundant when overriding a property."
+               u" The OVERRIDE must only be used when actually overriding an existing property;"
+               u" using it on a new property is an error."_s;
+
 #ifdef Q_OS_UNIX  // Limit to Unix because the error message is platform-dependent
     QTest::newRow("Q_PLUGIN_METADATA: unreadable file")
         << QByteArray("class X { \n Q_PLUGIN_METADATA(FILE \".\") \n };")

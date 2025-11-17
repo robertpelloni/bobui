@@ -770,6 +770,10 @@ void Generator::addProperties()
             addFlag("Constant");
         if (p.final)
             addFlag("Final");
+        if (p.virtual_)
+            addFlag("Virtual");
+        if (p.override)
+            addFlag("Override");
         if (p.user != "false")
             addFlag("User");
         if (p.required)

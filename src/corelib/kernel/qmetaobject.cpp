@@ -4405,6 +4405,34 @@ bool QMetaProperty::isFinal() const
 }
 
 /*!
+    \since 6.11
+    Returns \c true if the property is virtual; otherwise returns \c false.
+
+    A property is virtual if the \c{Q_PROPERTY()}'s \c VIRTUAL attribute
+    is set.
+*/
+bool QMetaProperty::isVirtual() const
+{
+    if (!mobj)
+        return false;
+    return data.flags() & Virtual;
+}
+
+/*!
+    \since 6.11
+    Returns \c true if the property does override; otherwise returns \c false.
+
+    A property does override if the \c{Q_PROPERTY()}'s \c OVERRIDE attribute
+    is set.
+*/
+bool QMetaProperty::isOverride() const
+{
+    if (!mobj)
+        return false;
+    return data.flags() & Override;
+}
+
+/*!
   \since 5.15
   Returns \c true if the property is required; otherwise returns \c false.
 

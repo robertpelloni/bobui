@@ -130,6 +130,8 @@ struct PropertyDef
     TypeTags typeTag;
     bool constant = false;
     bool final = false;
+    bool virtual_ = false;
+    bool override = false;
     bool required = false;
     int relativeIndex = -1; // property index in current metaobject
     int lineNumber = 0;

@@ -365,6 +365,8 @@ public:
     bool isUser() const;
     bool isConstant() const;
     bool isFinal() const;
+    bool isVirtual() const;
+    bool isOverride() const;
     bool isRequired() const;
     bool isBindable() const;
 

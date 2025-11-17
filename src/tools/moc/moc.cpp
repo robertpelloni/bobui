@@ -1434,12 +1434,18 @@ void Moc::parsePropertyAttributes(PropertyDef &propDef)
             next(IDENTIFIER);
             propDef.name = lexem();
             continue;
+        } else if (l[0] == 'O' && l == "OVERRIDE") {
+            propDef.override = true;
+            continue;
         } else if (l[0] == 'R' && l == "REQUIRED") {
             propDef.required = true;
             continue;
         } else if (l[0] == 'R' && l == "REVISION" && test(LPAREN)) {
             prev();
             propDef.revision = parseRevision().toEncodedVersion<int>();
+            continue;
+        } else if (l[0] == 'V' && l == "VIRTUAL") {
+            propDef.virtual_ = true;
             continue;
         }
 
@@ -1544,6 +1550,24 @@ void Moc::parsePropertyAttributes(PropertyDef &propDef)
                 + " is not BINDable but default-WRITEable. WRITE will be ignored.";
         propDef.write = "";
         warning(msg.constData());
+    }
+    if (propDef.override && propDef.virtual_) {
+        const QByteArray msg = "Issue with property declaration " + propDef.name
+                + ": VIRTUAL is redundant when overriding a property. The OVERRIDE "
+                  "must only be used when actually overriding an existing property; using it on a "
+                  "new property is an error.";
+        error(msg.constData());
+    }
+    if (propDef.override && propDef.final) {
+        const QByteArray msg = "Issue with property declaration " + propDef.name
+                + ": OVERRIDE is redundant when property is marked FINAL";
+        error(msg.constData());
+    }
+    if (propDef.virtual_ && propDef.final) {
+        const QByteArray msg = "Issue with property declaration " + propDef.name
+                + ": The VIRTUAL cannot be combined with FINAL, as these attributes are mutually "
+                  "exclusive";
+        error(msg.constData());
     }
 }
 

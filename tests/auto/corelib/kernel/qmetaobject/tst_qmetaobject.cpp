@@ -291,6 +291,8 @@ class tst_QMetaObject : public QObject
     Q_PROPERTY(int value8 READ value8)
     Q_PROPERTY(int value9 READ value9 CONSTANT)
     Q_PROPERTY(int value10 READ value10 FINAL)
+    Q_PROPERTY(int value11 READ value10 VIRTUAL)
+    Q_PROPERTY(int value12 READ value10 OVERRIDE)
 
 public:
     enum EnumType { EnumType1 };
@@ -358,6 +360,8 @@ private slots:
     void propertyNotify();
     void propertyConstant();
     void propertyFinal();
+    void propertyVirtual();
+    void propertyOverride();
 
     void metaType();
 
@@ -2725,6 +2729,32 @@ void tst_QMetaObject::propertyFinal()
     prop = mo->property(mo->indexOfProperty("value9"));
     QVERIFY(prop.isValid());
     QVERIFY(!prop.isFinal());
+}
+
+void tst_QMetaObject::propertyVirtual()
+{
+    const QMetaObject *mo = metaObject();
+
+    QMetaProperty prop = mo->property(mo->indexOfProperty("value11"));
+    QVERIFY(prop.isValid());
+    QVERIFY(prop.isVirtual());
+
+    prop = mo->property(mo->indexOfProperty("value9"));
+    QVERIFY(prop.isValid());
+    QVERIFY(!prop.isVirtual());
+}
+
+void tst_QMetaObject::propertyOverride()
+{
+    const QMetaObject *mo = metaObject();
+
+    QMetaProperty prop = mo->property(mo->indexOfProperty("value12"));
+    QVERIFY(prop.isValid());
+    QVERIFY(prop.isOverride());
+
+    prop = mo->property(mo->indexOfProperty("value9"));
+    QVERIFY(prop.isValid());
+    QVERIFY(!prop.isOverride());
 }
 
 void tst_QMetaObject::metaType()

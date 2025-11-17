@@ -16,6 +16,8 @@ Q_PROPERTY(type name
            [BINDABLE bindableProperty]
            [CONSTANT]
            [FINAL]
+           [VIRTUAL]
+           [OVERRIDE]
            [REQUIRED])
 //! [0]
 
