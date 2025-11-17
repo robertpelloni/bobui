@@ -2326,6 +2326,15 @@ void QTabBarPrivate::moveTabFinished(int index)
 void QTabBar::mouseReleaseEvent(QMouseEvent *event)
 {
     Q_D(QTabBar);
+
+    if (d->closeButtonOnTabs && event->button() == Qt::MiddleButton) {
+        const int index = tabAt(event->pos());
+        if (index != -1) {
+            emit tabCloseRequested(index);
+            return;
+        }
+    }
+
     if (event->button() != Qt::LeftButton) {
         event->ignore();
         return;
@@ -2559,8 +2568,9 @@ void QTabBar::setUsesScrollButtons(bool useButtons)
     \since 4.5
 
     When tabsClosable is set to true a close button will appear on the tab on
-    either the left or right hand side depending upon the style.  When the button
-    is clicked the tab the signal tabCloseRequested will be emitted.
+    either the left or right hand side depending upon the style. When the button
+    is clicked directly, or a mouse middle-click is received anywhere in the tab,
+    the signal tabCloseRequested will be emitted.
 
     By default the value is false.
 
