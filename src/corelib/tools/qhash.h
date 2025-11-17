@@ -23,7 +23,13 @@ QT_BEGIN_NAMESPACE
 
 struct QHashDummyValue
 {
-    bool operator==(const QHashDummyValue &) const noexcept { return true; }
+    explicit QHashDummyValue() = default;
+    friend constexpr bool operator==(QHashDummyValue, QHashDummyValue) noexcept { return true; }
+#ifndef __cpp_impl_three_way_comparison
+    friend constexpr bool operator!=(QHashDummyValue, QHashDummyValue) noexcept { return false; }
+#endif
+    friend constexpr size_t qHash(QHashDummyValue) noexcept = delete;
+    friend constexpr size_t qHash(QHashDummyValue, size_t) noexcept = delete;
 };
 
 namespace QHashPrivate {
