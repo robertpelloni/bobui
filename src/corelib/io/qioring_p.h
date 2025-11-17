@@ -144,6 +144,7 @@ private:
     quint32 unstagedRequests = 0;
     bool stagePending = false;
     bool preparingRequests = false;
+    qsizetype ongoingSplitOperations = 0;
 
     Q_CORE_EXPORT
     bool initializeIORing();
@@ -169,6 +170,10 @@ private:
         QueueFull,
         Defer,
         RequestCompleted,
+    };
+    enum class ReadWriteStatus : bool {
+        MoreToDo,
+        Finished,
     };
 #ifdef Q_OS_LINUX
     std::optional<QSocketNotifier> notifier;
@@ -196,6 +201,10 @@ private:
     int eventDescriptor = -1;
     [[nodiscard]]
     RequestPrepResult prepareRequest(io_uring_sqe *sqe, GenericRequestType &request);
+    template <Operation Op>
+    ReadWriteStatus handleReadCompletion(const io_uring_cqe *cqe, GenericRequestType *request);
+    template <Operation Op>
+    ReadWriteStatus handleWriteCompletion(const io_uring_cqe *cqe, GenericRequestType *request);
 #endif
 };
 
@@ -459,6 +468,16 @@ case QIORing::Operation::Op:                       \
     Q_UNREACHABLE();
 #undef INVOKE_ON_OP
 }
+
+namespace QtPrivate {
+// The 'extra' struct for Read/Write operations that must be split up
+struct ReadWriteExtra
+{
+    qsizetype spanIndex = 0;
+    qsizetype spanOffset = 0;
+    qsizetype numSpans = 1;
+};
+} // namespace QtPrivate
 
 QT_END_NAMESPACE
 

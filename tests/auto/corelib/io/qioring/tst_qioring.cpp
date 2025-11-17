@@ -231,11 +231,6 @@ void tst_QIORing::fiveGiBReadWrite()
             [&bytesWritten](const QIORingRequest<QIORing::Operation::Write> &request) {
                 auto *result = std::get_if<QIORingResult<QIORing::Operation::Write>>(
                         &request.result);
-                // Instead of silently cutting off at MAX_RW_COUNT we decide to just fail the
-                // request for now:
-                QEXPECT_FAIL("",
-                             "Linux backend fails when asked to write more than MAX_RW_COUNT bytes",
-                             Abort);
                 QVERIFY(result);
                 bytesWritten = result->bytesWritten;
                 QCOMPARE(bytesWritten, Size);
