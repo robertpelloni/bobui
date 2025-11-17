@@ -96,6 +96,7 @@ macro(qt_internal_reset_global_state)
     qt_internal_set_qt_known_plugins("")
 
     set(QT_KNOWN_MODULES_WITH_TOOLS "" CACHE INTERNAL "Known Qt modules with tools" FORCE)
+    set_property(GLOBAL PROPERTY _qt_standalone_tool_packages "")
 endmacro()
 
 macro(qt_internal_set_qt_path_separator)

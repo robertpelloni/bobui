@@ -30,3 +30,6 @@ if(TARGET Qt6::Platform)
         qt_internal_add_RunCMake_test(Sbom ${extra_run_cmake_args})
     endif()
 endif()
+
+list(APPEND extra_run_cmake_args "-DQT_WILL_INSTALL=${QT_WILL_INSTALL}")
+qt_internal_add_RunCMake_test(StandaloneToolsPackage ${extra_run_cmake_args})

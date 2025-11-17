@@ -457,6 +457,52 @@ function(qt_record_extra_third_party_dependency main_target_name dep_target)
     endif()
 endfunction()
 
+# Record a third party dependency for a standalone tools package.
+#
+# This function records a dependency between the standalone pacakge PACKAGE_BASE_NAME and third
+# party dependency DEPENDENCY_PACKAGE_NAME and DEPENDENCY_PACKAGE_VERSION
+# at the CMake package level.
+#
+# E.g. A Qt6GarageTools package with the PACKAGE_BASE_NAME 'Garage',
+# needs to call find_package(ZLIB 1.2) (non-qt-package).
+function(qt_internal_record_tools_package_extra_third_party_dependency)
+    set(opt_args "")
+    set(single_args
+        PACKAGE_BASE_NAME
+    )
+    set(multi_args
+        DEPENDENCY_PACKAGE_NAME
+        DEPENDENCY_PACKAGE_VERSION
+    )
+    cmake_parse_arguments(PARSE_ARGV 0 arg "${opt_args}" "${single_args}" "${multi_args}")
+    _qt_internal_validate_all_args_are_parsed(arg)
+
+    if(NOT arg_PACKAGE_BASE_NAME)
+        message(FATAL_ERROR "PACKAGE_BASE_NAME is required.")
+    endif()
+    set(id "${arg_PACKAGE_BASE_NAME}")
+
+    if(NOT arg_DEPENDENCY_PACKAGE_NAME)
+        message(FATAL_ERROR "DEPENDENCY_PACKAGE_NAME is required.")
+    endif()
+    set(dep_package_name "${arg_DEPENDENCY_PACKAGE_NAME}")
+
+    if(arg_DEPENDENCY_PACKAGE_VERSION)
+        set(dep_package_version "${arg_DEPENDENCY_PACKAGE_VERSION}")
+    else()
+        set(dep_package_version "")
+    endif()
+
+    get_cmake_property(extra_deps _qt_standalone_tool_package_${id}_third_party_dependencies)
+    if(NOT extra_deps)
+        set(extra_deps "")
+    endif()
+
+    list(APPEND extra_deps "${dep_package_name}\;${dep_package_version}")
+    set_property(GLOBAL PROPERTY _qt_standalone_tool_package_${id}_third_party_dependencies
+        "${extra_deps}")
+endfunction()
+
 # Sets out_var to TRUE if the non-namespaced ${lib} target is exported as part of Qt6Targets.cmake.
 function(qt_internal_is_lib_part_of_qt6_package lib out_var)
     if (lib STREQUAL "Platform"

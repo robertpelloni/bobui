@@ -801,8 +801,15 @@ endfunction()
 function(qt_create_tools_config_files)
     # Create packages like Qt6CoreTools/Qt6CoreToolsConfig.cmake.
     foreach(module_name ${QT_KNOWN_MODULES_WITH_TOOLS})
-        qt_export_tools("${module_name}")
+        qt_export_tools(MODULE_NAME "${module_name}")
     endforeach()
+
+    get_cmake_property(standalone_packages _qt_standalone_tool_packages)
+    if(standalone_packages)
+        foreach(package_name IN LISTS standalone_packages)
+            qt_export_tools(PACKAGE_BASE_NAME "${package_name}")
+        endforeach()
+    endif()
 endfunction()
 
 function(qt_internal_create_config_file_for_standalone_tests)
@@ -835,9 +842,11 @@ function(qt_internal_create_config_file_for_standalone_tests)
         endif()
     endforeach()
 
-    # Skip generating and installing file if no modules were built. This make sure not to install
-    # anything when build qtx11extras on macOS for example.
-    if(NOT modules)
+    get_cmake_property(tool_package_base_names _qt_standalone_tool_packages)
+
+    # Skip generating and installing file if no modules or tools were built. This makes sure not
+    # to install anything when building qtx11extras on macOS for example.
+    if(NOT modules AND NOT tool_package_base_names)
         return()
     endif()
 
@@ -846,7 +855,22 @@ function(qt_internal_create_config_file_for_standalone_tests)
     qt_internal_get_standalone_parts_config_file_name(tests_config_file_name)
 
     # Substitution variables.
-    list(JOIN modules "\n        " QT_MODULE_PACKAGES)
+    if(modules)
+        list(JOIN modules "\n        " module_string)
+        set(QT_MODULE_PACKAGES "    QT_MODULE_PACKAGES
+        ${module_string}")
+    endif()
+
+    if(tool_package_base_names)
+        # We only have the base package names, so we need to append Tools to each of the package
+        # names
+        set(tool_packages "${tool_package_base_names}")
+        list(TRANSFORM tool_packages APPEND Tools)
+
+        list(JOIN tool_packages "\n        " tool_packages_string)
+        set(QT_TOOL_PACKAGES "    QT_TOOL_PACKAGES
+        ${tool_packages_string}")
+    endif()
 
     configure_file(
         "${QT_CMAKE_DIR}/QtStandaloneTestsConfig.cmake.in"

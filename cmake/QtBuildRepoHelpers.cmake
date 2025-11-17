@@ -732,6 +732,7 @@ macro(qt_internal_find_standalone_parts_qt_packages standalone_parts_args_var_na
     set(__standalone_parts_single_args "")
     set(__standalone_parts_multi_args
         QT_MODULE_PACKAGES
+        QT_TOOL_PACKAGES
     )
     cmake_parse_arguments(__standalone_parts
         "${__standalone_parts_opt_args}"
@@ -742,6 +743,32 @@ macro(qt_internal_find_standalone_parts_qt_packages standalone_parts_args_var_na
     # Packages looked up in standalone tests Config files should use the same version as
     # the one recorded on the Platform target.
     qt_internal_get_package_version_of_target(Platform __standalone_parts_main_qt_package_version)
+
+    if(__standalone_parts_QT_TOOL_PACKAGES)
+        # Set up QT_HOST_PATH as an extra root path to look for the Tools packages when
+        # cross-compiling.
+        if(NOT "${QT_HOST_PATH}" STREQUAL "")
+             set(__standalone_parts_CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH})
+             set(__standalone_parts_CMAKE_FIND_ROOT_PATH ${CMAKE_FIND_ROOT_PATH})
+             list(PREPEND CMAKE_PREFIX_PATH "${QT_HOST_PATH_CMAKE_DIR}")
+             list(PREPEND CMAKE_FIND_ROOT_PATH "${QT_HOST_PATH}")
+        endif()
+
+        foreach(__standalone_parts_package_name IN LISTS __standalone_parts_QT_TOOL_PACKAGES)
+            find_package(${QT_CMAKE_EXPORT_NAMESPACE}${__standalone_parts_package_name}
+                "${__standalone_parts_main_qt_package_version}"
+                PATHS
+                        # These come from Qt6Config.cmake
+                        ${_qt_additional_packages_prefix_path}
+                        ${_qt_additional_packages_prefix_path_env}
+            )
+        endforeach()
+
+        if(NOT "${QT_HOST_PATH}" STREQUAL "")
+             set(CMAKE_PREFIX_PATH ${__standalone_parts_CMAKE_PREFIX_PATH})
+             set(CMAKE_FIND_ROOT_PATH ${__standalone_parts_CMAKE_FIND_ROOT_PATH})
+        endif()
+    endif()
 
     if(__standalone_parts_QT_MODULE_PACKAGES)
         foreach(__standalone_parts_package_name IN LISTS __standalone_parts_QT_MODULE_PACKAGES)
@@ -755,8 +782,11 @@ macro(qt_internal_find_standalone_parts_qt_packages standalone_parts_args_var_na
     unset(__standalone_parts_single_args)
     unset(__standalone_parts_multi_args)
     unset(__standalone_parts_QT_MODULE_PACKAGES)
+    unset(__standalone_parts_QT_TOOL_PACKAGES)
     unset(__standalone_parts_main_qt_package_version)
     unset(__standalone_parts_package_name)
+    unset(__standalone_parts_CMAKE_PREFIX_PATH)
+    unset(__standalone_parts_CMAKE_FIND_ROOT_PATH)
 endmacro()
 
 # Used by standalone tests and standalone non-ExternalProject examples to find all installed qt
