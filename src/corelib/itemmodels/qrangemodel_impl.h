@@ -1651,21 +1651,21 @@ public:
     template <typename Fn>
     bool forEachColumn(const row_type &row, int rowIndex, const QModelIndex &parent, Fn &&fn) const
     {
+        using namespace QRangeModelDetails;
+
         const auto &model = this->itemModel();
         if constexpr (one_dimensional_range) {
-            return fn(model.index(rowIndex, 0, parent), QRangeModelDetails::pointerTo(row));
+            return fn(model.index(rowIndex, 0, parent), pointerTo(row));
         } else if constexpr (dynamicColumns()) {
             int columnIndex = -1;
-            return std::all_of(row.begin(), row.end(), [&](const auto &item) {
-                return fn(model.index(rowIndex, ++columnIndex, parent),
-                          QRangeModelDetails::pointerTo(item));
+            return std::all_of(begin(row), end(row), [&](const auto &item) {
+                return fn(model.index(rowIndex, ++columnIndex, parent), pointerTo(item));
             });
         } else { // tuple-like
             int columnIndex = -1;
             return std::apply([fn = std::forward<Fn>(fn), &model, rowIndex, &columnIndex, parent]
                               (const auto &...item) {
-                return (fn(model.index(rowIndex, ++columnIndex, parent),
-                           QRangeModelDetails::pointerTo(item)) && ...);
+                return (fn(model.index(rowIndex, ++columnIndex, parent), pointerTo(item)) && ...);
             }, row);
         }
     }
