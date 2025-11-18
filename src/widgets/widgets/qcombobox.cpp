@@ -829,6 +829,12 @@ QAbstractItemView *QComboBoxPrivateContainer::itemView() const
 }
 
 /*!
+    \class QComboBoxPrivateContainer
+    \inmodule QtWidgets
+    \internal
+*/
+
+/*!
     Sets the item view to be used for the combobox popup.
 */
 void QComboBoxPrivateContainer::setItemView(QAbstractItemView *itemView)

@@ -293,6 +293,12 @@ QFlickGestureRecognizer::QFlickGestureRecognizer(Qt::MouseButton button)
     this->button = button;
 }
 
+/*!
+    \class QFlickGestureRecognizer
+    \inmodule QtWidgets
+    \internal
+*/
+
 /*! \reimp
  */
 QGesture *QFlickGestureRecognizer::create(QObject *target)

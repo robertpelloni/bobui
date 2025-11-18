@@ -518,6 +518,12 @@ void QLabel::setMargin(int margin)
 }
 
 /*!
+    \class QLabelPrivate
+    \inmodule QtWidgets
+    \internal
+*/
+
+/*!
     Returns the size that will be used if the width of the label is \a
     w. If \a w is -1, the sizeHint() is returned. If \a w is 0 minimumSizeHint() is returned
 */

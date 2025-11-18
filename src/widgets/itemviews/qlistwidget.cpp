@@ -256,6 +256,12 @@ bool QListModel::removeRows(int row, int count, const QModelIndex &parent)
 }
 
 /*!
+    \class QListModel
+    \inmodule QtWidgets
+    \internal
+*/
+
+/*!
     \since 5.13
     \reimp
 */

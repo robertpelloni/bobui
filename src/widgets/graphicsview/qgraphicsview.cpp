@@ -1119,6 +1119,12 @@ void QGraphicsViewPrivate::freeStyleOptionsArray(QStyleOptionGraphicsItem *array
 Q_GUI_EXPORT extern QPainterPath qt_regionToPath(const QRegion &region);
 
 /*!
+    \class QGraphicsViewPrivate
+    \inmodule QtWidgets
+    \internal
+*/
+
+/*!
     ### Adjustments in findItems: mapToScene(QRect) forces us to adjust the
     input rectangle by (0, 0, 1, 1), because it uses QRect::bottomRight()
     (etc) when mapping the rectangle to a polygon (which is _wrong_). In

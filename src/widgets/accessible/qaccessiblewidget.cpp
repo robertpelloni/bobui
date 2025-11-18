@@ -455,6 +455,11 @@ QAccessibleWidgetV2::QAccessibleWidgetV2(QWidget *object, QAccessible::Role role
 {
 }
 
+/*!
+    \class QAccessibleWidgetV2
+    \inmodule QtWidgets
+    \internal
+*/
 QAccessibleWidgetV2::QAccessibleWidgetV2(QWidget *object, QAccessible::Role role)
     : QAccessibleWidget(object, role)
 {

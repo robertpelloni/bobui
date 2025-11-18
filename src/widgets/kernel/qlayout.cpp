@@ -771,6 +771,12 @@ void QLayoutPrivate::reparentChildWidgets(QWidget *mw)
 }
 
 /*!
+    \class QLayoutPrivate
+    \inmodule QtWidgets
+    \internal
+*/
+
+/*!
     Returns \c true if the \a widget can be added to the \a layout;
     otherwise returns \c false.
 */

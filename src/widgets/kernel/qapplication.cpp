@@ -503,6 +503,12 @@ void qt_init_tooltip_palette()
 extern void qRegisterWidgetsVariant();
 
 /*!
+    \class QApplicationPrivate
+    \inmodule QtWidgets
+    \internal
+*/
+
+/*!
   Initializes the QApplication object, called from the constructors.
 */
 void QApplicationPrivate::initialize()

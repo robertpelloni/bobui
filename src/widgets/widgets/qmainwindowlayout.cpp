@@ -1541,6 +1541,12 @@ void QMainWindowLayout::removeToolBar(QToolBar *toolbar)
 }
 
 /*!
+    \class QMainWindowLayout
+    \inmodule QtWidgets
+    \internal
+*/
+
+/*!
     Adds \a toolbar to \a area, continuing the current line.
 */
 void QMainWindowLayout::addToolBar(Qt::ToolBarArea area,

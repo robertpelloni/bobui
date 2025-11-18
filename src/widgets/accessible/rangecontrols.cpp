@@ -34,6 +34,12 @@ using namespace Qt::StringLiterals;
 #if QT_CONFIG(accessibility)
 
 #if QT_CONFIG(spinbox)
+
+/*!
+    \class QAccessibleAbstractSpinBox
+    \inmodule QtWidgets
+    \internal
+*/
 QAccessibleAbstractSpinBox::QAccessibleAbstractSpinBox(QWidget *w)
     : QAccessibleWidgetV2(w, QAccessible::SpinBox), lineEdit(nullptr)
 {
@@ -242,6 +248,12 @@ QSpinBox *QAccessibleSpinBox::spinBox() const
 
 
 // ================================== QAccessibleDoubleSpinBox ==================================
+
+/*!
+    \class QAccessibleDoubleSpinBox
+    \inmodule QtWidgets
+    \internal
+*/
 QAccessibleDoubleSpinBox::QAccessibleDoubleSpinBox(QWidget *widget)
     : QAccessibleAbstractSpinBox(widget)
 {

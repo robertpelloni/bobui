@@ -4172,6 +4172,12 @@ QSize QFileDialogTreeView::sizeHint() const
 }
 
 /*!
+    \class QFileDialogLineEdit
+    \inmodule QtWidgets
+    \internal
+*/
+
+/*!
     // FIXME: this is a hack to avoid propagating key press events
     // to the dialog and from there to the "Ok" button
 */

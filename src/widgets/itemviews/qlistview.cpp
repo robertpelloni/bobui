@@ -608,6 +608,12 @@ void QListViewPrivate::selectAll(QItemSelectionModel::SelectionFlags command)
 }
 
 /*!
+    \class QListViewPrivate
+    \inmodule QtWidgets
+    \internal
+*/
+
+/*!
   \reimp
 
   We have a QListView way of knowing what elements are on the viewport

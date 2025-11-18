@@ -597,6 +597,12 @@ static QPlatformTextureList *widgetTexturesFor(QWidget *tlw, QWidget *widget)
 // ---------------------------------------------------------------------------
 
 /*!
+    \class QWidgetRepaintManager
+    \inmodule QtWidgets
+    \internal
+*/
+
+/*!
     Synchronizes the \a exposedRegion of the \a exposedWidget with the backing store.
 
     If there are dirty widgets, including but not limited to the \a exposedWidget,
@@ -1200,6 +1206,12 @@ bool QWidgetRepaintManager::isDirty() const
 {
     return !(dirtyWidgets.isEmpty() && dirty.isEmpty() && dirtyRenderToTextureWidgets.isEmpty());
 }
+
+/*!
+    \class QWidgetPrivate
+    \inmodule QtWidgets
+    \internal
+*/
 
 /*!
     Invalidates the backing store when the widget is resized.

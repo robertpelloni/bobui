@@ -360,6 +360,11 @@ void QUrlModel::changed(const QString &path)
     }
 }
 
+/*!
+    \class QSidebar
+    \inmodule QtWidgets
+    \internal
+*/
 QSidebar::QSidebar(QWidget *parent) : QListView(parent)
 {
 }

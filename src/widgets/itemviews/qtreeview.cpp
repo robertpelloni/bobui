@@ -1453,6 +1453,12 @@ QRect QTreeViewPrivate::intersectedRect(const QRect rect, const QModelIndex &top
 }
 
 /*!
+    \class QTreeViewPrivate
+    \inmodule QtWidgets
+    \internal
+*/
+
+/*!
   \reimp
 
   We have a QTreeView way of knowing what elements are on the viewport
