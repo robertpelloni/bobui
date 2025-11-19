@@ -922,6 +922,11 @@ QAccessibleWindowContainer::QAccessibleWindowContainer(QWidget *w)
 {
 }
 
+QString QAccessibleWindowContainer::text(QAccessible::Text) const
+{
+    return QString();
+}
+
 int QAccessibleWindowContainer::childCount() const
 {
     if (container()->containedWindow() && QAccessible::queryAccessibleInterface(container()->containedWindow()))
