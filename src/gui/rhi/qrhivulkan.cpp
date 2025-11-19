@@ -2159,6 +2159,18 @@ bool QRhiVulkan::createOffscreenRenderPass(QVkRenderPassDescriptor *rpD,
     }
 #endif
 
+    // Add self-dependency to be able to add memory barriers for writes in graphics stages
+    VkSubpassDependency selfDependency;
+    VkPipelineStageFlags stageMask = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+    selfDependency.srcSubpass      = 0;
+    selfDependency.dstSubpass      = 0;
+    selfDependency.srcStageMask    = stageMask;
+    selfDependency.dstStageMask    = stageMask;
+    selfDependency.srcAccessMask   = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+    selfDependency.dstAccessMask   = selfDependency.srcAccessMask;
+    selfDependency.dependencyFlags = 0;
+    rpD->subpassDeps.append(selfDependency);
+
     // rpD->subpassDeps stays empty: don't yet know the correct initial/final
     // access and stage stuff for the implicit deps at this point, so leave it
     // to the resource tracking and activateTextureRenderTarget() to generate
@@ -4864,6 +4876,17 @@ void QRhiVulkan::recordPrimaryCommandBuffer(QVkCommandBuffer *cbD)
                                      cmd.args.beginRenderPass.useSecondaryCb ? VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS
                                                                              : VK_SUBPASS_CONTENTS_INLINE);
             break;
+        case QVkCommandBuffer::Command::MemoryBarrier: {
+            VkMemoryBarrier barrier;
+            barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+            barrier.pNext = nullptr;
+            barrier.dstAccessMask = cmd.args.memoryBarrier.dstAccessMask;
+            barrier.srcAccessMask = cmd.args.memoryBarrier.srcAccessMask;
+            df->vkCmdPipelineBarrier(cbD->cb, cmd.args.memoryBarrier.srcStageMask, cmd.args.memoryBarrier.dstStageMask, cmd.args.memoryBarrier.dependencyFlags,
+                                 1, &barrier,
+                                 0, VK_NULL_HANDLE,
+                                 0, VK_NULL_HANDLE);
+        } break;
         case QVkCommandBuffer::Command::EndRenderPass:
             df->vkCmdEndRenderPass(cbD->cb);
             break;
@@ -5702,6 +5725,9 @@ void QRhiVulkan::setShaderResources(QRhiCommandBuffer *cb, QRhiShaderResourceBin
     QVkShaderResourceBindings *srbD = QRHI_RES(QVkShaderResourceBindings, srb);
     auto &descSetBd(srbD->boundResourceData[currentFrameSlot]);
     bool rewriteDescSet = false;
+    bool addWriteBarrier = false;
+    VkPipelineStageFlags writeBarrierSrcStageMask = 0;
+    VkPipelineStageFlags writeBarrierDstStageMask = 0;
 
     // Do host writes and mark referenced shader resources as in-use.
     // Also prepare to ensure the descriptor set we are going to bind refers to up-to-date Vk objects.
@@ -5789,9 +5815,22 @@ void QRhiVulkan::setShaderResources(QRhiCommandBuffer *cb, QRhiShaderResourceBin
                 access = QRhiPassResourceTracker::TexStorageStore;
             else
                 access = QRhiPassResourceTracker::TexStorageLoadStore;
+
+            const auto stage = QRhiPassResourceTracker::toPassTrackerTextureStage(b->stage);
+            const auto prevAccess = passResTracker.textures().find(texD);
+            if (prevAccess != passResTracker.textures().end()) {
+                const QRhiPassResourceTracker::Texture &tex = prevAccess->second;
+                if (tex.access == QRhiPassResourceTracker::TexStorageStore
+                        || tex.access == QRhiPassResourceTracker::TexStorageLoadStore) {
+                    addWriteBarrier = true;
+                    writeBarrierDstStageMask |= toVkPipelineStage(stage);
+                    writeBarrierSrcStageMask |= toVkPipelineStage(tex.stage);
+                }
+            }
+
             trackedRegisterTexture(&passResTracker, texD,
                                    access,
-                                   QRhiPassResourceTracker::toPassTrackerTextureStage(b->stage));
+                                   stage);
 
             if (texD->generation != bd.simage.generation || texD->m_id != bd.simage.id) {
                 rewriteDescSet = true;
@@ -5818,9 +5857,21 @@ void QRhiVulkan::setShaderResources(QRhiCommandBuffer *cb, QRhiShaderResourceBin
                 access = QRhiPassResourceTracker::BufStorageStore;
             else
                 access = QRhiPassResourceTracker::BufStorageLoadStore;
+
+            const auto stage = QRhiPassResourceTracker::toPassTrackerBufferStage(b->stage);
+            const auto prevAccess = passResTracker.buffers().find(bufD);
+            if (prevAccess != passResTracker.buffers().end()) {
+                const QRhiPassResourceTracker::Buffer &buf = prevAccess->second;
+                if (buf.access == QRhiPassResourceTracker::BufStorageStore
+                        || buf.access == QRhiPassResourceTracker::BufStorageLoadStore) {
+                    addWriteBarrier = true;
+                    writeBarrierDstStageMask |= toVkPipelineStage(stage);
+                    writeBarrierSrcStageMask |= toVkPipelineStage(buf.stage);
+                }
+            }
             trackedRegisterBuffer(&passResTracker, bufD, bufD->m_type == QRhiBuffer::Dynamic ? currentFrameSlot : 0,
                                   access,
-                                  QRhiPassResourceTracker::toPassTrackerBufferStage(b->stage));
+                                  stage);
 
             if (bufD->generation != bd.sbuf.generation || bufD->m_id != bd.sbuf.id) {
                 rewriteDescSet = true;
@@ -5832,6 +5883,28 @@ void QRhiVulkan::setShaderResources(QRhiCommandBuffer *cb, QRhiShaderResourceBin
         default:
             Q_UNREACHABLE();
             break;
+        }
+    }
+
+    if (addWriteBarrier) {
+        if (cbD->passUsesSecondaryCb) {
+            VkMemoryBarrier barrier;
+            barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+            barrier.pNext = nullptr;
+            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+            barrier.srcAccessMask = barrier.dstAccessMask;
+            df->vkCmdPipelineBarrier(cbD->activeSecondaryCbStack.last(), writeBarrierSrcStageMask, writeBarrierDstStageMask, 0,
+                                 1, &barrier,
+                                 0, VK_NULL_HANDLE,
+                                 0, VK_NULL_HANDLE);
+        } else {
+            QVkCommandBuffer::Command &cmd(cbD->commands.get());
+            cmd.cmd = QVkCommandBuffer::Command::MemoryBarrier;
+            cmd.args.memoryBarrier.dependencyFlags = 0;
+            cmd.args.memoryBarrier.dstStageMask = writeBarrierDstStageMask;
+            cmd.args.memoryBarrier.srcStageMask = writeBarrierSrcStageMask;
+            cmd.args.memoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+            cmd.args.memoryBarrier.srcAccessMask = cmd.args.memoryBarrier.dstAccessMask;
         }
     }
 

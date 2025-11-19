@@ -425,7 +425,8 @@ struct QVkCommandBuffer : public QRhiCommandBuffer
             TransitionPassResources,
             Dispatch,
             ExecuteSecondary,
-            SetShadingRate
+            SetShadingRate,
+            MemoryBarrier
         };
         Cmd cmd;
 
@@ -461,6 +462,13 @@ struct QVkCommandBuffer : public QRhiCommandBuffer
                 int count;
                 int index;
             } imageBarrier;
+            struct {
+                VkPipelineStageFlags srcStageMask;
+                VkPipelineStageFlags dstStageMask;
+                VkAccessFlags srcAccessMask;
+                VkAccessFlags dstAccessMask;
+                VkDependencyFlags dependencyFlags;
+            } memoryBarrier;
             struct {
                 VkPipelineStageFlags srcStageMask;
                 VkPipelineStageFlags dstStageMask;
