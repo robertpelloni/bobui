@@ -430,6 +430,8 @@ void tst_Android::testFullScreenDimensions()
         widget.showNormal();
     }
 
+    // TODO needs fix to work in local and CI on same fashion
+    const bool runsOnCI = qgetenv("QTEST_ENVIRONMENT").split(' ').contains("ci");
     {
         // Translucent
         // available geometry == full display size (system bars visible but drawable under)
@@ -437,14 +439,11 @@ void tst_Android::testFullScreenDimensions()
         widget.show();
         QCoreApplication::processEvents();
         QTRY_COMPARE(screen->availableGeometry().width(), realSize.getField<jint>("x"));
+        if ((sdkVersion > __ANDROID_API_V__) && runsOnCI)
+            QEXPECT_FAIL("", "Fails on Android 16 (QTBUG-141712).", Continue);
         QTRY_COMPARE(screen->availableGeometry().height(), realSize.getField<jint>("y"));
 
         QTRY_COMPARE(screen->geometry().width(), realSize.getField<jint>("x"));
-        // TODO needs fix to work in local and CI on same fashion
-        const bool runsOnCI = qgetenv("QTEST_ENVIRONMENT").split(' ').contains("ci");
-        if ((sdkVersion > __ANDROID_API_V__) && runsOnCI)
-            QEXPECT_FAIL("", "Fails on Android 16 (QTBUG-141712).", Continue);
-
         QTRY_COMPARE(screen->geometry().height(), realSize.getField<jint>("y"));
         widget.showNormal();
     }
@@ -455,6 +454,8 @@ void tst_Android::testFullScreenDimensions()
         widget.showMaximized();
         QCoreApplication::processEvents();
         QTRY_COMPARE(screen->availableGeometry().width(), realSize.getField<jint>("x"));
+        if ((sdkVersion > __ANDROID_API_V__) && runsOnCI)
+            QEXPECT_FAIL("", "Fails on Android 16 (QTBUG-141712).", Continue);
         QTRY_COMPARE(screen->availableGeometry().height(), realSize.getField<jint>("y"));
 
         QTRY_COMPARE(screen->geometry().width(), realSize.getField<jint>("x"));
