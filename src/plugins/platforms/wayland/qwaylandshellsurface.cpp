@@ -87,6 +87,7 @@ void QWaylandShellSurface::requestXdgActivationToken(quint32 serial)
 }
 
 /*!
+    \internal
     Determines whether the client should commit the surface with no buffer
     after creating the role and performing initial setup
 */

@@ -48,6 +48,10 @@ Q_LOGGING_CATEGORY(lcWaylandBackingstore, "qt.qpa.wayland.backingstore")
 QWaylandWindow *QWaylandWindow::mMouseGrab = nullptr;
 QWaylandWindow *QWaylandWindow::mTopPopup = nullptr;
 
+/*!
+    \class QtWaylandClient::QWaylandWindow
+    \internal
+*/
 QWaylandWindow::QWaylandWindow(QWindow *window, QWaylandDisplay *display)
     : QPlatformWindow(window)
     , mDisplay(display)
