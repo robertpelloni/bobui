@@ -549,7 +549,7 @@ QWindowsTheme::QWindowsTheme()
     refreshIconPixmapSizes();
 
     auto className = QWindowsWindowClassRegistry::instance()->registerWindowClass(
-        QLatin1String("ThemeChangeObserverWindow"),
+        "ThemeChangeObserverWindow"_L1,
         qThemeChangeObserverWndProc);
     // HWND_MESSAGE windows do not get the required theme events,
     // so we use a real top-level window that we never show.

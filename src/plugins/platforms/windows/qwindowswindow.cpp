@@ -61,6 +61,8 @@
 
 QT_BEGIN_NAMESPACE
 
+using namespace Qt::StringLiterals;
+
 using QWindowCreationContextPtr = QSharedPointer<QWindowCreationContext>;
 
 enum {
@@ -889,7 +891,7 @@ QWindowsWindowData
     const QString windowClassName = QWindowsWindowClassRegistry::instance()->registerWindowClass(w);
 
     QWindowsWindowClassDescription windowTitlebarDescription;
-    windowTitlebarDescription.name = QStringLiteral("_q_titlebar");
+    windowTitlebarDescription.name = "_q_titlebar"_L1;
     windowTitlebarDescription.style = CS_VREDRAW | CS_HREDRAW;
     windowTitlebarDescription.shouldAddPrefix = false;
     const QString windowTitlebarName = QWindowsWindowClassRegistry::instance()->registerWindowClass(windowTitlebarDescription);
