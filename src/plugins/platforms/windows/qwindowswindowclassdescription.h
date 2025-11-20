@@ -14,6 +14,14 @@ class QWindow;
 
 struct QWindowsWindowClassDescription
 {
+    enum class WindowStyleOption
+    {
+        None = 0x00,
+        GLSurface = 0x01,
+        DropShadow = 0x02
+    };
+    Q_DECLARE_FLAGS(WindowStyleOptions, WindowStyleOption)
+
     static QWindowsWindowClassDescription fromName(QString name, WNDPROC procedure);
     static QWindowsWindowClassDescription fromWindow(const QWindow *window, WNDPROC procedure);
 
@@ -27,9 +35,12 @@ struct QWindowsWindowClassDescription
 private:
     static QString classNameSuffix(Qt::WindowFlags type, unsigned int style, bool hasIcon);
     static bool computeHasIcon(Qt::WindowFlags flags, Qt::WindowFlags type);
+    static unsigned int computeWindowStyles(Qt::WindowFlags flags, Qt::WindowFlags type, WindowStyleOptions options);
 
     friend QDebug operator<<(QDebug dbg, const QWindowsWindowClassDescription &description);
 };
+
+Q_DECLARE_OPERATORS_FOR_FLAGS(QWindowsWindowClassDescription::WindowStyleOptions)
 
 QT_END_NAMESPACE
 

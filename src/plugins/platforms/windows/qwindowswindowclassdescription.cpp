@@ -60,6 +60,28 @@ bool QWindowsWindowClassDescription::computeHasIcon(Qt::WindowFlags flags, Qt::W
     return hasIcon;
 }
 
+unsigned int QWindowsWindowClassDescription::computeWindowStyles(Qt::WindowFlags flags, Qt::WindowFlags type, WindowStyleOptions options)
+{
+    unsigned int style = CS_DBLCLKS;
+
+    // The following will not set CS_OWNDC for any widget window, even if it contains a
+    // QOpenGLWidget or QQuickWidget later on. That cannot be detected at this stage.
+    if (options.testFlag(WindowStyleOption::GLSurface) || (flags & Qt::MSWindowsOwnDC))
+        style |= CS_OWNDC;
+    if (!(flags & Qt::NoDropShadowWindowHint) && (type == Qt::Popup || options.testFlag(WindowStyleOption::DropShadow)))
+        style |= CS_DROPSHADOW;
+
+    switch (type) {
+        case Qt::Tool:
+        case Qt::ToolTip:
+        case Qt::Popup:
+            style |= CS_SAVEBITS; // Save/restore background
+            break;
+    }
+
+    return style;
+}
+
 QWindowsWindowClassDescription QWindowsWindowClassDescription::fromName(QString name, WNDPROC procedure)
 {
     return { std::move(name), procedure };
@@ -69,29 +91,19 @@ QWindowsWindowClassDescription QWindowsWindowClassDescription::fromWindow(const 
 {
     Q_ASSERT(window);
 
-    QWindowsWindowClassDescription description;
-    description.procedure = procedure;
-
     const Qt::WindowFlags flags = window->flags();
     const Qt::WindowFlags type = flags & Qt::WindowType_Mask;
-    // Determine style and icon.
-    description.style = CS_DBLCLKS;
+
+    WindowStyleOptions options = WindowStyleOption::None;
+    if (window->surfaceType() == QSurface::OpenGLSurface)
+        options |= WindowStyleOption::GLSurface;
+    if (window->property("_q_windowsDropShadow").toBool())
+        options |= WindowStyleOption::DropShadow;
+
+    QWindowsWindowClassDescription description;
+    description.procedure = procedure;
+    description.style = computeWindowStyles(flags, type, options);
     description.hasIcon = computeHasIcon(flags, type);
-    // The following will not set CS_OWNDC for any widget window, even if it contains a
-    // QOpenGLWidget or QQuickWidget later on. That cannot be detected at this stage.
-    if (window->surfaceType() == QSurface::OpenGLSurface || (flags & Qt::MSWindowsOwnDC))
-        description.style |= CS_OWNDC;
-    if (!(flags & Qt::NoDropShadowWindowHint)
-        && (type == Qt::Popup || window->property("_q_windowsDropShadow").toBool())) {
-        description.style |= CS_DROPSHADOW;
-    }
-    switch (type) {
-        case Qt::Tool:
-        case Qt::ToolTip:
-        case Qt::Popup:
-            description.style |= CS_SAVEBITS; // Save/restore background
-            break;
-    }
     description.name = "QWindow"_L1 + classNameSuffix(type, description.style, description.hasIcon);
 
     return description;
