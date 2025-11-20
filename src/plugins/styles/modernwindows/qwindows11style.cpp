@@ -914,12 +914,17 @@ void QWindows11Style::drawPrimitive(PrimitiveElement element, const QStyleOption
         break;
     case PE_IndicatorBranch: {
             if (option->state & State_Children) {
+                const QStyleOptionViewItem *vopt = qstyleoption_cast<const QStyleOptionViewItem *>(option);
                 const bool isReverse = option->direction == Qt::RightToLeft;
                 const bool isOpen = option->state & QStyle::State_Open;
+                const QAbstractItemView *view = qobject_cast<const QAbstractItemView *>(widget);
                 QFont f(d->assetFont);
                 f.setPointSize(8);
                 painter->setFont(f);
-                painter->setPen(option->palette.color(isOpen ? QPalette::Active : QPalette::Disabled,
+                if (view && view->alternatingRowColors() && vopt && vopt->state & State_Selected)
+                    painter->setPen(winUI3Color(textOnAccentPrimary));
+                else
+                    painter->setPen(option->palette.color(isOpen ? QPalette::Active : QPalette::Disabled,
                                                       QPalette::WindowText));
                 const auto ico = isOpen ? Icon::ChevronDownMed
                                         : (isReverse ? Icon::ChevronLeftMed
@@ -1071,14 +1076,16 @@ void QWindows11Style::drawPrimitive(PrimitiveElement element, const QStyleOption
 
             if (option->state & State_Selected && !highContrastTheme) {
                 // keep in sync with CE_ItemViewItem QListView indicator painting
-                const auto col = option->palette.accent().color();
-                painter->setBrush(col);
-                painter->setPen(col);
-                const auto xPos = isRtl ? rect.right() - 4.5f : rect.left() + 3.5f;
-                const auto yOfs = rect.height() / 4.;
-                QRectF r(QPointF(xPos, rect.y() + yOfs),
-                         QPointF(xPos + 1, rect.y() + rect.height() - yOfs));
-                painter->drawRoundedRect(r, 1, 1);
+                if (!qobject_cast<const QTableView *>(widget)) {
+                    const auto col = option->palette.accent().color();
+                    painter->setBrush(col);
+                    painter->setPen(col);
+                    const auto xPos = isRtl ? rect.right() - 4.5f : rect.left() + 3.5f;
+                    const auto yOfs = rect.height() / 4.;
+                    QRectF r(QPointF(xPos, rect.y() + yOfs),
+                             QPointF(xPos + 1, rect.y() + rect.height() - yOfs));
+                    painter->drawRoundedRect(r, 1, 1);
+                }
             }
 
             const bool isTreeDecoration = vopt->features.testFlag(
@@ -1099,7 +1106,7 @@ void QWindows11Style::drawPrimitive(PrimitiveElement element, const QStyleOption
                 }
 
                 const QAbstractItemView *view = qobject_cast<const QAbstractItemView *>(widget);
-                painter->setBrush(view->alternatingRowColors() ? vopt->palette.highlight() : WINUI3Colors[colorSchemeIndex][subtleHighlightColor]);
+                painter->setBrush(view->alternatingRowColors() && state & State_Selected ? calculateAccentColor(option) : WINUI3Colors[colorSchemeIndex][subtleHighlightColor]);
                 painter->setPen(Qt::NoPen);
                 if (isFirst) {
                     QPainterStateGuard psg(painter);
@@ -1753,13 +1760,13 @@ void QWindows11Style::drawControl(ControlElement element, const QStyleOption *op
                 }
             }
             const bool highlightCurrent = vopt->state.testAnyFlags(State_Selected | State_MouseOver);
+            const QAbstractItemView *view = qobject_cast<const QAbstractItemView *>(widget);
             if (highlightCurrent) {
                 if (highContrastTheme) {
                     painter->setBrush(vopt->palette.highlight());
                 } else {
-                    const QAbstractItemView *view = qobject_cast<const QAbstractItemView *>(widget);
-                    painter->setBrush(view && view->alternatingRowColors()
-                                              ? vopt->palette.highlight()
+                    painter->setBrush(view && view->alternatingRowColors() && vopt->state & State_Selected
+                                              ? calculateAccentColor(option)
                                               : winUI3Color(subtleHighlightColor));
                 }
             } else {
@@ -1815,8 +1822,13 @@ void QWindows11Style::drawControl(ControlElement element, const QStyleOption *op
                 vopt->icon.paint(painter, iconRect, vopt->decorationAlignment, mode, state);
             }
 
-            painter->setPen(highlightCurrent && highContrastTheme ? vopt->palette.base().color()
-                                                                  : vopt->palette.text().color());
+            if (highlightCurrent && highContrastTheme) {
+                painter->setPen(vopt->palette.base().color());
+            } else if ((view && view->alternatingRowColors() && highlightCurrent && vopt->state & State_Selected)) {
+                painter->setPen(winUI3Color(textOnAccentPrimary));
+            } else {
+                painter->setPen(vopt->palette.text().color());
+            }
             d->viewItemDrawText(painter, vopt, textRect);
 
             // paint a vertical marker for QListView
