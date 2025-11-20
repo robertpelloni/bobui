@@ -4,6 +4,8 @@
 #include "qwasmsuspendresumecontrol_p.h"
 #include "qstdweb_p.h"
 
+#include <QtCore/qapplicationstatic.h>
+
 #include <emscripten.h>
 #include <emscripten/val.h>
 #include <emscripten/bind.h>
@@ -356,4 +358,104 @@ void QWasmTimer::clearTimeout()
 {
     val::global("window").call<void>("clearTimeout", double(m_timerId));
     m_timerId = 0;
+}
+
+//
+// QWasmAnimationFrameMultiHandler
+//
+// Multiplexes multiple animate and draw callbacks to a single native requestAnimationFrame call.
+// Animate callbacks are called before draw callbacks to ensure animations are advanced before drawing.
+//
+QWasmAnimationFrameMultiHandler::QWasmAnimationFrameMultiHandler()
+{
+    auto wrapper = [this](val arg) {
+        handleAnimationFrame(arg.as<double>());
+    };
+    m_handlerIndex = QWasmSuspendResumeControl::get()->registerEventHandler(wrapper);
+}
+
+QWasmAnimationFrameMultiHandler::~QWasmAnimationFrameMultiHandler()
+{
+    cancelAnimationFrameRequest();
+    QWasmSuspendResumeControl::get()->removeEventHandler(m_handlerIndex);
+}
+
+Q_APPLICATION_STATIC(QWasmAnimationFrameMultiHandler, s_animationFrameHandler);
+QWasmAnimationFrameMultiHandler *QWasmAnimationFrameMultiHandler::instance()
+{
+    return s_animationFrameHandler();
+}
+
+// Registers a permanent animation callback. Call unregisterAnimateCallback() to unregister
+uint32_t QWasmAnimationFrameMultiHandler::registerAnimateCallback(Callback callback)
+{
+    uint32_t handle = ++m_nextAnimateHandle;
+    m_animateCallbacks[handle] = std::move(callback);
+    ensureAnimationFrameRequested();
+    return handle;
+}
+
+// Registers a single-shot draw callback.
+uint32_t QWasmAnimationFrameMultiHandler::registerDrawCallback(Callback callback)
+{
+    uint32_t handle = ++m_nextDrawHandle;
+    m_drawCallbacks[handle] = std::move(callback);
+    ensureAnimationFrameRequested();
+    return handle;
+}
+
+void QWasmAnimationFrameMultiHandler::unregisterAnimateCallback(uint32_t handle)
+{
+    m_animateCallbacks.erase(handle);
+    if (m_animateCallbacks.empty() && m_drawCallbacks.empty())
+        cancelAnimationFrameRequest();
+}
+
+void QWasmAnimationFrameMultiHandler::unregisterDrawCallback(uint32_t handle)
+{
+    m_drawCallbacks.erase(handle);
+    if (m_animateCallbacks.empty() && m_drawCallbacks.empty())
+        cancelAnimationFrameRequest();
+}
+
+void QWasmAnimationFrameMultiHandler::handleAnimationFrame(double timestamp)
+{
+    m_requestId = -1;
+
+    // Advance animations. Copy the callbacks list in case callbacks are
+    // unregistered during iteration
+    auto animateCallbacksCopy = m_animateCallbacks;
+    for (const auto &pair : animateCallbacksCopy)
+        pair.second(timestamp);
+
+    // Draw the frame. Note that draw callbacks are cleared after each
+    // frame, matching QWindow::requestUpdate() behavior. Copy the callbacks
+    // list in case new callbacks are registered while drawing the frame
+    auto drawCallbacksCopy = m_drawCallbacks;
+    m_drawCallbacks.clear();
+    for (const auto &pair : drawCallbacksCopy)
+        pair.second(timestamp);
+
+    // Request next frame if there are still callbacks registered
+    if (!m_animateCallbacks.empty() || !m_drawCallbacks.empty())
+        ensureAnimationFrameRequested();
+}
+
+void QWasmAnimationFrameMultiHandler::ensureAnimationFrameRequested()
+{
+    if (m_requestId != -1)
+        return;
+
+    using ReturnType = double;
+    val handler = QWasmSuspendResumeControl::get()->jsEventHandlerAt(m_handlerIndex);
+    m_requestId = int64_t(val::global("window").call<ReturnType>("requestAnimationFrame", handler));
+}
+
+void QWasmAnimationFrameMultiHandler::cancelAnimationFrameRequest()
+{
+    if (m_requestId == -1)
+        return;
+
+    val::global("window").call<void>("cancelAnimationFrame", double(m_requestId));
+    m_requestId = -1;
 }

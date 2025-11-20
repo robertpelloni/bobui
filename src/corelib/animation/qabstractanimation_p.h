@@ -23,6 +23,10 @@
 #include <private/qproperty_p.h>
 #include <qabstractanimation.h>
 
+#if defined(Q_OS_WASM)
+#include <QtCore/private/qwasmanimationdriver_p.h>
+#endif
+
 QT_REQUIRE_CONFIG(animation);
 
 QT_BEGIN_NAMESPACE
@@ -184,7 +188,11 @@ private:
     friend class QAnimationDriver;
 
     QAnimationDriver *driver;
+#if defined(Q_OS_WASM)
+    QWasmAnimationDriver defaultDriver;
+#else
     QDefaultAnimationDriver defaultDriver;
+#endif
 
     QBasicTimer pauseTimer;
 

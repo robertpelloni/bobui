@@ -113,6 +113,10 @@
 
 #include "qabstractanimation_p.h"
 
+#if defined(Q_OS_WASM)
+#include <QtCore/private/qwasmanimationdriver_p.h>
+#endif
+
 #include <QtCore/qmath.h>
 #include <QtCore/qcoreevent.h>
 #include <QtCore/qpointer.h>

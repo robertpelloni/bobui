@@ -83,4 +83,37 @@ private:
     uint64_t m_timerId = 0;
 };
 
+class Q_CORE_EXPORT QWasmAnimationFrameMultiHandler
+{
+public:
+    using Callback = std::function<void(double)>;
+
+    static QWasmAnimationFrameMultiHandler *instance();
+
+    uint32_t registerAnimateCallback(Callback callback);
+    uint32_t registerDrawCallback(Callback callback);
+
+    void unregisterAnimateCallback(uint32_t handle);
+    void unregisterDrawCallback(uint32_t handle);
+
+    QWasmAnimationFrameMultiHandler();
+    ~QWasmAnimationFrameMultiHandler();
+    QWasmAnimationFrameMultiHandler(const QWasmAnimationFrameMultiHandler&) = delete;
+    QWasmAnimationFrameMultiHandler& operator=(const QWasmAnimationFrameMultiHandler&) = delete;
+
+private:
+    void handleAnimationFrame(double timestamp);
+    void ensureAnimationFrameRequested();
+    void cancelAnimationFrameRequest();
+
+    static QWasmAnimationFrameMultiHandler *s_instance;
+
+    std::map<uint32_t, Callback> m_animateCallbacks;
+    std::map<uint32_t, Callback> m_drawCallbacks;
+    uint32_t m_nextAnimateHandle = 0;
+    uint32_t m_nextDrawHandle = 0;
+    uint32_t m_handlerIndex = 0;
+    int64_t m_requestId = -1;
+};
+
 #endif

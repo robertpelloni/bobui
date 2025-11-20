@@ -1510,6 +1510,7 @@ endif()
 
 qt_internal_extend_target(Core CONDITION WASM
     SOURCES
+        platform/wasm/qwasmanimationdriver.cpp platform/wasm/qwasmanimationdriver_p.h
         platform/wasm/qwasmglobal.cpp platform/wasm/qwasmglobal_p.h
         platform/wasm/qstdweb.cpp platform/wasm/qstdweb_p.h
         platform/wasm/qwasmsocket.cpp platform/wasm/qwasmsocket_p.h
