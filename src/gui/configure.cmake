@@ -102,31 +102,31 @@ if((X11_SUPPORTED) OR QT_FIND_ALL_PACKAGES_ALWAYS)
         COMPONENTS XCB PROVIDED_TARGETS XCB::XCB MODULE_NAME gui QMAKE_LIB xcb)
 endif()
 if((X11_SUPPORTED) OR QT_FIND_ALL_PACKAGES_ALWAYS)
-    qt_find_package(XCB 0.1.1 MODULE
+    qt_find_package(XCB MODULE
         COMPONENTS CURSOR PROVIDED_TARGETS XCB::CURSOR MODULE_NAME gui QMAKE_LIB xcb_cursor)
 endif()
 if((X11_SUPPORTED) OR QT_FIND_ALL_PACKAGES_ALWAYS)
-    qt_find_package(XCB 0.3.9 MODULE
+    qt_find_package(XCB MODULE
         COMPONENTS ICCCM PROVIDED_TARGETS XCB::ICCCM MODULE_NAME gui QMAKE_LIB xcb_icccm)
 endif()
 qt_add_qmake_lib_dependency(xcb_icccm xcb)
 if((X11_SUPPORTED) OR QT_FIND_ALL_PACKAGES_ALWAYS)
-    qt_find_package(XCB 0.3.8 MODULE
+    qt_find_package(XCB MODULE
         COMPONENTS UTIL PROVIDED_TARGETS XCB::UTIL MODULE_NAME gui QMAKE_LIB xcb_util)
 endif()
 qt_add_qmake_lib_dependency(xcb_util xcb)
 if((X11_SUPPORTED) OR QT_FIND_ALL_PACKAGES_ALWAYS)
-    qt_find_package(XCB 0.3.9 MODULE
+    qt_find_package(XCB MODULE
         COMPONENTS IMAGE PROVIDED_TARGETS XCB::IMAGE MODULE_NAME gui QMAKE_LIB xcb_image)
 endif()
 qt_add_qmake_lib_dependency(xcb_image xcb_shm xcb_util xcb)
 if((X11_SUPPORTED) OR QT_FIND_ALL_PACKAGES_ALWAYS)
-    qt_find_package(XCB 0.3.9 MODULE
+    qt_find_package(XCB MODULE
         COMPONENTS KEYSYMS PROVIDED_TARGETS XCB::KEYSYMS MODULE_NAME gui QMAKE_LIB xcb_keysyms)
 endif()
 qt_add_qmake_lib_dependency(xcb_keysyms xcb)
 if((X11_SUPPORTED) OR QT_FIND_ALL_PACKAGES_ALWAYS)
-    qt_find_package(XCB 0.3.9 MODULE
+    qt_find_package(XCB MODULE
         COMPONENTS RENDERUTIL PROVIDED_TARGETS XCB::RENDERUTIL MODULE_NAME gui QMAKE_LIB xcb_renderutil)
 endif()
 qt_add_qmake_lib_dependency(xcb_renderutil xcb xcb_render)
