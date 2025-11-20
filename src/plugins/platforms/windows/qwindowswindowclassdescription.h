@@ -26,6 +26,7 @@ struct QWindowsWindowClassDescription
 
 private:
     static QString classNameSuffix(Qt::WindowFlags type, unsigned int style, bool hasIcon);
+    static bool computeHasIcon(Qt::WindowFlags flags, Qt::WindowFlags type);
 
     friend QDebug operator<<(QDebug dbg, const QWindowsWindowClassDescription &description);
 };

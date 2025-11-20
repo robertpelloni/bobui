@@ -41,6 +41,25 @@ QString QWindowsWindowClassDescription::classNameSuffix(Qt::WindowFlags type, un
     return suffix;
 }
 
+bool QWindowsWindowClassDescription::computeHasIcon(Qt::WindowFlags flags, Qt::WindowFlags type)
+{
+    bool hasIcon = true;
+
+    switch (type) {
+        case Qt::Tool:
+        case Qt::ToolTip:
+        case Qt::Popup:
+            hasIcon = false;
+            break;
+        case Qt::Dialog:
+            if (!(flags & Qt::WindowSystemMenuHint))
+                hasIcon = false; // QTBUG-2027, dialogs without system menu.
+            break;
+    }
+
+    return hasIcon;
+}
+
 QWindowsWindowClassDescription QWindowsWindowClassDescription::fromName(QString name, WNDPROC procedure)
 {
     return { std::move(name), procedure };
@@ -57,7 +76,7 @@ QWindowsWindowClassDescription QWindowsWindowClassDescription::fromWindow(const 
     const Qt::WindowFlags type = flags & Qt::WindowType_Mask;
     // Determine style and icon.
     description.style = CS_DBLCLKS;
-    description.hasIcon = true;
+    description.hasIcon = computeHasIcon(flags, type);
     // The following will not set CS_OWNDC for any widget window, even if it contains a
     // QOpenGLWidget or QQuickWidget later on. That cannot be detected at this stage.
     if (window->surfaceType() == QSurface::OpenGLSurface || (flags & Qt::MSWindowsOwnDC))
@@ -71,11 +90,6 @@ QWindowsWindowClassDescription QWindowsWindowClassDescription::fromWindow(const 
         case Qt::ToolTip:
         case Qt::Popup:
             description.style |= CS_SAVEBITS; // Save/restore background
-            description.hasIcon = false;
-            break;
-        case Qt::Dialog:
-            if (!(flags & Qt::WindowSystemMenuHint))
-                description.hasIcon = false; // QTBUG-2027, dialogs without system menu.
             break;
     }
     description.name = "QWindow"_L1 + classNameSuffix(type, description.style, description.hasIcon);
