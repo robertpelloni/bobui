@@ -66,6 +66,7 @@ if(QT_FEATURE_gui)
         buffer/buffer.cpp
         qdebug/qdebugsnippet.cpp
     )
+    add_subdirectory(eventfilters)
 endif()
 
 set_target_properties(corelib_snippets PROPERTIES COMPILE_OPTIONS "-w")
@@ -76,7 +77,6 @@ endif()
 
 set_target_properties(corelib_snippets PROPERTIES UNITY_BUILD OFF)
 
-add_subdirectory(eventfilters)
 add_subdirectory(qmetaobject-invokable)
 add_subdirectory(qmetaobject-revision)
 if(QT_FEATURE_process)
