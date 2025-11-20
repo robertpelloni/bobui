@@ -69,16 +69,13 @@ QString QWindowsWindowClassRegistry::registerWindowClass(const QWindowsWindowCla
     // add a UUID. The check needs to be performed for each name
     // in case new message windows are added (QTBUG-81347).
     // Note: GetClassInfo() returns != 0 when a class exists.
-    const auto appInstance = static_cast<HINSTANCE>(GetModuleHandle(nullptr));
-    WNDCLASS wcinfo;
-    const bool classExists = GetClassInfo(appInstance, reinterpret_cast<LPCWSTR>(className.utf16()), &wcinfo) != FALSE
-        && wcinfo.lpfnWndProc != description.procedure;
-
-    if (classExists)
+    if (shouldDecorateWindowClassName(description))
         className += QUuid::createUuid().toString();
 
     if (m_registeredWindowClassNames.contains(className))        // already registered in our list
         return className;
+
+    const auto appInstance = static_cast<HINSTANCE>(GetModuleHandle(nullptr));
 
     WNDCLASSEX wc{};
     wc.cbSize = sizeof(WNDCLASSEX);
@@ -119,6 +116,21 @@ QString QWindowsWindowClassRegistry::registerWindowClass(const QWindow *window)
 QString QWindowsWindowClassRegistry::registerWindowClass(QString name, WNDPROC procedure)
 {
     return registerWindowClass(QWindowsWindowClassDescription::fromName(name, procedure));
+}
+
+bool QWindowsWindowClassRegistry::shouldDecorateWindowClassName(const QWindowsWindowClassDescription &description) const
+{
+    return shouldDecorateWindowClassName(description.name, description.procedure);
+}
+
+bool QWindowsWindowClassRegistry::shouldDecorateWindowClassName(const QString &name, WNDPROC procedure) const
+{
+    const auto appInstance = static_cast<HINSTANCE>(GetModuleHandle(nullptr));
+
+    WNDCLASS wc{};
+
+    return GetClassInfo(appInstance, reinterpret_cast<LPCWSTR>(name.utf16()), &wc) != FALSE
+        && wc.lpfnWndProc != procedure;
 }
 
 void QWindowsWindowClassRegistry::unregisterWindowClasses()
