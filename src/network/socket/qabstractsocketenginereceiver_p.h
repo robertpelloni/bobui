@@ -26,9 +26,9 @@ QT_BEGIN_NAMESPACE
 class QAuthenticator;
 class QNetworkProxy;
 
-class QAbstractSocketEngineReceiver {
+class Q_NETWORK_EXPORT QAbstractSocketEngineReceiver {
 public:
-    virtual ~QAbstractSocketEngineReceiver(){}
+    virtual ~QAbstractSocketEngineReceiver() = 0; // impl. in qabstractsocketengine.cpp
     virtual void readNotification()= 0;
     virtual void writeNotification()= 0;
     virtual void closeNotification()= 0;
