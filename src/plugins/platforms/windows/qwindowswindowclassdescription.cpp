@@ -11,6 +11,36 @@ QT_BEGIN_NAMESPACE
 
 using namespace Qt::StringLiterals;
 
+QString QWindowsWindowClassDescription::classNameSuffix(Qt::WindowFlags type, unsigned int style, bool hasIcon)
+{
+    QString suffix;
+
+    switch (type) {
+        case Qt::Popup:
+            suffix += "Popup"_L1;
+            break;
+        case Qt::Tool:
+            suffix += "Tool"_L1;
+            break;
+        case Qt::ToolTip:
+            suffix += "ToolTip"_L1;
+            break;
+        default:
+            break;
+    }
+
+    if (style & CS_DROPSHADOW)
+        suffix += "DropShadow"_L1;
+    if (style & CS_SAVEBITS)
+        suffix += "SaveBits"_L1;
+    if (style & CS_OWNDC)
+        suffix += "OwnDC"_L1;
+    if (hasIcon)
+        suffix += "Icon"_L1;
+
+    return suffix;
+}
+
 QWindowsWindowClassDescription QWindowsWindowClassDescription::fromName(QString name, WNDPROC procedure)
 {
     return { std::move(name), procedure };
@@ -48,29 +78,7 @@ QWindowsWindowClassDescription QWindowsWindowClassDescription::fromWindow(const 
                 description.hasIcon = false; // QTBUG-2027, dialogs without system menu.
             break;
     }
-    // Create a unique name for the flag combination
-    description.name = "QWindow"_L1;
-    switch (type) {
-        case Qt::Tool:
-            description.name += "Tool"_L1;
-            break;
-        case Qt::ToolTip:
-            description.name += "ToolTip"_L1;
-            break;
-        case Qt::Popup:
-            description.name += "Popup"_L1;
-            break;
-        default:
-            break;
-    }
-    if (description.style & CS_DROPSHADOW)
-        description.name += "DropShadow"_L1;
-    if (description.style & CS_SAVEBITS)
-        description.name += "SaveBits"_L1;
-    if (description.style & CS_OWNDC)
-        description.name += "OwnDC"_L1;
-    if (description.hasIcon)
-        description.name += "Icon"_L1;
+    description.name = "QWindow"_L1 + classNameSuffix(type, description.style, description.hasIcon);
 
     return description;
 }
