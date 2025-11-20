@@ -432,6 +432,7 @@
 
 #include "qabstractsocket.h"
 #include "qabstractsocket_p.h"
+#include "qabstractsocketengine_p.h"
 #include "qnetworkinterface.h"
 
 #include "private/qhostinfo_p.h"
