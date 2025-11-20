@@ -554,7 +554,6 @@ bool QRawFont::glyphIndexesForChars(const QChar *chars, int numChars, quint32 *g
 }
 
 /*!
-   \fn QList<QPointF> QRawFont::advancesForGlyphIndexes(const QList<quint32> &glyphIndexes, LayoutFlags layoutFlags) const
    \since 5.1
 
    Returns the QRawFont's advances for each of the \a glyphIndexes in pixel units. The advances
@@ -569,6 +568,14 @@ bool QRawFont::glyphIndexesForChars(const QChar *chars, int numChars, quint32 *g
 
    \sa QTextLine::horizontalAdvance(), QFontMetricsF::horizontalAdvance(), QTextLayout::glyphRuns()
 */
+
+QList<QPointF> QRawFont::advancesForGlyphIndexes(const QList<quint32> &glyphIndexes, QRawFont::LayoutFlags layoutFlags) const
+{
+    QList<QPointF> advances(glyphIndexes.size());
+    if (advancesForGlyphIndexes(glyphIndexes.constData(), advances.data(), int(glyphIndexes.size()), layoutFlags))
+        return advances;
+    return QList<QPointF>();
+}
 
 /*!
    \fn QList<QPointF> QRawFont::advancesForGlyphIndexes(const QList<quint32> &glyphIndexes) const
