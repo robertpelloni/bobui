@@ -4083,13 +4083,15 @@ void QTreeViewPrivate::sortIndicatorChanged(int column, Qt::SortOrder order)
     model->sort(column, order);
 }
 
-int QTreeViewPrivate::accessibleTree2Index(const QModelIndex &index) const
+#if QT_CONFIG(accessibility)
+int QTreeViewPrivate::accessibleChildIndex(const QModelIndex &index) const
 {
     Q_Q(const QTreeView);
 
     // Note that this will include the header, even if its hidden.
     return (q->visualIndex(index) + (q->header() ? 1 : 0)) * index.model()->columnCount() + index.column();
 }
+#endif
 
 void QTreeViewPrivate::updateIndentationFromStyle()
 {
@@ -4116,7 +4118,7 @@ void QTreeView::currentChanged(const QModelIndex &current, const QModelIndex &pr
         Q_D(QTreeView);
 
         QAccessibleEvent event(this, QAccessible::Focus);
-        event.setChild(d->accessibleTree2Index(current));
+        event.setChild(d->accessibleChildIndex(current));
         QAccessible::updateAccessibility(&event);
     }
 #endif
@@ -4136,7 +4138,7 @@ void QTreeView::selectionChanged(const QItemSelection &selected,
         // ### does not work properly for selection ranges.
         QModelIndex sel = selected.indexes().value(0);
         if (sel.isValid()) {
-            int entry = d->accessibleTree2Index(sel);
+            int entry = d->accessibleChildIndex(sel);
             Q_ASSERT(entry >= 0);
             QAccessibleEvent event(this, QAccessible::SelectionAdd);
             event.setChild(entry);
@@ -4144,7 +4146,7 @@ void QTreeView::selectionChanged(const QItemSelection &selected,
         }
         QModelIndex desel = deselected.indexes().value(0);
         if (desel.isValid()) {
-            int entry = d->accessibleTree2Index(desel);
+            int entry = d->accessibleChildIndex(desel);
             Q_ASSERT(entry >= 0);
             QAccessibleEvent event(this, QAccessible::SelectionRemove);
             event.setChild(entry);

@@ -3593,7 +3593,7 @@ void QTableView::currentChanged(const QModelIndex &current, const QModelIndex &p
     if (QAccessible::isActive()) {
         if (current.isValid() && hasFocus()) {
             Q_D(QTableView);
-            int entry = d->accessibleTable2Index(current);
+            int entry = d->accessibleChildIndex(current);
             QAccessibleEvent event(this, QAccessible::Focus);
             event.setChild(entry);
             QAccessible::updateAccessibility(&event);
@@ -3616,14 +3616,14 @@ void QTableView::selectionChanged(const QItemSelection &selected,
         // ### does not work properly for selection ranges.
         QModelIndex sel = selected.indexes().value(0);
         if (sel.isValid()) {
-            int entry = d->accessibleTable2Index(sel);
+            int entry = d->accessibleChildIndex(sel);
             QAccessibleEvent event(this, QAccessible::SelectionAdd);
             event.setChild(entry);
             QAccessible::updateAccessibility(&event);
         }
         QModelIndex desel = deselected.indexes().value(0);
         if (desel.isValid()) {
-            int entry = d->accessibleTable2Index(desel);
+            int entry = d->accessibleChildIndex(desel);
             QAccessibleEvent event(this, QAccessible::SelectionRemove);
             event.setChild(entry);
             QAccessible::updateAccessibility(&event);

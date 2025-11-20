@@ -141,11 +141,14 @@ public:
 
     QStyleOptionViewItem::ViewItemPosition viewItemPosition(const QModelIndex &index) const;
 
-    inline int accessibleTable2Index(const QModelIndex &index) const {
+#if QT_CONFIG(accessibility)
+    inline int accessibleChildIndex(const QModelIndex &index) const override
+    {
         const int vHeader = verticalHeader ? 1 : 0;
         return (index.row() + (horizontalHeader ? 1 : 0)) * (index.model()->columnCount() + vHeader)
             + index.column() + vHeader;
     }
+#endif
 
     int sectionSpanEndLogical(const QHeaderView *header, int logical, int span) const;
     int sectionSpanSize(const QHeaderView *header, int logical, int span) const;

@@ -1959,6 +1959,14 @@ bool QListViewPrivate::dropOn(QDropEvent *event, int *dropRow, int *dropCol, QMo
 }
 #endif
 
+#if QT_CONFIG(accessibility)
+int QListViewPrivate::accessibleChildIndex(const QModelIndex &index) const
+{
+    Q_Q(const QListView);
+    return q->visualIndex(index);
+}
+#endif
+
 void QListViewPrivate::removeCurrentAndDisabled(QList<QModelIndex> *indexes,
                                                 const QModelIndex &current) const
 {
@@ -3397,11 +3405,12 @@ void QIconModeViewBase::updateContentsSize()
 */
 void QListView::currentChanged(const QModelIndex &current, const QModelIndex &previous)
 {
+    Q_D(const QListView);
     QAbstractItemView::currentChanged(current, previous);
 #if QT_CONFIG(accessibility)
     if (QAccessible::isActive()) {
         if (current.isValid() && hasFocus()) {
-            int entry = visualIndex(current);
+            int entry = d->accessibleChildIndex(current);
             QAccessibleEvent event(this, QAccessible::Focus);
             event.setChild(entry);
             QAccessible::updateAccessibility(&event);
@@ -3417,18 +3426,19 @@ void QListView::selectionChanged(const QItemSelection &selected,
                                  const QItemSelection &deselected)
 {
 #if QT_CONFIG(accessibility)
+    Q_D(const QListView);
     if (QAccessible::isActive()) {
         // ### does not work properly for selection ranges.
         QModelIndex sel = selected.indexes().value(0);
         if (sel.isValid()) {
-            int entry = visualIndex(sel);
+            int entry = d->accessibleChildIndex(sel);
             QAccessibleEvent event(this, QAccessible::SelectionAdd);
             event.setChild(entry);
             QAccessible::updateAccessibility(&event);
         }
         QModelIndex desel = deselected.indexes().value(0);
         if (desel.isValid()) {
-            int entry = visualIndex(desel);
+            int entry = d->accessibleChildIndex(desel);
             QAccessibleEvent event(this, QAccessible::SelectionRemove);
             event.setChild(entry);
             QAccessible::updateAccessibility(&event);
