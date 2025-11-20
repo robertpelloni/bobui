@@ -172,6 +172,43 @@ void QAbstractItemViewPrivate::checkMouseMove(const QPersistentModelIndex &index
     }
 }
 
+#if QT_CONFIG(accessibility)
+void QAbstractItemViewPrivate::updateItemAccessibility(const QModelIndex &index,
+                                                       const QList<int> &roles)
+{
+    Q_Q(QAbstractItemView);
+
+    if (!QAccessible::isActive())
+        return;
+
+    const int childIndex = accessibleChildIndex(index);
+    if (childIndex < 0)
+        return;
+
+    // see QAccessibleTableCell for how role data are mapped to the a11y layer
+
+    for (int role : roles) {
+        if (role == Qt::AccessibleTextRole
+            || (role == Qt::DisplayRole
+                && index.data(Qt::AccessibleTextRole).toString().isEmpty())) {
+            QAccessibleEvent event(q, QAccessible::NameChanged);
+            event.setChild(childIndex);
+            QAccessible::updateAccessibility(&event);
+        } else if (role == Qt::AccessibleDescriptionRole) {
+            QAccessibleEvent event(q, QAccessible::DescriptionChanged);
+            event.setChild(childIndex);
+            QAccessible::updateAccessibility(&event);
+        } else if (role == Qt::CheckStateRole) {
+            QAccessible::State state;
+            state.checked = true;
+            QAccessibleStateChangeEvent event(q, state);
+            event.setChild(childIndex);
+            QAccessible::updateAccessibility(&event);
+        }
+    }
+}
+#endif
+
 #if QT_CONFIG(gestures) && QT_CONFIG(scroller)
 
 // stores and restores the selection and current item when flicking
@@ -3495,6 +3532,10 @@ void QAbstractItemView::dataChanged(const QModelIndex &topLeft, const QModelInde
         accessibleEvent.setLastRow(bottomRight.row());
         accessibleEvent.setLastColumn(bottomRight.column());
         QAccessible::updateAccessibility(&accessibleEvent);
+
+        // send accessibility events as needed when current item is modified
+        if (topLeft == bottomRight && topLeft == currentIndex())
+            d->updateItemAccessibility(topLeft, roles);
     }
 #endif
     d->updateGeometry();

@@ -280,6 +280,10 @@ public:
     }
 #endif
 
+#if QT_CONFIG(accessibility)
+    void updateItemAccessibility(const QModelIndex &index, const QList<int> &roles);
+#endif
+
     // reimplemented from QAbstractScrollAreaPrivate
     QPoint contentsOffset() const override {
         Q_Q(const QAbstractItemView);
