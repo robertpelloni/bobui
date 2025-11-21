@@ -136,11 +136,12 @@ function(qt_copy_framework_headers target)
     )
 
     if(NOT UIKIT)
-        set(create_headers_symlink_command
-            "${CMAKE_COMMAND}" -E create_symlink
-                "Versions/Current/Headers"
-                "${output_dir}/${fw_header_dir}"
-        )
+        # Create the framework's basic layout at configure time already. This is necessary, because
+        # we don't rely on the PUBLIC_HEADER property to create the QtFoo.framework/Headers symlink.
+        # See QTBUG-142119 for details.
+        file(MAKE_DIRECTORY "${output_dir}/${fw_dir}/Versions/${fw_version}/Headers")
+        file(CREATE_LINK "${fw_version}" "${output_dir}/${fw_dir}/Versions/Current" SYMBOLIC)
+        file(CREATE_LINK "Versions/Current/Headers" "${output_dir}/${fw_header_dir}" SYMBOLIC)
     endif()
 
     if(CMAKE_GENERATOR MATCHES "^Ninja")
@@ -151,7 +152,6 @@ function(qt_copy_framework_headers target)
             DEPENDS ${target}_sync_headers
             COMMAND ${copy_fw_sync_headers_command}
             COMMAND ${copy_fw_sync_headers_marker_file_command}
-            COMMAND ${create_headers_symlink_command}
             VERBATIM
         )
         add_custom_target(${target}_copy_fw_sync_headers
@@ -160,7 +160,6 @@ function(qt_copy_framework_headers target)
         add_custom_target(${target}_copy_fw_sync_headers
             COMMAND ${copy_fw_sync_headers_command}
             COMMAND ${copy_fw_sync_headers_marker_file_command}
-            COMMAND ${create_headers_symlink_command}
             DEPENDS ${target}_sync_headers
         )
     endif()
