@@ -397,6 +397,7 @@ private slots:
     void iterateAssociativeContainerElements_data();
     void iterateAssociativeContainerElements() { runTestFunction(); }
     void iterateContainerElements();
+    void emptyContainerInterface();
     void pairElements_data();
     void pairElements() { runTestFunction(); }
 
@@ -5322,6 +5323,26 @@ void tst_QVariant::iterateContainerElements()
         auto f = iter.constFind("one");
         QCOMPARE(*f, QVariant(1));
     }
+}
+
+void tst_QVariant::emptyContainerInterface()
+{
+    // An empty container interface should implicitly be of invalid size
+    // and its begin and end iterators should be equal.
+
+    const QtMetaContainerPrivate::QMetaContainerInterface emptyContainerInterface {};
+    QIterable emptyIterable(QMetaContainer(&emptyContainerInterface), nullptr);
+
+    QCOMPARE(emptyIterable.size(), -1);
+    auto constBegin = emptyIterable.constBegin();
+    auto constEnd = emptyIterable.constEnd();
+    QVERIFY(constBegin == constEnd);
+    QCOMPARE(constEnd - constBegin, 0);
+
+    auto mutableBegin = emptyIterable.mutableBegin();
+    auto mutableEnd = emptyIterable.mutableEnd();
+    QVERIFY(mutableBegin == mutableEnd);
+    QCOMPARE(mutableEnd - mutableBegin, 0);
 }
 
 template <typename Pair> static void testVariantPairElements()
