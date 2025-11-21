@@ -38,15 +38,16 @@ public:
     static emscripten::val suspendResumeControlJs();
 
     void suspend();
-    void suspendExclusive(uint32_t eventHandlerIndex);
+    // Accept events for all handlers, start to process events on last handler in list
+    void suspendExclusive(QList<uint32_t> eventHandlerIndices);
     int sendPendingEvents();
-    int sendPendingExclusiveEvent();
 
 private:
     friend void qtSendPendingEvents();
 
     static QWasmSuspendResumeControl *s_suspendResumeControl;
     std::map<int, std::function<void(emscripten::val)>> m_eventHandlers;
+    std::function<bool(int)> m_eventFilter = [](int) { return true; };
 };
 
 class Q_CORE_EXPORT QWasmEventHandler

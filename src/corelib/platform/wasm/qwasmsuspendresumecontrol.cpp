@@ -196,9 +196,13 @@ void QWasmSuspendResumeControl::suspend()
     qtSuspendJs();
 }
 
-void QWasmSuspendResumeControl::suspendExclusive(uint32_t eventHandlerIndex)
+void QWasmSuspendResumeControl::suspendExclusive(QList<uint32_t> eventHandlerIndices)
 {
-    suspendResumeControlJs().set("exclusiveEventHandler", eventHandlerIndex);
+    m_eventFilter = [eventHandlerIndices](int handler) {
+        return eventHandlerIndices.contains(handler);
+    };
+
+    suspendResumeControlJs().set("exclusiveEventHandler", eventHandlerIndices.back());
     qtSuspendJs();
 }
 
@@ -211,37 +215,27 @@ int QWasmSuspendResumeControl::sendPendingEvents()
     emscripten::val control = suspendResumeControlJs();
     emscripten::val pendingEvents = control["pendingEvents"];
 
-    if (control["exclusiveEventHandler"].as<int>() > 0)
-        return sendPendingExclusiveEvent();
-
-    if (pendingEvents["length"].as<int>() == 0)
-        return 0;
-
     int count = 0;
-    while (pendingEvents["length"].as<int>() > 0) { // Make sure it is reentrant
-        // Grab one event (handler and arg), and call it
-        emscripten::val event = pendingEvents.call<val>("shift");
-        auto it = m_eventHandlers.find(event["index"].as<int>());
-        if (it != m_eventHandlers.end())
-            it->second(event["arg"]);
-        ++count;
+    for (int i = 0; i < pendingEvents["length"].as<int>();) {
+        if (!m_eventFilter(pendingEvents[i]["index"].as<int>())) {
+            ++i;
+        } else {
+            // Grab one event (handler and arg), and call it
+            emscripten::val event = pendingEvents[i];
+            pendingEvents.call<void>("splice", i, 1);
+
+            auto it = m_eventHandlers.find(event["index"].as<int>());
+            if (it != m_eventHandlers.end())
+                it->second(event["arg"]);
+            ++count;
+        }
+    }
+
+    if (control["exclusiveEventHandler"].as<int>() > 0) {
+        control.set("exclusiveEventHandler", 0);
+        m_eventFilter = [](int) { return true;};
     }
     return count;
-}
-
-// Sends the pending exclusive event, and resets the "exclusive" state
-int QWasmSuspendResumeControl::sendPendingExclusiveEvent()
-{
-    emscripten::val control = suspendResumeControlJs();
-    int exclusiveHandlerIndex = control["exclusiveEventHandler"].as<int>();
-    control.set("exclusiveEventHandler", 0);
-    emscripten::val event = control["pendingEvents"].call<val>("pop");
-    int eventHandlerIndex = event["index"].as<int>();
-    Q_ASSERT(exclusiveHandlerIndex == eventHandlerIndex);
-    auto it = m_eventHandlers.find(eventHandlerIndex);
-    Q_ASSERT(it != m_eventHandlers.end());
-    it->second(event["arg"]);
-    return 1;
 }
 
 void qtSendPendingEvents()

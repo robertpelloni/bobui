@@ -238,7 +238,7 @@ namespace qstdweb {
     };
 
     namespace Promise {
-        uint32_t Q_CORE_EXPORT adoptPromise(emscripten::val promise, PromiseCallbacks callbacks);
+        uint32_t Q_CORE_EXPORT adoptPromise(emscripten::val promise, PromiseCallbacks callbacks, QList<uint32_t> *handlers = nullptr);
 
         template<typename... Args>
         uint32_t make(emscripten::val target,
@@ -255,7 +255,24 @@ namespace qstdweb {
             return adoptPromise(std::move(promiseObject), std::move(callbacks));
         }
 
-        void Q_CORE_EXPORT suspendExclusive(uint32_t handlerIndex);
+        template<typename... Args>
+        void make(
+            QList<uint32_t> &handlers,
+            emscripten::val target,
+                      QString methodName,
+                      PromiseCallbacks callbacks,
+                      Args... args)
+        {
+            emscripten::val promiseObject = target.call<emscripten::val>(
+                methodName.toStdString().c_str(), std::forward<Args>(args)...);
+            if (promiseObject.isUndefined() || promiseObject["constructor"]["name"].as<std::string>() != "Promise") {
+                 qFatal("This function did not return a promise");
+            }
+
+            adoptPromise(std::move(promiseObject), std::move(callbacks), &handlers);
+        }
+
+        void Q_CORE_EXPORT suspendExclusive(QList<uint32_t> handlerIndices);
         void Q_CORE_EXPORT all(std::vector<emscripten::val> promises, PromiseCallbacks callbacks);
     };
 

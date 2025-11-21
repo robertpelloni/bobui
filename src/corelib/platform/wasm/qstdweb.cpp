@@ -178,12 +178,17 @@ Blob Blob::slice(uint32_t begin, uint32_t end) const
 ArrayBuffer Blob::arrayBuffer_sync() const
 {
     emscripten::val buffer;
-    uint32_t handlerIndex = qstdweb::Promise::make(m_blob, QStringLiteral("arrayBuffer"), {
-        .thenFunc = [&buffer](emscripten::val arrayBuffer) {
-            buffer = arrayBuffer;
+    QList<uint32_t> handlers;
+    qstdweb::Promise::make(
+        handlers,
+        m_blob,
+        QStringLiteral("arrayBuffer"),
+        {
+            .thenFunc = [&buffer](emscripten::val arrayBuffer) {
+                buffer = arrayBuffer;
         }
     });
-    Promise::suspendExclusive(handlerIndex);
+    Promise::suspendExclusive(handlers);
     return ArrayBuffer(buffer);
 }
 
@@ -441,7 +446,7 @@ EventCallback::EventCallback(emscripten::val element, const std::string &name,
 
 }
 
-uint32_t Promise::adoptPromise(emscripten::val promise, PromiseCallbacks callbacks)
+uint32_t Promise::adoptPromise(emscripten::val promise, PromiseCallbacks callbacks, QList<uint32_t> *handlers)
 {
     Q_ASSERT_X(!!callbacks.catchFunc || !!callbacks.finallyFunc || !!callbacks.thenFunc,
         "Promise::adoptPromise", "must provide at least one callback function");
@@ -498,14 +503,21 @@ uint32_t Promise::adoptPromise(emscripten::val promise, PromiseCallbacks callbac
     promise = promise.call<emscripten::val>("finally",
                                             suspendResume->jsEventHandlerAt(*finallyIndex));
 
+    if (handlers) {
+        if (thenIndex)
+            handlers->push_back(*thenIndex);
+        if (catchIndex)
+            handlers->push_back(*catchIndex);
+        handlers->push_back(*finallyIndex);
+    }
     return *finallyIndex;
 }
 
-void Promise::suspendExclusive(uint32_t handlerIndex)
+void Promise::suspendExclusive(QList<uint32_t> handlerIndices)
 {
     QWasmSuspendResumeControl *suspendResume = QWasmSuspendResumeControl::get();
     Q_ASSERT(suspendResume);
-    suspendResume->suspendExclusive(handlerIndex);
+    suspendResume->suspendExclusive(handlerIndices);
     suspendResume->sendPendingEvents();
 }
 
@@ -657,11 +669,12 @@ void FileSystemWritableFileStreamIODevice::close()
         return;
     }
 
-    uint32_t handlerIndex = Promise::make(m_stream.val(), QStringLiteral("close"), {
+    QList<uint32_t> handlers;
+    Promise::make(handlers, m_stream.val(), QStringLiteral("close"), {
         .thenFunc = [](emscripten::val) {
         }
     });
-    Promise::suspendExclusive(handlerIndex);
+    Promise::suspendExclusive(handlers);
 
     QIODevice::close();
 }
@@ -683,14 +696,15 @@ bool FileSystemWritableFileStreamIODevice::seek(qint64 pos)
     emscripten::val seekParams = emscripten::val::object();
     seekParams.set("type", std::string("seek"));
     seekParams.set("position", static_cast<double>(pos));
-    uint32_t handlerIndex = Promise::make(m_stream.val(), QStringLiteral("write"), {
+    QList<uint32_t> handlers;
+    Promise::make(handlers, m_stream.val(), QStringLiteral("write"), {
         .thenFunc = [&success](emscripten::val) {
             success = true;
         },
         .catchFunc = [](emscripten::val) {
         }
     }, seekParams);
-    Promise::suspendExclusive(handlerIndex);
+    Promise::suspendExclusive(handlers);
 
     if (!success)
         return false;
@@ -708,14 +722,15 @@ qint64 FileSystemWritableFileStreamIODevice::writeData(const char *data, qint64 
     bool success = false;
 
     Uint8Array array = Uint8Array::copyFrom(data, size);
-    uint32_t handlerIndex = Promise::make(m_stream.val(), QStringLiteral("write"), {
+    QList<uint32_t> handlers;
+    Promise::make(handlers, m_stream.val(), QStringLiteral("write"), {
         .thenFunc = [&success](emscripten::val) {
             success = true;
         },
         .catchFunc = [](emscripten::val) {
         }
     }, array.val());
-    Promise::suspendExclusive(handlerIndex);
+    Promise::suspendExclusive(handlers);
 
     if (success) {
         qint64 newPos = pos() + size;
@@ -770,7 +785,8 @@ bool FileSystemFileIODevice::open(QIODevice::OpenMode mode)
         File file;
         bool success = false;
 
-        uint32_t handlerIndex = Promise::make(m_fileHandle.val(), QStringLiteral("getFile"), {
+        QList<uint32_t> handlers;
+        Promise::make(handlers, m_fileHandle.val(), QStringLiteral("getFile"), {
             .thenFunc = [&file, &success](emscripten::val fileVal) {
                 file = File(fileVal);
                 success = true;
@@ -778,7 +794,7 @@ bool FileSystemFileIODevice::open(QIODevice::OpenMode mode)
             .catchFunc = [](emscripten::val) {
             }
         });
-        Promise::suspendExclusive(handlerIndex);
+        Promise::suspendExclusive(handlers);
 
         if (success) {
             m_blobDevice = std::make_unique<BlobIODevice>(file.slice(0, file.size()));
@@ -796,7 +812,8 @@ bool FileSystemFileIODevice::open(QIODevice::OpenMode mode)
         FileSystemWritableFileStream writableStream;
         bool success = false;
 
-        uint32_t handlerIndex = Promise::make(m_fileHandle.val(), QStringLiteral("createWritable"), {
+        QList<uint32_t> handlers;
+        Promise::make(handlers, m_fileHandle.val(), QStringLiteral("createWritable"), {
             .thenFunc = [&writableStream, &success](emscripten::val writable) {
                 writableStream = FileSystemWritableFileStream(writable);
                 success = true;
@@ -804,7 +821,7 @@ bool FileSystemFileIODevice::open(QIODevice::OpenMode mode)
             .catchFunc = [](emscripten::val) {
             }
         });
-        Promise::suspendExclusive(handlerIndex);
+        Promise::suspendExclusive(handlers);
 
         if (success) {
             m_writableDevice = std::make_unique<FileSystemWritableFileStreamIODevice>(writableStream);
