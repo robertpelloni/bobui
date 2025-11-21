@@ -77,32 +77,20 @@ void qtRegisterEventHandlerJs(int index) {
             }[name];
         }
 
-        function deepShallowClone(parent, obj, depth) {
+        function deepShallowClone(obj) {
             if (obj === null)
                 return obj;
 
-            if (typeof obj === 'function') {
-                if (obj.name !== "")
-                    return createNamedFunction(obj.name, parent, obj);
-            }
-
-            if (depth >= 1)
+            if (!(obj instanceof Event))
                 return obj;
-
-            if (typeof obj !== 'object')
-                return obj;
-
-            if (Array.isArray(obj)) {
-                const arrCopy = [];
-                for (let i = 0; i < obj.length; i++)
-                    arrCopy[i] = deepShallowClone(obj, obj[i], depth + 1);
-
-                return arrCopy;
-            }
 
             const objCopy = {};
-            for (const key in obj)
-                objCopy[key] = deepShallowClone(obj, obj[key], depth + 1);
+            for (const key in obj) {
+                if (typeof obj[key] === 'function')
+                    objCopy[key] = createNamedFunction(obj[key].name, obj, obj[key]);
+                else
+                    objCopy[key] = obj[key];
+            }
 
             return objCopy;
         }
@@ -112,7 +100,7 @@ void qtRegisterEventHandlerJs(int index) {
         let handler = (arg) => {
             // Copy the top level object, alias the rest.
             // functions are copied by creating new forwarding functions.
-            arg = deepShallowClone(arg, arg, 0);
+            arg = deepShallowClone(arg);
 
             // Add event to event queue
             control.pendingEvents.push({
