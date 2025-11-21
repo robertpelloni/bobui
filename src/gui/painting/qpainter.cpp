@@ -6474,8 +6474,9 @@ QRectF QPainter::boundingRect(const QRectF &r, const QString &text, const QTextO
     and height (on both 1x and 2x displays), and produces high-resolution
     output on 2x displays.
 
-    The \a position offset is always in the painter coordinate system,
-    indepentent of display devicePixelRatio.
+    The \a position offset is provided in the device independent pixels
+    relative to the top-left corner of the \a rectangle. The \a position
+    can be used to align the repeating pattern inside the \a rectangle.
 
     \sa drawPixmap()
 */
@@ -6579,8 +6580,12 @@ void QPainter::drawTiledPixmap(const QRectF &r, const QPixmap &pixmap, const QPo
 
     (\a{x}, \a{y}) specifies the top-left point in the paint device
     that is to be drawn onto; with the given \a width and \a
-    height. (\a{sx}, \a{sy}) specifies the top-left point in the \a
-    pixmap that is to be drawn; this defaults to (0, 0).
+    height.
+
+    (\a{sx}, \a{sy}) specifies the origin inside the specified rectangle
+    where the pixmap will be drawn. The origin position is specified in
+    the device independent pixels relative to (\a{x}, \a{y}). This defaults
+    to (0, 0).
 */
 
 #ifndef QT_NO_PICTURE
