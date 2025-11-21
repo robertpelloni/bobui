@@ -364,7 +364,10 @@
       <item row="1" column="0">
        <widget class="QLabel" name="label">
         <property name="text">
-         <string>Page order:</string>
+         <string>Page &amp;order:</string>
+        </property>
+        <property name="buddy">
+         <cstring>pagesPerSheetLayoutCombo</cstring>
         </property>
        </widget>
       </item>
@@ -374,7 +377,10 @@
       <item row="0" column="0">
        <widget class="QLabel" name="label_2">
         <property name="text">
-         <string>Pages per sheet:</string>
+         <string>Pages &amp;per sheet:</string>
+        </property>
+        <property name="buddy">
+         <cstring>pagesPerSheetCombo</cstring>
         </property>
        </widget>
       </item>
