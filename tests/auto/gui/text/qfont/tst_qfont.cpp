@@ -53,7 +53,7 @@ private slots:
     void fromStringCompatibility_data();
     void fromStringCompatibility();
     void fromStringWithoutStyleName();
-    void fromStringWithoutFeatures();
+    void fromStringWithoutFeaturesOrVariableAxes();
     void fromDegenerateString_data();
     void fromDegenerateString();
 
@@ -672,12 +672,22 @@ void tst_QFont::fromStringCompatibility_data()
     QTest::addRow("Times New Roman, Qt 6.0") << false << QStringLiteral("Times New Roman,18,-1,5,700,1,0,0,1,0,1,0,150.5,2.5,50,2,Regular") << fontFrom60;
 
     QFont fontFrom611 = fontFrom60;
-    QTest::addRow("Times New Roman, Qt 6.11") << true << QStringLiteral("Times New Roman,18,-1,5,700,1,0,0,1,0,1,0,150.5,2.5,50,2,Regular,0") << fontFrom611;
+    QTest::addRow("Times New Roman (without font features and variable axes), Qt 6.11") << true << QStringLiteral("Times New Roman,18,-1,5,700,1,0,0,1,0,1,0,150.5,2.5,50,2,Regular,0,0") << fontFrom611;
 
     QFont fontFrom611WithFeatures = fontFrom60;
     fontFrom611WithFeatures.setFeature("frac", 1);
     fontFrom611WithFeatures.setFeature("liga", 0);
-    QTest::addRow("Times New Roman (with features), Qt 6.11") << true << QStringLiteral("Times New Roman,18,-1,5,700,1,0,0,1,0,1,0,150.5,2.5,50,2,Regular,2,frac=1,liga=0") << fontFrom611WithFeatures;
+    QTest::addRow("Times New Roman (with features), Qt 6.11") << true << QStringLiteral("Times New Roman,18,-1,5,700,1,0,0,1,0,1,0,150.5,2.5,50,2,Regular,2,frac=1,liga=0,0") << fontFrom611WithFeatures;
+
+    QFont fontFrom611WithVariableAxes = fontFrom60;
+    fontFrom611WithVariableAxes.setVariableAxis("wght", 12.34f);
+    QTest::addRow("Times New Roman (with variable axes), Qt 6.11") << true << QStringLiteral("Times New Roman,18,-1,5,700,1,0,0,1,0,1,0,150.5,2.5,50,2,Regular,0,1,wght=12.34") << fontFrom611WithVariableAxes;
+
+    QFont fontFrom611WithFontFeaturesAndVariableAxes = fontFrom60;
+    fontFrom611WithFontFeaturesAndVariableAxes.setFeature("frac", 1);
+    fontFrom611WithFontFeaturesAndVariableAxes.setFeature("liga", 0);
+    fontFrom611WithFontFeaturesAndVariableAxes.setVariableAxis("wght", 12.34f);
+    QTest::addRow("Times New Roman (with font features and variable axes), Qt 6.11") << true << QStringLiteral("Times New Roman,18,-1,5,700,1,0,0,1,0,1,0,150.5,2.5,50,2,Regular,2,frac=1,liga=0,1,wght=12.34") << fontFrom611WithFontFeaturesAndVariableAxes;
 }
 
 void tst_QFont::fromStringCompatibility()
@@ -745,17 +755,46 @@ void tst_QFont::fromStringWithoutStyleName()
     }
 }
 
-void tst_QFont::fromStringWithoutFeatures()
+void tst_QFont::fromStringWithoutFeaturesOrVariableAxes()
 {
-    // This test verifies that the font feature list will be reset if the from string contains no features.
+    // This test verifies that the font feature and the variable axis list will be reset if the string
+    // contains no features or variable axes, respectively.
 
-    const QString fontStringWithoutFeatures = QStringLiteral("Noto Sans,12,-1,5,400,0,0,0,0,0,0,0,0,0,0,1");
+    const QString fontStringWithoutFeaturesAndVariableAxes = QStringLiteral("Noto Sans,12,-1,5,400,0,0,0,0,0,0,0,0,0,0,1");
     const QString fontStringWithFeatures = QStringLiteral("Noto Sans,18,-1,5,400,0,0,0,0,0,0,0,0,0,0,1,,2,calt=0,frac=1");
+    const QString fontStringWithVariableAxes = QStringLiteral("Noto Sans,18,-1,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,1,wght=12.34");
 
-    QFont font;
-    font.fromString(fontStringWithFeatures);
-    font.fromString(fontStringWithoutFeatures);
-    QVERIFY(font.featureTags().isEmpty());
+    {
+        QFont font;
+        font.fromString(fontStringWithFeatures);
+        font.fromString(fontStringWithoutFeaturesAndVariableAxes);
+        QVERIFY(font.featureTags().isEmpty());
+        QVERIFY(font.variableAxisTags().isEmpty());
+    }
+
+    {
+        QFont font;
+        font.fromString(fontStringWithVariableAxes);
+        font.fromString(fontStringWithoutFeaturesAndVariableAxes);
+        QVERIFY(font.featureTags().isEmpty());
+        QVERIFY(font.variableAxisTags().isEmpty());
+    }
+
+    {
+        QFont font;
+        font.fromString(fontStringWithFeatures);
+        font.fromString(fontStringWithVariableAxes);
+        QVERIFY(font.featureTags().isEmpty());
+        QVERIFY(!font.variableAxisTags().isEmpty());
+    }
+
+    {
+        QFont font;
+        font.fromString(fontStringWithVariableAxes);
+        font.fromString(fontStringWithFeatures);
+        QVERIFY(!font.featureTags().isEmpty());
+        QVERIFY(font.variableAxisTags().isEmpty());
+    }
 }
 
 void tst_QFont::fromDegenerateString_data()

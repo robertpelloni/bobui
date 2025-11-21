@@ -2170,6 +2170,7 @@ QString QFont::key() const
       \li Style strategy
       \li Font style
       \li Font features
+      \li Variable axes
     \endlist
 
     \sa fromString()
@@ -2199,6 +2200,10 @@ QString QFont::toString() const
     for (const auto &[tag, value] : std::as_const(d->features).asKeyValueRange())
         fontDescription += comma + QLatin1StringView{tag.toString()} + u'=' + QString::number(value);
 
+    fontDescription += comma + QString::number(d->request.variableAxisValues.size());
+    for (const auto &[tag, value] : std::as_const(d->request.variableAxisValues).asKeyValueRange())
+        fontDescription += comma + QLatin1StringView{tag.toString()} + u'=' + QString::number(value);
+
     return fontDescription;
 }
 
@@ -2212,7 +2217,7 @@ size_t qHash(const QFont &font, size_t seed) noexcept
     return qHash(QFontPrivate::get(font)->request, seed);
 }
 
-static std::optional<std::pair<QFont::Tag, quint32>> tagAndValueFromString(QStringView view)
+static std::optional<std::pair<QFont::Tag, quint32>> fontFeatureFromString(QStringView view)
 {
     const int separator = view.indexOf(u'=');
     if (separator == -1)
@@ -2224,6 +2229,24 @@ static std::optional<std::pair<QFont::Tag, quint32>> tagAndValueFromString(QStri
 
     bool valueOk = false;
     const quint32 value = view.sliced(separator + 1).toUInt(&valueOk);
+    if (!valueOk)
+        return std::nullopt;
+
+    return std::make_pair(*tag, value);
+}
+
+static std::optional<std::pair<QFont::Tag, float>> variableAxisFromString(QStringView view)
+{
+    const int separator = view.indexOf(u'=');
+    if (separator == -1)
+        return std::nullopt;
+
+    const std::optional<QFont::Tag> tag = QFont::Tag::fromString(view.sliced(0, separator));
+    if (!tag)
+        return std::nullopt;
+
+    bool valueOk = false;
+    const float value = view.sliced(separator + 1).toFloat(&valueOk);
     if (!valueOk)
         return std::nullopt;
 
@@ -2259,6 +2282,8 @@ bool QFont::fromString(const QString &descrip)
         setUnderline(l[5].toInt());
         setStrikeOut(l[6].toInt());
         setFixedPitch(l[7].toInt());
+        if (!d->request.fixedPitch) // assume 'false' fixedPitch equals default
+            d->request.ignorePitch = true;
     } else if (count >= 10) {
         if (l[2].toInt() > 0)
             setPixelSize(l[2].toInt());
@@ -2271,6 +2296,8 @@ bool QFont::fromString(const QString &descrip)
         setUnderline(l[6].toInt());
         setStrikeOut(l[7].toInt());
         setFixedPitch(l[8].toInt());
+        if (!d->request.fixedPitch) // assume 'false' fixedPitch equals default
+            d->request.ignorePitch = true;
         if (count >= 16) {
             setCapitalization((Capitalization)l[10].toInt());
             setLetterSpacing((SpacingType)l[11].toInt(), l[12].toDouble());
@@ -2287,19 +2314,33 @@ bool QFont::fromString(const QString &descrip)
             d->request.styleName.clear();
 
         clearFeatures();
-        if (count >= 18) {
-            const int featureCount = l[17].toInt();
-            if (count >= featureCount + 18) {
-                for (int i = 0; i < featureCount; ++i) {
-                    if (const auto feature = tagAndValueFromString(l[18 + i]))
-                        setFeature(feature->first, feature->second);
-                }
-            }
+        clearVariableAxes();
+
+        int position = 17;
+        if (position >= count)
+            return true;
+
+        const int featureCount = l[position++].toInt();
+        if (position + featureCount > count)
+            return true;
+
+        for (int i = 0; i < featureCount; ++i) {
+            if (const auto feature = fontFeatureFromString(l[position++]))
+                setFeature(feature->first, feature->second);
+        }
+
+        if (position >= count)
+            return true;
+
+        const int variableAxisCount = l[position++].toInt();
+        if (position + variableAxisCount > count)
+            return true;
+
+        for (int i = 0; i < variableAxisCount; ++i) {
+            if (const auto axis = variableAxisFromString(l[position++]))
+                setVariableAxis(axis->first, axis->second);
         }
     }
-
-    if (count >= 9 && !d->request.fixedPitch) // assume 'false' fixedPitch equals default
-        d->request.ignorePitch = true;
 
     return true;
 }
