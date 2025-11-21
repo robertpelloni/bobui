@@ -2265,8 +2265,7 @@ bool QFont::fromString(const QString &descrip)
     const auto sr = QStringView(descrip).trimmed();
     const auto l = sr.split(u',');
     const int count = l.size();
-    if (!count || (count > 2 && count < 9) || count == 9 ||
-        l.first().isEmpty()) {
+    if (!count || (count > 2 && count < 10) || l.first().isEmpty()) {
         qWarning("QFont::fromString: Invalid description '%s'",
                  descrip.isEmpty() ? "(empty)" : descrip.toLatin1().data());
         return false;
@@ -2275,16 +2274,8 @@ bool QFont::fromString(const QString &descrip)
     setFamily(l[0].toString());
     if (count > 1 && l[1].toDouble() > 0.0)
         setPointSizeF(l[1].toDouble());
-    if (count == 9) {
-        setStyleHint((StyleHint) l[2].toInt());
-        setWeight(QFont::Weight(l[3].toInt()));
-        setItalic(l[4].toInt());
-        setUnderline(l[5].toInt());
-        setStrikeOut(l[6].toInt());
-        setFixedPitch(l[7].toInt());
-        if (!d->request.fixedPitch) // assume 'false' fixedPitch equals default
-            d->request.ignorePitch = true;
-    } else if (count >= 10) {
+
+    if (count >= 10) {
         if (l[2].toInt() > 0)
             setPixelSize(l[2].toInt());
         setStyleHint((StyleHint) l[3].toInt());
