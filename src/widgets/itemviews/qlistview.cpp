@@ -1024,7 +1024,7 @@ void QListView::paintEvent(QPaintEvent *e)
         else
             option.rect.setHeight(qMin(maxSize, option.rect.height()));
 
-        const bool itemIsEnabled = enabled && !index.flags().testFlag(Qt::ItemIsEnabled);
+        const bool itemIsEnabled = enabled && index.flags().testFlag(Qt::ItemIsEnabled);
         option.state = state;
         option.state.setFlag(QStyle::State_Selected, selections && selections->isSelected(index));
         option.state.setFlag(QStyle::State_Enabled, itemIsEnabled);
