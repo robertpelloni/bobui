@@ -2602,7 +2602,7 @@ QIcon QWindows11Style::standardIcon(StandardPixmap standardIcon,
     switch (standardIcon) {
     case SP_LineEditClearButton: {
         if (d->m_lineEditClearButton.isNull()) {
-            auto e = new WinFontIconEngine(Clear.at(0), d->assetFont);
+            auto e = new WinFontIconEngine(Clear, d->assetFont);
             d->m_lineEditClearButton = QIcon(e);
         }
         return d->m_lineEditClearButton;
