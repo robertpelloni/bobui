@@ -3894,10 +3894,12 @@ QDateTime::Data QDateTimePrivate::create(QDate toDate, QTime toTime, const QTime
            Selects a time on the standard time side of the transition.
     \value PreferDaylightSaving
            Selects a time on the daylight-saving-time side of the transition.
-    \value LegacyBehavior
-           An alias for RelativeToBefore, which is used as default for
-           TransitionResolution parameters, as this most closely matches the
-           behavior prior to Qt 6.7.
+    \omitvalue LegacyBehavior
+
+    An additional constant, \c LegacyBehavior, is used as a default value for
+    TransitionResolution parameters in some constructors and setter functions.
+    This is an alias for \c RelativeToBefore, which implements behavior that
+    most closely matches the behavior of QDateTime prior to Qt 6.7.
 
     For \l addDays(), \l addMonths() or \l addYears(), the behavior is and
     (mostly) was to use \c RelativeToBefore if adding a positive adjustment and \c
@@ -3909,7 +3911,7 @@ QDateTime::Data QDateTimePrivate::create(QDate toDate, QTime toTime, const QTime
     where the daylight-saving mechanism is a decrease in offset from UTC in
     winter (known as "negative DST"), the reverse applies, provided the
     operating system reports - as it does on most platforms - whether a datetime
-    is in DST or standard time. For some platforms, where transition times are
+    is in DST or standard time. For some platforms, where transition details are
     unavailable even for Qt::TimeZone datetimes, QTimeZone is obliged to presume
     that the side with lower offset from UTC is standard time, effectively
     assuming positive DST.
