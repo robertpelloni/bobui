@@ -77,10 +77,6 @@ class SomethingOfEverything : public QObject
     Q_PROPERTY(SomethingEnum eprop READ eprop)
     Q_PROPERTY(SomethingFlagEnum fprop READ fprop)
     Q_PROPERTY(QLocale::Language language READ language)
-    Q_ENUMS(SomethingEnum)
-    Q_FLAGS(SomethingFlag)
-    Q_ENUMS(SomethingEnum64)
-    Q_FLAGS(SomethingFlag64)
 public:
     Q_INVOKABLE SomethingOfEverything() {}
     ~SomethingOfEverything() {}
@@ -105,6 +101,7 @@ public:
         UVW = 8
     };
     Q_DECLARE_FLAGS(SomethingFlag, SomethingFlagEnum)
+    Q_FLAG(SomethingFlag)
 
     enum SomethingFlagEnum64 : quint64
     {
@@ -112,6 +109,7 @@ public:
         OPQ = Q_UINT64_C(1) << 63,
     };
     Q_DECLARE_FLAGS(SomethingFlag64, SomethingFlagEnum64)
+    Q_FLAG(SomethingFlag64)
 
     Q_INVOKABLE Q_SCRIPTABLE void method1() const {}
 
