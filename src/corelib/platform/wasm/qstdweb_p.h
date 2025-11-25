@@ -237,11 +237,80 @@ namespace qstdweb {
         std::function<void()> finallyFunc;
     };
 
-    namespace Promise {
-        uint32_t Q_CORE_EXPORT adoptPromise(emscripten::val promise, PromiseCallbacks callbacks, QList<uint32_t> *handlers = nullptr);
+    // Note: it is ok for the Promise object to go out of scope,
+    // the resources will be cleaned up in the finally handler.
+    class Q_CORE_EXPORT Promise {
+    public:
+        template<typename... Args>
+        Promise(emscripten::val target, QString methodName, Args... args) {
+            m_state = std::make_shared<State>();
+            m_state->m_promise = target.call<emscripten::val>(
+                methodName.toStdString().c_str(), std::forward<Args>(args)...);
+            if (m_state->m_promise.isUndefined() || m_state->m_promise["constructor"]["name"].as<std::string>() != "Promise") {
+                 qFatal("This function did not return a promise");
+            }
+            addFinallyFunction([](){});
+        }
+
+        Promise(emscripten::val promise) {
+            m_state = std::make_shared<State>();
+            m_state->m_promise = promise;
+            if (m_state->m_promise.isUndefined() || m_state->m_promise["constructor"]["name"].as<std::string>() != "Promise") {
+                 qFatal("This function did not return a promise");
+            }
+            addFinallyFunction([](){});
+        }
+
+        Promise(const std::vector<Promise> &promises) {
+            std::vector<emscripten::val> all;
+            all.reserve(promises.size());
+            for (const auto &p : promises)
+                all.push_back(p.getPromise());
+
+            auto arr = emscripten::val::array(all);
+            m_state = std::make_shared<State>();
+            m_state->m_promise = emscripten::val::global("Promise").call<emscripten::val>("all", arr);
+            addFinallyFunction([](){});
+        }
+
+        Promise& addThenFunction(std::function<void(emscripten::val)> thenFunc);
+        Promise& addCatchFunction(std::function<void(emscripten::val)> catchFunc);
+        Promise& addFinallyFunction(std::function<void()> finallyFunc);
+
+        void suspendExclusive();
+
+        emscripten::val getPromise() const;
+
+    public:
+        class State {
+        private:
+            friend class Promise;
+
+            State(const State&) = delete;
+            State(State&&) = delete;
+            State& operator=(const State&) = delete;
+            State& operator=(State&&) = delete;
+
+        public:
+            State() { ++s_numInstances; }
+            ~State() { --s_numInstances; }
+            static size_t numInstances() { return s_numInstances; }
+
+        private:
+            emscripten::val m_promise = emscripten::val::undefined();
+            QList<uint32_t> m_handlers;
+            static size_t s_numInstances;
+        };
+
+    private:
+        std::shared_ptr<State> m_state;
+
+    public:
+        // Deprecated: To be backwards compatible
+        static uint32_t Q_CORE_EXPORT adoptPromise(emscripten::val promise, PromiseCallbacks callbacks, QList<uint32_t> *handlers = nullptr);
 
         template<typename... Args>
-        uint32_t make(emscripten::val target,
+        static uint32_t make(emscripten::val target,
                       QString methodName,
                       PromiseCallbacks callbacks,
                       Args... args)
@@ -256,7 +325,7 @@ namespace qstdweb {
         }
 
         template<typename... Args>
-        void make(
+        static void make(
             QList<uint32_t> &handlers,
             emscripten::val target,
                       QString methodName,
@@ -272,8 +341,8 @@ namespace qstdweb {
             adoptPromise(std::move(promiseObject), std::move(callbacks), &handlers);
         }
 
-        void Q_CORE_EXPORT suspendExclusive(QList<uint32_t> handlerIndices);
-        void Q_CORE_EXPORT all(std::vector<emscripten::val> promises, PromiseCallbacks callbacks);
+        static void Q_CORE_EXPORT suspendExclusive(QList<uint32_t> handlerIndices);
+        static void Q_CORE_EXPORT all(std::vector<emscripten::val> promises, PromiseCallbacks callbacks);
     };
 
     template<class F>

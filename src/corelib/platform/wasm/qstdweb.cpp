@@ -446,6 +446,119 @@ EventCallback::EventCallback(emscripten::val element, const std::string &name,
 
 }
 
+size_t qstdweb::Promise::State::s_numInstances = 0;
+
+//
+// When a promise settles, all attached handlers will be called in
+// the order they where added.
+//
+// In particular a finally handler will be called according to its
+// position in the call chain. Which is not necessarily at the end,
+//
+// This makes cleanup difficult. If we cleanup to early, we will remove
+// handlers before they have a chance to be called. This would be the
+// case if we add a finally handler in the Promise constructor.
+//
+// For correct cleanup it is necessary that it happens after the
+// last handler has been called.
+//
+// We choose to implement this by making sure the last handler
+// is always a finally handler.
+//
+// In this case we have multiple finally handlers, so any called
+// handler checks if it is the last handler to be called.
+// If it is, the cleanup is performed, otherwise cleanup
+// is delayed to the last handler.
+//
+// We could try to let the handlers cleanup themselves, but this
+// only works for finally handlers. A then or catch handler is not
+// necessarily called, and would not cleanup itself.
+//
+// We could try to let a (then,catch) pair cleanup both handlers,
+// under the assumption that one of them will always be called.
+// This does not work in the case that we do not have both handlers,
+// or if the then handler throws (both should be called in this case).
+//
+Promise& Promise::addThenFunction(std::function<void(emscripten::val)> thenFunc)
+{
+    QWasmSuspendResumeControl *suspendResume = QWasmSuspendResumeControl::get();
+    Q_ASSERT(suspendResume);
+
+    m_state->m_handlers.push_back(suspendResume->registerEventHandler(thenFunc));
+    m_state->m_promise =
+        m_state->m_promise.call<emscripten::val>(
+            "then",
+            suspendResume->jsEventHandlerAt(
+                m_state->m_handlers.back()));
+
+    addFinallyFunction([](){}); // Add a potential cleanup handler
+    return (*this);
+}
+
+Promise& Promise::addCatchFunction(std::function<void(emscripten::val)> catchFunc)
+{
+    QWasmSuspendResumeControl *suspendResume = QWasmSuspendResumeControl::get();
+    Q_ASSERT(suspendResume);
+
+    m_state->m_handlers.push_back(suspendResume->registerEventHandler(catchFunc));
+    m_state->m_promise =
+        m_state->m_promise.call<emscripten::val>(
+            "catch",
+            suspendResume->jsEventHandlerAt(
+                m_state->m_handlers.back()));
+
+    addFinallyFunction([](){}); // Add a potential cleanup handler
+    return (*this);
+}
+
+Promise& Promise::addFinallyFunction(std::function<void()> finallyFunc)
+{
+    QWasmSuspendResumeControl *suspendResume = QWasmSuspendResumeControl::get();
+    Q_ASSERT(suspendResume);
+
+    auto thisHandler = std::make_shared<uint32_t>((uint32_t)(-1));
+    auto state = m_state;
+
+    std::function<void(emscripten::val)> func =
+        [state, thisHandler, finallyFunc](emscripten::val element) {
+            Q_UNUSED(element);
+
+            finallyFunc();
+
+            // See comment at top, we can only do the cleanup
+            // if we are the last handler in the handler chain
+            if (state->m_handlers.back() == *thisHandler) {
+                auto guard = state; // removeEventHandler will remove also this function
+                QWasmSuspendResumeControl *suspendResume = QWasmSuspendResumeControl::get();
+                Q_ASSERT(suspendResume);
+                for (int i = 0; i < guard->m_handlers.size(); ++i) {
+                    suspendResume->removeEventHandler(guard->m_handlers[i]);
+                    guard->m_handlers[i] = (uint32_t)(-1);
+                }
+            }
+        };
+
+    *thisHandler = suspendResume->registerEventHandler(func);
+    m_state->m_handlers.push_back(*thisHandler);
+    m_state->m_promise =
+        m_state->m_promise.call<emscripten::val>(
+            "finally",
+            suspendResume->jsEventHandlerAt(
+                m_state->m_handlers.back()));
+
+    return (*this);
+}
+
+void Promise::suspendExclusive()
+{
+    Promise::suspendExclusive(m_state->m_handlers);
+}
+
+emscripten::val Promise::getPromise() const
+{
+    return m_state->m_promise;
+}
+
 uint32_t Promise::adoptPromise(emscripten::val promise, PromiseCallbacks callbacks, QList<uint32_t> *handlers)
 {
     Q_ASSERT_X(!!callbacks.catchFunc || !!callbacks.finallyFunc || !!callbacks.thenFunc,
