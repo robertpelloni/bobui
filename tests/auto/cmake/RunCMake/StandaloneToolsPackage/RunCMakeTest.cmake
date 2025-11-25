@@ -5,6 +5,7 @@ include(QtRunCMake)
 
 set(build_case "build_and_install_tools_package")
 set(consume_case "consume_tools_package")
+set(consume_case_via_module "consume_tools_package_via_module")
 
 function(run_cmake_and_build case)
     set(RunCMake_TEST_BINARY_DIR ${RunCMake_BINARY_DIR}/${case}-build)
@@ -14,6 +15,7 @@ function(run_cmake_and_build case)
 
     set(options
         "-DQt6_DIR=${Qt6_DIR}"
+        "-DQT_REPO_MODULE_VERSION=${QT_REPO_MODULE_VERSION}"
     )
 
     # For prefix builds, install into a separate dir rather than the Qt one.
@@ -49,3 +51,6 @@ run_cmake_and_build("${build_case}")
 
 # Find the tools package.
 run_cmake_and_build("${consume_case}")
+
+# Find the tools package via module.
+run_cmake_and_build("${consume_case_via_module}")

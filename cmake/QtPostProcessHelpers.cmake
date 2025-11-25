@@ -202,12 +202,10 @@ function(qt_internal_create_module_depends_file target)
 
     # Extra QtFooModuleTools packages to be added as dependencies to
     # QtModuleDependencies.cmake. Needed for QtWaylandCompositor / QtWaylandClient.
-    if(NOT is_interface_lib)
-        get_target_property(extra_tools_package_dependencies "${target}"
-                            QT_EXTRA_TOOLS_PACKAGE_DEPENDENCIES)
-        if(extra_tools_package_dependencies)
-            list(APPEND main_module_tool_deps "${extra_tools_package_dependencies}")
-        endif()
+    get_target_property(extra_tools_package_dependencies "${target}"
+                        _qt_extra_tools_package_dependencies)
+    if(extra_tools_package_dependencies)
+        list(APPEND main_module_tool_deps "${extra_tools_package_dependencies}")
     endif()
 
     qt_internal_get_qt_all_known_modules(known_modules)

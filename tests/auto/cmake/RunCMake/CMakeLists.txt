@@ -32,4 +32,5 @@ if(TARGET Qt6::Platform)
 endif()
 
 list(APPEND extra_run_cmake_args "-DQT_WILL_INSTALL=${QT_WILL_INSTALL}")
+list(APPEND extra_run_cmake_args "-DQT_REPO_MODULE_VERSION=${QT_REPO_MODULE_VERSION}")
 qt_internal_add_RunCMake_test(StandaloneToolsPackage ${extra_run_cmake_args})

@@ -29,5 +29,20 @@ qt_internal_record_tools_package_extra_third_party_dependency(
     PACKAGE_BASE_NAME ${base_name}
     DEPENDENCY_PACKAGE_NAME WrapScrewdriver)
 
+# Add a module that should be look up the standalone tools package when the module itself is
+# looked up.
+qt_internal_add_module(Workshop
+    HEADER_MODULE
+    NO_MODULE_HEADERS
+    NO_PRIVATE_MODULE
+    NO_GENERATE_CPP_EXPORTS
+    NO_ADDITIONAL_TARGET_INFO
+    NO_GENERATE_METATYPES
+    NO_PACKAGE_CONFIG_FILE
+    NO_MODULE_JSON_FILE
+    NO_QMAKE_SUPPORT_FILES
+)
+qt_record_extra_qt_main_tools_package_dependency(Workshop GarageTools "6")
+
 qt_build_repo_post_process()
 qt_build_repo_end()

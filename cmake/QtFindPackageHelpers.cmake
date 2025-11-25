@@ -406,13 +406,13 @@ function(qt_record_extra_main_tools_package_dependency
     endif()
     if (TARGET "${main_target_name}")
         get_target_property(extra_packages "${main_target_name}"
-                            QT_EXTRA_TOOLS_PACKAGE_DEPENDENCIES)
+                            _qt_extra_tools_package_dependencies)
         if(NOT extra_packages)
             set(extra_packages "")
         endif()
 
         list(APPEND extra_packages "${dep_package_name}\;${dep_package_version}")
-        set_target_properties("${main_target_name}" PROPERTIES QT_EXTRA_TOOLS_PACKAGE_DEPENDENCIES
+        set_target_properties("${main_target_name}" PROPERTIES _qt_extra_tools_package_dependencies
                                                                "${extra_packages}")
     endif()
 endfunction()
