@@ -260,7 +260,7 @@ void tst_QLocaleData::numericData_data()
         << u"\u00D7\u06F1\u06F0^"_s << GS(1, 3, 3) << U'\u06F0' << false;
 
     // Grouping separator variants:
-    QTest::newRow("gsw-Latn-CH/exp") // Right single quote for grouping:
+    QTest::newRow("gsw-Latn-CH/exp") // Uses apostrophe for grouping (matching C++):
         << LOCALE_DATA_PTR(SwissGerman, LatinScript, Switzerland)
         << QLocaleData::DoubleScientificMode
         << u"."_s << u"'"_s << u"\u2212"_s << u"+"_s << u"E"_s
