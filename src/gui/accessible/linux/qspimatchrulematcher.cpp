@@ -23,7 +23,6 @@ QSpiMatchRuleMatcher::QSpiMatchRuleMatcher(const QSpiMatchRule &matchRule)
       m_interfaceMatchType(matchRule.interfaceMatchType)
 {
     // extract roles encoded in bitset stored in multiple 32 bit integers
-    std::unordered_set<AtspiRole> atSpiRoles;
     for (int i = 0; i < matchRule.roles.size(); ++i) {
         for (int j = 0; j < 32; j++) {
             if (matchRule.roles.at(i) & (1 << j)) {
