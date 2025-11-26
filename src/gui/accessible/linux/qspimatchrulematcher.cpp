@@ -23,10 +23,10 @@ QSpiMatchRuleMatcher::QSpiMatchRuleMatcher(const QSpiMatchRule &matchRule)
       m_interfaceMatchType(matchRule.interfaceMatchType)
 {
     // extract roles encoded in bitset stored in multiple 32 bit integers
-    for (int i = 0; i < matchRule.roles.size(); ++i) {
+    for (qsizetype i = 0; i < matchRule.roles.size(); ++i) {
         for (int j = 0; j < 32; j++) {
             if (matchRule.roles.at(i) & (1 << j)) {
-                const int atspiRole = i * 32 + j;
+                const auto atspiRole = i * 32 + j;
                 if (atspiRole < ATSPI_ROLE_LAST_DEFINED)
                     m_roles.insert(AtspiRole(atspiRole));
                 else
