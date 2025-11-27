@@ -14,6 +14,9 @@
                 ]
             }
         ],
+        "hashes": {
+            "MetaType": "0$swya0mP+olQ6EImtfZ4HW3dVkKs"
+        },
         "inputFile": "MetaType.h",
         "outputRevision": 69
     }
