@@ -201,8 +201,7 @@ private:
     friend class QWaylandXdgSurface;
 };
 
+} // namespace QtWaylandClient
+
 QT_END_NAMESPACE
-
-}
-
 #endif // QWAYLANDXDGSHELL_H
