@@ -37,7 +37,7 @@ QSpiMatchRuleMatcher::QSpiMatchRuleMatcher(const QSpiMatchRule &matchRule)
         }
     }
 
-    // use qualified interface names to match what accessibleInterfaces() returns
+    // use qualified interface names to match what AtSpiAdaptor::accessibleInterfaces returns
     m_interfaces.reserve(matchRule.interfaces.size());
     for (const QString &ifaceName : matchRule.interfaces)
         m_interfaces.push_back("org.a11y.atspi."_L1 + ifaceName);
