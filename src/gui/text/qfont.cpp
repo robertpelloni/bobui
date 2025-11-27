@@ -2195,12 +2195,8 @@ QString QFont::toString() const
         QString::number((int)styleStrategy()) + comma +
         styleName();
 
-    QMap<Tag, quint32> sortedFeatures;
+    fontDescription += comma + QString::number(d->features.size());
     for (const auto &[tag, value] : std::as_const(d->features).asKeyValueRange())
-        sortedFeatures.insert(tag, value);
-
-    fontDescription += comma + QString::number(sortedFeatures.size());
-    for (const auto &[tag, value] : std::as_const(sortedFeatures).asKeyValueRange())
         fontDescription += comma + QLatin1StringView{tag.toString()} + u'=' + QString::number(value);
 
     return fontDescription;
