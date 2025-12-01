@@ -238,14 +238,16 @@ namespace QRangeModelDetails
         : std::true_type
     {};
 
-    // we use std::rotate in moveRows/Columns, which requires std::swap
+    // we use std::rotate in moveRows/Columns, which requires std::swap and the
+    // iterators to be at least a forward iterator
     template <typename It, typename = void>
     struct test_rotate : std::false_type {};
 
     template <typename It>
     struct test_rotate<It, std::void_t<decltype(std::swap(*std::declval<It>(),
                                                           *std::declval<It>()))>>
-        : std::true_type
+        : std::is_base_of<std::forward_iterator_tag,
+                          typename std::iterator_traits<It>::iterator_category>
     {};
 
     template <typename C, typename = void>
