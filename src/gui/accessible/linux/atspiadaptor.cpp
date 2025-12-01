@@ -132,7 +132,7 @@ AtSpiAdaptor::~AtSpiAdaptor()
   */
 QString AtSpiAdaptor::introspect(const QString &path) const
 {
-    static const QLatin1StringView accessibleIntrospection(
+    constexpr auto accessibleIntrospection =
                 "  <interface name=\"org.a11y.atspi.Accessible\">\n"
                 "    <property access=\"read\" type=\"s\" name=\"Name\"/>\n"
                 "    <property access=\"read\" type=\"s\" name=\"Description\"/>\n"
@@ -182,9 +182,9 @@ QString AtSpiAdaptor::introspect(const QString &path) const
                 "      <arg direction=\"out\" type=\"s\"/>\n"
                 "    </method>\n"
                 "  </interface>\n"
-                );
+                ""_L1;
 
-    static const QLatin1StringView actionIntrospection(
+    constexpr auto actionIntrospection =
                 "  <interface name=\"org.a11y.atspi.Action\">\n"
                 "    <property access=\"read\" type=\"i\" name=\"NActions\"/>\n"
                 "    <method name=\"GetDescription\">\n"
@@ -208,9 +208,9 @@ QString AtSpiAdaptor::introspect(const QString &path) const
                 "      <arg direction=\"out\" type=\"b\"/>\n"
                 "    </method>\n"
                 "  </interface>\n"
-                );
+                ""_L1;
 
-    static const QLatin1StringView applicationIntrospection(
+    constexpr auto applicationIntrospection =
                 "  <interface name=\"org.a11y.atspi.Application\">\n"
                 "    <property access=\"read\" type=\"s\" name=\"ToolkitName\"/>\n"
                 "    <property access=\"read\" type=\"s\" name=\"Version\"/>\n"
@@ -223,9 +223,9 @@ QString AtSpiAdaptor::introspect(const QString &path) const
                 "      <arg direction=\"out\" type=\"s\" name=\"address\"/>\n"
                 "    </method>\n"
                 "  </interface>\n"
-                );
+                ""_L1;
 
-    static const QLatin1StringView collectionIntrospection(
+    constexpr auto collectionIntrospection =
                 "  <interface name=\"org.a11y.atspi.Collection\">\n"
                 "    <method name=\"GetMatches\">\n"
                 "      <arg direction=\"in\" name=\"rule\" type=\"(aiia{ss}iaiiasib)\"/>\n"
@@ -266,9 +266,9 @@ QString AtSpiAdaptor::introspect(const QString &path) const
                 "      <annotation name=\"org.qtproject.QtDBus.QtTypeName.Out0\" value=\"QSpiReferenceSet\"/>\n"
                 "    </method>\n"
                 "  </interface>\n"
-            );
+                ""_L1;
 
-    static const QLatin1StringView componentIntrospection(
+    constexpr auto componentIntrospection =
                 "  <interface name=\"org.a11y.atspi.Component\">\n"
                 "    <method name=\"Contains\">\n"
                 "      <arg direction=\"in\" type=\"i\" name=\"x\"/>\n"
@@ -329,9 +329,9 @@ QString AtSpiAdaptor::introspect(const QString &path) const
                 "      <arg direction=\"out\" type=\"b\"/>\n"
                 "    </method>\n"
                 "  </interface>\n"
-                );
+                ""_L1;
 
-    static const QLatin1StringView editableTextIntrospection(
+    constexpr auto editableTextIntrospection =
                 "  <interface name=\"org.a11y.atspi.EditableText\">\n"
                 "    <method name=\"SetTextContents\">\n"
                 "      <arg direction=\"in\" type=\"s\" name=\"newContents\"/>\n"
@@ -362,9 +362,9 @@ QString AtSpiAdaptor::introspect(const QString &path) const
                 "      <arg direction=\"out\" type=\"b\"/>\n"
                 "    </method>\n"
                 "  </interface>\n"
-                );
+                ""_L1;
 
-    static const QLatin1StringView selectionIntrospection(
+    constexpr auto selectionIntrospection =
                 "  <interface name=\"org.a11y.atspi.Selection\">\n"
                 "    <property name=\"NSelectedChildren\" type=\"i\" access=\"read\"/>\n"
                 "    <method name=\"GetSelectedChild\">\n"
@@ -395,9 +395,9 @@ QString AtSpiAdaptor::introspect(const QString &path) const
                 "      <arg direction=\"out\" type=\"b\"/>\n"
                 "    </method>\n"
                 "  </interface>\n"
-                );
+                ""_L1;
 
-    static const QLatin1StringView tableIntrospection(
+    constexpr auto tableIntrospection =
                 "  <interface name=\"org.a11y.atspi.Table\">\n"
                 "    <property access=\"read\" type=\"i\" name=\"NRows\"/>\n"
                 "    <property access=\"read\" type=\"i\" name=\"NColumns\"/>\n"
@@ -503,9 +503,9 @@ QString AtSpiAdaptor::introspect(const QString &path) const
                 "      <arg direction=\"out\" type=\"b\" name=\"is_selected\"/>\n"
                 "    </method>\n"
                 "  </interface>\n"
-                );
+                ""_L1;
 
-    static const QLatin1StringView tableCellIntrospection(
+    constexpr auto tableCellIntrospection =
                 "  <interface name=\"org.a11y.atspi.TableCell\">\n"
                 "    <property access=\"read\" name=\"ColumnSpan\" type=\"i\" />\n"
                 "    <property access=\"read\" name=\"Position\" type=\"(ii)\">\n"
@@ -531,9 +531,9 @@ QString AtSpiAdaptor::introspect(const QString &path) const
                 "      <annotation value=\"QSpiObjectReferenceArray\" name=\"org.qtproject.QtDBus.QtTypeName.Out0\"/>\n"
                 "    </method>\n"
                 "  </interface>\n"
-                );
+                ""_L1;
 
-    static const QLatin1StringView textIntrospection(
+    constexpr auto textIntrospection =
                 "  <interface name=\"org.a11y.atspi.Text\">\n"
                 "    <property access=\"read\" type=\"i\" name=\"CharacterCount\"/>\n"
                 "    <property access=\"read\" type=\"i\" name=\"CaretOffset\"/>\n"
@@ -670,9 +670,9 @@ QString AtSpiAdaptor::introspect(const QString &path) const
                 "      <arg direction=\"out\" type=\"b\"/>\n"
                 "    </method>\n"
                 "  </interface>\n"
-                );
+                ""_L1;
 
-    static const QLatin1StringView valueIntrospection(
+    constexpr auto valueIntrospection =
                 "  <interface name=\"org.a11y.atspi.Value\">\n"
                 "    <property access=\"read\" type=\"d\" name=\"MinimumValue\"/>\n"
                 "    <property access=\"read\" type=\"d\" name=\"MaximumValue\"/>\n"
@@ -682,7 +682,7 @@ QString AtSpiAdaptor::introspect(const QString &path) const
                 "      <arg direction=\"in\" type=\"d\" name=\"value\"/>\n"
                 "    </method>\n"
                 "  </interface>\n"
-                );
+                ""_L1;
 
     QAccessibleInterface * interface = interfaceFromPath(path);
     if (!interface) {
