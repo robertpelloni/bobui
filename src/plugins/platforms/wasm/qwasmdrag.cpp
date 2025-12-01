@@ -110,8 +110,6 @@ void QWasmDrag::onNativeDragStarted(DragEvent *event)
     Q_ASSERT_X(event->type == EventType::DragStart, Q_FUNC_INFO,
                "The event is not a DragStart event");
 
-    event->webEvent.call<void>("preventDefault");
-
     // It is possible for a drag start event to arrive from another window.
     if (!m_dragState || m_dragState->window != event->targetWindow) {
         event->cancelDragStart();
