@@ -812,7 +812,7 @@ inline bool operator!=(const QJniObject &obj1, const QJniObject &obj2)
 }
 
 namespace QtJniTypes {
-struct QT_TECH_PREVIEW_API JObjectBase
+struct JObjectBase
 {
     operator QJniObject() const { return m_object; }
 
@@ -841,7 +841,7 @@ protected:
 };
 
 template<typename Type>
-class QT_TECH_PREVIEW_API JObject : public JObjectBase
+class JObject : public JObjectBase
 {
 public:
     using Class = Type;
@@ -884,6 +884,13 @@ public:
     {
         return JObject(QJniObject::fromLocalRef(lref));
     }
+
+#ifdef Q_QDOC // from JObjectBase, which we don't document
+    bool isValid() const;
+    jclass objectClass() const;
+    QString toString() const;
+    template <typename T = jobject> object() const;
+#endif
 
     static bool registerNativeMethods(std::initializer_list<JNINativeMethod> methods)
     {

@@ -1527,4 +1527,179 @@ jobject QJniObject::javaObject() const
     return d->m_jobject;
 }
 
+/*!
+    \class QtJniTypes::JObjectBase
+    \brief The JObjectBase in the QtJniTypes namespace is the base of all declared Java types.
+    \inmodule QtCore
+    \internal
+*/
+
+/*!
+    \class QtJniTypes::JObject
+    \inmodule QtCore
+    \brief The JObject template in the QtJniTypes namespace is the base of declared Java types.
+    \since Qt 6.8
+
+    This template gets specialized when using the Q_DECLARE_JNI_CLASS macro. The
+    specialization produces a unique type in the QtJniTypes namespace. This
+    allows the type system to deduce the correct signature in JNI calls when an
+    instance of the specialized type is passed as a parameter.
+
+    Instances can be implicitly converted to and from QJniObject and jobject,
+    and provide the same template API as QJniObject to call methods and access
+    properties. Since instances of JObject know about the Java type they hold,
+    APIs to access static methods or fields do not require the class name as an
+    explicit parameter.
+
+    \sa Q_DECLARE_JNI_CLASS
+*/
+
+/*!
+    \fn template <typename Type> QtJniTypes::JObject<Type>::JObject()
+
+    Default-constructs the JObject instance. This also default-constructs an
+    instance of the represented Java type.
+*/
+
+/*!
+    \fn template <typename Type> QtJniTypes::JObject<Type>::JObject(const QJniObject &other)
+
+    Constructs a JObject instance that holds a reference to the same jobject as \a other.
+*/
+
+/*!
+    \fn template <typename Type> QtJniTypes::JObject<Type>::JObject(jobject other)
+
+    Constructs a JObject instance that holds a reference to \a other.
+*/
+
+/*!
+    \fn template <typename Type> QtJniTypes::JObject<Type>::JObject(QJniObject &&other)
+
+    Move-constructs a JObject instance from \a other.
+*/
+
+/*!
+    \fn template <typename Type> bool QtJniTypes::JObject<Type>::isValid() const
+
+    Returns whether the JObject instance holds a valid reference to a jobject.
+
+    \sa QJniObject::isValid()
+*/
+
+/*!
+    \fn template <typename Type> jclass QtJniTypes::JObject<Type>::objectClass() const
+
+    Returns the Java class that this JObject is an instance of as a jclass.
+
+    \sa className(), QJniObject::objectClass()
+*/
+
+/*!
+    \fn template <typename Type> QString QtJniTypes::JObject<Type>::toString() const
+
+    Returns a QString with a string representation of the Java object.
+
+    \sa QJniObject::toString()
+*/
+
+/*!
+    \fn template <typename Type> QByteArray QtJniTypes::JObject<Type>::className() const
+
+    Returns the name of the Java class that this object is an instance of.
+
+    \sa objectClass(), QJniObject::className()
+*/
+
+/*!
+    \fn template <typename Type> bool QtJniTypes::JObject<Type>::isClassAvailable()
+
+    Returns whether the class that this JObject specialization represents is
+    available.
+
+    \sa QJniObject::isClassAvailable()
+*/
+
+/*!
+    \fn template <typename Type> JObject QtJniTypes::JObject<Type>::fromJObject(jobject object)
+
+    Constructs a JObject instance from \a object and returns that instance.
+*/
+
+/*!
+    \fn template <typename Type> template <typename ...Args> JObject QtJniTypes::JObject<Type>::construct(Args &&...args)
+
+    Constructs a Java object from \a args and returns a JObject instance that
+    holds a reference to that Java object.
+*/
+
+/*!
+    \fn template <typename Type> JObject QtJniTypes::JObject<Type>::fromLocalRef(jobject ref)
+
+    Constructs a JObject that holds a local reference to \a ref, and returns
+    that object.
+*/
+
+/*!
+    \fn template <typename Type> template <typename Ret, typename ...Args> auto QtJniTypes::JObject<Type>::callStaticMethod(const char *methodName, Args &&...args)
+
+    Calls the static method \a methodName with arguments \a args, and returns
+    the result of type \c Ret (unless \c Ret is \c void). If \c Ret is a
+    jobject type, then the returned value will be a QJniObject.
+
+    \sa QJniObject::callStaticMethod()
+*/
+
+/*!
+    \fn template <typename Type> bool QtJniTypes::JObject<Type>::registerNativeMethods(std::initializer_list<JNINativeMethod> methods)
+
+    Registers the Java methods in \a methods with the Java class represented by
+    the JObject specialization, and returns whether the registration was successful.
+
+    \sa QJniEnvironment::registerNativeMethods()
+*/
+
+/*!
+    \fn template <typename Type> template <typename T> auto QtJniTypes::JObject<Type>::getStaticField(const char *field)
+
+    Returns the value of the static field \a field.
+
+    \sa QJniObject::getStaticField()
+*/
+
+/*!
+    \fn template <typename Type> template <typename Ret, typename T> auto QtJniTypes::JObject<Type>::setStaticField(const char *field, T &&value)
+
+    Sets the static field \a field to \a value.
+
+    \sa QJniObject::setStaticField()
+*/
+
+/*!
+    \fn template <typename Type> template <typename Ret, typename ...Args> auto QtJniTypes::JObject<Type>::callMethod(const char *method, Args &&...args) const
+
+    Calls the instance method \a method with arguments \a args, and returns
+    the result of type \c Ret (unless \c Ret is \c void). If \c Ret is a
+    jobject type, then the returned value will be a QJniObject.
+
+    \sa QJniObject::callMethod()
+*/
+
+/*!
+    \fn template <typename Type> template <typename T> auto QtJniTypes::JObject<Type>::getField(const char *field) const
+
+    Returns the value of the instance field \a field.
+
+    \sa QJniObject::getField()
+*/
+
+/*!
+    \fn template <typename Type> template <typename Ret, typename T> auto QtJniTypes::JObject<Type>::setField(const char *field, T &&value)
+
+    Sets the value of the instance field \a field to \a value.
+
+    \sa QJniObject::setField()
+*/
+
+
 QT_END_NAMESPACE
