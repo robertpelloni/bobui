@@ -16,6 +16,8 @@
 #include <QtCore/qtimer.h>
 #include <QFile>
 
+#include <private/qshapedpixmapdndwindow_p.h>
+
 #include <functional>
 #include <string>
 #include <utility>
@@ -92,9 +94,8 @@ Qt::DropAction QWasmDrag::drag(QDrag *drag)
 
     Qt::DropAction dragResult = Qt::IgnoreAction;
     if (qstdweb::haveJspi()) {
-        QEventLoop loop;
-        m_dragState = std::make_unique<DragState>(drag, window, [&loop]() { loop.quit(); });
-        loop.exec();
+        m_dragState = std::make_unique<DragState>(drag, window, [this]() { QSimpleDrag::cancelDrag();  });
+        QSimpleDrag::drag(drag);
         dragResult = m_dragState->dropAction;
         m_dragState.reset();
     }
@@ -115,6 +116,10 @@ void QWasmDrag::onNativeDragStarted(DragEvent *event)
         event->cancelDragStart();
         return;
     }
+
+    // We have our own window
+    if (shapedPixmapWindow())
+        shapedPixmapWindow()->setVisible(false);
 
     m_dragState->dragImage = std::make_unique<DragState::DragImage>(
             m_dragState->drag->pixmap(), m_dragState->drag->mimeData(), event->targetWindow);
