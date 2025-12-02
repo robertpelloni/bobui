@@ -1291,13 +1291,6 @@ QByteArray QMetaEnum::valueToKeys(int value) const
 
 #include "qmutex.h"
 
-#include "qbytearray.h"
-
-QByteArray QByteArray::percentDecoded(char percent) const
-{
-    return fromPercentEncoding(*this, percent);
-}
-
 #if QT_CONFIG(thread)
 void QBasicMutex::destroyInternal(QMutexPrivate *d)
 {
@@ -1494,6 +1487,13 @@ bool QObject::doSetProperty(const char *name, const QVariant *lvalue, QVariant *
 #endif // QT_CORE_REMOVED_SINCE(6, 10)
 
 #if QT_CORE_REMOVED_SINCE(6, 11)
+
+#include "qbytearray.h"
+
+QByteArray QByteArray::percentDecoded(char percent) const
+{
+    return fromPercentEncoding(*this, percent);
+}
 
 #if QT_CONFIG(thread)
 // some of the previously inlined API became removed
