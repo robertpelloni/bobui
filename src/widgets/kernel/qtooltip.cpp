@@ -389,13 +389,16 @@ void QTipLabel::placeTip(const QPoint &pos, QWidget *w)
         p += offset;
 
 #if QT_CONFIG(wayland)
-        create();
-        if (auto waylandWindow = dynamic_cast<QNativeInterface::Private::QWaylandWindow*>(windowHandle()->handle())) {
-            // based on the existing code below, by default position at 'p' stored at the bottom right of our rect
-            // then  flip to the other arbitrary 4x24 space if constrained
-            const QRect controlGeometry(QRect(p.x() - 4, p.y() - 24, 4, 24));
-            waylandWindow->setParentControlGeometry(controlGeometry);
-            waylandWindow->setExtendedWindowType(QNativeInterface::Private::QWaylandWindow::ToolTip);
+        if (w) {
+            create();
+            if (auto waylandWindow = dynamic_cast<QNativeInterface::Private::QWaylandWindow*>(windowHandle()->handle())) {
+                // based on the existing code below, by default position at 'p' stored at the bottom right of our rect
+                // then  flip to the other arbitrary 4x24 space if constrained
+                const QRect controlGeometry = QRect(p.x() - 4, p.y() - 24, 4, 24)
+                    .translated(-w->window()->mapToGlobal(QPoint(0, 0)));
+                waylandWindow->setParentControlGeometry(controlGeometry);
+                waylandWindow->setExtendedWindowType(QNativeInterface::Private::QWaylandWindow::ToolTip);
+            }
         }
 #endif
 
