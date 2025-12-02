@@ -127,6 +127,8 @@ void tst_QSaveFile::stdfilesystem()
     f2.setFileName(path());
     QCOMPARE(f2.fileName(), QString());
     QVERIFY(f.filesystemFileName().empty());
+#else
+    QSKIP("C++17 std::filesystem support not found.");
 #endif
 }
 
