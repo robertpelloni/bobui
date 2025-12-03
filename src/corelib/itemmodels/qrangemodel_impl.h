@@ -1656,6 +1656,13 @@ public:
         return this->itemModel().QAbstractItemModel::roleNames();
     }
 
+    template <typename Fn, std::size_t ...Is>
+    static bool forEachTupleElement(const row_type &row, Fn &&fn, std::index_sequence<Is...>)
+    {
+        using std::get;
+        return (std::forward<Fn>(fn)(QRangeModelDetails::pointerTo(get<Is>(row))) && ...);
+    }
+
     template <typename Fn>
     bool forEachColumn(const row_type &row, int rowIndex, const QModelIndex &parent, Fn &&fn) const
     {
@@ -1664,17 +1671,16 @@ public:
         const auto &model = this->itemModel();
         if constexpr (one_dimensional_range) {
             return fn(model.index(rowIndex, 0, parent), pointerTo(row));
-        } else if constexpr (dynamicColumns()) {
+        } else if constexpr (dynamicColumns() || QRangeModelDetails::array_like_v<row_type>) {
             int columnIndex = -1;
             return std::all_of(begin(row), end(row), [&](const auto &item) {
                 return fn(model.index(rowIndex, ++columnIndex, parent), pointerTo(item));
             });
-        } else { // tuple-like
-            int columnIndex = -1;
-            return std::apply([fn = std::forward<Fn>(fn), &model, rowIndex, &columnIndex, parent]
-                              (const auto &...item) {
-                return (fn(model.index(rowIndex, ++columnIndex, parent), pointerTo(item)) && ...);
-            }, row);
+        } else { // tuple-like (but not necessarily std::tuple, so can't use std::apply)
+            int column = -1;
+            return forEachTupleElement(row, [&column, &fn, &model, &rowIndex, &parent](QObject *item){
+                return std::forward<Fn>(fn)(model.index(rowIndex, ++column, parent), item);
+            }, std::make_index_sequence<static_column_count>());
         }
     }
 
@@ -2635,7 +2641,7 @@ protected:
                 return false;
             Q_ASSERT(QRangeModelDetails::isValid(row));
             const auto &children = this->protocol().childRows(QRangeModelDetails::refTo(row));
-            if (!autoConnectPropertiesRange(children,
+            if (!autoConnectPropertiesRange(QRangeModelDetails::refTo(children),
                                             this->itemModel().index(rowIndex, 0, parent))) {
                 return false;
             }

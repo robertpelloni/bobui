@@ -959,6 +959,29 @@ void tst_QRangeModel::autoConnectPolicy()
         QCOMPARE(dataChangedSpy.at(0).at(1).value<QModelIndex>(), child01Index);
         QCOMPARE(dataChangedSpy.at(0).at(2), QVariant::fromValue(QList{Qt::UserRole + 1}));
     }();
+
+    // build tests
+    { // make sure we don't kill the compiler with recursive templates
+        QList<std::array<Object *, 1000000>> wideList;
+        QRangeModel model(wideList);
+    }
+
+    { // work with custom tuple types
+        QList<ObjectRow> objectRows;
+        QRangeModel model(objectRows);
+    }
+
+    { // correctly resolve optional children
+        struct Protocol {
+            ObjectRow *parentRow(const ObjectRow &) const { return nullptr; }
+            const auto &childRows(const ObjectRow &) const { return emptyRow; }
+
+            std::optional<std::vector<ObjectRow>> emptyRow = std::nullopt;
+        };
+        std::vector<ObjectRow> objectTree;
+        QRangeModel model(objectTree, Protocol{});
+        model.setAutoConnectPolicy(QRangeModel::AutoConnectPolicy::Full);
+    }
 }
 
 void tst_QRangeModel::dimensions()

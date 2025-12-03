@@ -145,6 +145,19 @@ private:
     int m_number = -1;
 };
 
+struct ObjectRow
+{
+    std::array<Object *, 5> m_objects = {};
+
+    template <std::size_t I> // read-only is enough for this
+    friend decltype(auto) get(const ObjectRow &row) { return row.m_objects[I]; }
+};
+
+namespace std {
+    template <> struct tuple_size<ObjectRow> : std::integral_constant<std::size_t, 5> {};
+    template <std::size_t I> struct tuple_element<I, ObjectRow> { using type = Object *; };
+}
+
 // a class that can be both and requires disambiguation
 class MetaObjectTuple : public QObject
 {
