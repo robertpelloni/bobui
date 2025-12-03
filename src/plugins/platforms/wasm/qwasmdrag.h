@@ -41,7 +41,7 @@ public:
 private:
     struct DragState;
 
-    std::unique_ptr<DragState> m_dragState;
+    std::shared_ptr<DragState> m_dragState;
 };
 
 QT_END_NAMESPACE

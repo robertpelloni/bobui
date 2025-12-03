@@ -174,19 +174,21 @@ void QWasmDrag::onNativeDrop(DragEvent *event)
     // files, but the browser expects that accepted state is set before any
     // async calls.
     event->acceptDrop();
+    std::shared_ptr<DragState> dragState = m_dragState;
 
-    const auto dropCallback = [&m_dragState = m_dragState, wasmWindow, targetWindowPos,
+    const auto dropCallback = [dragState, wasmWindow, targetWindowPos,
         actions, mouseButton, modifiers](QMimeData *mimeData) {
-
-        auto dropResponse = std::make_shared<QPlatformDropQtResponse>(true, Qt::DropAction::CopyAction);
-        *dropResponse = QWindowSystemInterface::handleDrop(wasmWindow->window(), mimeData,
+        if (mimeData) {
+            auto dropResponse = std::make_shared<QPlatformDropQtResponse>(true, Qt::DropAction::CopyAction);
+            *dropResponse = QWindowSystemInterface::handleDrop(wasmWindow->window(), mimeData,
                                                            targetWindowPos, actions,
                                                            mouseButton, modifiers);
 
-        if (dropResponse->isAccepted())
-            m_dragState->dropAction = dropResponse->acceptedAction();
+            if (dragState && dropResponse->isAccepted())
+                dragState->dropAction = dropResponse->acceptedAction();
 
-        delete mimeData;
+            delete mimeData;
+        }
     };
 
      event->dataTransfer.toMimeDataWithFile(dropCallback);
