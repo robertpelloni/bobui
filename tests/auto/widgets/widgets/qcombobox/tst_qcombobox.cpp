@@ -3572,6 +3572,7 @@ void tst_QComboBox::popupPositionAfterStyleChange()
     QFrame *container = box.findChild<QComboBoxPrivateContainer *>();
     QVERIFY(container);
     QVERIFY(QTest::qWaitForWindowExposed(container));
+    container->resize(80, 80);
 
     // Select the last menu item, which will close the popup. This item is then expected
     // to be centered on top of the combobox the next time the popup opens.
