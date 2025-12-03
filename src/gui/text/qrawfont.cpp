@@ -224,7 +224,7 @@ void QRawFont::loadFromData(const QByteArray &fontData,
 
    \since 6.11
 */
-int QRawFont::glyphCount() const
+quint32 QRawFont::glyphCount() const
 {
     return d->isValid() ? d->fontEngine->glyphCount() : 0;
 }

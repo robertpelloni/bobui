@@ -55,7 +55,7 @@ public:
     inline bool operator!=(const QRawFont &other) const
     { return !operator==(other); }
 
-    int glyphCount() const;
+    quint32 glyphCount() const;
 
     QString familyName() const;
     QString styleName() const;
