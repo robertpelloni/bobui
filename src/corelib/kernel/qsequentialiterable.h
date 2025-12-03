@@ -9,12 +9,20 @@
 
 QT_BEGIN_NAMESPACE
 
-#if QT_DEPRECATED_SINCE(6, 13)
+#if QT_DEPRECATED_SINCE(6, 15)
 QT_WARNING_PUSH
 QT_WARNING_DISABLE_DEPRECATED
 
+#if defined(Q_CC_GNU_ONLY) && Q_CC_GNU < 1300
+    // GCC < 13 doesn't accept both deprecation and visibility on the same class
+    #define QT_CORE_DEPRECATED_EXPORT_VERSION_X_6_15(text) Q_CORE_EXPORT
+#else
+    #define QT_CORE_DEPRECATED_EXPORT_VERSION_X_6_15(text) \
+        Q_CORE_EXPORT QT_DEPRECATED_VERSION_X_6_15(text)
+#endif
+
 class
-QT_DEPRECATED_VERSION_X_6_13("Use QMetaSequence::Iterable::Iterator instead.")
+QT_CORE_DEPRECATED_EXPORT_VERSION_X_6_15("Use QMetaSequence::Iterable::Iterator instead.")
 QSequentialIterator : public QIterator<QMetaSequence>
 {
 public:
@@ -26,12 +34,12 @@ public:
         : QIterator(std::move(it))
     {}
 
-    Q_CORE_EXPORT QVariantRef<QSequentialIterator> operator*() const;
-    Q_CORE_EXPORT QVariantPointer<QSequentialIterator> operator->() const;
+    QVariantRef<QSequentialIterator> operator*() const;
+    QVariantPointer<QSequentialIterator> operator->() const;
 };
 
 class
-QT_DEPRECATED_VERSION_X_6_13("Use QMetaSequence::Iterable::ConstIterator instead.")
+QT_CORE_DEPRECATED_EXPORT_VERSION_X_6_15("Use QMetaSequence::Iterable::ConstIterator instead.")
 QSequentialConstIterator : public QConstIterator<QMetaSequence>
 {
 public:
@@ -43,12 +51,12 @@ public:
         : QConstIterator(std::move(it))
     {}
 
-    Q_CORE_EXPORT QVariant operator*() const;
-    Q_CORE_EXPORT QVariantConstPointer operator->() const;
+    QVariant operator*() const;
+    QVariantConstPointer operator->() const;
 };
 
 class
-QT_DEPRECATED_VERSION_X_6_13("Use QMetaSequence::Iterable instead.")
+QT_CORE_DEPRECATED_EXPORT_VERSION_X_6_15("Use QMetaSequence::Iterable instead.")
 QSequentialIterable : public QIterable<QMetaSequence>
 {
 public:
@@ -118,14 +126,14 @@ public:
     iterator mutableBegin() { return iterator(QIterable::mutableBegin()); }
     iterator mutableEnd() { return iterator(QIterable::mutableEnd()); }
 
-    Q_CORE_EXPORT QVariant at(qsizetype idx) const;
-    Q_CORE_EXPORT void set(qsizetype idx, const QVariant &value);
+    QVariant at(qsizetype idx) const;
+    void set(qsizetype idx, const QVariant &value);
 
     enum Position { Unspecified, AtBegin, AtEnd };
-    Q_CORE_EXPORT void addValue(const QVariant &value, Position position = Unspecified);
-    Q_CORE_EXPORT void removeValue(Position position = Unspecified);
+    void addValue(const QVariant &value, Position position = Unspecified);
+    void removeValue(Position position = Unspecified);
 
-    Q_CORE_EXPORT QMetaType valueMetaType() const;
+    QMetaType valueMetaType() const;
 };
 
 template<>
@@ -158,8 +166,10 @@ Q_DECLARE_TYPEINFO(QSequentialIterable, Q_RELOCATABLE_TYPE);
 Q_DECLARE_TYPEINFO(QSequentialIterable::iterator, Q_RELOCATABLE_TYPE);
 Q_DECLARE_TYPEINFO(QSequentialIterable::const_iterator, Q_RELOCATABLE_TYPE);
 
+#undef QT_CORE_DEPRECATED_EXPORT_VERSION_X_6_15
+
 QT_WARNING_POP
-#endif // QT_DEPRECATED_SINCE(6, 13)
+#endif // QT_DEPRECATED_SINCE(6, 15)
 
 QT_END_NAMESPACE
 

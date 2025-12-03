@@ -9,12 +9,20 @@
 
 QT_BEGIN_NAMESPACE
 
-#if QT_DEPRECATED_SINCE(6, 13)
+#if QT_DEPRECATED_SINCE(6, 15)
 QT_WARNING_PUSH
 QT_WARNING_DISABLE_DEPRECATED
 
+#if defined(Q_CC_GNU_ONLY) && Q_CC_GNU < 1300
+    // GCC < 13 doesn't accept both deprecation and visibility on the same class
+    #define QT_CORE_DEPRECATED_EXPORT_VERSION_X_6_15(text) Q_CORE_EXPORT
+#else
+    #define QT_CORE_DEPRECATED_EXPORT_VERSION_X_6_15(text) \
+        Q_CORE_EXPORT QT_DEPRECATED_VERSION_X_6_15(text)
+#endif
+
 class
-QT_DEPRECATED_VERSION_X_6_13("Use QMetaAssociation::Iterable::Iterator instead.")
+QT_CORE_DEPRECATED_EXPORT_VERSION_X_6_15("Use QMetaAssociation::Iterable::Iterator instead.")
 QAssociativeIterator : public QIterator<QMetaAssociation>
 {
 public:
@@ -27,15 +35,15 @@ public:
         : QIterator(std::move(it))
     {}
 
-    Q_CORE_EXPORT QVariant key() const;
-    Q_CORE_EXPORT QVariantRef<QAssociativeIterator> value() const;
+    QVariant key() const;
+    QVariantRef<QAssociativeIterator> value() const;
 
-    Q_CORE_EXPORT QVariantRef<QAssociativeIterator> operator*() const;
-    Q_CORE_EXPORT QVariantPointer<QAssociativeIterator> operator->() const;
+    QVariantRef<QAssociativeIterator> operator*() const;
+    QVariantPointer<QAssociativeIterator> operator->() const;
 };
 
 class
-QT_DEPRECATED_VERSION_X_6_13("Use QMetaAssociation::Iterable::ConstIterator instead.")
+QT_CORE_DEPRECATED_EXPORT_VERSION_X_6_15("Use QMetaAssociation::Iterable::ConstIterator instead.")
 QAssociativeConstIterator : public QConstIterator<QMetaAssociation>
 {
 public:
@@ -48,15 +56,15 @@ public:
         : QConstIterator(std::move(it))
     {}
 
-    Q_CORE_EXPORT QVariant key() const;
-    Q_CORE_EXPORT QVariant value() const;
+    QVariant key() const;
+    QVariant value() const;
 
-    Q_CORE_EXPORT QVariant operator*() const;
-    Q_CORE_EXPORT QVariantConstPointer operator->() const;
+    QVariant operator*() const;
+    QVariantConstPointer operator->() const;
 };
 
 class
-QT_DEPRECATED_VERSION_X_6_13("Use QMetaAssociation::Iterable instead.")
+QT_CORE_DEPRECATED_EXPORT_VERSION_X_6_15("Use QMetaAssociation::Iterable instead.")
 QAssociativeIterable : public QIterable<QMetaAssociation>
 {
 public:
@@ -125,16 +133,16 @@ public:
     iterator mutableBegin() { return iterator(QIterable::mutableBegin()); }
     iterator mutableEnd() { return iterator(QIterable::mutableEnd()); }
 
-    Q_CORE_EXPORT const_iterator find(const QVariant &key) const;
+    const_iterator find(const QVariant &key) const;
     const_iterator constFind(const QVariant &key) const { return find(key); }
-    Q_CORE_EXPORT iterator mutableFind(const QVariant &key);
+    iterator mutableFind(const QVariant &key);
 
-    Q_CORE_EXPORT bool containsKey(const QVariant &key);
-    Q_CORE_EXPORT void insertKey(const QVariant &key);
-    Q_CORE_EXPORT void removeKey(const QVariant &key);
+    bool containsKey(const QVariant &key);
+    void insertKey(const QVariant &key);
+    void removeKey(const QVariant &key);
 
-    Q_CORE_EXPORT QVariant value(const QVariant &key) const;
-    Q_CORE_EXPORT void setValue(const QVariant &key, const QVariant &mapped);
+    QVariant value(const QVariant &key) const;
+    void setValue(const QVariant &key, const QVariant &mapped);
 };
 
 template<>
@@ -176,8 +184,10 @@ Q_DECLARE_TYPEINFO(QAssociativeIterable, Q_RELOCATABLE_TYPE);
 Q_DECLARE_TYPEINFO(QAssociativeIterable::iterator, Q_RELOCATABLE_TYPE);
 Q_DECLARE_TYPEINFO(QAssociativeIterable::const_iterator, Q_RELOCATABLE_TYPE);
 
+#undef QT_CORE_DEPRECATED_EXPORT_VERSION_X_6_15
+
 QT_WARNING_POP
-#endif // QT_DEPRECATED_SINCE(6, 13)
+#endif // QT_DEPRECATED_SINCE(6, 15)
 
 QT_END_NAMESPACE
 
