@@ -203,6 +203,12 @@ void QWasmWindow::registerEventHandlers()
             QWasmDrag::instance()->onNativeDragFinished(&dragEvent);
         }
     );
+    m_dragEnterCallback = QWasmEventHandler(m_window, "dragenter",
+        [this](emscripten::val event) {
+            DragEvent dragEvent(EventType::DragEnter, event, window());
+            QWasmDrag::instance()->onNativeDragEnter(&dragEvent);
+        }
+    );
     m_dragLeaveCallback = QWasmEventHandler(m_window, "dragleave",
         [this](emscripten::val event) {
             DragEvent dragEvent(EventType::DragLeave, event, window());

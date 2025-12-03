@@ -17,6 +17,7 @@
 #include <QFile>
 
 #include <private/qshapedpixmapdndwindow_p.h>
+#include <private/qdnd_p.h>
 
 #include <functional>
 #include <string>
@@ -198,10 +199,28 @@ void QWasmDrag::onNativeDragFinished(DragEvent *event)
     m_dragState->quitEventLoopClosure();
 }
 
+void QWasmDrag::onNativeDragEnter(DragEvent *event)
+{
+    event->webEvent.call<void>("preventDefault");
+
+    // Already dragging
+    if (QDragManager::self() && QDragManager::self()->object())
+        return;
+
+    // Event coming from external browser, start a drag
+    if (m_dragState)
+        m_dragState->dropAction = event->dropAction;
+
+    QDrag *drag = new QDrag(this);
+    drag->setMimeData(new QMimeData());
+    drag->exec(Qt::CopyAction | Qt::MoveAction, Qt::CopyAction);
+}
+
 void QWasmDrag::onNativeDragLeave(DragEvent *event)
 {
     event->webEvent.call<void>("preventDefault");
-    m_dragState->dropAction = event->dropAction;
+    if (m_dragState)
+        m_dragState->dropAction = event->dropAction;
     event->dataTransfer.setDropAction(Qt::DropAction::IgnoreAction);
 }
 

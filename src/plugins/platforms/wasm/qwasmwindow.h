@@ -195,6 +195,7 @@ private:
     QWasmEventHandler m_dragStartCallback;
     QWasmEventHandler m_dragEndCallback;
     QWasmEventHandler m_dropCallback;
+    QWasmEventHandler m_dragEnterCallback;
     QWasmEventHandler m_dragLeaveCallback;
 
     QWasmEventHandler m_wheelEventCallback;
