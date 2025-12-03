@@ -247,6 +247,8 @@ struct Q_CORE_EXPORT QMetaObject
 
     QMetaType metaType() const;
 
+    const char *metaObjectHash() const;
+
     int methodOffset() const;
     int enumeratorOffset() const;
     int propertyOffset() const;

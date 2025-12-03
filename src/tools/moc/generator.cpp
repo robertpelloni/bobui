@@ -80,14 +80,16 @@ QT_FOR_EACH_STATIC_TYPE(RETURN_METATYPENAME_STRING)
 
  Generator::Generator(Moc *moc, const ClassDef *classDef, const QList<QByteArray> &metaTypes,
                       const QHash<QByteArray, QByteArray> &knownQObjectClasses,
-                      const QHash<QByteArray, QByteArray> &knownGadgets, FILE *outfile,
-                      bool requireCompleteTypes)
+                      const QHash<QByteArray, QByteArray> &knownGadgets,
+                      const QHash<QByteArray, QByteArray> &hashes,
+                      FILE *outfile, bool requireCompleteTypes)
      : parser(moc),
        out(outfile),
        cdef(classDef),
        metaTypes(metaTypes),
        knownQObjectClasses(knownQObjectClasses),
        knownGadgets(knownGadgets),
+       hashes(hashes),
        requireCompleteTypes(requireCompleteTypes)
  {
      if (cdef->superclassList.size())
@@ -232,6 +234,7 @@ void Generator::generateCode()
 // Register all strings used in data section
 //
     strreg(cdef->qualified);
+    strreg(hashes[cdef->qualified]);
     registerClassInfoStrings();
     registerFunctionStrings(cdef->signalList);
     registerFunctionStrings(cdef->slotList);
@@ -290,6 +293,8 @@ void Generator::generateCode()
     addEnums();
     fprintf(out, "    };\n");
 
+    fprintf(out, "    uint qt_metaObjectHashIndex = %d;\n", stridx(hashes[cdef->qualified]));
+
     const char *uintDataParams = "";
     if (isConstructible || !cdef->classInfoList.isEmpty()) {
         if (isConstructible) {
@@ -322,7 +327,7 @@ void Generator::generateCode()
         if (!requireCompleteness)
             tagType = "qt_meta_tag_" + qualifiedClassNameIdentifier +  "_t";
         fprintf(out, "    return QtMocHelpers::metaObjectData<%s, %s>(%s, qt_stringData,\n"
-                     "            qt_methods, qt_properties, qt_enums%s);\n"
+                     "            qt_methods, qt_properties, qt_enums, qt_metaObjectHashIndex%s);\n"
                      "}\n",
                 ownType, tagType.constData(), metaObjectFlags, uintDataParams);
     }

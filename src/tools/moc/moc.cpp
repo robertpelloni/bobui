@@ -1301,8 +1301,8 @@ void Moc::generate(FILE *out, FILE *jsonOutput)
 
     fputs("", out);
     for (const ClassDef &def : std::as_const(classList)) {
-        Generator generator(this, &def, metaTypes, knownQObjectClasses, knownGadgets, out,
-                            requireCompleteTypes);
+        Generator generator(this, &def, metaTypes, knownQObjectClasses, knownGadgets,
+                            metaObjectHashes, out, requireCompleteTypes);
         generator.generateCode();
 
         // generator.generateCode() should have already registered all strings
