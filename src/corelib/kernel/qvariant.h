@@ -983,12 +983,12 @@ private:
 };
 }
 
-#if QT_DEPRECATED_SINCE(6, 13)
+#if QT_DEPRECATED_SINCE(6, 15)
 QT_WARNING_PUSH
 QT_WARNING_DISABLE_DEPRECATED
 
 template<typename Pointer> class
-QT_DEPRECATED_VERSION_X_6_13("Use QVariant::Reference instead.")
+QT_DEPRECATED_VERSION_X_6_15("Use QVariant::Reference instead.")
 QVariantRef
 {
 private:
@@ -1014,7 +1014,7 @@ public:
 };
 
 class
-QT_DEPRECATED_VERSION_X_6_13("Use QVariant::ConstPointer instead.")
+QT_DEPRECATED_VERSION_X_6_15("Use QVariant::ConstPointer instead.")
 QVariantConstPointer
 {
 private:
@@ -1028,7 +1028,7 @@ public:
 };
 
 template<typename Pointer> class
-QT_DEPRECATED_VERSION_X_6_13("Use QVariant::Pointer instead.")
+QT_DEPRECATED_VERSION_X_6_15("Use QVariant::Pointer instead.")
 QVariantPointer
 {
 private:
@@ -1041,7 +1041,7 @@ public:
 };
 
 QT_WARNING_POP
-#endif // QT_DEPRECATED_SINCE(6, 13)
+#endif // QT_DEPRECATED_SINCE(6, 15)
 
 QT_END_NAMESPACE
 
