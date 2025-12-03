@@ -5319,10 +5319,6 @@ void tst_QVariant::iterateContainerElements()
         QMetaAssociation::Iterable::const_iterator end = iter.end();
         QCOMPARE(*(++mapping.begin()), (*(it + 1)).toString());
 
-        for (int i = 0, end = mapping.size(); i != end; ++i) {
-            QCOMPARE(*(std::next(mapping.begin(), i)), it[i].toString());
-        }
-
         for (int i = 0; it != end; ++it, ++i) {
             QCOMPARE(*(std::next(mapping.begin(), i)), (*it).toString());
         }
@@ -5414,11 +5410,6 @@ void tst_QVariant::modifyContainerElements()
         QMetaAssociation::Iterable::iterator end = iter.mutableEnd();
         *(it + 1) = QStringLiteral("four");
         QCOMPARE(*(++mapping.begin()), "four");
-
-        for (int i = 0, end = mapping.size(); i != end; ++i) {
-            it[i] = QString::number(i);
-            QCOMPARE(*std::next(mapping.begin(), i), QString::number(i));
-        }
 
         for (int i = 0; it != end; ++it, ++i) {
             *it = QString::number(i + 10);

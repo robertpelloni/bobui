@@ -464,13 +464,6 @@ QMetaType QMetaAssociation::mappedMetaType() const
 */
 
 /*!
-    \fn QVariant::Reference<QMetaAssociation::Iterable::Iterator> QMetaAssociation::Iterable::Iterator::operator[](qsizetype n) const
-    Returns the item offset from the current one by \a n, converted to a
-    QVariant::Reference. The resulting QVariant::Reference resolves to the
-    mapped value if there is one, or to the key value if not.
-*/
-
-/*!
     \fn QVariant QMetaAssociation::Iterable::ConstIterator::key() const
     Returns the key this iterator points to.
 */
@@ -492,13 +485,6 @@ QMetaType QMetaAssociation::mappedMetaType() const
     Returns the current item, converted to a QVariant::ConstPointer. The
     QVariant::ConstPointer will resolve to the mapped value at the current
     iterator if there is one, or otherwise the key.
-*/
-
-/*!
-    \fn QVariant QMetaAssociation::Iterable::ConstIterator::operator[](qsizetype n) const
-    Returns the item offset from the current one by \a n, converted to a
-    QVariant. The returned value is the mapped value at the current iterator if
-    there is one, or otherwise the key.
 */
 
 QT_END_NAMESPACE
