@@ -248,55 +248,14 @@ public:
         Unspecified, AtBegin, AtEnd
     };
 
-    QT_DEPRECATED_VERSION_X_6_11("Use append() or prepend() instead.")
     void addValue(const QVariant &value, Position position = Unspecified)
-    {
-        const QMetaSequence meta = metaContainer();
-        QtPrivate::QVariantTypeCoercer coercer;
-        const void *valuePtr = coercer.coerce(value, meta.valueMetaType());
+            Q_DECL_EQ_DELETE_X("Use append() or prepend() instead.");
 
-        switch (position) {
-        case AtBegin:
-            if (meta.canAddValueAtBegin())
-                meta.addValueAtBegin(mutableIterable(), valuePtr);
-            break;
-        case AtEnd:
-            if (meta.canAddValueAtEnd())
-                meta.addValueAtEnd(mutableIterable(), valuePtr);
-            break;
-        case Unspecified:
-            if (meta.canAddValue())
-                meta.addValue(mutableIterable(), valuePtr);
-            break;
-        }
-    }
-
-    QT_DEPRECATED_VERSION_X_6_11("Use removeLast() or removeFirst() instead.")
     void removeValue(Position position = Unspecified)
-    {
-        const QMetaSequence meta = metaContainer();
+            Q_DECL_EQ_DELETE_X("Use removeLast() or removeFirst() instead.");
 
-        switch (position) {
-        case AtBegin:
-            if (meta.canRemoveValueAtBegin())
-                meta.removeValueAtBegin(mutableIterable());
-            break;
-        case AtEnd:
-            if (meta.canRemoveValueAtEnd())
-                meta.removeValueAtEnd(mutableIterable());
-            break;
-        case Unspecified:
-            if (meta.canRemoveValue())
-                meta.removeValue(mutableIterable());
-            break;
-        }
-    }
-
-    QT_DEPRECATED_VERSION_X_6_11("Use QMetaSequence::valueMetaType() instead.")
     QMetaType valueMetaType() const
-    {
-        return metaContainer().valueMetaType();
-    }
+            Q_DECL_EQ_DELETE_X("Use QMetaSequence::valueMetaType() instead.");
 
     QT_WARNING_POP
 #endif // QT_DEPRECATED_SINCE(6, 11)
