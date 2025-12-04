@@ -377,7 +377,6 @@ void QWaylandWindow::resetFrameCallback()
             mFrameCallback = nullptr;
         }
         mFrameCallbackElapsedTimer.invalidate();
-        mWaitingForFrameCallback = false;
         mFrameSyncWait.wakeAll();
     }
     if (mFrameCallbackCheckIntervalTimerId != -1) {
@@ -850,16 +849,13 @@ const wl_callback_listener QWaylandWindow::callbackListener = {
 void QWaylandWindow::handleFrameCallback(wl_callback* callback)
 {
     QMutexLocker locker(&mFrameSyncMutex);
-    if (!mFrameCallback) {
+    if (mFrameCallback != callback) {
         // This means the callback is already unset by QWaylandWindow::reset.
         // The wl_callback object will be destroyed there too.
         return;
     }
-    Q_ASSERT(callback == mFrameCallback);
-    wl_callback_destroy(callback);
+    wl_callback_destroy(mFrameCallback);
     mFrameCallback = nullptr;
-
-    mWaitingForFrameCallback = false;
     mFrameCallbackElapsedTimer.invalidate();
 
     // The rest can wait until we can run it on the correct thread
@@ -888,15 +884,15 @@ bool QWaylandWindow::waitForFrameSync(int timeout)
     QMutexLocker locker(&mFrameSyncMutex);
 
     QDeadlineTimer deadline(timeout);
-    while (mWaitingForFrameCallback && mFrameSyncWait.wait(&mFrameSyncMutex, deadline)) { }
+    while (mFrameCallback && mFrameSyncWait.wait(&mFrameSyncMutex, deadline)) { }
 
-    if (mWaitingForFrameCallback) {
+    if (mFrameCallback) {
         qCDebug(lcWaylandBackingstore) << "Didn't receive frame callback in time, window should now be inexposed";
         mFrameCallbackTimedOut = true;
         QMetaObject::invokeMethod(this, &QWaylandWindow::updateExposure, Qt::QueuedConnection);
     }
 
-    return !mWaitingForFrameCallback;
+    return !mFrameCallback;
 }
 
 QMargins QWaylandWindow::frameMargins() const
@@ -1765,7 +1761,7 @@ void QWaylandWindow::requestUpdate()
     // If we have a frame callback all is good and will be taken care of there
     {
         QMutexLocker locker(&mFrameSyncMutex);
-        if (mWaitingForFrameCallback)
+        if (mFrameCallback)
             return;
     }
 
@@ -1775,7 +1771,7 @@ void QWaylandWindow::requestUpdate()
         // Things might have changed in the meantime
         {
             QMutexLocker locker(&mFrameSyncMutex);
-            if (mWaitingForFrameCallback)
+            if (mFrameCallback)
                 return;
         }
         if (hasPendingUpdateRequest())
@@ -1797,7 +1793,7 @@ void QWaylandWindow::handleUpdate()
         return;
 
     QMutexLocker locker(&mFrameSyncMutex);
-    if (mWaitingForFrameCallback)
+    if (mFrameCallback)
         return;
 
     struct ::wl_surface *wrappedSurface = reinterpret_cast<struct ::wl_surface *>(wl_proxy_create_wrapper(mSurface->object()));
@@ -1805,14 +1801,13 @@ void QWaylandWindow::handleUpdate()
     mFrameCallback = wl_surface_frame(wrappedSurface);
     wl_proxy_wrapper_destroy(wrappedSurface);
     wl_callback_add_listener(mFrameCallback, &QWaylandWindow::callbackListener, this);
-    mWaitingForFrameCallback = true;
 
     // Start a timer for handling the case when the compositor stops sending frame callbacks.
     if (mFrameCallbackTimeout > 0) {
         QMetaObject::invokeMethod(this, [this] {
             QMutexLocker locker(&mFrameSyncMutex);
 
-            if (mWaitingForFrameCallback) {
+            if (mFrameCallback) {
                 if (mFrameCallbackCheckIntervalTimerId < 0)
                     mFrameCallbackCheckIntervalTimerId = startTimer(mFrameCallbackTimeout);
                 mFrameCallbackElapsedTimer.start();

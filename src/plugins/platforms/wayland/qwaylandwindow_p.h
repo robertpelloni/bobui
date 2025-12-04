@@ -317,7 +317,6 @@ protected:
     int mFrameCallbackCheckIntervalTimerId = -1;
     QAtomicInt mWaitingForUpdateDelivery = false;
 
-    bool mWaitingForFrameCallback = false; // Protected by mFrameSyncMutex
     QElapsedTimer mFrameCallbackElapsedTimer; // Protected by mFrameSyncMutex
     struct ::wl_callback *mFrameCallback = nullptr; // Protected by mFrameSyncMutex
     QMutex mFrameSyncMutex;
