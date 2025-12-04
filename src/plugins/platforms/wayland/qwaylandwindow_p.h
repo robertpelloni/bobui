@@ -334,7 +334,6 @@ protected:
     int mFrameCallbackTimeout = 100;
     QVariantMap m_properties;
 
-    bool mSentInitialResize = false;
     QPoint mOffset;
     std::optional<qreal> mScale = std::nullopt;
 

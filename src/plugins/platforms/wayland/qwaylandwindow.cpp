@@ -513,7 +513,6 @@ void QWaylandWindow::setGeometry(const QRect &r)
             mWindowDecoration->update();
 
         QWindowSystemInterface::handleGeometryChange<QWindowSystemInterface::SynchronousDelivery>(window(), geometry());
-        mSentInitialResize = true;
     }
 
     // Wayland has no concept of areas being exposed or not, only the entire window, when our geometry changes, we need to flag the new area as exposed
