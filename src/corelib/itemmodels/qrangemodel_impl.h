@@ -23,6 +23,7 @@
 #include <QtCore/qmap.h>
 #include <QtCore/qscopedvaluerollback.h>
 #include <QtCore/qset.h>
+#include <QtCore/qvarlengtharray.h>
 
 #include <algorithm>
 #include <functional>
@@ -1217,73 +1218,34 @@ public:
     QMap<int, QVariant> itemData(const QModelIndex &index) const
     {
         QMap<int, QVariant> result;
-        bool tried = false;
-        const auto readItemData = [this, &index, &result, &tried](const auto &value){
-            Q_UNUSED(this);
-            Q_UNUSED(index);
-            using value_type = q20::remove_cvref_t<decltype(value)>;
-            using multi_role = QRangeModelDetails::is_multi_role<value_type>;
-            using wrapped_value_type = QRangeModelDetails::wrapped_t<value_type>;
-
-            if constexpr (QRangeModelDetails::item_access<wrapped_value_type>()) {
-                using ItemAccess = QRangeModelDetails::QRangeModelItemAccess<wrapped_value_type>;
-                tried = true;
-                const auto roles = this->itemModel().roleNames().keys();
-                for (auto &role : roles) {
-                    if (isRangeModelRole(role))
-                        continue;
-                    QVariant data = ItemAccess::readRole(value, role);
-                    if (data.isValid())
-                        result[role] = std::move(data);
-                }
-            } else if constexpr (multi_role()) {
-                tried = true;
-                if constexpr (std::is_convertible_v<value_type, decltype(result)>) {
-                    result = value;
-                } else {
-                    const auto roleNames = [this]() -> QHash<int, QByteArray> {
-                        Q_UNUSED(this);
-                        if constexpr (!multi_role::int_key)
-                            return this->itemModel().roleNames();
-                        else
-                            return {};
-                    }();
-                    for (auto it = std::begin(value); it != std::end(value); ++it) {
-                        const int role = [&roleNames, key = QRangeModelDetails::key(it)]() {
-                            Q_UNUSED(roleNames);
-                            if constexpr (multi_role::int_key)
-                                return int(key);
-                            else
-                                return roleNames.key(key.toUtf8(), -1);
-                        }();
-
-                        if (role != -1 && role != Qt::RangeModelDataRole && role != Qt::RangeModelAdapterRole)
-                            result.insert(role, QRangeModelDetails::value(it));
-                    }
-                }
-            } else if constexpr (has_metaobject<value_type>) {
-                if (row_traits::fixed_size() <= 1) {
-                    tried = true;
-                    const auto roleNames = this->itemModel().roleNames();
-                    const auto end = roleNames.keyEnd();
-                    for (auto it = roleNames.keyBegin(); it != end; ++it) {
-                        const int role = *it;
-                        if (isRangeModelRole(role))
-                            continue;
-                        QVariant data = readRole(index, role, QRangeModelDetails::pointerTo(value));
-                        if (data.isValid())
-                            result[role] = std::move(data);
-                    }
-                }
-            }
-        };
 
         if (index.isValid()) {
-            readAt(index, readItemData);
+            bool tried = false;
 
-            if (!tried) { // no multi-role item found
-                result = this->itemModel().QAbstractItemModel::itemData(index);
-                result.remove(Qt::RangeModelAdapterRole);
+            // optimisation for items backed by a QMap<int, QVariant> or equivalent
+            readAt(index, [&result, &tried](const auto &value) {
+                if constexpr (std::is_convertible_v<decltype(value), decltype(result)>) {
+                    tried = true;
+                    result = value;
+                }
+            });
+            if (!tried) {
+                const auto roles = this->itemModel().roleNames().keys();
+                QVarLengthArray<QModelRoleData, 16> roleDataArray;
+                roleDataArray.reserve(roles.size());
+                for (auto role : roles) {
+                    if (isRangeModelRole(role))
+                        continue;
+                    roleDataArray.emplace_back(role);
+                }
+                QModelRoleDataSpan roleDataSpan(roleDataArray);
+                multiData(index, roleDataSpan);
+
+                for (auto &&roleData : std::move(roleDataSpan)) {
+                    QVariant data = roleData.data();
+                    if (data.isValid())
+                        result[roleData.role()] = std::move(data);
+                }
             }
         }
         return result;
