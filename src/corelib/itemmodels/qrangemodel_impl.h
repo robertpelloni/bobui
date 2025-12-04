@@ -1373,25 +1373,34 @@ public:
                 using multi_role = QRangeModelDetails::is_multi_role<value_type>;
 
                 auto setRangeModelDataRole = [&target, &data]{
-                    auto &targetRef = QRangeModelDetails::refTo(target);
                     constexpr auto targetMetaType = QMetaType::fromType<value_type>();
                     const auto dataMetaType = data.metaType();
                     constexpr bool isWrapped = QRangeModelDetails::is_wrapped<value_type>();
                     if constexpr (!std::is_copy_assignable_v<wrapped_value_type>) {
                         // we don't support replacing objects that are stored as raw pointers,
                         // as this makes object ownership very messy. But we can replace objects
-                        // stored in smart pointers.
-                        if constexpr (isWrapped && !std::is_pointer_v<value_type>
-                                      && std::is_copy_assignable_v<value_type>) {
-                            if (data.canConvert(targetMetaType)) {
-                                target = data.value<value_type>();
-                                return true;
+                        // stored in smart pointers, and we can initialize raw nullptr objects.
+                        if constexpr (isWrapped) {
+                            constexpr bool is_raw_pointer = std::is_pointer_v<value_type>;
+                            if constexpr (!is_raw_pointer && std::is_copy_assignable_v<value_type>) {
+                                if (data.canConvert(targetMetaType)) {
+                                    target = data.value<value_type>();
+                                    return true;
+                                }
+                            } else if constexpr (is_raw_pointer) {
+                                if (!QRangeModelDetails::isValid(target) && data.canConvert(targetMetaType)) {
+                                    target = data.value<value_type>();
+                                    return true;
+                                }
+                            } else {
+                                Q_UNUSED(target);
                             }
                         }
                         // Otherwise we have a move-only or polymorph type. fall through to
                         // error handling.
                     } else if constexpr (isWrapped) {
                         if (QRangeModelDetails::isValid(target)) {
+                            auto &targetRef = QRangeModelDetails::refTo(target);
                             // we need to get a wrapped value type out of the QVariant, which
                             // might carry a pointer. We have to try all alternatives.
                             if (const auto mt = QMetaType::fromType<wrapped_value_type>();
@@ -1405,10 +1414,10 @@ public:
                             }
                         }
                     } else if (targetMetaType == dataMetaType) {
-                        targetRef = data.value<value_type>();
+                        QRangeModelDetails::refTo(target) = data.value<value_type>();
                         return true;
                     } else if (dataMetaType.flags() & QMetaType::PointerToGadget) {
-                        targetRef = *data.value<value_type *>();
+                        QRangeModelDetails::refTo(target) = *data.value<value_type *>();
                         return true;
                     }
 #ifndef QT_NO_DEBUG
@@ -1463,6 +1472,13 @@ public:
             };
 
             success = writeAt(index, writeData);
+
+            if constexpr (itemsAreQObjects) {
+                if (success && isRangeModelRole(role) && this->autoConnectPolicy() == AutoConnectPolicy::Full) {
+                    if (QObject *item = data.value<QObject *>())
+                        Self::connectProperties(index, item, m_data.context, m_data.properties);
+                }
+            }
         }
         return success;
     }

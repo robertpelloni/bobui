@@ -2631,8 +2631,9 @@ public:
     auto &childRows() { return m_children; }
 
 private:
-    template <std::size_t I> // read-only is enough for this
-    friend decltype(auto) get(const ObjectTreeItem &row) { return row.m_objects[I]; }
+    template <std::size_t I, typename Item,
+        std::enable_if_t<std::is_same_v<q20::remove_cvref_t<Item>, ObjectTreeItem>, bool> = true>
+    friend decltype(auto) get(Item &&row) { return q23::forward_like<Item>(row.m_objects[I]); }
 
     ObjectTreeItem *m_parentRow = nullptr;
     std::optional<ObjectTree> m_children = std::nullopt;
@@ -2684,7 +2685,7 @@ void tst_QRangeModelAdapter::insertAutoConnectObjects()
     Object *newGrandChild = new Object;
     ObjectTreeItem newBranch(newChild);
     newBranch.childRows() = ObjectTree{
-        ObjectTreeItem(), // skip the first column
+        ObjectTreeItem(), // skip the first row to verify that we continue through nullptr
         ObjectTreeItem(newGrandChild),
         ObjectTreeItem()
     };
@@ -2698,9 +2699,11 @@ void tst_QRangeModelAdapter::insertAutoConnectObjects()
     QCOMPARE(dataChangedSpy.count(), 1);
     dataChangedSpy.clear();
 
-    // newGrandChild = new Object;
-    // adapter.at({0, 2, 0}, 0) = newGrandChild;
-    // newGrandChild->setString("0.2.0");
+    newGrandChild = new Object;
+    adapter.at({0, 2, 0}, 0) = newGrandChild;
+    QCOMPARE(dataChangedSpy.count(), 1);
+    newGrandChild->setString("0.2.0");
+    QCOMPARE(dataChangedSpy.count(), 2);
 }
 
 QTEST_MAIN(tst_QRangeModelAdapter)
