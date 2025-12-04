@@ -106,21 +106,6 @@ Q_DECLARE_TYPEINFO(QSpiTextRange, Q_RELOCATABLE_TYPE);
 typedef QList<QSpiTextRange> QSpiTextRangeList;
 typedef QMap <QString, QString> QSpiAttributeSet;
 
-enum QSpiAppUpdateType {
-    QSPI_APP_UPDATE_ADDED = 0,
-    QSPI_APP_UPDATE_REMOVED = 1
-};
-Q_DECLARE_TYPEINFO(QSpiAppUpdateType, Q_PRIMITIVE_TYPE);
-
-struct QSpiAppUpdate {
-    int type; /* Is an application added or removed */
-    QString address; /* D-Bus address of application added or removed */
-};
-Q_DECLARE_TYPEINFO(QSpiAppUpdate, Q_RELOCATABLE_TYPE);
-
-QDBusArgument &operator<<(QDBusArgument &argument, const QSpiAppUpdate &update);
-const QDBusArgument &operator>>(const QDBusArgument &argument, QSpiAppUpdate &update);
-
 struct QSpiDeviceEvent {
     unsigned int type;
     int id;
@@ -171,7 +156,6 @@ QT_DECL_METATYPE_EXTERN(QSpiRelationArray, /* not exported */)
 QT_DECL_METATYPE_EXTERN(QSpiTextRange, /* not exported */)
 QT_DECL_METATYPE_EXTERN(QSpiTextRangeList, /* not exported */)
 QT_DECL_METATYPE_EXTERN(QSpiAttributeSet, /* not exported */)
-QT_DECL_METATYPE_EXTERN(QSpiAppUpdate, /* not exported */)
 QT_DECL_METATYPE_EXTERN(QSpiDeviceEvent, /* not exported */)
 QT_DECL_METATYPE_EXTERN(QSpiMatchRule, /* not exported */)
 

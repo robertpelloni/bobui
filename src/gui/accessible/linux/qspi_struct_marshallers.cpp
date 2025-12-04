@@ -28,7 +28,6 @@ QT_IMPL_METATYPE_EXTERN(QSpiRelationArray)
 QT_IMPL_METATYPE_EXTERN(QSpiTextRange)
 QT_IMPL_METATYPE_EXTERN(QSpiTextRangeList)
 QT_IMPL_METATYPE_EXTERN(QSpiAttributeSet)
-QT_IMPL_METATYPE_EXTERN(QSpiAppUpdate)
 QT_IMPL_METATYPE_EXTERN(QSpiDeviceEvent)
 QT_IMPL_METATYPE_EXTERN(QSpiMatchRule)
 
@@ -134,23 +133,6 @@ const QDBusArgument &operator>>(const QDBusArgument &argument, QSpiEventListener
     return argument;
 }
 
-/* QSpiAppUpdate */
-/*---------------------------------------------------------------------------*/
-
-QDBusArgument &operator<<(QDBusArgument &argument, const QSpiAppUpdate &update) {
-    argument.beginStructure();
-    argument << update.type << update.address;
-    argument.endStructure();
-    return argument;
-}
-
-const QDBusArgument &operator>>(const QDBusArgument &argument, QSpiAppUpdate &update) {
-    argument.beginStructure();
-    argument >> update.type >> update.address;
-    argument.endStructure();
-    return argument;
-}
-
 /* QSpiRelationArrayEntry */
 /*---------------------------------------------------------------------------*/
 
@@ -245,7 +227,6 @@ void qSpiInitializeStructTypes()
     qDBusRegisterMetaType<QSpiEventListenerArray>();
     qDBusRegisterMetaType<QSpiDeviceEvent>();
     qDBusRegisterMetaType<QSpiMatchRule>();
-    qDBusRegisterMetaType<QSpiAppUpdate>();
     qDBusRegisterMetaType<QSpiRelationArrayEntry>();
     qDBusRegisterMetaType<QSpiRelationArray>();
 }
