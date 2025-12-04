@@ -757,10 +757,18 @@ public:
                     }
                 }
             } else {
-                oldRow = other;
+                oldRow = std::forward<R>(other);
             }
             this->m_adapter->emitDataChanged(this->m_index,
                                              this->m_index.siblingAtColumn(this->m_adapter->columnCount() - 1));
+            if constexpr (Impl::itemsAreQObjects) {
+                if (this->m_adapter->model()->autoConnectPolicy() == QRangeModel::AutoConnectPolicy::Full) {
+                    impl->autoConnectPropertiesInRow(oldRow, this->m_index.row(), this->m_index.parent());
+                    if constexpr (is_tree<Impl>)
+                        impl->autoConnectProperties(this->m_index);
+                }
+
+            }
         }
 
 #ifndef QT_NO_DATASTREAM
@@ -1046,6 +1054,15 @@ public:
                 impl->setParentRow(refTo(impl->childRange(storage.root())),
                                    pointerTo(impl->rowData(root)));
                 impl->endInsertRows();
+            }
+        }
+        if constexpr (Impl::itemsAreQObjects) {
+            if (model()->autoConnectPolicy() == QRangeModel::AutoConnectPolicy::Full) {
+                const auto begin = QRangeModelDetails::begin(refTo(oldRange));
+                const auto end = QRangeModelDetails::end(refTo(oldRange));
+                int rowIndex = 0;
+                for (auto it = begin; it != end; ++it, ++rowIndex)
+                    impl->autoConnectPropertiesInRow(*it, rowIndex, root);
             }
         }
     }

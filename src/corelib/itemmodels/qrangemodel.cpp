@@ -154,7 +154,7 @@ static bool connectPropertiesHelper(const QModelIndex &index, QObject *item, QOb
                                     const QHash<int, QMetaProperty> &properties)
 {
     if (!item)
-        return false;
+        return true;
     for (auto &&[role, property] : properties.asKeyValueRange()) {
         if (property.hasNotifySignal()) {
             if (!Handler(index, item, context, role, property))
@@ -171,7 +171,7 @@ bool QRangeModelImplBase::connectProperty(const QModelIndex &index, QObject *ite
                                           int role, const QMetaProperty &property)
 {
     if (!item)
-        return false;
+        return true; // nothing to do, continue
     PropertyChangedHandler handler{index, role};
     auto connection = property.enclosingMetaObject()->connect(item, property.notifySignal(),
                                                               context, std::move(handler));
@@ -199,7 +199,7 @@ bool QRangeModelImplBase::connectPropertyConst(const QModelIndex &index, QObject
                                                int role, const QMetaProperty &property)
 {
     if (!item)
-        return false;
+        return true; // nothing to do, continue
     ConstPropertyChangedHandler handler{index, role};
     if (!property.enclosingMetaObject()->connect(item, property.notifySignal(),
                                                  context, std::move(handler))) {

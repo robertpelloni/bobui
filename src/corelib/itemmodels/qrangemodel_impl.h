@@ -1715,7 +1715,7 @@ public:
     bool autoConnectPropertiesInRow(const row_type &row, int rowIndex, const QModelIndex &parent) const
     {
         if (!QRangeModelDetails::isValid(row))
-            return false;
+            return true; // nothing to do
         return forEachColumn(row, rowIndex, parent, [this](const QModelIndex &index, QObject *item) {
             if constexpr (isMutable())
                 return Self::connectProperties(index, item, m_data.context, m_data.properties);
@@ -2450,6 +2450,14 @@ public:
         deleteRemovedRows(QRangeModelDetails::begin(range), QRangeModelDetails::end(range));
     }
 
+    bool autoConnectProperties(const QModelIndex &parent) const
+    {
+        auto *children = this->childRange(parent);
+        if (!children)
+            return true;
+        return autoConnectPropertiesRange(QRangeModelDetails::refTo(children), parent);
+    }
+
 protected:
     QModelIndex indexImpl(int row, int column, const QModelIndex &parent) const
     {
@@ -2682,9 +2690,11 @@ protected:
                 return false;
             Q_ASSERT(QRangeModelDetails::isValid(row));
             const auto &children = this->protocol().childRows(QRangeModelDetails::refTo(row));
-            if (!autoConnectPropertiesRange(QRangeModelDetails::refTo(children),
-                                            this->itemModel().index(rowIndex, 0, parent))) {
-                return false;
+            if (QRangeModelDetails::isValid(children)) {
+                if (!autoConnectPropertiesRange(QRangeModelDetails::refTo(children),
+                                                this->itemModel().index(rowIndex, 0, parent))) {
+                    return false;
+                }
             }
             ++rowIndex;
         }

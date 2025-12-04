@@ -91,6 +91,8 @@ private slots:
     void buildValueTree();
     void buildPointerTree();
 
+    void insertAutoConnectObjects();
+
 private:
     void expectInvalidIndex(int count)
     {
@@ -2610,6 +2612,95 @@ void tst_QRangeModelAdapter::buildPointerTree()
         QCOMPARE(rowsInsertedSpy.at(0).value(1), 0);
         QCOMPARE(rowsInsertedSpy.at(0).value(2), 4); // five children added
     }
+}
+
+class ObjectTreeItem;
+using ObjectTree = std::vector<ObjectTreeItem>;
+
+class ObjectTreeItem : public ObjectRow
+{
+public:
+    ObjectTreeItem(Object *item = nullptr)
+    {
+        m_objects[0] = item;
+    }
+
+    ObjectTreeItem *parentRow() const { return m_parentRow; }
+    void setParentRow(ObjectTreeItem *parentRow) { m_parentRow = parentRow; }
+    const auto &childRows() const { return m_children; }
+    auto &childRows() { return m_children; }
+
+private:
+    template <std::size_t I> // read-only is enough for this
+    friend decltype(auto) get(const ObjectTreeItem &row) { return row.m_objects[I]; }
+
+    ObjectTreeItem *m_parentRow = nullptr;
+    std::optional<ObjectTree> m_children = std::nullopt;
+};
+
+namespace std {
+    template <> struct tuple_size<ObjectTreeItem> : tuple_size<ObjectRow> {};
+    template <std::size_t I> struct tuple_element<I, ObjectTreeItem> : tuple_element<I, ObjectRow> {};
+}
+
+void tst_QRangeModelAdapter::insertAutoConnectObjects()
+{
+    ObjectTree emptyTree;
+
+    QRangeModelAdapter adapter(emptyTree);
+    QSignalSpy dataChangedSpy(adapter.model(), &QAbstractItemModel::dataChanged);
+    adapter.model()->setAutoConnectPolicy(QRangeModel::AutoConnectPolicy::Full);
+
+    Object *newObject = new Object;
+    adapter.insertRow(0, ObjectTreeItem{newObject});
+    newObject->setString("0");
+    newObject->setNumber(0);
+
+    QCOMPARE(dataChangedSpy.count(), 2);
+    dataChangedSpy.clear();
+
+    Object *newChild = new Object;
+    auto firstRow = adapter.begin();
+    (*firstRow).children() = ObjectTree{
+        ObjectTreeItem(newChild),
+        ObjectTreeItem(),
+        ObjectTreeItem()
+    };
+    QCOMPARE(dataChangedSpy.count(), 0);
+    QVERIFY(adapter.hasChildren(0));
+    newChild->setString("0.0");
+    QCOMPARE(dataChangedSpy.count(), 1);
+    dataChangedSpy.clear();
+
+    newChild = new Object;
+    newChild->setString("0.1");
+    adapter.at({0, 1}) = ObjectTreeItem(newChild);
+    QCOMPARE(dataChangedSpy.count(), 1);
+    newChild->setNumber(1);
+    QCOMPARE(dataChangedSpy.count(), 2);
+    dataChangedSpy.clear();
+
+    newChild = new Object;
+    Object *newGrandChild = new Object;
+    ObjectTreeItem newBranch(newChild);
+    newBranch.childRows() = ObjectTree{
+        ObjectTreeItem(), // skip the first column
+        ObjectTreeItem(newGrandChild),
+        ObjectTreeItem()
+    };
+    adapter.at({0, 2}) = newBranch;
+    QCOMPARE(dataChangedSpy.count(), 1);
+    newChild->setNumber(1);
+    QCOMPARE(dataChangedSpy.count(), 2);
+    dataChangedSpy.clear();
+
+    newGrandChild->setString("0.2.1");
+    QCOMPARE(dataChangedSpy.count(), 1);
+    dataChangedSpy.clear();
+
+    // newGrandChild = new Object;
+    // adapter.at({0, 2, 0}, 0) = newGrandChild;
+    // newGrandChild->setString("0.2.0");
 }
 
 QTEST_MAIN(tst_QRangeModelAdapter)
