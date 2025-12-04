@@ -378,6 +378,7 @@ void QWaylandWindow::resetFrameCallback()
         }
         mFrameCallbackElapsedTimer.invalidate();
         mWaitingForFrameCallback = false;
+        mFrameSyncWait.wakeAll();
     }
     if (mFrameCallbackCheckIntervalTimerId != -1) {
         killTimer(mFrameCallbackCheckIntervalTimerId);
