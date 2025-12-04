@@ -118,11 +118,9 @@
     would bypass the QAbstractItemModel notification protocol, those reference
     objects prevent direct modifications of the items.
 
-    \note Calling mutable overloads generates some overhead. Make a const copy
-    of the adapter (which will not copy the data), or use \c{std::as_const} to
-    make sure that only the const overloads are used in performance critical,
-    read-heavy code. This is the same technique as when accessing elements in
-    an implicitly shared Qt container.
+    \note Accessing the reference object always makes a call to the model to get
+    a copy of the value. This can be expensive; for performance critical access
+    to data, store a copy.
 
     \section3 Item access
 
