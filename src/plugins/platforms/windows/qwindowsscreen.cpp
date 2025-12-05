@@ -450,6 +450,26 @@ QPixmap QWindowsScreen::grabWindow(WId window, int xIn, int yIn, int width, int 
         hwnd = GetDesktopWindow();
         const QRect screenGeometry = geometry();
         windowSize = screenGeometry.size();
+        // When dpi awareness is not set to PerMonitor, windows reports primary display or dummy
+        // DPI for all displays, so xIn and yIn and windowSize are calculated with a wrong DPI,
+        // so we need to recalculate them using the actual screen size we get from
+        // EnumDisplaySettings api.
+        const auto dpiAwareness = QWindowsContext::instance()->processDpiAwareness();
+        if (dpiAwareness != QtWindows::DpiAwareness::PerMonitor &&
+            dpiAwareness != QtWindows::DpiAwareness::PerMonitorVersion2) {
+            MONITORINFOEX info = {};
+            info.cbSize = sizeof(MONITORINFOEX);
+            if (GetMonitorInfo(handle(), &info)) {
+                DEVMODE dm = {};
+                dm.dmSize = sizeof(dm);
+                if (EnumDisplaySettings(info.szDevice, ENUM_CURRENT_SETTINGS, &dm)) {
+                    qreal scale = static_cast<qreal>(dm.dmPelsWidth) / windowSize.width();
+                    x = static_cast<int>(static_cast<qreal>(x) * scale);
+                    y = static_cast<int>(static_cast<qreal>(y) * scale);
+                    windowSize = QSize(dm.dmPelsWidth, dm.dmPelsHeight);
+                }
+            }
+        }
         x += screenGeometry.x();
         y += screenGeometry.y();
     }
