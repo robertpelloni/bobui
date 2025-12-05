@@ -1247,12 +1247,30 @@ void Moc::generate(FILE *out, FILE *jsonOutput)
             "#endif\n\n");
 #endif
 
+    // filter out undeclared enumerators and sets
+    for (ClassDef &cdef : classList) {
+        QList<EnumDef> enumList;
+        for (EnumDef def : std::as_const(cdef.enumList)) {
+            if (cdef.enumDeclarations.contains(def.name)) {
+                enumList += def;
+            }
+            def.enumName = def.name;
+            QByteArray alias = cdef.flagAliases.value(def.name);
+            if (cdef.enumDeclarations.contains(alias)) {
+                def.name = alias;
+                def.flags |= cdef.enumDeclarations[alias];
+                enumList += def;
+            }
+        }
+        cdef.enumList = enumList;
+    }
+
     fprintf(out, "QT_WARNING_PUSH\n");
     fprintf(out, "QT_WARNING_DISABLE_DEPRECATED\n");
     fprintf(out, "QT_WARNING_DISABLE_GCC(\"-Wuseless-cast\")\n");
 
     fputs("", out);
-    for (ClassDef &def : classList) {
+    for (const ClassDef &def : std::as_const(classList)) {
         Generator generator(this, &def, metaTypes, knownQObjectClasses, knownGadgets, out,
                             requireCompleteTypes);
         generator.generateCode();
