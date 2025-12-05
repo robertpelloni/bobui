@@ -133,7 +133,6 @@ use, for example, library files referenced from a Qt installation.
 \summary {Forces or disables release package signing regardless of the build type.}
 
 \cmakevariablesince 6.7
-\preliminarycmakevariable
 \cmakevariableandroidonly
 
 When set to \c Release, the \c --release flag is passed to the \c
