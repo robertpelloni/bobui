@@ -755,6 +755,11 @@ int main(void)
 }
 "
 )
+qt_feature("windows-ioring-runtime" PRIVATE
+    LABEL "Resolve Windows I/O Ring functions at runtime"
+    AUTODETECT TRUE
+    CONDITION QT_FEATURE_windows_ioring
+)
 
 #### Features
 
@@ -1326,6 +1331,7 @@ qt_configure_add_summary_entry(ARGS "jemalloc")
 qt_configure_add_summary_entry(ARGS "liburing")
 qt_configure_add_summary_entry(ARGS "windows-ioring")
 qt_configure_add_summary_entry(ARGS "windows-ioring-skip-builder-param-checks")
+qt_configure_add_summary_entry(ARGS "windows-ioring-runtime")
 qt_configure_add_summary_entry(ARGS "timezone_tzdb")
 qt_configure_add_summary_entry(ARGS "system-libb2")
 qt_configure_add_summary_entry(ARGS "mimetype-database")
