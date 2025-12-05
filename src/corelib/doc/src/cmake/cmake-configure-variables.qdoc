@@ -142,6 +142,10 @@ effectively disables release package signing even in Release or RelWithDebInfo
 builds. When not set, the default behavior is to use release package signing in
 build types other than Debug.
 
+This variable is not supposed to be set in CMake project files. Rather set it
+when configuring your project on the command line or in the CMake settings of
+your IDE.
+
 \sa {androiddeployqt}
 */
 
