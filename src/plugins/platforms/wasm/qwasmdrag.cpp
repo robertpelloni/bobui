@@ -94,15 +94,13 @@ Qt::DropAction QWasmDrag::drag(QDrag *drag)
         return Qt::IgnoreAction;
 
     Qt::DropAction dragResult = Qt::IgnoreAction;
-    if (qstdweb::haveJspi()) {
+    if (qstdweb::haveAsyncify()) {
         m_dragState = std::make_unique<DragState>(drag, window, [this]() { QSimpleDrag::cancelDrag();  });
-        QSimpleDrag::drag(drag);
-        dragResult = m_dragState->dropAction;
+        dragResult = QSimpleDrag::drag(drag);
         m_dragState.reset();
-    }
-
-    if (dragResult == Qt::IgnoreAction)
+    } else {
         dragResult = QBasicDrag::drag(drag);
+    }
 
     return dragResult;
 }
@@ -117,6 +115,7 @@ void QWasmDrag::onNativeDragStarted(DragEvent *event)
         event->cancelDragStart();
         return;
     }
+    setExecutedDropAction(event->dropAction);
 
     // We have our own window
     if (shapedPixmapWindow())
@@ -145,8 +144,10 @@ void QWasmDrag::onNativeDragOver(DragEvent *event)
             event->mouseButton, event->modifiers);
     event->acceptDragOver();
     if (dragResponse.isAccepted()) {
+        setExecutedDropAction(dragResponse.acceptedAction());
         event->dataTransfer.setDropAction(dragResponse.acceptedAction());
     } else {
+        setExecutedDropAction(Qt::DropAction::IgnoreAction);
         event->dataTransfer.setDropAction(Qt::DropAction::IgnoreAction);
     }
 }
@@ -174,6 +175,7 @@ void QWasmDrag::onNativeDrop(DragEvent *event)
     // files, but the browser expects that accepted state is set before any
     // async calls.
     event->acceptDrop();
+    setExecutedDropAction(event->dropAction);
     std::shared_ptr<DragState> dragState = m_dragState;
 
     const auto dropCallback = [dragState, wasmWindow, targetWindowPos,
@@ -198,6 +200,7 @@ void QWasmDrag::onNativeDragFinished(DragEvent *event)
 {
     event->webEvent.call<void>("preventDefault");
     m_dragState->dropAction = event->dropAction;
+    setExecutedDropAction(event->dropAction);
     m_dragState->quitEventLoopClosure();
 }
 
@@ -213,6 +216,8 @@ void QWasmDrag::onNativeDragEnter(DragEvent *event)
     if (m_dragState)
         m_dragState->dropAction = event->dropAction;
 
+    setExecutedDropAction(event->dropAction);
+
     QDrag *drag = new QDrag(this);
     drag->setMimeData(new QMimeData());
     drag->exec(Qt::CopyAction | Qt::MoveAction, Qt::CopyAction);
@@ -223,6 +228,7 @@ void QWasmDrag::onNativeDragLeave(DragEvent *event)
     event->webEvent.call<void>("preventDefault");
     if (m_dragState)
         m_dragState->dropAction = event->dropAction;
+    setExecutedDropAction(event->dropAction);
     event->dataTransfer.setDropAction(Qt::DropAction::IgnoreAction);
 }
 
