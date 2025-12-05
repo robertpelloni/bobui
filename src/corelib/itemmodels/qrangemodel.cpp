@@ -1385,6 +1385,7 @@ void QRangeModel::resetRoleNames()
 
 /*!
     \property QRangeModel::autoConnectPolicy
+    \since 6.11
     \brief if and when the model auto-connects to property changed notifications.
 
     If QRangeModel operates on a data structure that holds the same type of
