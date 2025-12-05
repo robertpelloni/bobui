@@ -1278,7 +1278,6 @@ qt_feature("permissions" PUBLIC
 )
 qt_feature("openssl-hash" PRIVATE
     LABEL "OpenSSL based cryptographic hash"
-    AUTODETECT OFF
     CONDITION QT_FEATURE_openssl_linked AND QT_FEATURE_opensslv30
     PURPOSE "Uses OpenSSL based implementation of cryptographic hash algorithms."
 )
