@@ -523,6 +523,7 @@ function(qt_internal_show_extra_ide_sources)
     add_custom_target(${target_name})
 
     set(recursive_glob_patterns
+        REUSE.toml
         ${QT_BUILD_EXTRA_IDE_FILE_RECURSIVE_PATTERNS}
     )
     set(simple_glob_patterns
