@@ -120,8 +120,6 @@ public:
     NSView *view() const;
     NSWindow *nativeWindow() const;
 
-    void setEmbeddedInForeignView();
-
     Q_NOTIFICATION_HANDLER(NSViewFrameDidChangeNotification) void viewDidChangeFrame();
     Q_NOTIFICATION_HANDLER(NSViewGlobalFrameDidChangeNotification) void viewDidChangeGlobalFrame();
 
@@ -181,6 +179,7 @@ public:
 
     void updateNormalGeometry();
 
+    void recreateWindowIfNeeded();
     enum RecreationReason {
         RecreationNotNeeded = 0,
         ParentChanged = 0x1,
@@ -188,6 +187,7 @@ public:
         WindowModalityChanged = 0x4,
         ContentViewChanged = 0x10,
         PanelChanged = 0x20,
+        EmbeddedChanged = 0x40,
     };
     Q_DECLARE_FLAGS(RecreationReasons, RecreationReason)
     Q_FLAG(RecreationReasons)
@@ -201,7 +201,6 @@ public:
     static QRectF mapFromNative(CGRect rect, NSView *referenceView);
 
 protected:
-    void recreateWindowIfNeeded();
     QCocoaNSWindow *createNSWindow(bool shouldBePanel);
 
     Qt::WindowStates windowState() const;

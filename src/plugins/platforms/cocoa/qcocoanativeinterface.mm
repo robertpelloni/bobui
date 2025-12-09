@@ -64,8 +64,6 @@ QPlatformNativeInterface::NativeResourceForIntegrationFunction QCocoaNativeInter
         return NativeResourceForIntegrationFunction(QFunctionPointer(QCocoaNativeInterface::registerDraggedTypes));
     if (resource.toLower() == "registertouchwindow")
         return NativeResourceForIntegrationFunction(QFunctionPointer(QCocoaNativeInterface::registerTouchWindow));
-    if (resource.toLower() == "setembeddedinforeignview")
-        return NativeResourceForIntegrationFunction(QFunctionPointer(QCocoaNativeInterface::setEmbeddedInForeignView));
     if (resource.toLower() == "registercontentborderarea")
         return NativeResourceForIntegrationFunction(QFunctionPointer(QCocoaNativeInterface::registerContentBorderArea));
     if (resource.toLower() == "setcontentborderareaenabled")
@@ -90,13 +88,6 @@ void QCocoaNativeInterface::onAppFocusWindowChanged(QWindow *window)
 void QCocoaNativeInterface::registerDraggedTypes(const QStringList &types)
 {
     QMacMimeRegistry::registerDraggedTypes(types);
-}
-
-void QCocoaNativeInterface::setEmbeddedInForeignView(QPlatformWindow *window, bool embedded)
-{
-    Q_UNUSED(embedded); // "embedded" state is now automatically detected
-    QCocoaWindow *cocoaPlatformWindow = static_cast<QCocoaWindow *>(window);
-    cocoaPlatformWindow->setEmbeddedInForeignView();
 }
 
 void QCocoaNativeInterface::registerTouchWindow(QWindow *window,  bool enable)

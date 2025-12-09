@@ -1260,13 +1260,6 @@ NSWindow *QCocoaWindow::nativeWindow() const
     return m_view.window;
 }
 
-void QCocoaWindow::setEmbeddedInForeignView()
-{
-    // Release any previously created NSWindow.
-    [m_nsWindow closeAndRelease];
-    m_nsWindow = 0;
-}
-
 // ----------------------- NSView notifications -----------------------
 
 void QCocoaWindow::viewDidChangeFrame()
@@ -1643,6 +1636,9 @@ void QCocoaWindow::recreateWindowIfNeeded()
     if (parentWindow != oldParentCocoaWindow)
          recreateReason |= ParentChanged;
 
+    if (isEmbeddedView && m_nsWindow)
+        recreateReason |= EmbeddedChanged;
+
     if (!m_view.window)
         recreateReason |= MissingWindow;
 
@@ -1671,7 +1667,7 @@ void QCocoaWindow::recreateWindowIfNeeded()
         return;
 
     // Remove current window (if any)
-    if ((isContentView() && !shouldBeContentView) || (recreateReason & PanelChanged)) {
+    if ((isContentView() && !shouldBeContentView) || (recreateReason & (PanelChanged | EmbeddedChanged))) {
         if (m_nsWindow) {
             qCDebug(lcQpaWindow) << "Getting rid of existing window" << m_nsWindow;
             [m_nsWindow closeAndRelease];

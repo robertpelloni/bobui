@@ -36,9 +36,6 @@ private:
 
     static void registerDraggedTypes(const QStringList &types);
 
-    // Set a QWindow as a "guest" (subwindow) of a non-QWindow
-    static void setEmbeddedInForeignView(QPlatformWindow *window, bool embedded);
-
     // Register if a window should deliver touch events. Enabling
     // touch events has implications for delivery of other events,
     // for example by causing scrolling event lag.

@@ -263,6 +263,10 @@ QT_NAMESPACE_ALIAS_OBJC_CLASS(QNSViewMenuHelper);
         return;
 
     qCDebug(lcQpaWindow) << "Done moving" << self << "to" << self.window;
+
+    // Get rid of our Qt managed NSWindow if we're now embedded
+    if (m_platformWindow && m_platformWindow->isEmbedded())
+        m_platformWindow->recreateWindowIfNeeded();
 }
 
 // QWindow::setParent() promises that the child window will be clipped
