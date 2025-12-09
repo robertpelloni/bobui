@@ -2213,6 +2213,20 @@ void QCocoaWindow::setFrameStrutEventsEnabled(bool enabled)
     m_frameStrutEventsEnabled = enabled;
 }
 
+QPoint QCocoaWindow::mapToGlobal(const QPoint &point) const
+{
+    NSPoint windowPoint = [m_view convertPoint:point.toCGPoint() toView:nil];
+    NSPoint screenPoint = [m_view.window convertPointToScreen:windowPoint];
+    return QCocoaScreen::mapFromNative(screenPoint).toPoint();
+}
+
+QPoint QCocoaWindow::mapFromGlobal(const QPoint &point) const
+{
+    NSPoint screenPoint = QCocoaScreen::mapToNative(point);
+    NSPoint windowPoint = [m_view.window convertPointFromScreen:screenPoint];
+    return QPointF::fromCGPoint([m_view convertPoint:windowPoint fromView:nil]).toPoint();
+}
+
 CGPoint QCocoaWindow::mapToNative(const QPointF &point, NSView *referenceView)
 {
     if (!referenceView || referenceView.flipped)

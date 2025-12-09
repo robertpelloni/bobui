@@ -194,6 +194,9 @@ public:
 
     bool allowsIndependentThreadedRendering() const override;
 
+    QPoint mapToGlobal(const QPoint &pos) const override;
+    QPoint mapFromGlobal(const QPoint &pos) const override;
+
     // Maps between Qt coordinates and potentially non-flipped NSView coordinates
     static CGPoint mapToNative(const QPointF &pos, NSView *referenceView);
     static CGRect mapToNative(const QRectF &rect, NSView *referenceView);
