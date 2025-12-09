@@ -304,7 +304,7 @@ void QCocoaWindow::setCocoaGeometry(const QRect &rect)
         NSRect bounds = QCocoaScreen::mapToNative(rect);
         [m_view.window setFrame:[m_view.window frameRectForContentRect:bounds] display:YES animate:NO];
     } else {
-        [m_view setFrame:NSMakeRect(rect.x(), rect.y(), rect.width(), rect.height())];
+        m_view.frame = QCocoaWindow::mapToNative(rect, m_view.superview);
     }
 
     // will call QPlatformWindow::setGeometry(rect) during resize confirmation (see qnsview.mm)
@@ -1516,8 +1516,7 @@ void QCocoaWindow::handleGeometryChange()
         // The result above is in native screen coordinates, so remap to the Qt coordinate system
         newGeometry = QCocoaScreen::mapFromNative(contentRect).toRect();
     } else {
-        // QNSView has isFlipped set, so no need to remap the geometry
-        newGeometry = QRectF::fromCGRect(m_view.frame).toRect();
+        newGeometry = QCocoaWindow::mapFromNative(m_view.frame, m_view.superview).toRect();
     }
 
     qCDebug(lcQpaWindow) << "QCocoaWindow::handleGeometryChange" << window()
@@ -2216,6 +2215,38 @@ QMargins QCocoaWindow::frameMargins() const
 void QCocoaWindow::setFrameStrutEventsEnabled(bool enabled)
 {
     m_frameStrutEventsEnabled = enabled;
+}
+
+CGPoint QCocoaWindow::mapToNative(const QPointF &point, NSView *referenceView)
+{
+    if (!referenceView || referenceView.flipped)
+        return point.toCGPoint();
+    else
+        return qt_mac_flip(point, QRectF::fromCGRect(referenceView.bounds)).toCGPoint();
+}
+
+CGRect QCocoaWindow::mapToNative(const QRectF &rect, NSView *referenceView)
+{
+    if (!referenceView || referenceView.flipped)
+        return rect.toCGRect();
+    else
+        return qt_mac_flip(rect, QRectF::fromCGRect(referenceView.bounds)).toCGRect();
+}
+
+QPointF QCocoaWindow::mapFromNative(CGPoint point, NSView *referenceView)
+{
+    if (!referenceView || referenceView.flipped)
+        return QPointF::fromCGPoint(point);
+    else
+        return qt_mac_flip(QPointF::fromCGPoint(point), QRectF::fromCGRect(referenceView.bounds));
+}
+
+QRectF QCocoaWindow::mapFromNative(CGRect rect, NSView *referenceView)
+{
+    if (!referenceView || referenceView.flipped)
+        return QRectF::fromCGRect(rect);
+    else
+        return qt_mac_flip(QRectF::fromCGRect(rect), QRectF::fromCGRect(referenceView.bounds));
 }
 
 CALayer *QCocoaWindow::contentLayer() const

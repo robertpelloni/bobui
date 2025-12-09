@@ -228,16 +228,12 @@ QT_NAMESPACE_ALIAS_OBJC_CLASS(QNSViewMenuHelper);
     // Note: at this point the view's window property hasn't been updated to match the window
     // of the new superview. We have to wait for viewDidMoveToWindow for that to be reflected.
 
-    if (!m_platformWindow)
-        return;
+    if (m_platformWindow && m_platformWindow->isEmbedded()) {
+        // FIXME: Align this with logic in QCocoaWindow::setParent
+        m_platformWindow->handleGeometryChange();
 
-    if (!m_platformWindow->isEmbedded())
-        return;
-
-    if ([self superview]) {
-        QWindowSystemInterface::handleGeometryChange(m_platformWindow->window(), m_platformWindow->geometry());
-        [self setNeedsDisplay:YES];
-        QWindowSystemInterface::flushWindowSystemEvents();
+        if (self.superview)
+            [self setNeedsDisplay:YES];
     }
 }
 

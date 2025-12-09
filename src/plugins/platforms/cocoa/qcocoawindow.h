@@ -194,6 +194,12 @@ public:
 
     bool allowsIndependentThreadedRendering() const override;
 
+    // Maps between Qt coordinates and potentially non-flipped NSView coordinates
+    static CGPoint mapToNative(const QPointF &pos, NSView *referenceView);
+    static CGRect mapToNative(const QRectF &rect, NSView *referenceView);
+    static QPointF mapFromNative(CGPoint pos, NSView *referenceView);
+    static QRectF mapFromNative(CGRect rect, NSView *referenceView);
+
 protected:
     void recreateWindowIfNeeded();
     QCocoaNSWindow *createNSWindow(bool shouldBePanel);
