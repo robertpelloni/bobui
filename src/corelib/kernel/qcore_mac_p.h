@@ -78,6 +78,15 @@ kern_return_t IOObjectRelease(io_object_t object);
 Q_FORWARD_DECLARE_OBJC_CLASS(NSObject);
 Q_FORWARD_DECLARE_OBJC_CLASS(NSString);
 
+struct CGPoint;
+struct CGSize;
+struct CGRect;
+#if defined(Q_OS_MACOS)
+struct NSEdgeInsets;
+#else
+struct UIEdgeInsets;
+#endif
+
 // @compatibility_alias doesn't work with categories or their methods
 #define QtExtras QT_MANGLE_NAMESPACE(QtExtras)
 
@@ -225,6 +234,14 @@ Q_AUTOTEST_EXPORT void qt_mac_ensureResponsible();
 #ifndef QT_NO_DEBUG_STREAM
 Q_CORE_EXPORT QDebug operator<<(QDebug debug, const QMacAutoReleasePool *pool);
 Q_CORE_EXPORT QDebug operator<<(QDebug debug, const QCFString &string);
+Q_CORE_EXPORT QDebug operator<<(QDebug, CGPoint);
+Q_CORE_EXPORT QDebug operator<<(QDebug, CGSize);
+Q_CORE_EXPORT QDebug operator<<(QDebug, CGRect);
+#if defined(Q_OS_MACOS)
+Q_CORE_EXPORT QDebug operator<<(QDebug, NSEdgeInsets);
+#else
+Q_CORE_EXPORT QDebug operator<<(QDebug, UIEdgeInsets);
+#endif
 #endif
 
 Q_CORE_EXPORT bool qt_apple_isApplicationExtension();

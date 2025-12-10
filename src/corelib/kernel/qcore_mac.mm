@@ -22,6 +22,10 @@
 #include <spawn.h>
 
 #include <qdebug.h>
+#include <qpoint.h>
+#include <qsize.h>
+#include <qrect.h>
+#include <qmargins.h>
 
 #include "qendian.h"
 #include "qhash.h"
@@ -219,6 +223,34 @@ QDebug operator<<(QDebug dbg, CFStringRef stringRef)
     else
         dbg << QString::fromCFString(stringRef);
 
+    return dbg;
+}
+
+QDebug operator<<(QDebug dbg, CGPoint point)
+{
+    dbg << QPointF::fromCGPoint(point);
+    return dbg;
+}
+
+QDebug operator<<(QDebug dbg, CGSize size)
+{
+    dbg << QSizeF::fromCGSize(size);
+    return dbg;
+}
+
+QDebug operator<<(QDebug dbg, CGRect rect)
+{
+    dbg << QRectF::fromCGRect(rect);
+    return dbg;
+}
+
+#if defined(Q_OS_MACOS)
+QDebug operator<<(QDebug dbg, NSEdgeInsets insets)
+#else
+QDebug operator<<(QDebug dbg, UIEdgeInsets insets)
+#endif
+{
+    dbg << QMargins(insets.left, insets.top, insets.right, insets.bottom);
     return dbg;
 }
 
