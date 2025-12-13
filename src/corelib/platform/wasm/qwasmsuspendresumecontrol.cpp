@@ -365,7 +365,7 @@ QWasmAnimationFrameMultiHandler::~QWasmAnimationFrameMultiHandler()
     QWasmSuspendResumeControl::get()->removeEventHandler(m_handlerIndex);
 }
 
-Q_APPLICATION_STATIC(QWasmAnimationFrameMultiHandler, s_animationFrameHandler);
+Q_GLOBAL_STATIC(QWasmAnimationFrameMultiHandler, s_animationFrameHandler);
 QWasmAnimationFrameMultiHandler *QWasmAnimationFrameMultiHandler::instance()
 {
     return s_animationFrameHandler();
