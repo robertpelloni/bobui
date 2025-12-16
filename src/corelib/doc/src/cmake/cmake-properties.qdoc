@@ -772,7 +772,6 @@ CMake properties:
 \brief Sets the FOLDER property for Qt-internal targets.
 
 \cmakepropertysince 6.5
-\preliminarycmakeproperty
 
 Name of the \l FOLDER for internal targets that are added by Qt's CMake
 commands.
