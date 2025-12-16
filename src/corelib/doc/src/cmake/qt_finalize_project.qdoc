@@ -9,7 +9,6 @@
 \keyword qt6_finalize_project
 
 \summary {Handles various common platform-specific tasks associated with a Qt project.}
-\preliminarycmakecommand
 
 \include cmake-find-package-core.qdocinc
 
