@@ -70,7 +70,7 @@
     \l{QListIterator::next()}{next()} and
     \l{QListIterator::previous()}{previous()} on an iterator:
 
-    \image javaiterators2.png Iterating to the next and previous items
+    \image javaiterators2.svg Iterating to the next and previous items
 
     The following table summarizes the QListIterator API:
 
