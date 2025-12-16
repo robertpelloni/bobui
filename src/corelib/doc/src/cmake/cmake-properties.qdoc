@@ -665,7 +665,6 @@ UTF-8 input). Use the \l QT_NO_CAST_FROM_ASCII and
 \summary {Specifies the default Qt resource prefix.}
 
 \cmakepropertysince 6.0
-\preliminarycmakeproperty
 
 When using \l{qt6_add_resources}{qt_add_resources} without a \c PREFIX
 argument, then the value of this target property will be used as
