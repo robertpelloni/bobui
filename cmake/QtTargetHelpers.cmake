@@ -2023,3 +2023,45 @@ function(qt_internal_apply_dynamic_list_linker_flags target dynlist_template)
 
     target_link_options(${target} PRIVATE "LINKER:--dynamic-list=${dynlist_file_abspath}")
 endfunction()
+
+function(qt_internal_workaround_static_lib_gcc_lto_issue target)
+    get_target_property(target_type "${target}" TYPE)
+    get_target_property(target_lto_enabled "${target}" INTERPROCEDURAL_OPTIMIZATION)
+    get_target_property(target_lto_enabled_debug "${target}" INTERPROCEDURAL_OPTIMIZATION_DEBUG)
+    set(target_lto_enabled_debug_unset FALSE)
+
+    if(target_lto_enabled_debug MATCHES "-NOTFOUND")
+        set(target_lto_enabled_debug_unset TRUE)
+    endif()
+
+    set(general_lto_enabled FALSE)
+
+    if(FEATURE_ltcg
+            OR QT_FEATURE_ltcg
+            OR CMAKE_INTERPROCEDURAL_OPTIMIZATION
+            OR target_lto_enabled)
+        set(general_lto_enabled TRUE)
+    endif()
+
+    if((general_lto_enabled OR target_lto_enabled_debug)
+        AND GCC
+        AND target_type STREQUAL "STATIC_LIBRARY")
+        # CMake <= 3.19 appends -fno-fat-lto-objects for all library types if
+        # CMAKE_INTERPROCEDURAL_OPTIMIZATION is enabled. Static libraries need
+        # the opposite compiler option.
+        # (https://gitlab.kitware.com/cmake/cmake/-/issues/21696)
+        set(flag_name -ffat-lto-objects)
+
+        if((general_lto_enabled AND target_lto_enabled_debug_unset)
+                OR (general_lto_enabled AND target_lto_enabled)
+            )
+            set(flag_wrapped "${flag_name}")
+        elseif(general_lto_enabled AND NOT target_lto_enabled_debug)
+            set(flag_wrapped "$<$<NOT:$<CONFIG:Debug>>:${flag_name}>")
+        elseif(target_lto_enabled_debug)
+            set(flag_wrapped "$<$<CONFIG:Debug>:${flag_name}>")
+        endif()
+
+        target_compile_options("${target}" PRIVATE "${flag_wrapped}")
+    endif()
+endfunction()
