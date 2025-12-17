@@ -1390,7 +1390,7 @@ void QAbstractItemModel::resetInternalData()
     simple table of rows and columns. Each item has a unique index specified by
     a QModelIndex.
 
-    \image modelindex-no-parent.png {Screenshot showing a 3x3 grid with numbered
+    \image modelindex-no-parent.svg {Diagram showing a 3x3 grid with numbered
            rows and columns that shows the cell at row 1, column 2 highlighted.}
 
     Every item of data that can be accessed via a model has an associated model
