@@ -292,6 +292,8 @@ function(qt_internal_add_tool target_name)
     )
     qt_internal_install_pdb_files(${target_name} "${install_dir}")
 
+    qt_internal_add_target_optimized_flags_for_debug_config_in_parent_scope("${target_name}")
+
     if(QT_GENERATE_SBOM)
         _qt_internal_forward_function_args(
             FORWARD_APPEND
