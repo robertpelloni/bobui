@@ -2065,3 +2065,19 @@ function(qt_internal_workaround_static_lib_gcc_lto_issue target)
         target_compile_options("${target}" PRIVATE "${flag_wrapped}")
     endif()
 endfunction()
+
+# Enable LTO for the debug configuration of optimized tool or library targets.
+# Can be opted out via various options.
+function(qt_internal_enable_optimized_tools_lto target)
+    string(TOLOWER "${PROJECT_NAME}" project_name_lower)
+
+    if(QT_FEATURE_optimized_tools
+            AND NOT QT_FORCE_NO_OPTIMIZED_TOOLS_LTO
+            AND NOT QT_FORCE_NO_OPTIMIZE_${target}
+            AND NOT QT_FORCE_NO_OPTIMIZE_${project_name_lower}
+            AND NOT QT_FORCE_NO_LTO_${target}
+            AND NOT QT_FORCE_NO_LTO_${project_name_lower}
+        )
+        set_target_properties("${target}" PROPERTIES INTERPROCEDURAL_OPTIMIZATION_DEBUG ON)
+    endif()
+endfunction()
