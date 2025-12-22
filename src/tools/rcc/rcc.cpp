@@ -366,7 +366,7 @@ qint64 RCCFileInfo::writeDataBlob(RCCResourceLibrary &lib,
                             .arg(m_name).arg(data.size()).arg(compressed.size());
                     lib.m_errorDevice->write(msg.toUtf8());
                 }
-                data = compressed;
+                data = std::move(compressed);
                 lib.m_overallFlags |= Compressed;
                 m_flags |= Compressed;
             } else if (lib.verbose()) {
