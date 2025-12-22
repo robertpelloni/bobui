@@ -286,8 +286,8 @@ qint64 RCCFileInfo::writeDataBlob(RCCResourceLibrary &lib,
 
         // de-duplicate the same file content, we can re-use already written data
         // we only do that if we have the same compression settings
-        const QByteArray hash = QCryptographicHash::hash(data, QCryptographicHash::Sha256);
-        const DeduplicationKey key{m_compressAlgo, m_compressLevel, m_compressThreshold, hash};
+        const DeduplicationKey key{m_compressAlgo, m_compressLevel, m_compressThreshold,
+                                   QCryptographicHash::hash(data, QCryptographicHash::Sha256)};
         const QList<RCCFileInfo *> potentialCandidates = dedupByContent.values(key);
         for (const RCCFileInfo *candidate : potentialCandidates) {
             // check real content, we can have collisions
