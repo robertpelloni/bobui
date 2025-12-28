@@ -213,6 +213,14 @@ QDebug operator<<(QDebug dbg, const NSObject *nsObject)
         : "NSObject(0x0)");
 }
 
+QDebug operator<<(QDebug dbg, const NSString *nsString)
+{
+    if (!nsString)
+        return dbg << "NSString(0x0)";
+    else
+        return dbg << (__bridge CFStringRef)nsString;
+}
+
 QDebug operator<<(QDebug dbg, CFStringRef stringRef)
 {
     if (!stringRef)
