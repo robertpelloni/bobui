@@ -99,8 +99,26 @@ QDebug operator<<(QDebug debug, QAbstractSocket::SocketState state)
 {
     return operator<< <QAbstractSocket::SocketState>(debug, state);
 }
-
 #endif // !QT_NO_DEBUG_STREAM
+
+#if QT_CONFIG(localserver)
+#include "qlocalsocket.h"
+
+#ifndef QT_NO_DEBUG_STREAM
+#include "qdebug.h"
+
+QDebug operator<<(QDebug debug, QLocalSocket::LocalSocketError error)
+{
+    return operator<< <QLocalSocket::LocalSocketError>(debug, error);
+}
+
+QDebug operator<<(QDebug debug, QLocalSocket::LocalSocketState state)
+{
+    return operator<< <QLocalSocket::LocalSocketState>(debug, state);
+}
+#endif // !QT_NO_DEBUG_STREAM
+#endif // QT_CONFIG(localserver)
+
 
 // #include "qotherheader.h"
 // // implement removed functions from qotherheader.h
