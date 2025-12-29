@@ -82,3 +82,28 @@ QDebug operator<<(QDebug debug, const QSslError::SslError &error)
 // order sections alphabetically
 
 #endif // QT_NETWORK_REMOVED_SINCE(6, 8)
+
+#if QT_NETWORK_REMOVED_SINCE(6, 12)
+
+#ifndef QT_NO_DEBUG_STREAM
+#include "qdebug.h"
+
+#include "qabstractsocket.h"
+
+QDebug operator<<(QDebug debug, QAbstractSocket::SocketError error)
+{
+    return operator<< <QAbstractSocket::SocketError>(debug, error);
+}
+
+QDebug operator<<(QDebug debug, QAbstractSocket::SocketState state)
+{
+    return operator<< <QAbstractSocket::SocketState>(debug, state);
+}
+
+#endif // !QT_NO_DEBUG_STREAM
+
+// #include "qotherheader.h"
+// // implement removed functions from qotherheader.h
+// order sections alphabetically
+
+#endif // QT_NETWORK_REMOVED_SINCE(6, 12)
