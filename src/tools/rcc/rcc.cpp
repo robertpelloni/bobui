@@ -312,8 +312,6 @@ qint64 RCCFileInfo::writeDataBlob(RCCResourceLibrary &lib,
     if (data.size() != 0) {
 #if QT_CONFIG(zstd)
         if (m_compressAlgo == RCCResourceLibrary::CompressionAlgorithm::Zstd && !m_noZstd) {
-            if (lib.m_zstdCCtx == nullptr)
-                lib.m_zstdCCtx = ZSTD_createCCtx();
             qsizetype size = data.size();
             size = ZSTD_COMPRESSBOUND(size);
 
@@ -323,16 +321,16 @@ qint64 RCCFileInfo::writeDataBlob(RCCResourceLibrary &lib,
 
             QByteArray compressed(size, Qt::Uninitialized);
             char *dst = const_cast<char *>(compressed.constData());
-            size_t n = ZSTD_compressCCtx(lib.m_zstdCCtx, dst, size,
-                                         data.constData(), data.size(),
-                                         compressLevel);
+            size_t n = ZSTD_compress(dst, size,
+                                     data.constData(), data.size(),
+                                     compressLevel);
             if (n * 100.0 < data.size() * 1.0 * (100 - m_compressThreshold) ) {
                 // compressing is worth it
                 if (m_compressLevel < 0) {
                     // heuristic compression, so recompress
-                    n = ZSTD_compressCCtx(lib.m_zstdCCtx, dst, size,
-                                          data.constData(), data.size(),
-                                          CONSTANT_ZSTDCOMPRESSLEVEL_STORE);
+                    n = ZSTD_compress(dst, size,
+                                      data.constData(), data.size(),
+                                      CONSTANT_ZSTDCOMPRESSLEVEL_STORE);
                 }
                 if (ZSTD_isError(n)) {
                     QString msg = "%1: error: compression with zstd failed: %2\n"_L1
@@ -511,17 +509,11 @@ RCCResourceLibrary::RCCResourceLibrary(quint8 formatVersion)
     m_noZstd(false)
 {
     m_out.reserve(30 * 1000 * 1000);
-#if QT_CONFIG(zstd)
-    m_zstdCCtx = nullptr;
-#endif
 }
 
 RCCResourceLibrary::~RCCResourceLibrary()
 {
     delete m_root;
-#if QT_CONFIG(zstd)
-    ZSTD_freeCCtx(m_zstdCCtx);
-#endif
 }
 
 enum RCCXmlTag {
