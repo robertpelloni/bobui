@@ -2198,6 +2198,14 @@ void Q_TRACE_INSTRUMENT(qtgui) QGuiApplicationPrivate::processWindowSystemEvent(
     Q_TRACE_PARAM_REPLACE(QWindowSystemInterfacePrivate::WindowSystemEvent *, int);
     Q_TRACE_SCOPE(QGuiApplicationPrivate_processWindowSystemEvent, e->type);
 
+    const bool haveGuiApplication = QGuiApplication::instance() && QGuiApplicationPrivate::instance();
+    Q_ASSERT_X(haveGuiApplication, "QGuiApplication", "Asked to process QPA event without a QGuiApplication");
+    if (!haveGuiApplication) {
+        qWarning("QGuiApplication was asked to process QPA event without a QGuiApplication instance");
+        e->eventAccepted = false;
+        return;
+    }
+
     switch(e->type) {
     case QWindowSystemInterfacePrivate::Mouse:
         QGuiApplicationPrivate::processMouseEvent(static_cast<QWindowSystemInterfacePrivate::MouseEvent *>(e));
