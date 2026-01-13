@@ -21,7 +21,7 @@ static QPen qPenFromStyle(const QBrush& b, qreal width, BorderStyle s)
         ps  = Qt::DotLine;
         break;
     case BorderStyle_Dashed:
-        ps = width == 1 ? Qt::DotLine : Qt::DashLine;
+        ps = Qt::DashLine;
         break;
     case BorderStyle_DotDash:
         ps = Qt::DashDotLine;
