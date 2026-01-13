@@ -10,6 +10,7 @@
 #endif
 #include <qapplication.h>
 #include <private/qguiapplication_p.h>
+#include <QtGui/qstylehints.h>
 #include <qpa/qplatformtheme.h>
 #if QT_CONFIG(dockwidget)
 #include <qdockwidget.h>
@@ -5342,7 +5343,7 @@ int QCommonStyle::styleHint(StyleHint sh, const QStyleOption *opt, const QWidget
         break;
 #if QT_CONFIG(tooltip)
     case SH_ToolTip_WakeUpDelay:
-        ret = 700;
+        ret = qGuiApp->styleHints()->toolTipWakeUpDelay();
         break;
     case SH_ToolTip_FallAsleepDelay:
         ret = 2000;

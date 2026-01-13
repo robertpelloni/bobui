@@ -196,6 +196,27 @@ const QAccessibilityHints *QStyleHints::accessibility() const
 }
 
 /*!
+    \property QStyleHints::toolTipWakeUpDelay
+    \brief The delay in milliseconds before tool tips should be shown.
+    \since 6.12
+    \sa QWidget::toolTip, [QML]{ToolTip::delay}
+*/
+int QStyleHints::toolTipWakeUpDelay() const
+{
+    Q_D(const QStyleHints);
+    return d->m_toolTipWakeUpDelay;
+}
+
+void QStyleHints::setToolTipWakeUpDelay(int toolTipWakeUpDelay)
+{
+    Q_D(QStyleHints);
+    if (d->m_toolTipWakeUpDelay == toolTipWakeUpDelay)
+        return;
+    d->m_toolTipWakeUpDelay = toolTipWakeUpDelay;
+    emit toolTipWakeUpDelayChanged(toolTipWakeUpDelay);
+}
+
+/*!
     Sets the \a mousePressAndHoldInterval.
     \internal
     \sa mousePressAndHoldInterval()
