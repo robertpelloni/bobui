@@ -872,15 +872,7 @@ public:
 
 #ifdef __cpp_lib_three_way_comparison
     constexpr Q_IMPLICIT QPartialOrdering(std::partial_ordering stdorder) noexcept
-        : m_order{} // == equivalent
-    {
-        if (stdorder == std::partial_ordering::less)
-            m_order = static_cast<QtPrivate::CompareUnderlyingType>(QtPrivate::Ordering::Less);
-        else if (stdorder == std::partial_ordering::greater)
-            m_order = static_cast<QtPrivate::CompareUnderlyingType>(QtPrivate::Ordering::Greater);
-        else if (stdorder == std::partial_ordering::unordered)
-            m_order = static_cast<QtPrivate::CompareUnderlyingType>(QtPrivate::LegacyUncomparable::Unordered);
-    }
+        : QPartialOrdering(Qt::partial_ordering(stdorder)) {}
 
     constexpr Q_IMPLICIT QPartialOrdering(std::weak_ordering stdorder) noexcept
         : QPartialOrdering(std::partial_ordering(stdorder)) {}
