@@ -49,8 +49,11 @@ enum class Uncomparable : CompareUnderlyingType
     Unordered =
         #if   defined(Q_STL_LIBCPP)
                 -127
-        #elif defined(Q_STL_LIBSTDCPP)
+        #elif defined(Q_STL_LIBSTDCPP) && QT_VERSION < QT_VERSION_CHECK(7, 0, 0)
+        // GCC 10 to 15 ABI
                    2
+        #elif defined(Q_STL_LIBSTDCPP)
+                -128
         #elif defined(Q_STL_MSSTL)
                 -128
         #elif defined(Q_STL_DINKUMWARE) || \
