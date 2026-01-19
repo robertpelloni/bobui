@@ -92,12 +92,12 @@ QDebug operator<<(QDebug debug, const QSslError::SslError &error)
 
 QDebug operator<<(QDebug debug, QAbstractSocket::SocketError error)
 {
-    return operator<< <QAbstractSocket::SocketError>(debug, error);
+    return operator<< <QAbstractSocket::SocketError>(std::move(debug), error);
 }
 
 QDebug operator<<(QDebug debug, QAbstractSocket::SocketState state)
 {
-    return operator<< <QAbstractSocket::SocketState>(debug, state);
+    return operator<< <QAbstractSocket::SocketState>(std::move(debug), state);
 }
 #endif // !QT_NO_DEBUG_STREAM
 
@@ -109,12 +109,12 @@ QDebug operator<<(QDebug debug, QAbstractSocket::SocketState state)
 
 QDebug operator<<(QDebug debug, QLocalSocket::LocalSocketError error)
 {
-    return operator<< <QLocalSocket::LocalSocketError>(debug, error);
+    return operator<< <QLocalSocket::LocalSocketError>(std::move(debug), error);
 }
 
 QDebug operator<<(QDebug debug, QLocalSocket::LocalSocketState state)
 {
-    return operator<< <QLocalSocket::LocalSocketState>(debug, state);
+    return operator<< <QLocalSocket::LocalSocketState>(std::move(debug), state);
 }
 #endif // !QT_NO_DEBUG_STREAM
 #endif // QT_CONFIG(localserver)
