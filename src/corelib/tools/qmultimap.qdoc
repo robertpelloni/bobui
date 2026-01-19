@@ -13,8 +13,9 @@
 
     \reentrant
 
-    QMultiMap\<Key, T\> is one of Qt's generic \l{container classes}. It
-    stores (key, value) pairs and provides fast lookup by key.
+    QMultiMap\<Key, T\> is one of Qt's generic \l{container classes}, where
+    \a Key is the type used for lookup keys and \a T is the mapped value
+    type. It stores (key, value) pairs and provides fast lookup by key.
 
     QMultiMap and QMultiHash provide very similar functionality. The
     differences are:

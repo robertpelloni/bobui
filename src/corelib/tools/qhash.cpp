@@ -1481,9 +1481,10 @@ size_t qHash(long double key, size_t seed) noexcept
 
     \reentrant
 
-    QHash\<Key, T\> is one of Qt's generic \l{container classes}. It
-    stores (key, value) pairs and provides very fast lookup of the
-    value associated with a key.
+    QHash\<Key, T\> is one of Qt's generic \l{container classes}, where
+    \a Key is the type used for lookup keys and \a T is the mapped value
+    type. It stores (key, value) pairs and provides very fast lookup of
+    the value associated with a key.
 
     QHash provides very similar functionality to QMap. The
     differences are:
@@ -3063,7 +3064,8 @@ size_t qHash(long double key, size_t seed) noexcept
 
     \reentrant
 
-    QMultiHash\<Key, T\> is one of Qt's generic \l{container classes}.
+    QMultiHash\<Key, T\> is one of Qt's generic \l{container classes}, where
+    \a Key is the type used for lookup keys and \a T is the mapped value type.
     It provides a hash table that allows multiple values for the same key.
 
     QMultiHash mostly mirrors QHash's API. For example, you can use isEmpty() to test

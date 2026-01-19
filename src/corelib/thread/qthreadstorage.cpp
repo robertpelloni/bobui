@@ -181,8 +181,8 @@ void QThreadStoragePrivate::finish(QList<void *> *tls)
 
     \ingroup thread
 
-    QThreadStorage is a template class that provides per-thread data
-    storage.
+    QThreadStorage is a template class where the template parameter \a T
+    specifies the type of data stored per-thread.
 
     The setLocalData() function stores a single thread-specific value
     for the calling thread. The data can be accessed later using

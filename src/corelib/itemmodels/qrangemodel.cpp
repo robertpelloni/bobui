@@ -677,6 +677,7 @@ Q_CORE_EXPORT QVariant qVariantAtIndex(const QModelIndex &index)
            how QRangeModel represents types used as rows.
     \since 6.10
 
+    RowOptions\<T\> is a struct template where \a T specifies the row type.
     Specialize this template for the type used in your range, and add the
     relevant members.
 
@@ -723,6 +724,7 @@ Q_CORE_EXPORT QVariant qVariantAtIndex(const QModelIndex &index)
            how QRangeModel accesses role data of individual items.
     \since 6.11
 
+    ItemAccess\<T\> is a struct template where \a T specifies the item type.
     Specialize this template for the type used in your data structure, and
     implement \c{readRole()} and \c{writeRole()} members to access the role-
     specific data of your type.

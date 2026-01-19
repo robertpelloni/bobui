@@ -62,9 +62,8 @@
 
     \ingroup tools
 
-    The QFlags<Enum> class is a template class, where Enum is an enum
-    type. QFlags is used throughout Qt for storing combinations of
-    enum values.
+    QFlags\<Enum\> is a template class where \a Enum is an enumeration type.
+    QFlags is used throughout Qt for storing combinations of enum values.
 
     The traditional C++ approach for storing OR-combinations of enum
     values is to use an \c int or \c uint variable. The inconvenience

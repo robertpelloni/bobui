@@ -23,8 +23,9 @@
     is a base type of the other.
     \endcompareswith
 
-    The QSharedPointer is an automatic, shared pointer in C++. It
-    behaves exactly like a normal pointer for normal purposes,
+    The QSharedPointer is an automatic, shared pointer in C++, where the
+    template parameter \a T specifies the type of the pointer being managed.
+    It behaves exactly like a normal pointer for normal purposes,
     including respect for constness.
 
     QSharedPointer will delete the pointer it is holding when it goes
@@ -295,8 +296,9 @@
     \reentrant
 
     The QWeakPointer is an automatic weak reference to a
-    pointer in C++. It cannot be used to dereference the pointer
-    directly, but it can be used to verify if the pointer has been
+    pointer in C++, where the template parameter \a T specifies the type
+    of the pointer being tracked. It cannot be used to dereference the
+    pointer directly, but it can be used to verify if the pointer has been
     deleted or not in another context.
 
     QWeakPointer objects can only be created by assignment from a
@@ -347,9 +349,10 @@
 
     You can inherit this class when you need to create a QSharedPointer
     from any instance of a class; for instance, from within the
-    object itself. The key point is that the technique of
-    just returning QSharedPointer<T>(this) cannot be used, because
-    this winds up creating multiple distinct QSharedPointer objects
+    object itself. The template parameter \a T specifies the type of the
+    class that inherits from QEnableSharedFromThis. The key point is that
+    the technique of just returning QSharedPointer<T>(this) cannot be used,
+    because this winds up creating multiple distinct QSharedPointer objects
     with separate reference counts. For this reason you must never
     create more than one QSharedPointer from the same raw pointer.
 

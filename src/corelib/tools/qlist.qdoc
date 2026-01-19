@@ -6,6 +6,8 @@
     \inmodule QtCore
     \brief QVector is an alias for QList.
 
+    QVector\<T\> is a template class where \a T specifies the element type.
+
     Please see the QList documentation for details.
 */
 
@@ -19,9 +21,9 @@
 
     \reentrant
 
-    QList\<T\> is one of Qt's generic \l{container classes}. It
-    stores its items in adjacent memory locations and provides fast
-    index-based access. QVector\<T\> used to be a different class in
+    QList\<T\> is one of Qt's generic \l{container classes}, where \a T
+    specifies the type of elements stored in the list. It stores its items
+    in adjacent memory locations and provides fast index-based access. QVector\<T\> used to be a different class in
     Qt 5, but is now a simple alias to QList.
 
     QList\<T\> and QVarLengthArray\<T\>

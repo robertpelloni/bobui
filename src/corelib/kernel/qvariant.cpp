@@ -2866,9 +2866,8 @@ QT_WARNING_DISABLE_DEPRECATED
     As the generic iterators don't actually instantiate a QVariant on each
     step, they cannot return a reference to one from operator*(). QVariantRef
     provides the same functionality as an actual reference to a QVariant would,
-    but is backed by a pointer given as template parameter. The template is
-    implemented for pointers of type QSequentialIterator and
-    QAssociativeIterator.
+    but is backed by a pointer of type \a Pointer. The template is implemented
+    for pointers of type QSequentialIterator and QAssociativeIterator.
 */
 
 /*!
@@ -2956,10 +2955,10 @@ const QVariant *QVariantConstPointer::operator->() const
     \inmodule QtCore
     \brief QVariantPointer is a template class that emulates a pointer to QVariant based on a pointer.
 
-    QVariantConstPointer wraps a pointer and returns QVariantRef to it from its
-    operator*(). This makes it suitable as replacement for an actual pointer. We
-    cannot return an actual pointer from generic iterators as the iterators don't
-    hold an actual QVariant.
+    QVariantPointer\<Pointer\> wraps a pointer of type \a Pointer and returns
+    QVariantRef to it from its operator*(). This makes it suitable as
+    replacement for an actual pointer. We cannot return an actual pointer from
+    generic iterators as the iterators don't hold an actual QVariant.
 */
 
 /*!
@@ -2992,9 +2991,9 @@ QT_WARNING_POP
 
     As the generic iterators don't actually instantiate a QVariant on each
     step, they cannot return a reference to one from operator*().
-    QVariant::ConstReference provides the same functionality as an actual
-    reference to a QVariant would, but is backed a referred-to value given as
-    template parameter. The template is implemented for
+    QVariant::ConstReference\<Indirect\> provides the same functionality as an
+    actual reference to a QVariant would, but is backed by a referred-to value
+    of type \a Indirect. The template is implemented for
     QMetaSequence::ConstIterator, QMetaSequence::Iterator,
     QMetaAssociation::ConstIterator, and QMetaAssociation::Iterator.
 */
@@ -3042,10 +3041,10 @@ QT_WARNING_POP
 
     As the generic iterators don't actually instantiate a QVariant on each
     step, they cannot return a reference to one from operator*().
-    QVariant::Reference provides the same functionality as an actual reference
-    to a QVariant would, but is backed a referred-to value given as template
-    parameter. The template is implemented for QMetaSequence::Iterator and
-    QMetaAssociation::Iterator.
+    QVariant::Reference\<Indirect\> provides the same functionality as an
+    actual reference to a QVariant would, but is backed by a referred-to value
+    of type \a Indirect. The template is implemented for
+    QMetaSequence::Iterator and QMetaAssociation::Iterator.
 */
 
 /*!
@@ -3107,10 +3106,11 @@ QT_WARNING_POP
     \inmodule QtCore
     \brief QVariant::ConstPointer is a template class that emulates a const pointer to QVariant.
 
-    QVariant::ConstPointer wraps pointed-to value and returns a
-    QVariant::ConstReference to it from its operator*(). This makes it suitable
-    as replacement for an actual pointer. We cannot return an actual pointer
-    from generic iterators as the iterators don't hold an actual QVariant.
+    QVariant::ConstPointer\<Indirect\> wraps a pointed-to value of type
+    \a Indirect and returns a QVariant::ConstReference to it from its
+    operator*(). This makes it suitable as replacement for an actual pointer.
+    We cannot return an actual pointer from generic iterators as the iterators
+    don't hold an actual QVariant.
 */
 
 /*!
@@ -3137,10 +3137,11 @@ QT_WARNING_POP
     \inmodule QtCore
     \brief QVariant::Pointer is a template class that emulates a non-const pointer to QVariant.
 
-    QVariant::Pointer wraps pointed-to value and returns a QVariant::Reference
-    to it from its operator*(). This makes it suitable as replacement for an
-    actual pointer. We cannot return an actual pointer from generic iterators as
-    the iterators don't hold an actual QVariant.
+    QVariant::Pointer\<Indirect\> wraps a pointed-to value of type \a Indirect
+    and returns a QVariant::Reference to it from its operator*(). This makes it
+    suitable as replacement for an actual pointer. We cannot return an actual
+    pointer from generic iterators as the iterators don't hold an actual
+    QVariant.
 */
 
 /*!

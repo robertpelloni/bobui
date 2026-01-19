@@ -1028,6 +1028,9 @@ QString QPropertyBindingError::description() const
 
   \ingroup tools
 
+  QPropertyData is a template class where the template parameter \a T specifies
+  the type of the property value being stored.
+
   QPropertyData\<T\> is a common base class for classes that can hold properties with automatic
   data bindings. It mainly wraps the stored data, and offers low level access to that data.
 
@@ -1220,6 +1223,9 @@ QString QPropertyBindingError::description() const
 
    \ingroup tools
 
+   QBindable is a template class where the template parameter \a T specifies
+   the type of the property value.
+
    QBindable\<T\> helps to integrate Qt's traditional Q_PROPERTY with
    \l {Qt Bindable Properties}{binding-enabled} properties.
    If a property is backed by a QProperty, QObjectBindableProperty or QObjectComputedProperty,
@@ -1343,6 +1349,9 @@ QString QPropertyBindingError::description() const
   \endcompareswith
 
   \ingroup tools
+
+  QProperty is a template class where the template parameter \a T specifies
+  the type of the property value.
 
   QProperty\<T\> is one of the classes implementing \l {Qt Bindable Properties}.
   It is a container that holds an instance of T. You can assign
@@ -1559,6 +1568,12 @@ QString QPropertyBindingError::description() const
 
   \ingroup tools
 
+  QObjectBindableProperty is a template class where the template parameter
+  \a Class specifies the owning QObject-derived class, \a T specifies the
+  property value type, \a Offset specifies the property's location within
+  the class, and \a Signal optionally specifies the notify signal to emit
+  when the property value changes.
+
   QObjectBindableProperty is a generic container that holds an
   instance of T and behaves mostly like \l QProperty.
   It is one of the classes implementing \l {Qt Bindable Properties}.
@@ -1731,6 +1746,12 @@ QString QPropertyBindingError::description() const
          properties to the bindable property system.
   \since 6.0
   \ingroup tools
+
+  QObjectComputedProperty is a template class where the template parameter
+  \a Class specifies the owning QObject-derived class, \a T specifies the
+  computed property value type, \a Offset specifies the property's location
+  within the class, and \a Getter specifies the member function that computes
+  the property value.
 
   QObjectComputedProperty is a read-only property which is recomputed on each read.
   It does not store the computed value.
@@ -2000,6 +2021,10 @@ QString QPropertyBindingError::description() const
   callback installed on a QProperty.
 
   \ingroup tools
+
+  QPropertyChangeHandler is a template class where the template parameter
+  \a Functor specifies the type of the callback function that is invoked
+  when the property value changes.
 
   QPropertyChangeHandler\<Functor\> is created when registering a callback on a
   QProperty to listen to changes to the property's value, using

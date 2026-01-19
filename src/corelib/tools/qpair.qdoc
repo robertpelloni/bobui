@@ -11,7 +11,8 @@
     \typealias QPair
     \relates <QPair>
     \since 6.0
-    Alias for std::pair\<T1, T2\>.
+    Alias for std::pair\<T1, T2\>, where \a T1 and \a T2 are the types of the
+    first and second elements, respectively.
 */
 
 /*!

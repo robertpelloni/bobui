@@ -1603,6 +1603,9 @@ CHECK(strong, equivalent);
     total order for the wrapped types.
     \since 6.8
 
+    Qt::totally_ordered_wrapper\<P\> is a template class where \a P specifies
+    the type to wrap.
+
     One of its primary usecases is to prevent \e {Undefined Behavior} (UB) when
     comparing pointers.
 

@@ -782,7 +782,7 @@ inline QRandomGenerator::SystemGenerator &QRandomGenerator::SystemGenerator::sel
 /*!
     \fn template <typename UInt, size_t N, QRandomGenerator::IfValidUInt<UInt> = true> void QRandomGenerator::fillRange(UInt (&buffer)[N])
 
-    Generates \c N 32- or 64-bit quantities (depending on the type \c UInt) and
+    Generates \a N 32-bit or 64-bit quantities (depending on the type \c UInt) and
     stores them in the \a buffer array. This is the most efficient way to
     obtain more than one quantity at a time, as it reduces the number of calls
     into the Random Number Generator source.

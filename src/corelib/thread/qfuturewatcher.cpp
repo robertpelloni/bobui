@@ -22,9 +22,11 @@ QT_BEGIN_NAMESPACE
     \brief The QFutureWatcher class allows monitoring a QFuture using signals
     and slots.
 
-    QFutureWatcher provides information and notifications about a QFuture. Use
-    the setFuture() function to start watching a particular QFuture. The
-    future() function returns the future set with setFuture().
+    QFutureWatcher is a template class where the template parameter \a T
+    specifies the result type of the QFuture being watched. QFutureWatcher
+    provides information and notifications about a QFuture. Use the setFuture()
+    function to start watching a particular QFuture. The future() function
+    returns the future set with setFuture().
 
     For convenience, several of QFuture's functions are also available in
     QFutureWatcher: progressValue(), progressMinimum(), progressMaximum(),

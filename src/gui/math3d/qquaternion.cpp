@@ -470,6 +470,9 @@ QQuaternion QQuaternion::fromAxisAndAngle
     \ingroup painting-3D
     \inmodule QtGui
 
+    EulerAngles\<T\> is a struct template where \a T specifies the floating-point
+    type used for the angle values (typically \c float).
+
     A struct containing three fields \l{pitch}, \l{yaw}, and \l{roll},
     representing the three Euler angles that define a
     \l{QQuaternion}{quaternion}.

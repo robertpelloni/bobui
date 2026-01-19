@@ -361,10 +361,10 @@ static_assert(QtPrivate::IsContainerCompatibleWithQUtf8StringView<QAnyStringView
 /*!
     \fn template <typename Char, size_t Size> static QAnyStringView fromArray(const Char (&string)[Size]) noexcept
 
-    Constructs a string view on the full character string literal \a string,
-    including any trailing \c{Char(0)}. If you don't want the
-    null-terminator included in the view then you can use the constructor
-    overload taking a pointer and a size:
+    Constructs a string view on the full character string literal \a string
+    of \a Size elements, including any trailing \c{Char(0)}. If you don't
+    want the null-terminator included in the view then you can use the
+    constructor overload taking a pointer and a size:
 
     \snippet code/src_corelib_text_qanystringview.cpp 2
 
@@ -823,8 +823,8 @@ QDebug operator<<(QDebug d, QAnyStringView s)
 /*!
     \fn template <typename Char, size_t Size, QAnyStringView::if_compatible_char<Char>> QAnyStringView QAnyStringView::fromArray(const Char (&string)[Size])
 
-    Constructs a string view on the full character string literal \a string,
-    including any trailing \c{Char(0)}. If you don't want the
+    Constructs a string view on the full character string literal \a string
+    of \a Size elements, including any trailing \c{Char(0)}. If you don't want the
     null-terminator included in the view then you can chop() it off
     when you are certain it is at the end. Alternatively you can use
     the constructor overload taking an array literal which will create

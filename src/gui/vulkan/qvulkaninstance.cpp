@@ -349,6 +349,9 @@ QVulkanInstance::~QVulkanInstance()
     \class QVulkanInfoVector
     \inmodule QtGui
     \brief A specialized QList for QVulkanLayer and QVulkanExtension.
+
+    QVulkanInfoVector\<T\> is a template class where \a T is either
+    QVulkanLayer or QVulkanExtension.
  */
 
 /*!

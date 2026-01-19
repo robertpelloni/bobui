@@ -281,9 +281,9 @@ QT_BEGIN_NAMESPACE
 /*!
     \fn template <typename Char, size_t Size, QStringView::if_compatible_char<Char> = true> static QStringView QStringView::fromArray(const Char (&string)[Size]) noexcept
 
-    Constructs a string view on the full character string literal \a string,
-    including any trailing \c{Char(0)}. If you don't want the
-    null-terminator included in the view then you can chop() it off
+    Constructs a string view on the full character string literal \a string
+    of \a Size elements, including any trailing \c{Char(0)}. If you don't want
+    the null-terminator included in the view then you can chop() it off
     when you are certain it is at the end. Alternatively you can use
     the constructor overload taking an array literal which will create
     a view up to, but not including, the first null-terminator in the data.
