@@ -9,6 +9,9 @@
 
 #include <QtCore/qstring.h>
 #include <QtCore/qstringfwd.h>
+#ifndef QT_BOOTSTRAPPED
+#include <QtCore/qbitarray.h>
+#endif
 
 #include <numeric> // for std::accumulate
 #include <functional> // for std::hash
@@ -25,8 +28,6 @@
 #endif
 
 QT_BEGIN_NAMESPACE
-
-class QBitArray;
 
 #if QT_DEPRECATED_SINCE(6,6)
 QT_DEPRECATED_VERSION_X_6_6("Use QHashSeed instead")
