@@ -46,9 +46,9 @@ QT_BEGIN_NAMESPACE
 #define MAKE_CLASS(C) \
     struct C \
     { \
-        std::string s; \
-        explicit C(std::string s = {}) : s{std::move(s)} {} \
-        void swap(C &other) noexcept { std::swap(s, other.s); } \
+        QString s; \
+        explicit C(QString s = {}) : s{std::move(s)} {} \
+        void swap(C &other) noexcept { qSwap(s, other.s); } \
     } \
     /* end */
 
