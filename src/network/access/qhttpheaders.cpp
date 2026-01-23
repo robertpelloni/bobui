@@ -678,6 +678,8 @@ static_assert(q20::is_sorted(std::begin(orderedHeaderNameIndexes),
     \value ProtocolQuery
 */
 
+constexpr auto NonWellKnownHeader = QHttpHeaders::WellKnownHeader{-1};
+
 static QByteArray fieldToByteArray(QLatin1StringView s) noexcept
 {
     return QByteArray(s.data(), s.size());
@@ -700,7 +702,7 @@ static QByteArray normalizedName(QAnyStringView name)
 
 struct HeaderName
 {
-    explicit HeaderName(QHttpHeaders::WellKnownHeader name) : data(name)
+    explicit HeaderName(QHttpHeaders::WellKnownHeader name) : wellKnownHeader(name)
     {
     }
 
@@ -708,9 +710,9 @@ struct HeaderName
     {
         auto nname = normalizedName(name);
         if (auto h = HeaderName::toWellKnownHeader(nname))
-            data = *h;
+            wellKnownHeader = *h;
         else
-            data = std::move(nname);
+            headerName = std::move(nname);
     }
 
     // Returns an enum corresponding with the 'name' if possible. Uses binary search (O(logN)).
@@ -729,44 +731,45 @@ struct HeaderName
 
     QByteArrayView asView() const noexcept
     {
-        return std::visit([](const auto &arg) -> QByteArrayView {
-            using T = decltype(arg);
-            if constexpr (std::is_same_v<T, const QByteArray &>)
-                return arg;
-            else if constexpr (std::is_same_v<T, const QHttpHeaders::WellKnownHeader &>)
-                return headerNames.viewAt(qToUnderlying(arg));
-            else
-                static_assert(QtPrivate::type_dependent_false<T>());
-        }, data);
+        if (wellKnownHeader != NonWellKnownHeader)
+            return headerNames.viewAt(qToUnderlying(wellKnownHeader));
+
+        return headerName;
     }
 
     QByteArray asByteArray() const noexcept
     {
-        return std::visit([](const auto &arg) -> QByteArray {
-            using T = decltype(arg);
-            if constexpr (std::is_same_v<T, const QByteArray &>) {
-                return arg;
-            } else if constexpr (std::is_same_v<T, const QHttpHeaders::WellKnownHeader &>) {
-                const auto view = headerNames.viewAt(qToUnderlying(arg));
-                return QByteArray::fromRawData(view.constData(), view.size());
-            } else {
-                static_assert(QtPrivate::type_dependent_false<T>());
-            }
-        }, data);
+        if (wellKnownHeader != NonWellKnownHeader) {
+            const auto view = headerNames.viewAt(qToUnderlying(wellKnownHeader));
+            return QByteArray::fromRawData(view.constData(), view.size());
+        }
+
+        return headerName;
     }
 
 private:
     // Store the data as 'enum' whenever possible; more performant, and comparison relies on that
-    std::variant<QHttpHeaders::WellKnownHeader, QByteArray> data;
+    QHttpHeaders::WellKnownHeader wellKnownHeader = NonWellKnownHeader;
+    QByteArray headerName;
 
     friend bool comparesEqual(const HeaderName &lhs, const HeaderName &rhs) noexcept
     {
-        // Here we compare two std::variants, which will return false if the types don't match.
+        // Here we compare two HeaderNames and will return false if the types don't match.
         // That is beneficial here because we avoid unnecessary comparisons; but it also means
         // we must always store the data as WellKnownHeader when possible (in other words, if
-        // we get a string that is mappable to a WellKnownHeader). To guard against accidental
-        // misuse, the 'data' is private and the constructors must be used.
-        return lhs.data == rhs.data;
+        // we get a string that is mappable to a WellKnownHeader).
+
+        // if the wellKnownHeaders differ, they are not equal
+        if (lhs.wellKnownHeader != rhs.wellKnownHeader)
+            return false;
+
+        // from this point on we know that the two wellKnownHeaders are equal
+        // if they are NonWellKnownHeaders, check the QByteArrays
+        if (lhs.wellKnownHeader == NonWellKnownHeader)
+            return lhs.headerName == rhs.headerName;
+
+        // both of them are well-known headers and are equal
+        return true;
     }
     Q_DECLARE_EQUALITY_COMPARABLE(HeaderName)
 };
