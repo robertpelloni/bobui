@@ -287,6 +287,12 @@ private:
 #ifndef QT_NO_DEBUG_STREAM
     friend Q_NETWORK_EXPORT QDebug operator<<(QDebug debug, const QHttpHeaders &headers);
 #endif
+
+#ifndef QT_NO_DATASTREAM
+    friend Q_NETWORK_EXPORT QDataStream &operator<<(QDataStream &stream, const QHttpHeaders &headers);
+    friend Q_NETWORK_EXPORT QDataStream &operator>>(QDataStream &stream, QHttpHeaders &headers);
+#endif
+
     Q_ALWAYS_INLINE void verify([[maybe_unused]] qsizetype pos = 0,
                                 [[maybe_unused]] qsizetype n = 1) const
     {

@@ -5,6 +5,8 @@
 
 #include <QtTest/qtest.h>
 
+#include <QtCore/qbuffer.h>
+#include <QtCore/qdatastream.h>
 #include <QtCore/qmap.h>
 #include <QtCore/qset.h>
 
@@ -24,6 +26,10 @@ private slots:
     void replaceOrAppend();
     void intValues();
     void dateTimeValues();
+    void data_stream_data();
+    void data_stream();
+    void data_stream_invalid_data();
+    void data_stream_invalid();
 
 private:
     static constexpr QAnyStringView n1{"name1"};
@@ -638,6 +644,90 @@ void tst_QHttpHeaders::dateTimeValues()
     QCOMPARE(h1.dateTimeValue("date"), std::nullopt);
     QCOMPARE(h1.dateTimeValue("non-existing-header"), std::nullopt);
     QCOMPARE(h1.dateTimeValues("date"), std::nullopt);
+}
+
+void tst_QHttpHeaders::data_stream_data()
+{
+    QHttpHeaders h1;
+    h1.append(n1, v1);
+    h1.append(n1, v2);
+    h1.append(n2, v3);
+
+    QHttpHeaders h2;
+    h2.append(n1, v1);
+    h2.removeAll(n1); // makes it empty, but not default-constructed
+
+    QHttpHeaders h3;
+
+    QTest::addColumn<QHttpHeaders>("http_headers");
+
+    QTest::newRow("non-empty") << h1;
+    QTest::newRow("empty") << h2;
+    QTest::newRow("null") << h3;
+}
+
+void tst_QHttpHeaders::data_stream()
+{
+    QFETCH(const QHttpHeaders, http_headers);
+
+    QBuffer buffer;
+    buffer.open(QIODevice::ReadWrite);
+    {
+        QDataStream stream(&buffer);
+        stream << http_headers;
+        QCOMPARE_EQ(stream.status(), QDataStream::Status::Ok);
+    }
+
+    buffer.seek(0);
+
+    {
+        QDataStream stream(&buffer);
+        QHttpHeaders h2;
+        stream >> h2;
+        QCOMPARE_EQ(stream.status(), QDataStream::Status::Ok);
+        QCOMPARE(http_headers.toListOfPairs(), h2.toListOfPairs());
+    }
+}
+
+void tst_QHttpHeaders::data_stream_invalid_data()
+{
+    QList<std::pair<QByteArray, QByteArray>> raw;
+    raw.append(std::pair<QByteArray, QByteArray>("Invalid:Header", "value"));
+
+    QTest::addColumn<QList<std::pair<QByteArray, QByteArray>>>("raw");
+    QTest::addColumn<QDataStream::Status>("stream_out_status");
+
+    QTest::newRow("invalid-char-colon") << raw << QDataStream::Status::ReadCorruptData;
+}
+
+void tst_QHttpHeaders::data_stream_invalid()
+{
+    using RawHeaders = QList<std::pair<QByteArray, QByteArray>>;
+
+    QFETCH(const RawHeaders, raw);
+    QFETCH(const QDataStream::Status, stream_out_status);
+
+    QBuffer buffer;
+    buffer.open(QIODevice::ReadWrite);
+
+    {
+        QDataStream out(&buffer);
+
+        out << raw;
+        QCOMPARE(out.status(), QDataStream::Status::Ok);
+    }
+
+    buffer.seek(0);
+
+    {
+        QDataStream in(&buffer);
+
+        QHttpHeaders headers;
+        headers.append(n1, v1);
+        in >> headers;
+        QCOMPARE(in.status(), stream_out_status);
+        QVERIFY(headers.isEmpty());
+    }
 }
 
 QTEST_MAIN(tst_QHttpHeaders)

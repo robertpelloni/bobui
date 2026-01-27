@@ -700,8 +700,12 @@ static QByteArray normalizedName(QAnyStringView name)
     return name.visit([](auto name){ return fieldToByteArray(name); }).toLower();
 }
 
+static bool headerNameValidImpl(QUtf8StringView) noexcept;
+
 struct HeaderName
 {
+    HeaderName() = default;  // // needed for QDataStream de-serialization; don't use
+
     explicit HeaderName(QHttpHeaders::WellKnownHeader name) : wellKnownHeader(name)
     {
     }
@@ -752,6 +756,28 @@ private:
     QHttpHeaders::WellKnownHeader wellKnownHeader = NonWellKnownHeader;
     QByteArray headerName;
 
+#ifndef QT_NO_DATASTREAM
+    friend QDataStream &operator<<(QDataStream &out, const HeaderName &headerName)
+    {
+        return out << headerName.asByteArray();
+    }
+
+    friend QDataStream &operator>>(QDataStream &in, HeaderName &headerName)
+    {
+        if (QByteArray ba; in >> ba) {
+            if (!headerNameValidImpl(QUtf8StringView{ba}))
+                in.setStatus(QDataStream::Status::ReadCorruptData);
+            else if (auto h = HeaderName::toWellKnownHeader(ba))
+                headerName.wellKnownHeader = *h;
+            else
+                headerName.headerName = std::move(ba);
+        }
+
+        return in;
+    }
+
+#endif // QT_NO_DATASTREAM
+
     friend bool comparesEqual(const HeaderName &lhs, const HeaderName &rhs) noexcept
     {
         // Here we compare two HeaderNames and will return false if the types don't match.
@@ -782,6 +808,17 @@ private:
 struct Header {
     HeaderName name;
     QByteArray value;
+
+#ifndef QT_NO_DATASTREAM
+    friend QDataStream &operator<<(QDataStream &out, const Header &header)
+    {
+        return out << header.name << header.value;
+    }
+    friend QDataStream &operator>>(QDataStream &in, Header &header)
+    {
+        return in >> header.name >> header.value;
+    }
+#endif
 };
 
 auto headerNameMatches(const HeaderName &name)
@@ -1015,6 +1052,40 @@ QDebug operator<<(QDebug debug, const QHttpHeaders &headers)
     return debug;
 }
 #endif
+
+#ifndef QT_NO_DATASTREAM
+/*!
+    \since 6.12
+    \fn QDataStream& QHttpHeaders::operator<<(QDataStream &out, const QHttpHeaders &headers)
+
+    Writes \a headers to the \a out stream.
+
+    \sa {Serializing Qt Data Types}
+*/
+QDataStream &operator<<(QDataStream &out, const QHttpHeaders &headers)
+{
+    if (!headers.d)
+        return out << QList<Header>{};
+
+    return out << headers.d->headers;
+}
+
+/*!
+    \since 6.12
+    \fn QDataStream& QHttpHeaders::operator>>(QDataStream &in, QHttpHeaders &headers)
+
+    Reads headers from stream \a in into \a headers.
+
+    \sa {Serializing Qt Data Types}
+*/
+QDataStream &operator>>(QDataStream &in, QHttpHeaders &headers)
+{
+    headers.d.detach();
+
+    return in >> headers.d->headers;
+}
+#endif // QT_NO_DATASTREAM
+
 
 static constexpr auto isValidHttpHeaderNameChar = [](uchar c) noexcept
 {
