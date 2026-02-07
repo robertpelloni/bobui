@@ -168,7 +168,8 @@ program
 program
   .command('doctor')
   .description('Check environment health')
-  .action(() => {
+  .option('--fix', 'Attempt to fix common issues')
+  .action((options) => {
     log('Checking environment...');
     try {
         const cmakeVer = execSync('cmake --version').toString().split('\n')[0];

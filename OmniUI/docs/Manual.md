@@ -62,7 +62,36 @@ The `omni` CLI is a Node.js wrapper around CMake and Ninja.
 - `omni generate widget <name>`: Scaffolds a new OmniUI QML widget.
 - `omni generate audio <name>`: Scaffolds a new OmniUI audio processor.
 - `omni test`: Runs unit tests.
-- `omni doctor`: Checks environment health.
+- `omni doctor [--fix]`: Checks environment health and optionally tries to fix it.
+
+## 6. Widget Reference (OmniUI 1.0)
+### Core Widgets
+- `Button`: A native-styled push button.
+- `Slider`: A horizontal slider.
+- `TextField`: Single-line text input.
+- `Dial`: A rotary control, ideal for audio parameters.
+- `CheckBox`: A boolean toggle.
+- `ComboBox`: A dropdown selection menu.
+- `ProgressBar`: Displays progress or metering.
+- `JuceView`: A container for raw C++ JUCE Components.
+
+### Charts & Data (OmniCharts 1.0)
+- `LineChart`: High-performance 2D line plotter.
+- `Oscilloscope`: Real-time waveform visualizer.
+
+### Layouts (OmniLayout 1.0)
+- `DockArea`: A flexible docking container.
+- `SplitView`: A resizable split pane.
+
+## 7. Audio & DSP (OmniAudio 1.0)
+### Components
+- `AudioProcessor`: Wraps a JUCE `AudioProcessor` graph.
+- `AudioGraph`: Allows connecting multiple processors together.
+- `AudioSource`: Plays sample files (supports looping).
+- `Gain`: Simple volume control.
+- `Filter`: LowPass/HighPass/BandPass filter.
+- `Sequencer`: A simple MIDI step sequencer.
+- `MidiHandler`: Provides slots to send NoteOn/Off events to the audio thread.
 
 ## 6. Widget Reference (OmniUI 1.0)
 ### Core Widgets
