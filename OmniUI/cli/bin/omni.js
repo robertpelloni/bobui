@@ -113,9 +113,63 @@ program
   });
 
 program
+  .command('generate <type> <name>')
+  .description('Generate a new component (type: widget, audio)')
+  .action((type, name) => {
+    log(`Generating ${type}: ${name}`);
+    const targetDir = path.join(process.cwd(), 'src', 'components');
+    if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
+
+    if (type === 'widget') {
+        const content = `
+import OmniUI 1.0
+import QtQuick 2.15
+
+Button {
+    text: "${name}"
+    onClicked: console.log("${name} clicked")
+}
+`;
+        fs.writeFileSync(path.join(targetDir, `${name}.qml`), content.trim());
+        log(`Created src/components/${name}.qml`);
+    } else if (type === 'audio') {
+        const content = `
+import OmniAudio 1.0
+
+AudioProcessor {
+    // Custom audio graph logic
+    Component.onCompleted: console.log("Audio processor ${name} loaded")
+}
+`;
+        fs.writeFileSync(path.join(targetDir, `${name}Audio.qml`), content.trim());
+        log(`Created src/components/${name}Audio.qml`);
+    } else {
+        error(`Unknown generator type: ${type}`);
+    }
+  });
+
+program
+  .command('test')
+  .description('Run unit tests')
+  .action(() => {
+    log('Running tests...');
+    try {
+        const buildDir = path.join(process.cwd(), 'build');
+        if (fs.existsSync(buildDir)) {
+             execSync('ctest --output-on-failure', { cwd: buildDir, stdio: 'inherit' });
+        } else {
+             error('Build directory not found. Run "omni build" first.');
+        }
+    } catch (e) {
+        error('Tests failed.');
+    }
+  });
+
+program
   .command('doctor')
   .description('Check environment health')
-  .action(() => {
+  .option('--fix', 'Attempt to fix common issues')
+  .action((options) => {
     log('Checking environment...');
     try {
         const cmakeVer = execSync('cmake --version').toString().split('\n')[0];
