@@ -42,6 +42,23 @@ ApplicationWindow {
             text: "Hello from QML!"
         }
 
+        RowLayout {
+            Dial {
+                Layout.alignment: Qt.AlignHCenter
+                value: 30
+            }
+
+            CheckBox {
+                text: "Loop Mode"
+                checked: true
+            }
+        }
+
+        ProgressBar {
+            Layout.fillWidth: true
+            value: 75
+        }
+
         // JUCE Visualizer
         JuceView {
             Layout.fillWidth: true
@@ -49,11 +66,15 @@ ApplicationWindow {
         }
     }
 
-    MidiHandler {
-        id: midi
+    MidiHandler { id: midi }
+
+    AudioGraph {
+        id: graph
+        Component.onCompleted: {
+            graph.addProcessor(reverb)
+        }
     }
 
-    AudioProcessor {
-        id: dsp
-    }
+    AudioProcessor { id: reverb }
+    Sequencer { id: seq; bpm: 128 }
 }

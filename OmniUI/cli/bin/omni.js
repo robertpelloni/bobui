@@ -132,8 +132,36 @@ Button {
 `;
         fs.writeFileSync(path.join(targetDir, `${name}.qml`), content.trim());
         log(`Created src/components/${name}.qml`);
+    } else if (type === 'audio') {
+        const content = `
+import OmniAudio 1.0
+
+AudioProcessor {
+    // Custom audio graph logic
+    Component.onCompleted: console.log("Audio processor ${name} loaded")
+}
+`;
+        fs.writeFileSync(path.join(targetDir, `${name}Audio.qml`), content.trim());
+        log(`Created src/components/${name}Audio.qml`);
     } else {
         error(`Unknown generator type: ${type}`);
+    }
+  });
+
+program
+  .command('test')
+  .description('Run unit tests')
+  .action(() => {
+    log('Running tests...');
+    try {
+        const buildDir = path.join(process.cwd(), 'build');
+        if (fs.existsSync(buildDir)) {
+             execSync('ctest --output-on-failure', { cwd: buildDir, stdio: 'inherit' });
+        } else {
+             error('Build directory not found. Run "omni build" first.');
+        }
+    } catch (e) {
+        error('Tests failed.');
     }
   });
 

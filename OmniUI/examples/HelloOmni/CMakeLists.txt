@@ -18,6 +18,10 @@ add_executable(HelloOmni
     ../../core/src/widgets/OmniButton.cpp
     ../../core/src/widgets/OmniSlider.cpp
     ../../core/src/widgets/OmniTextField.cpp
+    ../../core/src/widgets/OmniDial.cpp
+    ../../core/src/widgets/OmniCheckBox.cpp
+    ../../core/src/widgets/OmniComboBox.cpp
+    ../../core/src/widgets/OmniProgressBar.cpp
     ../../deps/juce/juce_mock.cpp
 )
 
