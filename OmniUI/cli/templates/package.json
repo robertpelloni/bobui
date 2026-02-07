@@ -1,0 +1,10 @@
+{
+  "name": "hello-omni",
+  "version": "1.0.0",
+  "scripts": {
+    "build:ts": "echo 'Transpiling TS...' && tsc src/ui.ts --outFile build/ui.js --target es6"
+  },
+  "devDependencies": {
+    "typescript": "^4.5.0"
+  }
+}
