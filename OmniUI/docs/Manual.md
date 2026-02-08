@@ -97,6 +97,18 @@ The `omni` CLI is a Node.js wrapper around CMake and Ninja.
 ### Localization (OmniI18n 1.0)
 - `Translator`: Singleton for switching languages at runtime.
 
+### Desktop Integration (OmniDesktop 1.0)
+- `SystemTray`: Native taskbar icon with menu.
+- `Clipboard`: Copy/paste text.
+- `DropArea`: File drag-and-drop support.
+
+### Hardware I/O (OmniHardware 1.0)
+- `SerialPort`: RS-232/USB UART communication.
+- `Bluetooth`: BLE device discovery.
+
+### Theming (OmniUI 2.0)
+- `Theme`: Load JSON themes dynamically.
+
 ### Testing (OmniTest 1.0)
 - `TestCase`: Unit test component.
 - `TestRunner`: Executes registered test cases.
