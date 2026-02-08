@@ -31,6 +31,18 @@ ApplicationWindow {
                     bpm: 140
                 }
 
+                Text { text: "Output Level" }
+                Meter {
+                    Layout.fillWidth: true
+                    height: 20
+                    level: Math.random() // Mock level
+                    running: true
+                    Timer {
+                        interval: 100; running: true; repeat: true
+                        onTriggered: parent.level = Math.random()
+                    }
+                }
+
                 RowLayout {
                     Button { text: "Start"; onClicked: seq.start() }
                     Button { text: "Stop"; onClicked: seq.stop() }

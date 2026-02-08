@@ -30,6 +30,8 @@ add_executable(ComplexDemo
     ../../core/src/net/OmniWebSocket.cpp
     ../../core/src/audio/dsp/OmniGain.cpp
     ../../core/src/audio/dsp/OmniFilter.cpp
+    ../../core/src/audio/OmniAudioMeter.cpp
+    ../../core/src/widgets/highlight/OmniSyntaxHighlighter.cpp
     ../../deps/juce/juce_mock.cpp
 )
 

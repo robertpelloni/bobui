@@ -91,6 +91,7 @@ The `omni` CLI is a Node.js wrapper around CMake and Ninja.
 
 ### 3D Rendering (Omni3D 1.0)
 - `View3D`: High-performance 3D viewport.
+- `Camera`: Controls position, look-at target, and FOV.
 - `Mesh`: Loads 3D models (OBJ/GLTF).
 - `Light`: Scene lighting source.
 
@@ -124,8 +125,9 @@ The `omni` CLI is a Node.js wrapper around CMake and Ninja.
 ## 7. Audio & DSP (OmniAudio 1.0)
 ### Components
 - `AudioProcessor`: Wraps a JUCE `AudioProcessor` graph.
-- `AudioGraph`: Allows connecting multiple processors together.
+- `AudioGraph`: Manages a graph of audio nodes with cycle detection.
 - `AudioSource`: Plays sample files (supports looping).
+- `AudioMeter`: Visualizes audio levels (RMS/Peak).
 - `Gain`: Simple volume control.
 - `Filter`: LowPass/HighPass/BandPass filter.
 - `Sequencer`: A simple MIDI step sequencer.
