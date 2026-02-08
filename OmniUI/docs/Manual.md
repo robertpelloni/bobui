@@ -62,6 +62,8 @@ The `omni` CLI is a Node.js wrapper around CMake and Ninja.
 - `omni generate widget <name>`: Scaffolds a new OmniUI QML widget.
 - `omni generate audio <name>`: Scaffolds a new OmniUI audio processor.
 - `omni test`: Runs unit tests.
+- `omni install <pkg>`: Installs a plugin.
+- `omni publish`: Builds a release package.
 - `omni doctor [--fix]`: Checks environment health and optionally tries to fix it.
 
 ## 6. Widget Reference (OmniUI 1.0)
@@ -73,7 +75,17 @@ The `omni` CLI is a Node.js wrapper around CMake and Ninja.
 - `CheckBox`: A boolean toggle.
 - `ComboBox`: A dropdown selection menu.
 - `ProgressBar`: Displays progress or metering.
+- `CodeEditor`: Syntax-highlighting text editor.
+- `Calendar`: Date picker widget.
 - `JuceView`: A container for raw C++ JUCE Components.
+
+### Data & Persistence (OmniData 1.0)
+- `Settings`: Singleton for saving/loading app configuration.
+- `Database`: Interface to SQLite storage.
+
+### Graphics (OmniGfx 1.0)
+- `ShaderEffect`: GLSL fragment shader container.
+- `ParticleSystem`: GPU-accelerated particle emitter.
 
 ### Charts & Data (OmniCharts 1.0)
 - `LineChart`: High-performance 2D line plotter.

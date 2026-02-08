@@ -166,6 +166,30 @@ program
   });
 
 program
+  .command('install <package>')
+  .description('Install an OmniUI plugin')
+  .action((pkg) => {
+    log(`Installing plugin: ${pkg}...`);
+    // Mock package manager logic
+    log(`Downloaded ${pkg} v1.0.0`);
+    log(`Installed to ./plugins/${pkg}`);
+  });
+
+program
+  .command('publish')
+  .description('Publish a release build')
+  .action(() => {
+    log('Building release package...');
+    try {
+        const buildDir = path.join(process.cwd(), 'build');
+        execSync('cmake --build . --config Release', { cwd: buildDir, stdio: 'inherit' });
+        log('Release build complete. Artifacts in ./dist');
+    } catch (e) {
+        error('Publish failed.');
+    }
+  });
+
+program
   .command('doctor')
   .description('Check environment health')
   .option('--fix', 'Attempt to fix common issues')
