@@ -66,6 +66,7 @@ The `omni` CLI is a Node.js wrapper around CMake and Ninja.
 - `omni publish`: Builds a release package.
 - `omni deploy <platform>`: Deploys to Android, iOS, WASM, etc.
 - `omni translate <lang>`: Generates a translation template.
+- `omni repl`: Starts an interactive OmniScript shell.
 - `omni doctor [--fix]`: Checks environment health and optionally tries to fix it.
 
 ## 6. Widget Reference (OmniUI 1.0)
@@ -122,12 +123,23 @@ The `omni` CLI is a Node.js wrapper around CMake and Ninja.
 - `DockArea`: A flexible docking container.
 - `SplitView`: A resizable split pane.
 
+### Networking (OmniNet 1.0)
+- `HttpClient`: REST API client.
+- `WebSocket`: Real-time bidirectional communication.
+- `GraphQLClient`: Query and Mutate GraphQL endpoints.
+
+### Scripting & Tooling (OmniScript 1.0)
+- `ScriptEngine`: Run JavaScript dynamically.
+- `FileWatcher`: Monitor filesystem changes (used for Hot Reload).
+
 ## 7. Audio & DSP (OmniAudio 1.0)
 ### Components
 - `AudioProcessor`: Wraps a JUCE `AudioProcessor` graph.
 - `AudioGraph`: Manages a graph of audio nodes with cycle detection.
 - `AudioSource`: Plays sample files (supports looping).
 - `AudioMeter`: Visualizes audio levels (RMS/Peak).
+- `Sampler`: Multi-sample playback engine.
+- `Wavetable`: Wavetable synthesizer (Sine, Saw, Square, Triangle).
 - `Gain`: Simple volume control.
 - `Filter`: LowPass/HighPass/BandPass filter.
 - `Sequencer`: A simple MIDI step sequencer.

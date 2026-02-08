@@ -190,6 +190,35 @@ program
   });
 
 program
+  .command('repl')
+  .description('Start interactive scripting shell')
+  .action(() => {
+    log('Starting OmniScript REPL...');
+    const readline = require('readline');
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+        prompt: 'omni> '
+    });
+
+    rl.prompt();
+    rl.on('line', (line) => {
+        // In a real implementation, this would send the line to a running OmniUI instance via IPC/WebSocket
+        // For now, we mock the execution
+        try {
+            const result = eval(line); // Dangerous but fine for a mock REPL
+            console.log(result);
+        } catch (e) {
+            console.error('Error:', e.message);
+        }
+        rl.prompt();
+    }).on('close', () => {
+        console.log('\nExiting REPL.');
+        process.exit(0);
+    });
+  });
+
+program
   .command('deploy <platform>')
   .description('Deploy project to a platform (android, ios, wasm, macos, windows, linux)')
   .action((platform) => {
