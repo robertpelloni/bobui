@@ -274,6 +274,26 @@ program
   });
 
 program
+  .command('generate-node <name>')
+  .description('Generate a new visual node type')
+  .action((name) => {
+    log(`Generating node: ${name}`);
+    const targetDir = path.join(process.cwd(), 'src', 'nodes');
+    if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
+
+    const content = `
+import OmniNodes 1.0
+
+Node {
+    title: "${name}"
+    width: 200; height: 150
+}
+`;
+    fs.writeFileSync(path.join(targetDir, `${name}.qml`), content.trim());
+    log(`Created src/nodes/${name}.qml`);
+  });
+
+program
   .command('doctor')
   .description('Check environment health')
   .option('--fix', 'Attempt to fix common issues')

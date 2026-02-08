@@ -66,6 +66,7 @@ The `omni` CLI is a Node.js wrapper around CMake and Ninja.
 - `omni publish`: Builds a release package.
 - `omni deploy <platform>`: Deploys to Android, iOS, WASM, etc.
 - `omni translate <lang>`: Generates a translation template.
+- `omni generate-node <name>`: Scaffolds a new visual node type.
 - `omni repl`: Starts an interactive OmniScript shell.
 - `omni doctor [--fix]`: Checks environment health and optionally tries to fix it.
 
@@ -131,6 +132,18 @@ The `omni` CLI is a Node.js wrapper around CMake and Ninja.
 ### Scripting & Tooling (OmniScript 1.0)
 - `ScriptEngine`: Run JavaScript dynamically.
 - `FileWatcher`: Monitor filesystem changes (used for Hot Reload).
+
+### Visual Nodes (OmniNodes 1.0)
+- `NodeCanvas`: Infinite zoomable grid for node editing.
+- `Node`: Base component for a visual node.
+- `ConnectionLine`: Bezier curve connecting two points.
+
+### Artificial Intelligence (OmniAI 1.0)
+- `LLMClient`: Interface to local inference servers (e.g., Ollama).
+
+### Animation (OmniAnim 1.0)
+- `Track`: A timeline track containing keyframes.
+- `Keyframe`: A time/value pair.
 
 ## 7. Audio & DSP (OmniAudio 1.0)
 ### Components
