@@ -190,6 +190,21 @@ program
   });
 
 program
+  .command('serve')
+  .description('Start collaboration server')
+  .action(() => {
+    log('Starting OmniSync Server on ws://localhost:8080...');
+    // Mock WebSocket Server
+    const http = require('http');
+    const server = http.createServer((req, res) => {
+        res.writeHead(200, { 'Content-Type': 'text/plain' });
+        res.end('OmniSync Server Running\n');
+    });
+    server.listen(8080);
+    log('Server running. Connect OmniSyncClient to ws://localhost:8080');
+  });
+
+program
   .command('repl')
   .description('Start interactive scripting shell')
   .action(() => {
