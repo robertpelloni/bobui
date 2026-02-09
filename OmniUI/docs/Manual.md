@@ -68,6 +68,7 @@ The `omni` CLI is a Node.js wrapper around CMake and Ninja.
 - `omni translate <lang>`: Generates a translation template.
 - `omni generate-node <name>`: Scaffolds a new visual node type.
 - `omni generate-physics <name>`: Scaffolds a new physics entity.
+- `omni generate-game <name>`: Scaffolds a new game project.
 - `omni login`: Authenticates with OmniCloud.
 - `omni logout`: Signs out of OmniCloud.
 - `omni repl`: Starts an interactive OmniScript shell.
@@ -146,6 +147,18 @@ The `omni` CLI is a Node.js wrapper around CMake and Ninja.
 - `LLMClient`: Interface to local inference servers (e.g., Ollama).
 - `Vision`: Image analysis.
 - `Voice`: Speech-to-Text and Text-to-Speech.
+
+### Game Development (OmniGame 1.0)
+- `Sprite`: Animated 2D sprite.
+- `Input`: Gamepad and keyboard input mapping.
+
+### Web3 (OmniWeb3 1.0)
+- `Wallet`: Crypto wallet connection.
+- `SmartContract`: Interact with blockchain contracts.
+
+### Embedded Systems (OmniEmbedded 1.0)
+- `GPIO`: General Purpose Input/Output pin control.
+- `I2C`: Inter-Integrated Circuit communication.
 
 ### Scripting & Tooling (OmniScript 1.0)
 - `ScriptEngine`: Run JavaScript dynamically.

@@ -345,6 +345,15 @@ RigidBody {
   });
 
 program
+  .command('generate-game <name>')
+  .description('Generate a new game project structure')
+  .action((name) => {
+    log(`Generating game project: ${name}`);
+    // Mock generation
+    log(`Created src/game/${name}.qml`);
+  });
+
+program
   .command('doctor')
   .description('Check environment health')
   .option('--fix', 'Attempt to fix common issues')
