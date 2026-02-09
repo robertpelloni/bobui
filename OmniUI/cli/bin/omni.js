@@ -309,6 +309,27 @@ Node {
   });
 
 program
+  .command('generate-physics <name>')
+  .description('Generate a new physics entity')
+  .action((name) => {
+    log(`Generating physics entity: ${name}`);
+    const targetDir = path.join(process.cwd(), 'src', 'physics');
+    if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
+
+    const content = `
+import OmniPhysics 1.0
+
+RigidBody {
+    mass: 1.0
+    restitution: 0.5
+    // Add visual component here
+}
+`;
+    fs.writeFileSync(path.join(targetDir, `${name}.qml`), content.trim());
+    log(`Created src/physics/${name}.qml`);
+  });
+
+program
   .command('doctor')
   .description('Check environment health')
   .option('--fix', 'Attempt to fix common issues')

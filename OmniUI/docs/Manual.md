@@ -67,6 +67,7 @@ The `omni` CLI is a Node.js wrapper around CMake and Ninja.
 - `omni deploy <platform>`: Deploys to Android, iOS, WASM, etc.
 - `omni translate <lang>`: Generates a translation template.
 - `omni generate-node <name>`: Scaffolds a new visual node type.
+- `omni generate-physics <name>`: Scaffolds a new physics entity.
 - `omni repl`: Starts an interactive OmniScript shell.
 - `omni doctor [--fix]`: Checks environment health and optionally tries to fix it.
 
@@ -144,6 +145,14 @@ The `omni` CLI is a Node.js wrapper around CMake and Ninja.
 ### Animation (OmniAnim 1.0)
 - `Track`: A timeline track containing keyframes.
 - `Keyframe`: A time/value pair.
+
+### Physics (OmniPhysics 1.0)
+- `PhysicsWorld`: Simulation container.
+- `RigidBody`: Dynamic object with mass and velocity.
+
+### Shader Graph (OmniGfx 1.0)
+- `ShaderNode`: Logic block for shader generation.
+- `ShaderGenerator`: Compiles nodes to GLSL.
 
 ## 7. Audio & DSP (OmniAudio 1.0)
 ### Components
