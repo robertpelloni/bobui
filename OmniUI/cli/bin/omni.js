@@ -205,6 +205,21 @@ program
   });
 
 program
+  .command('login')
+  .description('Log in to OmniCloud')
+  .action(() => {
+    // Mock login
+    log('Logged in as user: admin');
+  });
+
+program
+  .command('logout')
+  .description('Log out from OmniCloud')
+  .action(() => {
+    log('Logged out.');
+  });
+
+program
   .command('repl')
   .description('Start interactive scripting shell')
   .action(() => {
