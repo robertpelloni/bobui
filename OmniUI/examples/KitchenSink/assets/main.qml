@@ -21,6 +21,30 @@ ApplicationWindow {
         visible: true
     }
 
+    // Debug Console Overlay
+    Rectangle {
+        anchors.bottom: parent.bottom
+        anchors.left: parent.left
+        width: parent.width; height: 150
+        color: "#AA000000"
+        visible: consoleBtn.checked
+
+        ListView {
+            anchors.fill: parent
+            model: Console.logs
+            delegate: Text { text: modelData; color: "white" }
+        }
+    }
+
+    Button {
+        id: consoleBtn
+        text: "Console"
+        checkable: true
+        anchors.bottom: parent.bottom
+        anchors.right: parent.right
+        z: 100
+    }
+
     TabBar {
         id: bar
         width: parent.width

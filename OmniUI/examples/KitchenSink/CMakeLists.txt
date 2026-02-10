@@ -44,6 +44,11 @@ add_executable(KitchenSink
     ../../core/src/charts/OmniOscilloscope.cpp
     ../../core/src/debug/OmniProfiler.cpp
     ../../core/src/debug/OmniCrashHandler.cpp
+    ../../core/src/devtools/OmniInspector.cpp
+    ../../core/src/devtools/OmniConsole.cpp
+    ../../core/src/devtools/OmniNetworkMonitor.cpp
+    ../../core/src/audio/analysis/OmniSpectrogram.cpp
+    ../../core/src/audio/analysis/OmniTuner.cpp
     ../../deps/juce/juce_mock.cpp
 )
 

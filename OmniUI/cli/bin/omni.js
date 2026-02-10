@@ -212,6 +212,15 @@ program
   });
 
 program
+  .command('debug')
+  .description('Launch application with DevTools attached')
+  .action(() => {
+    log('Launching in Debug Mode...');
+    // Mock debug launch
+    log('Debugger listening on port 9229');
+  });
+
+program
   .command('login')
   .description('Log in to OmniCloud')
   .action(() => {

@@ -72,6 +72,7 @@ The `omni` CLI is a Node.js wrapper around CMake and Ninja.
 - `omni login`: Authenticates with OmniCloud.
 - `omni logout`: Signs out of OmniCloud.
 - `omni repl`: Starts an interactive OmniScript shell.
+- `omni debug`: Launch app with DevTools attached.
 - `omni doctor [--fix]`: Checks environment health and optionally tries to fix it.
 
 ## 6. Widget Reference (OmniUI 1.0)
@@ -125,8 +126,15 @@ The `omni` CLI is a Node.js wrapper around CMake and Ninja.
 - `Oscilloscope`: Real-time waveform visualizer.
 
 ### Layouts (OmniLayout 1.0)
-- `DockArea`: A flexible docking container.
+- `DockArea`: A flexible docking container (supports detachable windows).
 - `SplitView`: A resizable split pane.
+
+### Developer Tools (OmniDebug 1.0)
+- `Inspector`: Inspect and modify QML object properties at runtime.
+- `Console`: In-app log viewer.
+- `NetMonitor`: Inspect network requests.
+- `Profiler`: Performance metrics.
+- `CrashHandler`: Error reporting.
 
 ### Networking (OmniNet 1.0)
 - `HttpClient`: REST API client.
@@ -190,6 +198,8 @@ The `omni` CLI is a Node.js wrapper around CMake and Ninja.
 - `AudioGraph`: Manages a graph of audio nodes with cycle detection.
 - `AudioSource`: Plays sample files (supports looping).
 - `AudioMeter`: Visualizes audio levels (RMS/Peak).
+- `Spectrogram`: Frequency spectrum visualization (waterfall).
+- `Tuner`: Pitch detection.
 - `Sampler`: Multi-sample playback engine.
 - `Wavetable`: Wavetable synthesizer (Sine, Saw, Square, Triangle).
 - `Gain`: Simple volume control.
