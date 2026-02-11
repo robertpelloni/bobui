@@ -69,6 +69,7 @@ The `omni` CLI is a Node.js wrapper around CMake and Ninja.
 - `omni generate-node <name>`: Scaffolds a new visual node type.
 - `omni generate-physics <name>`: Scaffolds a new physics entity.
 - `omni generate-game <name>`: Scaffolds a new game project.
+- `omni generate-shader <name>`: Scaffolds a new shader graph node.
 - `omni login`: Authenticates with OmniCloud.
 - `omni logout`: Signs out of OmniCloud.
 - `omni repl`: Starts an interactive OmniScript shell.
@@ -185,8 +186,13 @@ The `omni` CLI is a Node.js wrapper around CMake and Ninja.
 - `Keyframe`: A time/value pair.
 
 ### Physics (OmniPhysics 1.0)
-- `PhysicsWorld`: Simulation container.
-- `RigidBody`: Dynamic object with mass and velocity.
+- `PhysicsWorld`: Simulation container (AABB collision supported).
+- `RigidBody`: Dynamic object with mass, velocity, and collision signals.
+
+### Web3 (OmniWeb3 1.0)
+- `Wallet`: Crypto wallet connection with transaction history.
+- `SmartContract`: Interact with blockchain contracts.
+- `Transaction`: Represents a pending or confirmed transfer.
 
 ### Shader Graph (OmniGfx 1.0)
 - `ShaderNode`: Logic block for shader generation.

@@ -30,6 +30,11 @@ The goal of this phase is to replace "stub" implementations with robust, product
     - Data bits, Parity, Stop bits.
     - Flow control.
 
+## v17.0.0: Deep Implementation (Next)
+- **3D**: Upgrade `OmniView3D` to manage a scene graph of `OmniMesh` items.
+- **Physics**: Implement AABB collision detection and `collided` signals.
+- **Web3**: Transaction history and state management.
+
 ## Future Phases
-- **v9.0**: Advanced Networking (GraphQL, gRPC).
-- **v10.0**: AI Integration (Local LLM inference bindings).
+- **v18.0**: Advanced Networking (gRPC support).
+- **v19.0**: Native Mobile Hardware (Camera/Sensors deep integration).

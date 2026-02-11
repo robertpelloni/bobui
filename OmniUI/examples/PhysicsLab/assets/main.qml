@@ -24,13 +24,17 @@ ApplicationWindow {
         Repeater {
             model: 10
             RigidBody {
+                id: body
                 x: Math.random() * 700 + 50
                 y: Math.random() * -500
                 width: 50; height: 50
                 mass: 1.0
                 restitution: 0.7
 
+                onCollided: rect.color = "red"
+
                 Rectangle {
+                    id: rect
                     anchors.fill: parent
                     color: "orange"
                     radius: 25

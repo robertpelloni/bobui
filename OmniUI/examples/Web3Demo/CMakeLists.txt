@@ -32,6 +32,7 @@ add_executable(Web3Demo
     ../../core/src/audio/dsp/OmniFilter.cpp
     ../../core/src/web3/OmniWallet.cpp
     ../../core/src/web3/OmniSmartContract.cpp
+    ../../core/src/web3/OmniTransaction.cpp
     ../../deps/juce/juce_mock.cpp
 )
 

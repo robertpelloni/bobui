@@ -370,6 +370,26 @@ program
   });
 
 program
+  .command('generate-shader <name>')
+  .description('Generate a new visual shader node')
+  .action((name) => {
+    log(`Generating shader node: ${name}`);
+    const targetDir = path.join(process.cwd(), 'src', 'shaders');
+    if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
+
+    const content = `
+import OmniGfx 1.0
+
+ShaderNode {
+    type: "${name}"
+    // Define GLSL logic here
+}
+`;
+    fs.writeFileSync(path.join(targetDir, `${name}.qml`), content.trim());
+    log(`Created src/shaders/${name}.qml`);
+  });
+
+program
   .command('doctor')
   .description('Check environment health')
   .option('--fix', 'Attempt to fix common issues')
