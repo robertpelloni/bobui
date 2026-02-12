@@ -35,6 +35,16 @@ The goal of this phase is to replace "stub" implementations with robust, product
 - **Physics**: Implement AABB collision detection and `collided` signals.
 - **Web3**: Transaction history and state management.
 
-## Future Phases
-- **v18.0**: Advanced Networking (gRPC support).
-- **v19.0**: Native Mobile Hardware (Camera/Sensors deep integration).
+## Future Phases (Post-v20.0)
+
+### v21.0: Backend Hardening
+- Replace `OmniWallet` mock with `libsecp256k1` integration.
+- Replace `OmniLLMClient` http calls with `llama.cpp` bindings.
+- Replace `OmniPhysicsWorld` simple AABB with Box2D integration.
+
+### v22.0: Performance Moonshots
+- **Vulkan/Metal Backend**: Port `OmniView3D` from QQuickItem to RHI.
+- **Audio Worklet**: Move `OmniAudioGraph` processing to a high-priority thread.
+
+### v30.0: The Singularity
+- **AI Code Gen**: Integrate `OmniScriptEngine` with an LLM to generate QML layouts from text descriptions at runtime.
