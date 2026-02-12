@@ -14,6 +14,12 @@ OmniUI is the definitive C++ UI framework for modern cross-platform development.
 | **Gaming** | OmniGame | Stable (v15.0) |
 | **System** | OmniSystem | Stable (v20.0) |
 
+## Flagship Applications
+- **OmniStudio**: Integrated Development Environment.
+- **OmniSynth**: Modular Synthesizer.
+- **OmniChat**: AI Assistant.
+- **OmniDash**: IoT Dashboard.
+
 ## Getting Started
 ```bash
 npm install -g omni-ui-cli
