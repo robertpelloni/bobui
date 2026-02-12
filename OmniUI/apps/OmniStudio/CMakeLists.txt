@@ -51,6 +51,8 @@ add_executable(OmniStudio
     ../../core/src/audio/analysis/OmniTuner.cpp
     ../../core/src/system/OmniSystem.cpp
     ../../core/src/system/OmniNotifications.cpp
+    ../../core/src/ai/gen/OmniGen.cpp
+    ../../core/src/gfx/rhi/OmniRHI.cpp
     ../../deps/juce/juce_mock.cpp
 )
 

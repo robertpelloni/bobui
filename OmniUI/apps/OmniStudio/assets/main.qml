@@ -2,7 +2,7 @@ import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
 import OmniUI 1.0
-import OmniWidgets 1.0
+
 import OmniNodes 1.0
 import Omni3D 1.0
 import OmniDebug 1.0
@@ -26,6 +26,27 @@ ApplicationWindow {
         Menu {
             title: "View"
             Action { text: "Toggle Console"; onTriggered: consoleDock.visible = !consoleDock.visible }
+            Action { text: "Generate UI..."; onTriggered: genDialog.open() }
+        }
+    }
+
+    Dialog {
+        id: genDialog
+        title: "AI Generator"
+        width: 400; height: 200
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        anchors.centerIn: parent
+
+        ColumnLayout {
+            anchors.fill: parent
+            Text { text: "Describe the UI component:" }
+            TextField { id: genPrompt; Layout.fillWidth: true; placeholderText: "e.g. A login form with username and password" }
+        }
+
+        onAccepted: {
+            var code = Generator.generateQml(genPrompt.text)
+            // Ideally insert into editor, here we just log
+            Console.log("Generated:\n" + code)
         }
     }
 

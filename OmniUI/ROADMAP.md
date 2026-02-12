@@ -30,21 +30,10 @@ The goal of this phase is to replace "stub" implementations with robust, product
     - Data bits, Parity, Stop bits.
     - Flow control.
 
-## v17.0.0: Deep Implementation (Next)
-- **3D**: Upgrade `OmniView3D` to manage a scene graph of `OmniMesh` items.
-- **Physics**: Implement AABB collision detection and `collided` signals.
-- **Web3**: Transaction history and state management.
+## v21.0.0: The Future (Current)
+- **AI Code Gen**: `OmniGen` and `omni generate-ui` command.
+- **RHI**: `OmniRHI` abstraction for Vulkan support.
 
-## Future Phases (Post-v20.0)
-
-### v21.0: Backend Hardening
-- Replace `OmniWallet` mock with `libsecp256k1` integration.
-- Replace `OmniLLMClient` http calls with `llama.cpp` bindings.
-- Replace `OmniPhysicsWorld` simple AABB with Box2D integration.
-
-### v22.0: Performance Moonshots
-- **Vulkan/Metal Backend**: Port `OmniView3D` from QQuickItem to RHI.
-- **Audio Worklet**: Move `OmniAudioGraph` processing to a high-priority thread.
-
-### v30.0: The Singularity
-- **AI Code Gen**: Integrate `OmniScriptEngine` with an LLM to generate QML layouts from text descriptions at runtime.
+## Completed Milestones
+- **v20.0**: System Integration (OmniStudio IDE).
+- **v17.0**: Deep Implementation (Physics, 3D, Web3).

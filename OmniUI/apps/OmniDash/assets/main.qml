@@ -5,7 +5,6 @@ import OmniUI 1.0
 import OmniMobile 1.0
 import OmniCharts 1.0
 import OmniCloud 1.0
-import OmniWidgets 1.0
 
 ApplicationWindow {
     visible: true
@@ -61,9 +60,14 @@ ApplicationWindow {
         }
     }
 
-    PubSub {
-        id: mqtt
-        Component.onCompleted: subscribe("home/#")
-        onMessageReceived: console.log("MQTT:", topic, message)
+    Connections {
+        target: PubSub
+        function onMessageReceived(topic, message) {
+            console.log("MQTT:", topic, message)
+        }
+    }
+
+    Component.onCompleted: {
+        PubSub.subscribe("home/#")
     }
 }

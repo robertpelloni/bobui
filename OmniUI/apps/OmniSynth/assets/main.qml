@@ -4,7 +4,7 @@ import QtQuick.Controls 2.15
 import OmniUI 1.0
 import OmniAudio 1.0
 import OmniNodes 1.0
-import OmniWidgets 1.0
+
 import OmniCharts 1.0
 
 ApplicationWindow {

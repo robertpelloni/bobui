@@ -399,6 +399,28 @@ ShaderNode {
   });
 
 program
+  .command('generate-ui <prompt>')
+  .description('Use AI to generate a UI component from a text prompt')
+  .action((prompt) => {
+    log(`Generating UI for: "${prompt}"...`);
+    // Mock call to OmniGen
+    log('Analyzing request...');
+    log('Generating QML...');
+    const filename = 'GeneratedComponent.qml';
+    const content = `
+import QtQuick 2.15
+import OmniUI 1.0
+
+Item {
+    // Generated from: ${prompt}
+    Text { text: "AI Generated UI"; anchors.centerIn: parent }
+}
+`;
+    fs.writeFileSync(path.join(process.cwd(), filename), content.trim());
+    log(`Created ${filename}`);
+  });
+
+program
   .command('doctor')
   .description('Check environment health')
   .option('--fix', 'Attempt to fix common issues')

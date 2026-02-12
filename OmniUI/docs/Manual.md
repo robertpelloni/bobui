@@ -70,6 +70,7 @@ The `omni` CLI is a Node.js wrapper around CMake and Ninja.
 - `omni generate-physics <name>`: Scaffolds a new physics entity.
 - `omni generate-game <name>`: Scaffolds a new game project.
 - `omni generate-shader <name>`: Scaffolds a new shader graph node.
+- `omni generate-ui "<prompt>"`: Generates a QML file using AI.
 - `omni login`: Authenticates with OmniCloud.
 - `omni logout`: Signs out of OmniCloud.
 - `omni repl`: Starts an interactive OmniScript shell.

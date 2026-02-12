@@ -1,7 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import OmniUI 1.0
-import OmniWidgets 1.0
+
 import OmniAudio 1.0
 import OmniNodes 1.0
 import OmniCharts 1.0
