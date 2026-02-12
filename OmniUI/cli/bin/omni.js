@@ -208,7 +208,16 @@ program
   .command('version')
   .description('Show OmniUI version')
   .action(() => {
-    log('OmniUI v15.0.0 (Stable)');
+    log('OmniUI v20.0.0 (Stable)');
+  });
+
+program
+  .command('studio')
+  .description('Launch OmniStudio IDE')
+  .action(() => {
+    log('Launching OmniStudio...');
+    // In real implementation, this would spawn the OmniStudio executable
+    log('Studio process started.');
   });
 
 program

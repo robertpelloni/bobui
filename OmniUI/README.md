@@ -12,6 +12,7 @@ OmniUI is the definitive C++ UI framework for modern cross-platform development.
 | **Hardware** | OmniHardware, OmniEmbedded | Stable (v15.0) |
 | **Simulation** | OmniPhysics, OmniGfx | Stable (v15.0) |
 | **Gaming** | OmniGame | Stable (v15.0) |
+| **System** | OmniSystem | Stable (v20.0) |
 
 ## Getting Started
 ```bash
