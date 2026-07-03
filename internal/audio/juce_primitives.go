@@ -25,16 +25,30 @@ func (j *JUCEAudioGraphAdapter) MapJUCENode(nodeName string) {
 	j.mu.Lock()
 	defer j.mu.Unlock()
 
-	// Create a proxy node that simulates the JUCE C++ connection
-	proxyNode := &JUCEProxyNode{
-		name: nodeName,
+	var nativeNode AudioNode
+
+	// Map known JUCE primitives to their Go native implementations
+	switch nodeName {
+	case "OmniSynthesizer":
+		nativeNode = NewSynthesizer()
+		log.Printf("BQt/JUCE Bridge: Mapped JUCE Primitive '%s' to native Go Synthesizer.", nodeName)
+	case "OmniGain":
+		nativeNode = NewOmniGain()
+		log.Printf("BQt/JUCE Bridge: Mapped JUCE Primitive '%s' to native Go OmniGain.", nodeName)
+	default:
+		// Create a proxy node that simulates the JUCE C++ connection for unknown processors
+		nativeNode = &JUCEProxyNode{
+			name: nodeName,
+		}
+		log.Printf("BQt/JUCE Bridge: Mapped JUCE Primitive '%s' to Go Proxy Node.", nodeName)
 	}
 
-	j.graph.AddNode(proxyNode)
-	log.Printf("BQt/JUCE Bridge: Mapped JUCE Primitive '%s' into Go AudioGraph.", nodeName)
+	j.graph.AddNode(nativeNode)
 }
 
 // JUCEProxyNode acts as the native Go stand-in for the C++ JUCE primitive.
+// For components not natively mapped (like Synthesizer or Gain), this proxy
+// routes processing via CGO/FFI.
 type JUCEProxyNode struct {
 	name string
 }

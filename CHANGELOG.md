@@ -8,10 +8,6 @@
 - Added cross-toolkit Event Loop synchronization testing (`TestEventLoopSynchronization`) spanning BQt, GTK, JUCE, and U++ simulated tasks.
 - Normalized documentation across the repository to definitively structure BQt as a framework kernel, clarifying the OS shell capabilities as the separate scope of the `bobfilez` project.
 - Fully represented backend features in the UI dashboard (DemoSurface) including UndoStack, TimeMachine, Clipboard Sync, Omni Search, and Mesh Network with interactive buttons and descriptive tooltips organized natively in grid views.
-- Finalized Phase 2 GTK parity by implementing `BQtNotebook` and `BQtHeaderBar` native Go wrapper equivalents.
-- Added cross-toolkit Event Loop synchronization testing (`TestEventLoopSynchronization`) spanning BQt, GTK, JUCE, and U++ simulated tasks.
-- Normalized documentation across the repository to definitively structure BQt as a framework kernel, clarifying the OS shell capabilities as the separate scope of the `bobfilez` project.
-- Fully represented backend features in the UI dashboard (DemoSurface) including UndoStack, TimeMachine, Clipboard Sync, Omni Search, and Mesh Network with interactive buttons and descriptive tooltips organized natively in grid views.
 - Stabilized the Go package graph running `go mod tidy` and verified the build using `go build` and `go test`.
 
 ## [1.1.73] - 2026-06-22
