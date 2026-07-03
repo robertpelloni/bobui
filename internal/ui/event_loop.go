@@ -57,6 +57,13 @@ func (el *EventLoop) Run() {
 	log.Println("BQt Unified Event Loop starting...")
 
 	for {
+		el.mu.Lock()
+		active := el.active
+		el.mu.Unlock()
+		if !active {
+			break
+		}
+
 		<-el.wakeup
 
 		el.mu.Lock()
@@ -67,5 +74,18 @@ func (el *EventLoop) Run() {
 		for _, task := range tasks {
 			task()
 		}
+	}
+}
+
+// Stop signals the EventLoop to stop processing and exit the Run loop.
+func (el *EventLoop) Stop() {
+	el.mu.Lock()
+	defer el.mu.Unlock()
+	el.active = false
+
+	// Non-blocking wakeup signal to ensure the loop breaks
+	select {
+	case el.wakeup <- struct{}{}:
+	default:
 	}
 }
