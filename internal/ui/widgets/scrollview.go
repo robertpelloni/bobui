@@ -7,7 +7,7 @@ import (
 	"gioui.org/layout"
 	"gioui.org/op"
 	giowidget "gioui.org/widget"
-	"github.com/robertpelloni/bobui/internal/ui/theme"
+	"github.com/robertpelloni/bqt/internal/ui/theme"
 )
 
 type ScrollPolicy int

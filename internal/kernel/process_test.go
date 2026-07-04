@@ -51,12 +51,12 @@ func TestProcessEnvironmentAndDir(t *testing.T) {
 	p := NewProcess()
 	if runtime.GOOS == "windows" {
 		p.Program = "cmd.exe"
-		p.Arguments = []string{"/c", "echo %BOBUI_TEST_VAR%"}
+		p.Arguments = []string{"/c", "echo %BQT_TEST_VAR%"}
 	} else {
 		p.Program = "sh"
-		p.Arguments = []string{"-c", "echo $BOBUI_TEST_VAR"}
+		p.Arguments = []string{"-c", "echo $BQT_TEST_VAR"}
 	}
-	p.Environment = []string{"BOBUI_TEST_VAR=passed"}
+	p.Environment = []string{"BQT_TEST_VAR=passed"}
 
 	if err := p.Start(); err != nil {
 		t.Fatalf("failed to start process: %v", err)

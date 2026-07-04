@@ -9,7 +9,7 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
-	"github.com/robertpelloni/bobui/internal/ui/theme"
+	"github.com/robertpelloni/bqt/internal/ui/theme"
 )
 
 // ScriptMessage represents a lightweight page-to-host or host-to-page bridge payload.
@@ -24,7 +24,7 @@ type JSBridgeHandler func(payload string) (string, error)
 
 // JSBridge provides a compile-safe but now executable bridge model for
 // WebEngineQuick-style host/page messaging. Messages can be queued and then
-// pumped through local handlers, while still preserving a small BobUI-facing API.
+// pumped through local handlers, while still preserving a small BQt-facing API.
 type JSBridge struct {
 	OnMessage func(msg ScriptMessage)
 	Handlers  map[string]JSBridgeHandler

@@ -13,7 +13,7 @@ func GetLiveReloader() *LiveReloader {
 	return &LiveReloader{Active: true}
 }
 
-// StartWatcher monitors BobUI source code for autonomous evolution.
+// StartWatcher monitors BQt source code for autonomous evolution.
 func (lr *LiveReloader) StartWatcher() {
 	go func() {
 		for lr.Active {
@@ -22,5 +22,5 @@ func (lr *LiveReloader) StartWatcher() {
 			time.Sleep(2 * time.Second)
 		}
 	}()
-	log.Println("BOBUI STUDIO: Live-Reload Kernel active. Awaiting source code evolution...")
+	log.Println("BQT STUDIO: Live-Reload Kernel active. Awaiting source code evolution...")
 }

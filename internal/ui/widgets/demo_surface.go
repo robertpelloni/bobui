@@ -5,7 +5,7 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
-	"github.com/robertpelloni/bobui/internal/ui/theme"
+	"github.com/robertpelloni/bqt/internal/ui/theme"
 )
 
 type DemoSurface struct {
@@ -112,17 +112,33 @@ func (ds *DemoSurface) Layout(gtx layout.Context, th theme.Theme) layout.Dimensi
 		layout.Expanded(func(gtx layout.Context) layout.Dimensions {
 			return layout.UniformInset(unit.Dp(16)).Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 				return layout.Flex{Axis: layout.Vertical, Spacing: layout.SpaceEvenly}.Layout(gtx,
-					layout.Rigid(material.Button(mth, &ds.btn1, "Show Dialog").Layout),
-					layout.Rigid(material.Button(mth, &ds.btn2, "Show Popup").Layout),
-					layout.Rigid(material.Button(mth, &ds.btn3, "Show Drawer").Layout),
-					layout.Rigid(material.Button(mth, &ds.btn4, "OmniAudioGraph").Layout),
-					layout.Rigid(material.Button(mth, &ds.btn5, "OmniSynthesizer").Layout),
-					layout.Rigid(material.Button(mth, &ds.btn6, "Event Loop").Layout),
-					layout.Rigid(material.Button(mth, &ds.btnUndo, "Undo Stack").Layout),
-					layout.Rigid(material.Button(mth, &ds.btnClipboard, "Clipboard Sync").Layout),
-					layout.Rigid(material.Button(mth, &ds.btnTimeMachine, "Time Machine").Layout),
-					layout.Rigid(material.Button(mth, &ds.btnSearch, "Global Search").Layout),
-					layout.Rigid(material.Button(mth, &ds.btnMesh, "Mesh Network").Layout),
+					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+						return layout.Flex{Axis: layout.Horizontal, Spacing: layout.SpaceEvenly}.Layout(gtx,
+							layout.Rigid(material.Button(mth, &ds.btn1, "Show Dialog").Layout),
+							layout.Rigid(material.Button(mth, &ds.btn2, "Show Popup").Layout),
+							layout.Rigid(material.Button(mth, &ds.btn3, "Show Drawer").Layout),
+						)
+					}),
+					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+						return layout.Flex{Axis: layout.Horizontal, Spacing: layout.SpaceEvenly}.Layout(gtx,
+							layout.Rigid(material.Button(mth, &ds.btn4, "OmniAudioGraph").Layout),
+							layout.Rigid(material.Button(mth, &ds.btn5, "OmniSynthesizer").Layout),
+							layout.Rigid(material.Button(mth, &ds.btn6, "Event Loop").Layout),
+						)
+					}),
+					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+						return layout.Flex{Axis: layout.Horizontal, Spacing: layout.SpaceEvenly}.Layout(gtx,
+							layout.Rigid(material.Button(mth, &ds.btnUndo, "Undo Stack").Layout),
+							layout.Rigid(material.Button(mth, &ds.btnClipboard, "Clipboard Sync").Layout),
+							layout.Rigid(material.Button(mth, &ds.btnTimeMachine, "Time Machine").Layout),
+						)
+					}),
+					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+						return layout.Flex{Axis: layout.Horizontal, Spacing: layout.SpaceEvenly}.Layout(gtx,
+							layout.Rigid(material.Button(mth, &ds.btnSearch, "Global Search").Layout),
+							layout.Rigid(material.Button(mth, &ds.btnMesh, "Mesh Network").Layout),
+						)
+					}),
 				)
 			})
 		}),

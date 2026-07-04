@@ -339,3 +339,6 @@ tst_*.xml
 CMakeUserPresets.json
 /.vs/
 /out/
+csharp/obj/
+csharp/bin/
+java/**/*.class

@@ -1,5 +1,51 @@
 # Changelog
 
+
+
+## [1.1.75] - 2026-06-25
+### Added
+- Finalized Phase 2 GTK parity by implementing `BQtNotebook` and `BQtHeaderBar` native Go wrapper equivalents.
+- Added cross-toolkit Event Loop synchronization testing (`TestEventLoopSynchronization`) spanning BQt, GTK, JUCE, and U++ simulated tasks.
+- Normalized documentation across the repository to definitively structure BQt as a framework kernel, clarifying the OS shell capabilities as the separate scope of the `bobfilez` project.
+- Fully represented backend features in the UI dashboard (DemoSurface) including UndoStack, TimeMachine, Clipboard Sync, Omni Search, and Mesh Network with interactive buttons and descriptive tooltips organized natively in grid views.
+- Stabilized the Go package graph running `go mod tidy` and verified the build using `go build` and `go test`.
+
+## [1.1.73] - 2026-06-22
+### Added
+- Implemented native Go routines to handle BQt signal/slot emission seamlessly (`internal/ui/signals.go`).
+- Signal emissions are executed asynchronously via goroutines to perfectly mirror Qt's queued connection behavior and maintain a non-blocking event loop.
+
+## [1.1.72] - 2026-06-22
+### Added
+- Mapped JUCE audio primitives into the Go `AudioGraph` via `JUCEAudioGraphAdapter` to bridge external C++ processors natively into Go.
+- Added `JUCEProxyNode` to simulate the FFI/CGO barrier for bridging DSP logic.
+
+## [1.1.71] - 2026-06-21
+### Added
+- Ported the `OmniSynthesizer` component to Rust, Java, and C# to maintain cross-language parity.
+- Maintained 1:1 cross-language feature parity regarding polyphony management and `Process()` audio buffer sine generation.
+
+## [1.1.70] - 2026-06-21
+### Added
+- Ported the `OmniGain` component to Rust, Java, and C# to maintain cross-language parity.
+- Implemented `Process()` logic for gain scaling across all ports with unit tests.
+
+## [1.1.69] - 2026-06-20
+### Added
+- Initiated Java and C# ports of the framework, starting with the `AudioGraph` component (`java/src/main/java/com/bqt/audio/AudioGraph.java`, `csharp/src/Audio/AudioGraph.cs`).
+- Achieved 1:1 parity with the Go backend's `AudioGraph` logic including standard lifecycle (`Start()`, `Stop()`) and connection logic for both Java and C#.
+
+## [1.1.68] - 2026-06-20
+### Added
+- Initiated Rust port of the framework, starting with the `AudioGraph` component (`rust/src/audio/audio_graph.rs`).
+- Established 1:1 parity with the Go backend's `AudioGraph` logic including standard lifecycle (`Start()`, `Stop()`) and connection logic.
+## [1.1.67] - 2026-06-20
+### Added
+- Added `Start()` and `Stop()` logic into `internal/audio/audio_graph.go` to achieve feature parity with C++ `OmniAudioGraph`.
+### Changed
+- Performed codebase renaming, changing core framework references from `bobui` to `bqt` within the Go backend (`internal/` and `main.go`).
+
+
 ## [1.1.66] - 2026-05-19
 ### Added
 - Implemented `Synthesizer` in Go (`internal/audio/synthesizer.go`) to port `OmniSynthesizer` C++ logic to pure Go. It supports polyphony management and simple sine wave generation via the `AudioNode` interface.

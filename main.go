@@ -3,10 +3,10 @@ package main
 import (
 	"log"
 	"gioui.org/app"
-	"github.com/robertpelloni/bobui/internal/kernel"
-	"github.com/robertpelloni/bobui/internal/net"
-	"github.com/robertpelloni/bobui/internal/ui"
-	"github.com/robertpelloni/bobui/internal/vm"
+	"github.com/robertpelloni/bqt/internal/kernel"
+	"github.com/robertpelloni/bqt/internal/net"
+	"github.com/robertpelloni/bqt/internal/ui"
+	"github.com/robertpelloni/bqt/internal/vm"
 )
 
 func main() {

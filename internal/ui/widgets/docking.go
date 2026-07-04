@@ -2,7 +2,7 @@ package widgets
 
 import (
 	"gioui.org/layout"
-	"github.com/robertpelloni/bobui/internal/ui/theme"
+	"github.com/robertpelloni/bqt/internal/ui/theme"
 )
 
 type DockArea struct {

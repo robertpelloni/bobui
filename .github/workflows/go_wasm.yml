@@ -6,16 +6,16 @@ jobs:
   validate-framework:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - name: Validate BobUI CMake Compatibility
+    - uses: actions/checkout@v4
+    - name: Validate BQt CMake Compatibility
       run: |
-        cmake -P cmake/tests/bobui_consolidated_compatibility_validation.cmake -DBOBUI_SKIP_NATIVE_CONFIGURE=ON
+        cmake -P cmake/tests/bqt_consolidated_compatibility_validation.cmake -DBQT_SKIP_NATIVE_CONFIGURE=ON
 
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-go@v4
+    - uses: actions/checkout@v4
+    - uses: actions/setup-go@v5
       with:
         go-version: '1.21'
     - name: Run Go tests

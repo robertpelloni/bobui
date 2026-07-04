@@ -2,7 +2,7 @@
 
 =======
 ## High-Confidence Findings
-- `bobui` should be treated as the **framework/kernel**, not the full shell/desktop product. The shell belongs to `bobfilez`.
+- `bqt` should be treated as the **framework/kernel**, not the full shell/desktop product. The shell belongs to `bobfilez`.
 - The repository now contains **both** a large C++/BobUI/OmniUI codebase and a large experimental Go port.
 - The actively maintained Go framework path under `internal/` is currently build-verified with `go test ./internal/...` and `go build -buildvcs=false .`, even though the broader repository still contains exploratory and partially migrated areas.
 - The C++ tree contains many exploratory components; some are stubs or partial implementations intended as architectural placeholders.
@@ -11,7 +11,7 @@
 ## Verified Technical Problems
 - The legacy C++ tree is still burdened by a large rename-artifact explosion that mixes likely canonical files with generated/support files, tests, docs/assets, and duplicate renamed copies.
 - Some non-Go areas of the repository remain exploratory and should not be treated as uniformly build-verified.
-- Some docs still describe `bobui` as a full OS shell instead of a framework consumed by `bobfilez`.
+- Some docs still describe `bqt` (formerly `bobui`) as a full OS shell instead of a framework kernel consumed by shells like `bobfilez`.
 - `VERSION.md` and `CHANGELOG.md` required repeated normalization after prior uncontrolled bumps.
 
 ## Design Preferences Going Forward

@@ -4,11 +4,11 @@ import "testing"
 
 func TestVFSMountAndGetAsset(t *testing.T) {
 	vfs := &VFS{assets: make(map[string][]byte)}
-	blob := []byte("hello bobui")
+	blob := []byte("hello bqt")
 	vfs.Mount("docs/readme.txt", blob)
 
 	got := vfs.GetAsset("docs/readme.txt")
-	if string(got) != "hello bobui" {
+	if string(got) != "hello bqt" {
 		t.Fatalf("expected mounted asset contents, got %q", string(got))
 	}
 	if missing := vfs.GetAsset("missing"); missing != nil {

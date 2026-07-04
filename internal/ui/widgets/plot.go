@@ -6,7 +6,7 @@ import (
 	"gioui.org/layout"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
-	"github.com/robertpelloni/bobui/internal/ui/theme"
+	"github.com/robertpelloni/bqt/internal/ui/theme"
 )
 
 type Plot struct {

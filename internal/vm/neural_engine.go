@@ -3,7 +3,7 @@ package vm
 import (
 	"encoding/json"
 	"sync"
-	"github.com/robertpelloni/bobui/internal/ui"
+	"github.com/robertpelloni/bqt/internal/ui"
 )
 
 type NeuralEngine struct {
@@ -28,7 +28,7 @@ func (ne *NeuralEngine) CaptureDOM() (string, error) {
 	
 	// Create a structured representation of the Go UI
 	dom := map[string]interface{}{
-		"os": "BobUI-Go",
+		"os": "BQt-Go",
 		"windows": wm.Windows,
 	}
 

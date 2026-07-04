@@ -11,8 +11,8 @@ import (
 	"gioui.org/op/paint"
 	"gioui.org/unit"
 	"gioui.org/widget/material"
-	"github.com/robertpelloni/bobui/internal/ui/theme"
-	"github.com/robertpelloni/bobui/internal/ui/widgets"
+	"github.com/robertpelloni/bqt/internal/ui/theme"
+	"github.com/robertpelloni/bqt/internal/ui/widgets"
 )
 
 type Engine struct {
@@ -33,7 +33,7 @@ func NewEngine() *Engine {
 	}
 }
 
-// Run now opens a real Gio window/frame loop so the current BobUI Go baseline
+// Run now opens a real Gio window/frame loop so the current BQt Go baseline
 // can be exercised as an actual runtime surface instead of only a safe init path.
 func (e *Engine) Run() error {
 	log.Println("OmniUI Go: Engine starting live Gio runtime.")
@@ -41,7 +41,7 @@ func (e *Engine) Run() error {
 
 	w := new(app.Window)
 	w.Option(
-		app.Title("BobUI Go Runtime Demo"),
+		app.Title("BQt Go Runtime Demo"),
 		app.Size(unit.Dp(1280), unit.Dp(900)),
 	)
 
@@ -50,7 +50,7 @@ func (e *Engine) Run() error {
 		switch ev := w.Event().(type) {
 		case app.DestroyEvent:
 			if ev.Err != nil {
-				log.Printf("BOBUI RUNTIME: window destroyed with error: %v", ev.Err)
+				log.Printf("BQT RUNTIME: window destroyed with error: %v", ev.Err)
 			}
 			return ev.Err
 		case app.FrameEvent:
@@ -71,19 +71,19 @@ func (e *Engine) initializeDemo() {
 	e.initializeWindowManager()
 
 	e.demo.WebView.OnNavigate = func(url string) {
-		log.Printf("BOBUI WEBVIEW: navigate -> %s", url)
+		log.Printf("BQT WEBVIEW: navigate -> %s", url)
 	}
 	e.demo.WebView.OnLoad = func(url string) {
-		log.Printf("BOBUI WEBVIEW: load -> %s", url)
+		log.Printf("BQT WEBVIEW: load -> %s", url)
 	}
 	e.demo.WebView.OnTitleChanged = func(title string) {
-		log.Printf("BOBUI WEBVIEW: title -> %s", title)
+		log.Printf("BQT WEBVIEW: title -> %s", title)
 	}
 	e.demo.WebView.OnHistoryChanged = func(index int, length int) {
-		log.Printf("BOBUI WEBVIEW: history index=%d length=%d", index, length)
+		log.Printf("BQT WEBVIEW: history index=%d length=%d", index, length)
 	}
 	e.demo.WebView.OnScriptMessage = func(msg widgets.ScriptMessage) {
-		log.Printf("BOBUI WEBVIEW: script message kind=%s id=%s channel=%s payload=%s", msg.Kind, msg.ID, msg.Channel, msg.Payload)
+		log.Printf("BQT WEBVIEW: script message kind=%s id=%s channel=%s payload=%s", msg.Kind, msg.ID, msg.Channel, msg.Payload)
 	}
 	e.demo.WebView.RegisterHandler("ping", func(payload string) (string, error) {
 		return fmt.Sprintf("pong:%s", payload), nil
@@ -99,9 +99,9 @@ func (e *Engine) initializeDemo() {
 		return fmt.Sprintf("evaluated:%s", payload), nil
 	})
 	e.demo.WebView.PostMessage("boot", "demo-surface-online")
-	e.demo.WebView.EvalJS("window.bobuiReady = true")
+	e.demo.WebView.EvalJS("window.bqtReady = true")
 	_ = e.demo.WebView.Request("ping", "hello")
-	_ = e.demo.WebView.HandleScriptMessage(widgets.ScriptMessage{Channel: "title", Payload: "about:bobui runtime", Kind: "request"})
+	_ = e.demo.WebView.HandleScriptMessage(widgets.ScriptMessage{Channel: "title", Payload: "about:bqt runtime", Kind: "request"})
 }
 
 func (e *Engine) initializeWindowManager() {
@@ -141,7 +141,7 @@ func (e *Engine) layout(gtx layout.Context) layout.Dimensions {
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 					return layout.Inset{Top: unit.Dp(10), Left: unit.Dp(10), Right: unit.Dp(10), Bottom: unit.Dp(10)}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 						return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-							layout.Rigid(material.H5(mth, "BobUI Go Runtime Surface").Layout),
+							layout.Rigid(material.H5(mth, "BQt Go Runtime Surface").Layout),
 							layout.Rigid(material.Body2(mth, runtimeSubtitle).Layout),
 						)
 					})
