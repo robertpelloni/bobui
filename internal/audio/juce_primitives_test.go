@@ -21,6 +21,7 @@ func TestJUCEMapping(t *testing.T) {
 	// Map known primitives
 	adapter.MapJUCENode("OmniSynthesizer")
 	adapter.MapJUCENode("OmniGain")
+	adapter.MapJUCENode("OmniFilter")
 	// Map unknown primitive
 	adapter.MapJUCENode("CustomProcessor")
 
@@ -44,6 +45,15 @@ func TestJUCEMapping(t *testing.T) {
 	}
 	if _, ok := gainNode.(*OmniGain); !ok {
 		t.Errorf("Expected 'OmniGain' to be of type *OmniGain, got %T", gainNode)
+	}
+
+	// Verify OmniFilter was mapped to native Go BiquadFilter
+	filterNode, exists := graph.nodes["OmniFilter"]
+	if !exists {
+		t.Fatalf("Expected 'OmniFilter' to be mapped into the Go AudioGraph")
+	}
+	if _, ok := filterNode.(*BiquadFilter); !ok {
+		t.Errorf("Expected 'OmniFilter' to be of type *BiquadFilter, got %T", filterNode)
 	}
 
 	// Verify CustomProcessor was mapped to JUCEProxyNode
