@@ -342,3 +342,4 @@ CMakeUserPresets.json
 csharp/obj/
 csharp/bin/
 java/**/*.class
+bqt

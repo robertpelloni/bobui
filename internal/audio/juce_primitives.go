@@ -35,6 +35,9 @@ func (j *JUCEAudioGraphAdapter) MapJUCENode(nodeName string) {
 	case "OmniGain":
 		nativeNode = NewOmniGain()
 		log.Printf("BQt/JUCE Bridge: Mapped JUCE Primitive '%s' to native Go OmniGain.", nodeName)
+	case "OmniFilter":
+		nativeNode = NewBiquadFilter()
+		log.Printf("BQt/JUCE Bridge: Mapped JUCE Primitive '%s' to native Go BiquadFilter.", nodeName)
 	default:
 		// Create a proxy node that simulates the JUCE C++ connection for unknown processors
 		nativeNode = &JUCEProxyNode{

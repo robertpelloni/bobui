@@ -1,6 +1,6 @@
-# OmniUI / BobUI Framework
+# OmniUI / BQt Framework
 
-`bobui` is the **framework/kernel** project.
+`bqt` is the **framework/kernel** project.
 
 It provides the reusable foundation for:
 - multi-device input and ownership
@@ -10,18 +10,18 @@ It provides the reusable foundation for:
 - developer tooling overlays
 - cross-platform runtime experiments
 
-The **desktop shell / operating environment** belongs to the adjacent `bobfilez` project, which consumes `bobui`.
+The **desktop shell / operating environment** belongs to the adjacent `bobfilez` project, which consumes `bqt`.
 
 ## Current State
 This repository contains two major implementation tracks:
-1. **C++ / BobUI / OmniUI** in `OmniUI/`
+1. **C++ / BQt / OmniUI** in `OmniUI/`
 2. **Experimental Go port** in `internal/` and `main.go`
 
 Both tracks contain substantial work. Neither should be assumed complete without build verification.
 
 ## Design Direction
-BobUI aims to match or exceed practical strengths from:
-- BobUI 6 / BobUI 7 direction
+BQt aims to match or exceed practical strengths from:
+- Qt 6 / Qt 7 direction
 - JUCE
 - JavaFX
 - Dear ImGui / ImPlot

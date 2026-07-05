@@ -28,18 +28,24 @@ func (s *Signal) Connect(slot func(args ...interface{})) {
 }
 
 // Emit triggers all connected slots with the given arguments.
-// It executes slots asynchronously via goroutines to mirror Qt's queued connections
-// and prevent blocking the main event loop.
+// It executes slots asynchronously by posting them to the unified BQt EventLoop
+// to mirror Qt's queued connections and prevent blocking.
 func (s *Signal) Emit(args ...interface{}) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	log.Printf("BQt Signal System: Emitting signal '%s' to %d listener(s)", s.name, len(s.listeners))
+	log.Printf("BQt Signal System: Emitting signal '%s' to %d listener(s) via EventLoop", s.name, len(s.listeners))
+
+	el := GetEventLoop()
 
 	for _, slot := range s.listeners {
-		// Execute each slot in a separate goroutine for non-blocking behavior
-		go func(fn func(args ...interface{}), a []interface{}) {
+		// Capture loop variables
+		fn := slot
+		a := args
+
+		// Post each slot execution to the unified EventLoop
+		el.Post(func() {
 			fn(a...)
-		}(slot, args)
+		})
 	}
 }
