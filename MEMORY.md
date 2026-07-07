@@ -82,3 +82,4 @@
 - 2026-04-05: `.github/workflows/go_wasm.yml` now includes a `validate-framework` job that runs the exact verified Go baseline plus the consolidated BobUI compatibility command.
 - 2026-04-05: `BOBUI_SKIP_NATIVE_CONFIGURE=ON` is now the CI-friendly way to keep the compatibility gate green while native compiler/toolchain provisioning remains a separate environment concern.
 >>>>>>> 677b0f352ad2c50efba02126daac7b26465b876d
+The OmniGain C++ stub has been fully ported to native Go and tested, ensuring that cross-framework signal-slot dispatch uses the event loop and remains non-blocking. The experimental C++ stubs (OmniGain.cpp and OmniGain.h) can be successfully deprecated.
