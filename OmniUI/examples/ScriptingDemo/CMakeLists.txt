@@ -28,7 +28,6 @@ add_executable(ScriptingDemo
     ../../core/src/layout/OmniSplitView.cpp
     ../../core/src/net/OmniHttpClient.cpp
     ../../core/src/net/OmniWebSocket.cpp
-    ../../core/src/audio/dsp/OmniFilter.cpp
     ../../core/src/script/OmniScriptEngine.cpp
     ../../core/src/tools/OmniFileWatcher.cpp
     ../../core/src/net/graphql/OmniGraphQLClient.cpp

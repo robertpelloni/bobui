@@ -64,7 +64,6 @@ add_executable(PluginDemo
     ../../omnicore/src/audio/dsp/OmniAudioPlayer.cpp
     ../../omnicore/src/audio/dsp/OmniSynthesizer.cpp
     ../../omnicore/src/audio/OmniVoiceEngine.cpp
-    ../../omnicore/src/audio/dsp/OmniFilter.cpp
     ../../omnicore/src/plugin/OmniPluginManager.cpp
     ../../omnicore/src/data/OmniDatabase.cpp
     ../../omnicore/src/data/OmniFileSystem.cpp
@@ -94,7 +93,6 @@ add_executable(PluginDemo
     ../../core/src/layout/OmniSplitView.cpp
     ../../core/src/net/OmniHttpClient.cpp
     ../../core/src/net/OmniWebSocket.cpp
-    ../../core/src/audio/dsp/OmniFilter.cpp
     ../../core/src/plugin/OmniPluginManager.cpp
     ../../core/src/data/OmniDatabase.cpp
     ../../core/src/gfx/OmniShaderEffect.cpp

@@ -28,7 +28,6 @@ add_executable(MobileApp
     ../../core/src/layout/OmniSplitView.cpp
     ../../core/src/net/OmniHttpClient.cpp
     ../../core/src/net/OmniWebSocket.cpp
-    ../../core/src/audio/dsp/OmniFilter.cpp
     ../../core/src/mobile/OmniSensors.cpp
     ../../core/src/mobile/OmniHaptics.cpp
     ../../core/src/mobile/OmniLocation.cpp

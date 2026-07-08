@@ -481,3 +481,10 @@ All notable changes to this project will be documented in this file.
 ### Added
 - Implemented `BobQUppComponentRegistry`, a `QML_SINGLETON` factory that exposes generic Ultimate++ controls (e.g., `Upp::Button`, `Upp::ArrayCtrl`) via string names (like "Button" or "List") into dynamically instantiated `BobQUltimatePPHost` wrappers. This fulfills the interoperability goal of hot-swapping native Qt and U++ widgets directly in QML.
 >>>>>>> origin/jules-11090863842246041945-58931a03
+
+## [Unreleased]
+### Added
+- Added event dispatch to `OmniFilter` in native Go (`TypeChanged`, `CutoffChanged`, `ResonanceChanged`), mapping them directly to the `EventLoop` for non-blocking execution.
+
+### Changed
+- Fully deprecated the legacy C++ `OmniFilter` stubs, cleaning up references in `CMakeLists.txt` files and QML registration.

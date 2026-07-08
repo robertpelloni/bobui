@@ -64,7 +64,6 @@ add_executable(ComplexDemo
     ../../omnicore/src/audio/dsp/OmniAudioPlayer.cpp
     ../../omnicore/src/audio/dsp/OmniSynthesizer.cpp
     ../../omnicore/src/audio/OmniVoiceEngine.cpp
-    ../../omnicore/src/audio/dsp/OmniFilter.cpp
     ../../core/src/OmniApp.cpp
     ../../core/src/JuceWidget.cpp
     ../../core/src/widgets/OmniButton.cpp
@@ -80,7 +79,6 @@ add_executable(ComplexDemo
     ../../core/src/layout/OmniSplitView.cpp
     ../../core/src/net/OmniHttpClient.cpp
     ../../core/src/net/OmniWebSocket.cpp
-    ../../core/src/audio/dsp/OmniFilter.cpp
     ../../core/src/audio/OmniAudioMeter.cpp
     ../../core/src/widgets/highlight/OmniSyntaxHighlighter.cpp
     ../../deps/juce/juce_mock.cpp

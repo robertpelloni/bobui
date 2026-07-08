@@ -28,7 +28,6 @@ add_executable(BioMonitor
     ../../core/src/layout/OmniSplitView.cpp
     ../../core/src/net/OmniHttpClient.cpp
     ../../core/src/net/OmniWebSocket.cpp
-    ../../core/src/audio/dsp/OmniFilter.cpp
     ../../core/src/bio/OmniDicomViewer.cpp
     ../../core/src/bio/OmniBioSensor.cpp
     ../../core/src/ml/OmniTensor.cpp

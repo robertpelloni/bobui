@@ -28,7 +28,6 @@ add_executable(CollabSpace
     ../../core/src/layout/OmniSplitView.cpp
     ../../core/src/net/OmniHttpClient.cpp
     ../../core/src/net/OmniWebSocket.cpp
-    ../../core/src/audio/dsp/OmniFilter.cpp
     ../../core/src/collab/OmniSyncClient.cpp
     ../../core/src/collab/OmniCursor.cpp
     ../../core/src/audio/routing/OmniAudioPatchBay.cpp

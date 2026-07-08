@@ -20,7 +20,6 @@ components = {
     "layout/OmniSplitView": {"base": "QSplitter", "header": "<QSplitter>"},
     "net/OmniHttpClient": {"base": "QObject", "header": "<QObject>"},
     "net/OmniWebSocket": {"base": "QObject", "header": "<QObject>"},
-    "audio/dsp/OmniFilter": {"base": "QObject", "header": "<QObject>"},
     "plugin/OmniPluginManager": {"base": "QObject", "header": "<QObject>"},
     "data/OmniDatabase": {"base": "QObject", "header": "<QObject>"},
     "gfx/OmniShaderEffect": {"base": "QWidget", "header": "<QWidget>"},
