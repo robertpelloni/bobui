@@ -28,7 +28,6 @@ add_executable(CloudApp
     ../../core/src/layout/OmniSplitView.cpp
     ../../core/src/net/OmniHttpClient.cpp
     ../../core/src/net/OmniWebSocket.cpp
-    ../../core/src/audio/dsp/OmniGain.cpp
     ../../core/src/audio/dsp/OmniFilter.cpp
     ../../core/src/cloud/OmniAuth.cpp
     ../../core/src/cloud/OmniStorage.cpp

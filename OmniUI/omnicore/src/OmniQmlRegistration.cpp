@@ -19,7 +19,6 @@
 #include "OmniImGuiCanvas.h"
 #include "OmniPlot.h"
 #include "OmniFilter.h"
-#include "OmniGain.h"
 #include "OmniAudioGraph.h"
 #include "OmniJuceView.h"
 #include "OmniDockArea.h"
@@ -115,7 +114,6 @@ void OmniUI::registerQmlTypes() {
 
     // Audio
     qmlRegisterType<OmniFilter>("OmniAudio", 1, 0, "Filter");
-    qmlRegisterType<OmniGain>("OmniAudio", 1, 0, "Gain");
     qmlRegisterType<OmniAudioGraph>("OmniAudio", 1, 0, "AudioGraph");
     qmlRegisterType<OmniMidiHandler>("OmniAudio", 1, 0, "MidiHandler");
     qmlRegisterType<OmniSequencer>("OmniAudio", 1, 0, "Sequencer");

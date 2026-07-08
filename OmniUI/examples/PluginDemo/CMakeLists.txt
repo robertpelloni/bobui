@@ -58,7 +58,6 @@ add_executable(PluginDemo
     ../../omnicore/src/gfx/OmniDropShadow.cpp
     ../../omnicore/src/gfx/OmniRhiNode.cpp
     ../../omnicore/src/widgets/OmniPlot.cpp
-    ../../omnicore/src/audio/dsp/OmniGain.cpp
     ../../omnicore/src/audio/dsp/OmniMasterClock.cpp
     ../../omnicore/src/audio/dsp/OmniMidiHandler.cpp
     ../../omnicore/src/audio/dsp/OmniSequencer.cpp
@@ -95,7 +94,6 @@ add_executable(PluginDemo
     ../../core/src/layout/OmniSplitView.cpp
     ../../core/src/net/OmniHttpClient.cpp
     ../../core/src/net/OmniWebSocket.cpp
-    ../../core/src/audio/dsp/OmniGain.cpp
     ../../core/src/audio/dsp/OmniFilter.cpp
     ../../core/src/plugin/OmniPluginManager.cpp
     ../../core/src/data/OmniDatabase.cpp
