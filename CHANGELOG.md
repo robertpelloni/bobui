@@ -495,3 +495,10 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 - Fully deprecated the legacy C++ `OmniSynthesizer` stubs, cleaning up references in `CMakeLists.txt` files and QML registration.
+
+## [Unreleased]
+### Added
+- Added event dispatch to `OmniAudioGraph` in native Go (`GraphChanged`, `ProcessingStarted`, `ProcessingStopped`), mapping it directly to the `EventLoop` for non-blocking execution.
+
+### Changed
+- Fully deprecated the legacy C++ `OmniAudioGraph` stubs, cleaning up references in QML registration.
