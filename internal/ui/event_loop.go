@@ -56,13 +56,14 @@ func (el *EventLoop) Run() {
 	el.running = true
 	// Reset quit channel to allow restarting
 	el.quit = make(chan struct{})
+	quit := el.quit
 	el.mu.Unlock()
 
 	log.Println("BQt Unified Event Loop starting...")
 
 	for {
 		select {
-		case <-el.quit:
+		case <-quit:
 			return
 		case <-el.wakeup:
 			el.mu.Lock()

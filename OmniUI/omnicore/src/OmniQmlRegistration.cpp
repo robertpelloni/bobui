@@ -25,7 +25,6 @@
 #include "OmniMidiHandler.h"
 #include "OmniSequencer.h"
 #include "OmniAudioPlayer.h"
-#include "OmniSynthesizer.h"
 #include "OmniDatabase.h"
 #include "OmniHttpClient.h"
 #include "OmniWebSocket.h"
@@ -116,7 +115,6 @@ void OmniUI::registerQmlTypes() {
     qmlRegisterType<OmniMidiHandler>("OmniAudio", 1, 0, "MidiHandler");
     qmlRegisterType<OmniSequencer>("OmniAudio", 1, 0, "Sequencer");
     qmlRegisterType<OmniAudioPlayer>("OmniAudio", 1, 0, "AudioPlayer");
-    qmlRegisterType<OmniSynthesizer>("OmniAudio", 1, 0, "Synthesizer");
 
     // Data & Networking
     qmlRegisterType<OmniDatabase>("OmniData", 1, 0, "Database");

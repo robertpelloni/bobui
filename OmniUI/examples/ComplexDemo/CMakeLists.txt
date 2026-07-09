@@ -62,7 +62,6 @@ add_executable(ComplexDemo
     ../../omnicore/src/audio/dsp/OmniMidiHandler.cpp
     ../../omnicore/src/audio/dsp/OmniSequencer.cpp
     ../../omnicore/src/audio/dsp/OmniAudioPlayer.cpp
-    ../../omnicore/src/audio/dsp/OmniSynthesizer.cpp
     ../../omnicore/src/audio/OmniVoiceEngine.cpp
     ../../core/src/OmniApp.cpp
     ../../core/src/JuceWidget.cpp

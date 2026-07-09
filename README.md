@@ -9,7 +9,7 @@ BQt is the **framework kernel**, it is *not* a full OS shell. The OS shell capab
 The Go port of BQt represents the primary runtime kernel, featuring:
 *   **Unified Event Loop**: A central message queue (`internal/ui/event_loop.go`) that synchronizes and orchestrates tasks across sub-frameworks (e.g., GTK, JUCE, and U++).
 *   **Native Signal/Slot System**: Executes slots asynchronously via goroutines to mirror Qt's queued connections, ensuring the event loop is never blocked.
-*   **Audio Graph (`OmniAudioGraph`)**: Native Go parallel DSP processing simulating the JUCE `DeviceManager`. Includes nodes like `OmniGain` and `OmniSynthesizer` with 1:1 cross-language feature parity.
+*   **Audio Graph (`OmniAudioGraph`)**: Native Go parallel DSP processing simulating the JUCE `DeviceManager`. Includes nodes like `OmniGain` and `Synthesizer (OmniSynthesizer natively ported)` with 1:1 cross-language feature parity.
 
 ## Submodules
 BQt incorporates powerful existing engines:

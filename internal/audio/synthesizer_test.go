@@ -1,7 +1,11 @@
 package audio
 
 import (
+	"sync"
 	"testing"
+	"time"
+
+	"github.com/robertpelloni/bqt/internal/ui"
 )
 
 func TestSynthesizerPolyphony(t *testing.T) {
@@ -14,6 +18,50 @@ func TestSynthesizerPolyphony(t *testing.T) {
 	synth.SetPolyphony(16)
 	if synth.Polyphony() != 16 {
 		t.Errorf("Expected polyphony to be 16 after setting, got %d", synth.Polyphony())
+	}
+}
+
+func TestSynthesizerSignalEmission(t *testing.T) {
+	el := ui.GetEventLoop()
+	go el.Run()
+	defer el.Stop()
+
+	synth := NewSynthesizer()
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	var emittedPolyphony int
+	signalReceived := false
+
+	synth.PolyphonyChanged.Connect(func(args ...interface{}) {
+		defer wg.Done()
+		signalReceived = true
+		if len(args) > 0 {
+			if v, ok := args[0].(int); ok {
+				emittedPolyphony = v
+			}
+		}
+	})
+
+	synth.SetPolyphony(12)
+
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		if !signalReceived {
+			t.Fatal("Expected PolyphonyChanged signal to be dispatched")
+		}
+		if emittedPolyphony != 12 {
+			t.Errorf("Expected emitted polyphony to be 12, got %d", emittedPolyphony)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("Timeout waiting for PolyphonyChanged signal via EventLoop")
 	}
 }
 

@@ -84,3 +84,4 @@
 >>>>>>> 677b0f352ad2c50efba02126daac7b26465b876d
 The OmniGain C++ stub has been fully ported to native Go and tested, ensuring that cross-framework signal-slot dispatch uses the event loop and remains non-blocking. The experimental C++ stubs (OmniGain.cpp and OmniGain.h) can be successfully deprecated.
 The OmniFilter C++ stub has been fully ported to native Go and tested, ensuring that cross-framework signal-slot dispatch uses the event loop and remains non-blocking. The experimental C++ stubs (OmniFilter.cpp and OmniFilter.h) can be successfully deprecated.
+The OmniSynthesizer C++ stub has been fully ported to native Go and tested, ensuring that cross-framework signal-slot dispatch uses the event loop and remains non-blocking. The experimental C++ stubs (OmniSynthesizer.cpp and OmniSynthesizer.h) can be successfully deprecated.

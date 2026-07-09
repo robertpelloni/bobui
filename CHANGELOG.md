@@ -488,3 +488,10 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 - Fully deprecated the legacy C++ `OmniFilter` stubs, cleaning up references in `CMakeLists.txt` files and QML registration.
+
+## [Unreleased]
+### Added
+- Added event dispatch to `OmniSynthesizer` in native Go (`PolyphonyChanged`), mapping it directly to the `EventLoop` for non-blocking execution.
+
+### Changed
+- Fully deprecated the legacy C++ `OmniSynthesizer` stubs, cleaning up references in `CMakeLists.txt` files and QML registration.
