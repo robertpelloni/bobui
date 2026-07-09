@@ -509,3 +509,10 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 - Fully deprecated the legacy C++ `OmniMasterClock` stubs, cleaning up references in `CMakeLists.txt` files and QML registration.
+
+## [Unreleased]
+### Added
+- Added event dispatch to `OmniSequencer` in native Go (`BpmChanged`, `IsPlayingChanged`, `Beat`), mapping it directly to the `EventLoop` for non-blocking execution.
+
+### Changed
+- Fully deprecated the legacy C++ `OmniSequencer` stubs, cleaning up references in `CMakeLists.txt` files and QML registration.
