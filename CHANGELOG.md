@@ -502,3 +502,10 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 - Fully deprecated the legacy C++ `OmniAudioGraph` stubs, cleaning up references in QML registration.
+
+## [Unreleased]
+### Added
+- Added event dispatch to `OmniMasterClock` in native Go (`BpmChanged`, `IsRunningChanged`, `Beat`, `SixteenthStep`), mapping it directly to the `EventLoop` for non-blocking execution.
+
+### Changed
+- Fully deprecated the legacy C++ `OmniMasterClock` stubs, cleaning up references in `CMakeLists.txt` files and QML registration.

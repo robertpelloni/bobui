@@ -28,7 +28,6 @@
 #include "OmniHttpClient.h"
 #include "OmniWebSocket.h"
 #include "OmniPluginManager.h"
-#include "OmniMasterClock.h"
 #include "OmniIPC.h"
 #include "OmniFileSystem.h"
 #include "OmniThemeManager.h"
@@ -61,7 +60,6 @@ void OmniUI::registerQmlTypes() {
     // Singletons
     qmlRegisterSingletonType<OmniInputManager>("OmniUI", 1, 0, "InputManager", [](QQmlEngine *e, QJSEngine *s) -> QObject* { return OmniInputManager::instance(); });
     qmlRegisterSingletonType<OmniPluginManager>("OmniUI", 1, 0, "PluginManager", [](QQmlEngine *e, QJSEngine *s) -> QObject* { return OmniPluginManager::instance(); });
-    qmlRegisterSingletonType<OmniMasterClock>("OmniAudio", 1, 0, "MasterClock", [](QQmlEngine *e, QJSEngine *s) -> QObject* { return OmniMasterClock::instance(); });
     qmlRegisterSingletonType<OmniFileSystem>("OmniData", 1, 0, "FileSystem", [](QQmlEngine *e, QJSEngine *s) -> QObject* { return OmniFileSystem::instance(); });
     qmlRegisterSingletonType<OmniTimeMachine>("OmniData", 1, 0, "TimeMachine", [](QQmlEngine *e, QJSEngine *s) -> QObject* { return OmniTimeMachine::instance(); });
     qmlRegisterSingletonType<OmniAssetManager>("OmniData", 1, 0, "AssetManager", [](QQmlEngine *e, QJSEngine *s) -> QObject* { return OmniAssetManager::instance(); });

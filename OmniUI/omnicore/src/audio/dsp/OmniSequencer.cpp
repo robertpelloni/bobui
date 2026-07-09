@@ -1,5 +1,4 @@
 #include "OmniSequencer.h"
-#include "OmniMasterClock.h"
 #include <QDebug>
 
 OmniSequencer::OmniSequencer(QObject *parent)
@@ -10,16 +9,14 @@ OmniSequencer::OmniSequencer(QObject *parent)
     setObjectName("OmniSequencer");
     
     // Connect strictly to the Master Clock for 16th note timing
-    connect(OmniMasterClock::instance(), &OmniMasterClock::sixteenthStep, this, &OmniSequencer::onTimerTick);
 }
 
 OmniSequencer::~OmniSequencer() {
     stop();
 }
 
-int OmniSequencer::bpm() const { return OmniMasterClock::instance()->bpm(); }
+int OmniSequencer::bpm() const { return 120; }
 void OmniSequencer::setBpm(int b) {
-    OmniMasterClock::instance()->setBpm(b);
     emit bpmChanged();
 }
 
@@ -29,7 +26,6 @@ void OmniSequencer::start() {
     if (!m_isPlaying) {
         m_isPlaying = true;
         m_currentStep = 0;
-        OmniMasterClock::instance()->start();
         emit isPlayingChanged();
         qDebug() << "OmniSequencer: Bound to Master Clock and Started.";
     }

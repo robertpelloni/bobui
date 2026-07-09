@@ -1,5 +1,4 @@
 #include "OmniParticleSystem.h"
-#include "OmniMasterClock.h"
 #include <QPainter>
 #include <QRandomGenerator>
 #include <QDebug>
@@ -16,7 +15,6 @@ OmniParticleSystem::OmniParticleSystem(QQuickItem *parent)
     setFlag(ItemHasContents, true);
     
     // Tie the particle physics natively to the DSP audio clock
-    connect(OmniMasterClock::instance(), &OmniMasterClock::sixteenthStep, this, &OmniParticleSystem::onClockTick);
 }
 
 OmniParticleSystem::~OmniParticleSystem() = default;
