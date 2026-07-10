@@ -516,3 +516,10 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 - Fully deprecated the legacy C++ `OmniSequencer` stubs, cleaning up references in `CMakeLists.txt` files and QML registration.
+
+## [Unreleased]
+### Added
+- Added `SynthWidget` to visualize the audio waveform using `gioui.org` rendering primitives, properly bound to the `OmniSynthesizer`'s polyphony layer.
+
+### Fixed
+- Re-wired `SynthWidget` into `DemoSurface` safely, applying explicit boundaries within flex structures to prevent `op.MacroOp` layout panics.
