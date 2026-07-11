@@ -10,7 +10,7 @@ import (
 
 type DemoSurface struct {
 	WebView                                                   WebView
-	synthWidget                                               *DummySynthWidget
+	synthWidget                                               *SynthWidget
 	btn1, btn2, btn3                                          widget.Clickable
 	btn4, btn5, btn6                                          widget.Clickable // Audio, Synth, Event Loop
 	btnUndo, btnClipboard, btnTimeMachine, btnSearch, btnMesh widget.Clickable // Backend features
@@ -178,9 +178,7 @@ func (ds *DemoSurface) Layout(gtx layout.Context, th theme.Theme) layout.Dimensi
 }
 
 func NewDemoSurface() *DemoSurface {
-	// Initialize DummySynthWidget directly without importing audio package
-	// to avoid cyclic dependency between ui/widgets and audio
 	return &DemoSurface{
-		synthWidget: NewDummySynthWidget(),
+		synthWidget: NewSynthWidget(),
 	}
 }

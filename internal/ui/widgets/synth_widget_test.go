@@ -9,7 +9,7 @@ import (
 )
 
 func TestSynthWidgetLayout(t *testing.T) {
-	widget := NewDummySynthWidget()
+	widget := NewSynthWidget()
 
 	ops := new(op.Ops)
 	gtx := layout.Context{
