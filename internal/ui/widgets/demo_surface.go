@@ -182,3 +182,9 @@ func NewDemoSurface() *DemoSurface {
 		synthWidget: NewSynthWidget(),
 	}
 }
+
+func (ds *DemoSurface) SetSynthVoices(poly int) {
+	if ds.synthWidget != nil {
+		ds.synthWidget.SetActiveVoices(poly)
+	}
+}

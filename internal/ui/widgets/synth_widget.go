@@ -11,6 +11,8 @@ import (
 )
 
 // SynthWidget provides a direct gioui.org rendering hook for the OmniSynthesizer polyphony layer.
+// To use, instantiate and wire this in the shell or engine layer and update polyphony/buffer
+// through SetActiveVoices and UpdateWaveform to avoid cyclic package dependencies with audio core.
 type SynthWidget struct {
 	mu           sync.Mutex
 
