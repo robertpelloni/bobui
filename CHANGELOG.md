@@ -523,3 +523,10 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 - Re-wired `SynthWidget` into `DemoSurface` safely, applying explicit boundaries within flex structures to prevent `op.MacroOp` layout panics.
+
+## [Unreleased]
+### Added
+- Added event dispatch to `OmniSpatialAudio` in native Go (`PlaySpatialClick`, `PlaySpatialNotification`), mapping it directly to the `EventLoop` for non-blocking execution.
+
+### Changed
+- Fully deprecated the legacy C++ `OmniSpatialAudio` stubs, cleaning up references in `CMakeLists.txt` files.
