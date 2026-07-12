@@ -100,3 +100,5 @@ The following DSP components and subsystems remain as legacy C++ stubs (e.g. in 
 These legacy components are considered unstable. The goal of Phase 3 is to systematically port these remaining components into `internal/audio/` and bind their state updates to the unified `ui.EventLoop`, subsequently deprecating the C++ files.
 The OmniAudioPlayer C++ stub has been fully ported to native Go and tested, ensuring that cross-framework signal-slot dispatch uses the event loop and remains non-blocking. The experimental C++ stubs (OmniAudioPlayer.cpp and OmniAudioPlayer.h) can be successfully deprecated.
 The OmniMidiHandler C++ stub has been fully ported to native Go and tested, ensuring that cross-framework signal-slot dispatch uses the event loop and remains non-blocking. The experimental C++ stubs (OmniMidiHandler.cpp and OmniMidiHandler.h) can be successfully deprecated.
+
+Phase 4 ("World Domination") is now complete as the shell integration API (`ShellBridge`) correctly exposes the BQt kernel. The new focus is Phase 5, concentrating on the `bobfilez` native UI shells for specific platforms (web, desktop).
