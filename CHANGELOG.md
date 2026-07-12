@@ -530,3 +530,10 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 - Fully deprecated the legacy C++ `OmniSpatialAudio` stubs, cleaning up references in `CMakeLists.txt` files.
+
+## [Unreleased]
+### Added
+- Added event dispatch to `OmniAudioPlayer` in native Go (`SourceChanged`, `IsPlayingChanged`), mapping it directly to the `EventLoop` for non-blocking execution.
+
+### Changed
+- Fully deprecated the legacy C++ `OmniAudioPlayer` stubs, cleaning up references in `CMakeLists.txt` files and QML registration.

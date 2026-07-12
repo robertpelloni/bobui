@@ -59,7 +59,6 @@ add_executable(PluginDemo
     ../../omnicore/src/widgets/OmniPlot.cpp
     ../../omnicore/src/audio/dsp/OmniMidiHandler.cpp
     ../../omnicore/src/audio/dsp/OmniSequencer.cpp
-    ../../omnicore/src/audio/dsp/OmniAudioPlayer.cpp
     ../../omnicore/src/audio/OmniVoiceEngine.cpp
     ../../omnicore/src/plugin/OmniPluginManager.cpp
     ../../omnicore/src/data/OmniDatabase.cpp
