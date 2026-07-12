@@ -28,8 +28,6 @@ add_executable(Global3D
     ../../core/src/layout/OmniSplitView.cpp
     ../../core/src/net/OmniHttpClient.cpp
     ../../core/src/net/OmniWebSocket.cpp
-    ../../core/src/audio/dsp/OmniGain.cpp
-    ../../core/src/audio/dsp/OmniFilter.cpp
     ../../core/src/plugin/OmniPluginManager.cpp
     ../../core/src/data/OmniDatabase.cpp
     ../../core/src/gfx/OmniShaderEffect.cpp

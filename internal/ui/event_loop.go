@@ -10,8 +10,9 @@ import (
 type EventLoop struct {
 	mu     sync.Mutex
 	queue  []func()
-	active bool
+	quit   chan struct{}
 	wakeup chan struct{}
+	running bool
 }
 
 var (
@@ -24,6 +25,7 @@ func GetEventLoop() *EventLoop {
 	once.Do(func() {
 		globalEventLoop = &EventLoop{
 			queue:  make([]func(), 0),
+			quit:   make(chan struct{}),
 			wakeup: make(chan struct{}, 1),
 		}
 	})
@@ -47,32 +49,31 @@ func (el *EventLoop) Post(task func()) {
 // It is intended to run as the core orchestration thread unifying sub-frameworks.
 func (el *EventLoop) Run() {
 	el.mu.Lock()
-	if el.active {
+	if el.running {
 		el.mu.Unlock()
 		return
 	}
-	el.active = true
+	el.running = true
+	// Reset quit channel to allow restarting
+	el.quit = make(chan struct{})
+	quit := el.quit
 	el.mu.Unlock()
 
 	log.Println("BQt Unified Event Loop starting...")
 
 	for {
-		el.mu.Lock()
-		active := el.active
-		el.mu.Unlock()
-		if !active {
-			break
-		}
+		select {
+		case <-quit:
+			return
+		case <-el.wakeup:
+			el.mu.Lock()
+			tasks := el.queue
+			el.queue = make([]func(), 0)
+			el.mu.Unlock()
 
-		<-el.wakeup
-
-		el.mu.Lock()
-		tasks := el.queue
-		el.queue = make([]func(), 0)
-		el.mu.Unlock()
-
-		for _, task := range tasks {
-			task()
+			for _, task := range tasks {
+				task()
+			}
 		}
 	}
 }
@@ -81,11 +82,11 @@ func (el *EventLoop) Run() {
 func (el *EventLoop) Stop() {
 	el.mu.Lock()
 	defer el.mu.Unlock()
-	el.active = false
 
-	// Non-blocking wakeup signal to ensure the loop breaks
-	select {
-	case el.wakeup <- struct{}{}:
-	default:
+	if !el.running {
+		return
 	}
+	el.running = false
+
+	close(el.quit)
 }

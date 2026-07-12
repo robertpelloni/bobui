@@ -10,6 +10,7 @@ import (
 
 type DemoSurface struct {
 	WebView                                                   WebView
+	synthWidget                                               *SynthWidget
 	btn1, btn2, btn3                                          widget.Clickable
 	btn4, btn5, btn6                                          widget.Clickable // Audio, Synth, Event Loop
 	btnUndo, btnClipboard, btnTimeMachine, btnSearch, btnMesh widget.Clickable // Backend features
@@ -139,6 +140,16 @@ func (ds *DemoSurface) Layout(gtx layout.Context, th theme.Theme) layout.Dimensi
 							layout.Rigid(material.Button(mth, &ds.btnMesh, "Mesh Network").Layout),
 						)
 					}),
+					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+						if ds.synthWidget != nil {
+							return layout.Stack{}.Layout(gtx, layout.Stacked(func(gtx layout.Context) layout.Dimensions {
+								gtx.Constraints.Max.Y = 150
+								gtx.Constraints.Min.Y = 150
+								return ds.synthWidget.Layout(gtx)
+							}))
+						}
+						return layout.Dimensions{}
+					}),
 				)
 			})
 		}),
@@ -167,5 +178,13 @@ func (ds *DemoSurface) Layout(gtx layout.Context, th theme.Theme) layout.Dimensi
 }
 
 func NewDemoSurface() *DemoSurface {
-	return &DemoSurface{}
+	return &DemoSurface{
+		synthWidget: NewSynthWidget(),
+	}
+}
+
+func (ds *DemoSurface) SetSynthVoices(poly int) {
+	if ds.synthWidget != nil {
+		ds.synthWidget.SetActiveVoices(poly)
+	}
 }

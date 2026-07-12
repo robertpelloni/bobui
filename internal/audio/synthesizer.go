@@ -16,18 +16,20 @@ type Voice struct {
 }
 
 type Synthesizer struct {
-	mu          sync.Mutex
-	polyphony   int
-	activeNotes map[int]*Voice
-	sampleRate  float64
+	mu               sync.Mutex
+	polyphony        int
+	activeNotes      map[int]*Voice
+	sampleRate       float64
+	PolyphonyChanged *ui.Signal
 }
 
 // NewSynthesizer creates a new native Go synthesizer.
 func NewSynthesizer() *Synthesizer {
 	return &Synthesizer{
-		polyphony:   8,
-		activeNotes: make(map[int]*Voice),
-		sampleRate:  44100.0,
+		polyphony:        8,
+		activeNotes:      make(map[int]*Voice),
+		sampleRate:       44100.0,
+		PolyphonyChanged: ui.NewSignal("PolyphonyChanged"),
 	}
 }
 
@@ -43,13 +45,19 @@ func (s *Synthesizer) Polyphony() int {
 	return s.polyphony
 }
 
-// SetPolyphony sets the maximum number of concurrent voices.
+// SetPolyphony sets the maximum number of concurrent voices and emits a signal.
 func (s *Synthesizer) SetPolyphony(voices int) {
 	s.mu.Lock()
-	defer s.mu.Unlock()
+	changed := false
 	if s.polyphony != voices {
 		s.polyphony = voices
+		changed = true
 		log.Printf("OmniSynthesizer Go: Polyphony set to %d", voices)
+	}
+	s.mu.Unlock()
+
+	if changed {
+		s.PolyphonyChanged.Emit(voices)
 	}
 }
 

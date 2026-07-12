@@ -26,3 +26,6 @@ mkdir build && cd build
 cmake -GNinja ..
 ninja
 ```
+
+### Framework Status
+- The native Go path (`internal/audio`) is now stable and includes asynchronous signal/slot dispatch and full DSP node parity for components like `OmniGain` and `OmniFilter`. The C++ legacy build is considered unstable and should only be used when strictly necessary.

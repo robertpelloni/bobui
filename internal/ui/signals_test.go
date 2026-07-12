@@ -48,6 +48,7 @@ func TestSignalEventLoopEmission(t *testing.T) {
 	// Start the event loop
 	go el.Run()
 	defer el.Stop()
+	defer el.Stop()
 
 	var wg sync.WaitGroup
 	receivedVal := 0
