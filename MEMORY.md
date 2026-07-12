@@ -93,10 +93,10 @@ The OmniSpatialAudio C++ stub has been fully ported to native Go and tested, ens
 
 ## Missing Go Kernel Ports (C++ Legacy Stubs to be Deprecated)
 The following DSP components and subsystems remain as legacy C++ stubs (e.g. in `OmniUI/omnicore/src/audio/dsp/`) and are missing from the fully verified Go kernel (`internal/audio/`). These gaps must be bridged to achieve 100% native Go parity:
-- `OmniMidiHandler`: Hardware MIDI device interaction and NoteOn/NoteOff routing.
 - `OmniOscilloscope`: Real-time visual DSP data gathering.
 - `OmniVoiceEngine`: Voice streaming and capturing.
 - `OmniPluginManager` / `OmniPluginInterface`: VST/AU plugin wrapping.
 
 These legacy components are considered unstable. The goal of Phase 3 is to systematically port these remaining components into `internal/audio/` and bind their state updates to the unified `ui.EventLoop`, subsequently deprecating the C++ files.
 The OmniAudioPlayer C++ stub has been fully ported to native Go and tested, ensuring that cross-framework signal-slot dispatch uses the event loop and remains non-blocking. The experimental C++ stubs (OmniAudioPlayer.cpp and OmniAudioPlayer.h) can be successfully deprecated.
+The OmniMidiHandler C++ stub has been fully ported to native Go and tested, ensuring that cross-framework signal-slot dispatch uses the event loop and remains non-blocking. The experimental C++ stubs (OmniMidiHandler.cpp and OmniMidiHandler.h) can be successfully deprecated.
