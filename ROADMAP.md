@@ -25,3 +25,4 @@
 
 ## Completed Phases
 - **Phase 3: The Go Transcendence:** Fully validated and stabilized the native `OmniAudioGraph` DSP nodes (`OmniGain`, `OmniFilter`, `OmniSynthesizer`, `OmniMasterClock`, `OmniSequencer`) for real-time threading integrity under the unified event loop. Confirmed no goroutine leaks or event starvation. Implemented `OmniSynthesizer` polyphony layer with direct `gioui.org` waveform rendering hooks via `SynthWidget`, safely decoupled from the backend. Deprecated all corresponding C++ legacy stubs.
+- **Preparation for Phase 4:** The shell integration API (`internal/shell/shell_integration.go`) has been established to allow external OS shells (like `bobfilez`) to securely hook into the BQt kernel and dispatch signals across frameworks. The `DemoSurface` dashboard acts as the primary visual testbed for these components.
