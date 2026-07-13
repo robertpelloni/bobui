@@ -21,7 +21,6 @@ add_executable(OmniMind
     ../../core/src/widgets/OmniButton.cpp
     ../../core/src/widgets/OmniProgressBar.cpp
     ../../core/src/charts/OmniLineChart.cpp
-    ../../core/src/charts/OmniOscilloscope.cpp
     ../../core/src/system/OmniSystem.cpp
     ../../deps/juce/juce_mock.cpp
 )

@@ -23,7 +23,6 @@ add_executable(ScriptingDemo
     ../../core/src/widgets/OmniComboBox.cpp
     ../../core/src/widgets/OmniProgressBar.cpp
     ../../core/src/charts/OmniLineChart.cpp
-    ../../core/src/charts/OmniOscilloscope.cpp
     ../../core/src/layout/OmniDockArea.cpp
     ../../core/src/layout/OmniSplitView.cpp
     ../../core/src/net/OmniHttpClient.cpp
