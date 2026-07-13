@@ -21,7 +21,6 @@
 #include "OmniJuceView.h"
 #include "OmniDockArea.h"
 #include "OmniSplitView.h"
-#include "OmniMidiHandler.h"
 #include "OmniSequencer.h"
 #include "OmniDatabase.h"
 #include "OmniHttpClient.h"
@@ -107,7 +106,6 @@ void OmniUI::registerQmlTypes() {
     qmlRegisterType<OmniTilePane>("OmniLayout", 1, 0, "TilePane");
 
     // Audio
-    qmlRegisterType<OmniMidiHandler>("OmniAudio", 1, 0, "MidiHandler");
     qmlRegisterType<OmniSequencer>("OmniAudio", 1, 0, "Sequencer");
 
     // Data & Networking

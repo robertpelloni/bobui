@@ -537,3 +537,10 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 - Fully deprecated the legacy C++ `OmniAudioPlayer` stubs, cleaning up references in `CMakeLists.txt` files and QML registration.
+
+## [Unreleased]
+### Added
+- Added event dispatch to `OmniMidiHandler` in native Go (`CurrentDeviceChanged`, `NoteReceived`), mapping it directly to the `EventLoop` for non-blocking execution.
+
+### Changed
+- Fully deprecated the legacy C++ `OmniMidiHandler` stubs, cleaning up references in `CMakeLists.txt` files and QML registration.

@@ -93,10 +93,17 @@ The OmniSpatialAudio C++ stub has been fully ported to native Go and tested, ens
 
 ## Missing Go Kernel Ports (C++ Legacy Stubs to be Deprecated)
 The following DSP components and subsystems remain as legacy C++ stubs (e.g. in `OmniUI/omnicore/src/audio/dsp/`) and are missing from the fully verified Go kernel (`internal/audio/`). These gaps must be bridged to achieve 100% native Go parity:
-- `OmniMidiHandler`: Hardware MIDI device interaction and NoteOn/NoteOff routing.
 - `OmniOscilloscope`: Real-time visual DSP data gathering.
 - `OmniVoiceEngine`: Voice streaming and capturing.
 - `OmniPluginManager` / `OmniPluginInterface`: VST/AU plugin wrapping.
 
 These legacy components are considered unstable. The goal of Phase 3 is to systematically port these remaining components into `internal/audio/` and bind their state updates to the unified `ui.EventLoop`, subsequently deprecating the C++ files.
 The OmniAudioPlayer C++ stub has been fully ported to native Go and tested, ensuring that cross-framework signal-slot dispatch uses the event loop and remains non-blocking. The experimental C++ stubs (OmniAudioPlayer.cpp and OmniAudioPlayer.h) can be successfully deprecated.
+The OmniMidiHandler C++ stub has been fully ported to native Go and tested, ensuring that cross-framework signal-slot dispatch uses the event loop and remains non-blocking. The experimental C++ stubs (OmniMidiHandler.cpp and OmniMidiHandler.h) can be successfully deprecated.
+
+Phase 4 ("World Domination") is now complete as the shell integration API (`ShellBridge`) correctly exposes the BQt kernel. The new focus is Phase 5, concentrating on the `bobfilez` native UI shells for specific platforms (web, desktop).
+
+## JavaFX Parity Observations
+- The initial JavaFX spike maps the `Scene` and `Node` hierarchy natively into BQt via `internal/shell/javafx_bridge.go`.
+- Impedance mismatches: JavaFX fundamentally relies on its own robust application thread (`Platform.runLater`). Routing `JavaFX` native events down into BQt requires effectively marshaling state transitions through BQt's own non-blocking `ui.EventLoop` to ensure that standard GUI deadlocks (common in dual-framework architectures) do not occur.
+- BQt correctly processes these external shell events asynchronously.
