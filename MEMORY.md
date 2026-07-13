@@ -102,3 +102,8 @@ The OmniAudioPlayer C++ stub has been fully ported to native Go and tested, ensu
 The OmniMidiHandler C++ stub has been fully ported to native Go and tested, ensuring that cross-framework signal-slot dispatch uses the event loop and remains non-blocking. The experimental C++ stubs (OmniMidiHandler.cpp and OmniMidiHandler.h) can be successfully deprecated.
 
 Phase 4 ("World Domination") is now complete as the shell integration API (`ShellBridge`) correctly exposes the BQt kernel. The new focus is Phase 5, concentrating on the `bobfilez` native UI shells for specific platforms (web, desktop).
+
+## JavaFX Parity Observations
+- The initial JavaFX spike maps the `Scene` and `Node` hierarchy natively into BQt via `internal/shell/javafx_bridge.go`.
+- Impedance mismatches: JavaFX fundamentally relies on its own robust application thread (`Platform.runLater`). Routing `JavaFX` native events down into BQt requires effectively marshaling state transitions through BQt's own non-blocking `ui.EventLoop` to ensure that standard GUI deadlocks (common in dual-framework architectures) do not occur.
+- BQt correctly processes these external shell events asynchronously.
