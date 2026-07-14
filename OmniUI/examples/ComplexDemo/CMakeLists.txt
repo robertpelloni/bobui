@@ -36,6 +36,7 @@ add_executable(ComplexDemo
     ../../omnicore/src/widgets/OmniComboBox.cpp
     ../../omnicore/src/widgets/OmniProgressBar.cpp
     ../../omnicore/src/charts/OmniLineChart.cpp
+    ../../omnicore/src/charts/OmniOscilloscope.cpp
     ../../omnicore/src/layout/OmniDockArea.cpp
     ../../omnicore/src/layout/OmniSplitView.cpp
     ../../omnicore/src/net/OmniHttpClient.cpp
@@ -68,6 +69,7 @@ add_executable(ComplexDemo
     ../../core/src/widgets/OmniComboBox.cpp
     ../../core/src/widgets/OmniProgressBar.cpp
     ../../core/src/charts/OmniLineChart.cpp
+    ../../core/src/charts/OmniOscilloscope.cpp
     ../../core/src/layout/OmniDockArea.cpp
     ../../core/src/layout/OmniSplitView.cpp
     ../../core/src/net/OmniHttpClient.cpp
