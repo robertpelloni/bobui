@@ -18,7 +18,7 @@
 #ifndef QDBUSPENDINGCALL_P_H
 #define QDBUSPENDINGCALL_P_H
 
-#include <BobUIDBus/private/bobuidbusglobal_p.h>
+#include <QtDBus/private/qtdbusglobal_p.h>
 #include <qlist.h>
 #include <qmutex.h>
 #include <qpointer.h>

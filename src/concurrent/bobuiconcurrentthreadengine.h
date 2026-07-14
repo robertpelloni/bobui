@@ -5,7 +5,7 @@
 #ifndef BOBUICONCURRENT_THREADENGINE_H
 #define BOBUICONCURRENT_THREADENGINE_H
 
-#include <BobUIConcurrent/bobuiconcurrent_global.h>
+#include <QtConcurrent/qtconcurrent_global.h>
 
 #if !defined(BOBUI_NO_CONCURRENT) ||defined(Q_QDOC)
 
@@ -207,7 +207,7 @@ public:
         : ThreadEngineStarterBase<void>(_threadEngine) {}
 };
 
-//! [bobuiconcurrentthreadengine-1]
+//! [qtconcurrentthreadengine-1]
 template <typename ThreadEngine>
 inline ThreadEngineStarter<typename ThreadEngine::ResultType> startThreadEngine(ThreadEngine *threadEngine)
 {

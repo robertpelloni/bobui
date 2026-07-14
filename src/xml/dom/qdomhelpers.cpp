@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LicenseRef-BobUI-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 // BobUI-Security score:critical reason:data-parser
 
-#include <BobUIXml/bobuixmlglobal.h>
+#include <QtXml/qtxmlglobal.h>
 
 #if BOBUI_CONFIG(dom)
 

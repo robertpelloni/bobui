@@ -29,7 +29,7 @@ func (w *Watcher) AddPath(path string) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	w.files[path] = time.Now()
-	log.Printf("BOBUI WATCHER: Tracking path: %s", path)
+	log.Printf("BQT WATCHER: Tracking path: %s", path)
 }
 
 func (w *Watcher) RemovePath(path string) {

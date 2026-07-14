@@ -5,15 +5,11 @@
 #ifndef QDBUSCONNECTIONINTERFACE_H
 #define QDBUSCONNECTIONINTERFACE_H
 
-#include <BobUIDBus/bobuidbusglobal.h>
-<<<<<<< HEAD
+#include <QtDBus/qtdbusglobal.h>
 #include <QtCore/qstringlist.h>
-=======
-#include <BobUICore/qstringlist.h>
->>>>>>> origin/dev
 
-#include <BobUIDBus/qdbusabstractinterface.h>
-#include <BobUIDBus/qdbusreply.h>
+#include <QtDBus/qdbusabstractinterface.h>
+#include <QtDBus/qdbusreply.h>
 
 #ifndef BOBUI_NO_DBUS
 

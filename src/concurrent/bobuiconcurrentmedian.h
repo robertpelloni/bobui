@@ -5,7 +5,7 @@
 #ifndef BOBUICONCURRENT_MEDIAN_H
 #define BOBUICONCURRENT_MEDIAN_H
 
-#include <BobUIConcurrent/bobuiconcurrent_global.h>
+#include <QtConcurrent/qtconcurrent_global.h>
 
 #if !defined(BOBUI_NO_CONCURRENT) || defined(Q_QDOC)
 

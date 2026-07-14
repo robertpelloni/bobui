@@ -16,11 +16,7 @@
     \section1 Optimize includes
 
     If you include the \c <BobUIConcurrent> header, the entire BobUI Concurrent
-<<<<<<< HEAD:src/concurrent/qtconcurrentmap.cpp
     module with the entire Qt Core module will be included, which may increase
-=======
-    module with the entire BobUI Core module will be included, which may increase
->>>>>>> origin/dev:src/concurrent/bobuiconcurrentmap.cpp
     compilation times and binary sizes. To use individual functions from the
     BobUIConcurrent namespace, you can include more specific headers.
 
@@ -95,37 +91,37 @@
 */
 
 /*!
-  \fn [bobuiconcurrentmapkernel-1] ThreadEngineStarter<void> BobUIConcurrent::startMap(Iterator begin, Iterator end, Functor &&functor)
+  \fn [qtconcurrentmapkernel-1] ThreadEngineStarter<void> BobUIConcurrent::startMap(Iterator begin, Iterator end, Functor &&functor)
   \internal
 */
 
 /*!
-  \fn [bobuiconcurrentmapkernel-2] ThreadEngineStarter<T> BobUIConcurrent::startMapped(Iterator begin, Iterator end, Functor &&functor)
+  \fn [qtconcurrentmapkernel-2] ThreadEngineStarter<T> BobUIConcurrent::startMapped(Iterator begin, Iterator end, Functor &&functor)
   \internal
 */
 
 /*!
-  \fn [bobuiconcurrentmapkernel-3] ThreadEngineStarter<T> BobUIConcurrent::startMapped(Sequence &&sequence, Functor &&functor)
+  \fn [qtconcurrentmapkernel-3] ThreadEngineStarter<T> BobUIConcurrent::startMapped(Sequence &&sequence, Functor &&functor)
   \internal
 */
 
 /*!
-  \fn [bobuiconcurrentmapkernel-4] ThreadEngineStarter<ResultType> BobUIConcurrent::startMappedReduced(Sequence &&sequence, MapFunctor &&mapFunctor, ReduceFunctor &&reduceFunctor, ReduceOptions options)
+  \fn [qtconcurrentmapkernel-4] ThreadEngineStarter<ResultType> BobUIConcurrent::startMappedReduced(Sequence &&sequence, MapFunctor &&mapFunctor, ReduceFunctor &&reduceFunctor, ReduceOptions options)
   \internal
 */
 
 /*!
-  \fn [bobuiconcurrentmapkernel-5] ThreadEngineStarter<ResultType> BobUIConcurrent::startMappedReduced(Iterator begin, Iterator end, MapFunctor &&mapFunctor, ReduceFunctor &&reduceFunctor, ReduceOptions options)
+  \fn [qtconcurrentmapkernel-5] ThreadEngineStarter<ResultType> BobUIConcurrent::startMappedReduced(Iterator begin, Iterator end, MapFunctor &&mapFunctor, ReduceFunctor &&reduceFunctor, ReduceOptions options)
   \internal
 */
 
 /*!
-  \fn [bobuiconcurrentmapkernel-6] ThreadEngineStarter<ResultType> BobUIConcurrent::startMappedReduced(Sequence &&sequence, MapFunctor &&mapFunctor, ReduceFunctor &&reduceFunctor, ResultType &&initialValue, ReduceOptions options)
+  \fn [qtconcurrentmapkernel-6] ThreadEngineStarter<ResultType> BobUIConcurrent::startMappedReduced(Sequence &&sequence, MapFunctor &&mapFunctor, ReduceFunctor &&reduceFunctor, ResultType &&initialValue, ReduceOptions options)
   \internal
 */
 
 /*!
-  \fn [bobuiconcurrentmapkernel-7] ThreadEngineStarter<ResultType> BobUIConcurrent::startMappedReduced(Iterator begin, Iterator end, MapFunctor &&mapFunctor, ReduceFunctor &&reduceFunctor, ResultType &&initialValue, ReduceOptions options)
+  \fn [qtconcurrentmapkernel-7] ThreadEngineStarter<ResultType> BobUIConcurrent::startMappedReduced(Iterator begin, Iterator end, MapFunctor &&mapFunctor, ReduceFunctor &&reduceFunctor, ResultType &&initialValue, ReduceOptions options)
   \internal
 */
 
@@ -143,7 +139,7 @@
 */
 
 /*!
-    \page bobuiconcurrentmap.html
+    \page qtconcurrentmap.html
     \title Concurrent Map and Map-Reduce
     \brief Transforming values from a sequence and combining them, all in parallel.
     \ingroup thread
@@ -161,7 +157,7 @@
     the final result instead of a QFuture. You use them in the same
     way as the asynchronous variants.
 
-    \snippet code/src_concurrent_bobuiconcurrentmap.cpp 7
+    \snippet code/src_concurrent_qtconcurrentmap.cpp 7
 
     Note that the result types above are not QFuture objects, but real result
     types (in this case, QList<QImage> and QImage).
@@ -169,11 +165,7 @@
     \section1 Optimize includes
 
     If you include the \c <BobUIConcurrent> header, the entire BobUI Concurrent
-<<<<<<< HEAD:src/concurrent/qtconcurrentmap.cpp
     module with the entire Qt Core module will be included, which may increase
-=======
-    module with the entire BobUI Core module will be included, which may increase
->>>>>>> origin/dev:src/concurrent/bobuiconcurrentmap.cpp
     compilation times and binary sizes. To use the
     \l {BobUIConcurrent::map}{BobUIConcurrent::map()},
     \l {BobUIConcurrent::mapped}{BobUIConcurrent::mapped()}, and
@@ -192,7 +184,7 @@
 
     The map function must be of the form:
 
-    \snippet code/src_concurrent_bobuiconcurrentmap.cpp 0
+    \snippet code/src_concurrent_qtconcurrentmap.cpp 0
 
     T and U can be any type (and they can even be the same type), but T must
     match the type stored in the sequence. The function returns the modified
@@ -201,7 +193,7 @@
     This example shows how to apply a scale function to all the items
     in a sequence:
 
-    \snippet code/src_concurrent_bobuiconcurrentmap.cpp 1
+    \snippet code/src_concurrent_qtconcurrentmap.cpp 1
 
     The results of the map are made available through QFuture.  See the
     QFuture and QFutureWatcher documentation for more information on how to
@@ -210,14 +202,14 @@
     If you want to modify a sequence in-place, use BobUIConcurrent::map(). The
     map function must then be of the form:
 
-    \snippet code/src_concurrent_bobuiconcurrentmap.cpp 2
+    \snippet code/src_concurrent_qtconcurrentmap.cpp 2
 
     Note that the return value and return type of the map function are not
     used.
 
     Using BobUIConcurrent::map() is similar to using BobUIConcurrent::mapped():
 
-    \snippet code/src_concurrent_bobuiconcurrentmap.cpp 3
+    \snippet code/src_concurrent_qtconcurrentmap.cpp 3
 
     Since the sequence is modified in place, BobUIConcurrent::map() does not
     return any results via QFuture. However, you can still use QFuture and
@@ -230,7 +222,7 @@
     QFuture, make sure to use a continuation that takes QFuture as a parameter,
     otherwise only the first result will be processed:
 
-    \snippet code/src_concurrent_bobuiconcurrentmap.cpp 18
+    \snippet code/src_concurrent_qtconcurrentmap.cpp 18
 
     In this example \c {badFuture} will only print a single result, while
     \c {goodFuture} will print all results.
@@ -243,7 +235,7 @@
 
     The reduce function must be of the form:
 
-    \snippet code/src_concurrent_bobuiconcurrentmap.cpp 4
+    \snippet code/src_concurrent_qtconcurrentmap.cpp 4
 
     T is the type of the final result, U is the return type of the map
     function. Note that the return value and return type of the reduce
@@ -251,7 +243,7 @@
 
     Call BobUIConcurrent::mappedReduced() like this:
 
-    \snippet code/src_concurrent_bobuiconcurrentmap.cpp 5
+    \snippet code/src_concurrent_qtconcurrentmap.cpp 5
 
     The reduce function will be called once for each result returned by the map
     function, and should merge the \e{intermediate} into the \e{result}
@@ -271,7 +263,7 @@
     instead of a sequence. You use them in the same way as the sequence
     variants:
 
-    \snippet code/src_concurrent_bobuiconcurrentmap.cpp 6
+    \snippet code/src_concurrent_qtconcurrentmap.cpp 6
 
     \section2 Blocking Variants
 
@@ -279,7 +271,7 @@
     the final result instead of a QFuture. You use them in the same
     way as the asynchronous variants.
 
-    \snippet code/src_concurrent_bobuiconcurrentmap.cpp 7
+    \snippet code/src_concurrent_qtconcurrentmap.cpp 7
 
     Note that the result types above are not QFuture objects, but real result
     types (in this case, QList<QImage> and QImage).
@@ -290,7 +282,7 @@
     BobUIConcurrent::mappedReduced() accept pointers to member functions.
     The member function class type must match the type stored in the sequence:
 
-    \snippet code/src_concurrent_bobuiconcurrentmap.cpp 8
+    \snippet code/src_concurrent_qtconcurrentmap.cpp 8
 
     Note the use of qOverload. It is needed to resolve the ambiguity for the
     methods, that have multiple overloads.
@@ -298,7 +290,7 @@
     Also note that when using BobUIConcurrent::mappedReduced(), you can mix the use of
     normal and member functions freely:
 
-    \snippet code/src_concurrent_bobuiconcurrentmap.cpp 9
+    \snippet code/src_concurrent_qtconcurrentmap.cpp 9
 
     \section2 Using Function Objects
 
@@ -307,11 +299,11 @@
     for the map function. These function objects can be used to
     add state to a function call:
 
-    \snippet code/src_concurrent_bobuiconcurrentmap.cpp 14
+    \snippet code/src_concurrent_qtconcurrentmap.cpp 14
 
     Function objects are also supported for the reduce function:
 
-    \snippet code/src_concurrent_bobuiconcurrentmap.cpp 11
+    \snippet code/src_concurrent_qtconcurrentmap.cpp 11
 
     \section2 Using Lambda Expressions
 
@@ -319,17 +311,17 @@
     BobUIConcurrent::mappedReduced() accept lambda expressions for the map and
     reduce function:
 
-    \snippet code/src_concurrent_bobuiconcurrentmap.cpp 15
+    \snippet code/src_concurrent_qtconcurrentmap.cpp 15
 
     When using BobUIConcurrent::mappedReduced() or
     BobUIConcurrent::blockingMappedReduced(), you can mix the use of normal
     functions, member functions and lambda expressions freely.
 
-    \snippet code/src_concurrent_bobuiconcurrentmap.cpp 16
+    \snippet code/src_concurrent_qtconcurrentmap.cpp 16
 
     You can also pass a lambda as a reduce object:
 
-    \snippet code/src_concurrent_bobuiconcurrentmap.cpp 17
+    \snippet code/src_concurrent_qtconcurrentmap.cpp 17
 
     \section2 Wrapping Functions that Take Multiple Arguments
 
@@ -339,7 +331,7 @@
 
     As an example, we'll use QImage::scaledToWidth():
 
-    \snippet code/src_concurrent_bobuiconcurrentmap.cpp 10
+    \snippet code/src_concurrent_qtconcurrentmap.cpp 10
 
     scaledToWidth takes three arguments (including the "this" pointer) and
     can't be used with BobUIConcurrent::mapped() directly, because
@@ -347,15 +339,11 @@
     QImage::scaledToWidth() with BobUIConcurrent::mapped() we have to provide a
     value for the \e{width} and the \e{transformation mode}:
 
-    \snippet code/src_concurrent_bobuiconcurrentmap.cpp 13
+    \snippet code/src_concurrent_qtconcurrentmap.cpp 13
 */
 
 /*!
-<<<<<<< HEAD:src/concurrent/qtconcurrentmap.cpp
     \fn template <typename Sequence, typename MapFunctor> QFuture<void> BobUIConcurrent::map(QThreadPool *pool, Sequence &&sequence, MapFunctor &&function)
-=======
-    \fn template <typename Sequence, typename MapFunctor> QFuture<void> BobUIConcurrent::map(BOBUIhreadPool *pool, Sequence &&sequence, MapFunctor &&function)
->>>>>>> origin/dev:src/concurrent/bobuiconcurrentmap.cpp
 
     Calls \a function once for each item in \a sequence.
     All calls to \a function are invoked from the threads taken from the BOBUIhreadPool \a pool.
@@ -376,11 +364,7 @@
 */
 
 /*!
-<<<<<<< HEAD:src/concurrent/qtconcurrentmap.cpp
     \fn template <typename Iterator, typename MapFunctor> QFuture<void> BobUIConcurrent::map(QThreadPool *pool, Iterator begin, Iterator end, MapFunctor &&function)
-=======
-    \fn template <typename Iterator, typename MapFunctor> QFuture<void> BobUIConcurrent::map(BOBUIhreadPool *pool, Iterator begin, Iterator end, MapFunctor &&function)
->>>>>>> origin/dev:src/concurrent/bobuiconcurrentmap.cpp
 
     Calls \a function once for each item from \a begin to \a end.
     All calls to \a function are invoked from the threads taken from the BOBUIhreadPool \a pool.
@@ -401,11 +385,7 @@
 */
 
 /*!
-<<<<<<< HEAD:src/concurrent/qtconcurrentmap.cpp
     \fn template <typename Sequence, typename MapFunctor> QFuture<QtPrivate::MapResultType<Sequence, MapFunctor>> BobUIConcurrent::mapped(QThreadPool *pool, Sequence &&sequence, MapFunctor &&function)
-=======
-    \fn template <typename Sequence, typename MapFunctor> QFuture<BobUIPrivate::MapResultType<Sequence, MapFunctor>> BobUIConcurrent::mapped(BOBUIhreadPool *pool, Sequence &&sequence, MapFunctor &&function)
->>>>>>> origin/dev:src/concurrent/bobuiconcurrentmap.cpp
 
     Calls \a function once for each item in \a sequence and returns a future
     with each mapped item as a result. All calls to \a function are invoked from the
@@ -416,11 +396,7 @@
 */
 
 /*!
-<<<<<<< HEAD:src/concurrent/qtconcurrentmap.cpp
     \fn template <typename Sequence, typename MapFunctor> QFuture<QtPrivate::MapResultType<Sequence, MapFunctor>> BobUIConcurrent::mapped(Sequence &&sequence, MapFunctor &&function)
-=======
-    \fn template <typename Sequence, typename MapFunctor> QFuture<BobUIPrivate::MapResultType<Sequence, MapFunctor>> BobUIConcurrent::mapped(Sequence &&sequence, MapFunctor &&function)
->>>>>>> origin/dev:src/concurrent/bobuiconcurrentmap.cpp
 
     Calls \a function once for each item in \a sequence and returns a future
     with each mapped item as a result. You can use QFuture::const_iterator or
@@ -430,11 +406,7 @@
 */
 
 /*!
-<<<<<<< HEAD:src/concurrent/qtconcurrentmap.cpp
     \fn template <typename Iterator, typename MapFunctor> QFuture<QtPrivate::MapResultType<Iterator, MapFunctor>> BobUIConcurrent::mapped(QThreadPool *pool, Iterator begin, Iterator end, MapFunctor &&function)
-=======
-    \fn template <typename Iterator, typename MapFunctor> QFuture<BobUIPrivate::MapResultType<Iterator, MapFunctor>> BobUIConcurrent::mapped(BOBUIhreadPool *pool, Iterator begin, Iterator end, MapFunctor &&function)
->>>>>>> origin/dev:src/concurrent/bobuiconcurrentmap.cpp
 
     Calls \a function once for each item from \a begin to \a end and returns a
     future with each mapped item as a result. All calls to \a function are invoked from the
@@ -445,11 +417,7 @@
 */
 
 /*!
-<<<<<<< HEAD:src/concurrent/qtconcurrentmap.cpp
     \fn template <typename Iterator, typename MapFunctor> QFuture<QtPrivate::MapResultType<Iterator, MapFunctor>> BobUIConcurrent::mapped(Iterator begin, Iterator end, MapFunctor &&function)
-=======
-    \fn template <typename Iterator, typename MapFunctor> QFuture<BobUIPrivate::MapResultType<Iterator, MapFunctor>> BobUIConcurrent::mapped(Iterator begin, Iterator end, MapFunctor &&function)
->>>>>>> origin/dev:src/concurrent/bobuiconcurrentmap.cpp
 
     Calls \a function once for each item from \a begin to \a end and returns a
     future with each mapped item as a result. You can use
@@ -459,11 +427,7 @@
 */
 
 /*!
-<<<<<<< HEAD:src/concurrent/qtconcurrentmap.cpp
     \fn template <typename ResultType, typename Sequence, typename MapFunctor, typename ReduceFunctor> QFuture<ResultType> BobUIConcurrent::mappedReduced(QThreadPool *pool, Sequence &&sequence, MapFunctor &&mapFunction, ReduceFunctor &&reduceFunction, BobUIConcurrent::ReduceOptions reduceOptions)
-=======
-    \fn template <typename ResultType, typename Sequence, typename MapFunctor, typename ReduceFunctor> QFuture<ResultType> BobUIConcurrent::mappedReduced(BOBUIhreadPool *pool, Sequence &&sequence, MapFunctor &&mapFunction, ReduceFunctor &&reduceFunction, BobUIConcurrent::ReduceOptions reduceOptions)
->>>>>>> origin/dev:src/concurrent/bobuiconcurrentmap.cpp
 
     Calls \a mapFunction once for each item in \a sequence.
     All calls to \a mapFunction are invoked from the threads taken from the BOBUIhreadPool \a pool.
@@ -490,11 +454,7 @@
 */
 
 /*!
-<<<<<<< HEAD:src/concurrent/qtconcurrentmap.cpp
     \fn template <typename ResultType, typename Sequence, typename MapFunctor, typename ReduceFunctor, typename InitialValueType> QFuture<ResultType> BobUIConcurrent::mappedReduced(QThreadPool *pool, Sequence &&sequence, MapFunctor &&mapFunction, ReduceFunctor &&reduceFunction, InitialValueType &&initialValue, BobUIConcurrent::ReduceOptions reduceOptions)
-=======
-    \fn template <typename ResultType, typename Sequence, typename MapFunctor, typename ReduceFunctor, typename InitialValueType> QFuture<ResultType> BobUIConcurrent::mappedReduced(BOBUIhreadPool *pool, Sequence &&sequence, MapFunctor &&mapFunction, ReduceFunctor &&reduceFunction, InitialValueType &&initialValue, BobUIConcurrent::ReduceOptions reduceOptions)
->>>>>>> origin/dev:src/concurrent/bobuiconcurrentmap.cpp
 
     Calls \a mapFunction once for each item in \a sequence.
     All calls to \a mapFunction are invoked from the threads taken from the BOBUIhreadPool \a pool.
@@ -527,11 +487,7 @@
 */
 
 /*!
-<<<<<<< HEAD:src/concurrent/qtconcurrentmap.cpp
     \fn template <typename ResultType, typename Iterator, typename MapFunctor, typename ReduceFunctor> QFuture<ResultType> BobUIConcurrent::mappedReduced(QThreadPool *pool, Iterator begin, Iterator end, MapFunctor &&mapFunction, ReduceFunctor &&reduceFunction, BobUIConcurrent::ReduceOptions reduceOptions)
-=======
-    \fn template <typename ResultType, typename Iterator, typename MapFunctor, typename ReduceFunctor> QFuture<ResultType> BobUIConcurrent::mappedReduced(BOBUIhreadPool *pool, Iterator begin, Iterator end, MapFunctor &&mapFunction, ReduceFunctor &&reduceFunction, BobUIConcurrent::ReduceOptions reduceOptions)
->>>>>>> origin/dev:src/concurrent/bobuiconcurrentmap.cpp
 
     Calls \a mapFunction once for each item from \a begin to \a end.
     All calls to \a mapFunction are invoked from the threads taken from the BOBUIhreadPool \a pool.
@@ -562,11 +518,7 @@
 */
 
 /*!
-<<<<<<< HEAD:src/concurrent/qtconcurrentmap.cpp
     \fn template <typename ResultType, typename Iterator, typename MapFunctor, typename ReduceFunctor, typename InitialValueType> QFuture<ResultType> BobUIConcurrent::mappedReduced(QThreadPool *pool, Iterator begin, Iterator end, MapFunctor &&mapFunction, ReduceFunctor &&reduceFunction, InitialValueType &&initialValue, BobUIConcurrent::ReduceOptions reduceOptions)
-=======
-    \fn template <typename ResultType, typename Iterator, typename MapFunctor, typename ReduceFunctor, typename InitialValueType> QFuture<ResultType> BobUIConcurrent::mappedReduced(BOBUIhreadPool *pool, Iterator begin, Iterator end, MapFunctor &&mapFunction, ReduceFunctor &&reduceFunction, InitialValueType &&initialValue, BobUIConcurrent::ReduceOptions reduceOptions)
->>>>>>> origin/dev:src/concurrent/bobuiconcurrentmap.cpp
 
     Calls \a mapFunction once for each item from \a begin to \a end.
     All calls to \a mapFunction are invoked from the threads taken from the BOBUIhreadPool \a pool.
@@ -603,11 +555,7 @@
 */
 
 /*!
-<<<<<<< HEAD:src/concurrent/qtconcurrentmap.cpp
     \fn template <typename Sequence, typename MapFunctor> void BobUIConcurrent::blockingMap(QThreadPool *pool, Sequence &&sequence, MapFunctor function)
-=======
-    \fn template <typename Sequence, typename MapFunctor> void BobUIConcurrent::blockingMap(BOBUIhreadPool *pool, Sequence &&sequence, MapFunctor function)
->>>>>>> origin/dev:src/concurrent/bobuiconcurrentmap.cpp
 
     Calls \a function once for each item in \a sequence.
     All calls to \a function are invoked from the threads taken from the BOBUIhreadPool \a pool.
@@ -632,11 +580,7 @@
 */
 
 /*!
-<<<<<<< HEAD:src/concurrent/qtconcurrentmap.cpp
     \fn template <typename Iterator, typename MapFunctor> void BobUIConcurrent::blockingMap(QThreadPool *pool, Iterator begin, Iterator end, MapFunctor &&function)
-=======
-    \fn template <typename Iterator, typename MapFunctor> void BobUIConcurrent::blockingMap(BOBUIhreadPool *pool, Iterator begin, Iterator end, MapFunctor &&function)
->>>>>>> origin/dev:src/concurrent/bobuiconcurrentmap.cpp
 
     Calls \a function once for each item from \a begin to \a end.
     All calls to \a function are invoked from the threads taken from the BOBUIhreadPool \a pool.
@@ -663,11 +607,7 @@
 */
 
 /*!
-<<<<<<< HEAD:src/concurrent/qtconcurrentmap.cpp
     \fn template <typename OutputSequence, typename InputSequence, typename MapFunctor> OutputSequence BobUIConcurrent::blockingMapped(QThreadPool *pool, InputSequence &&sequence, MapFunctor &&function)
-=======
-    \fn template <typename OutputSequence, typename InputSequence, typename MapFunctor> OutputSequence BobUIConcurrent::blockingMapped(BOBUIhreadPool *pool, InputSequence &&sequence, MapFunctor &&function)
->>>>>>> origin/dev:src/concurrent/bobuiconcurrentmap.cpp
 
     Calls \a function once for each item in \a sequence and returns an OutputSequence containing
     the results. All calls to \a function are invoked from the threads taken from the BOBUIhreadPool
@@ -690,11 +630,7 @@
 */
 
 /*!
-<<<<<<< HEAD:src/concurrent/qtconcurrentmap.cpp
     \fn template <typename Sequence, typename Iterator, typename MapFunctor> Sequence BobUIConcurrent::blockingMapped(QThreadPool *pool, Iterator begin, Iterator end, MapFunctor &&function)
-=======
-    \fn template <typename Sequence, typename Iterator, typename MapFunctor> Sequence BobUIConcurrent::blockingMapped(BOBUIhreadPool *pool, Iterator begin, Iterator end, MapFunctor &&function)
->>>>>>> origin/dev:src/concurrent/bobuiconcurrentmap.cpp
 
     Calls \a function once for each item from \a begin to \a end and returns a
     container with the results. All calls to \a function are invoked from the threads
@@ -729,11 +665,7 @@
 */
 
 /*!
-<<<<<<< HEAD:src/concurrent/qtconcurrentmap.cpp
     \fn template <typename ResultType, typename Sequence, typename MapFunctor, typename ReduceFunctor> ResultType BobUIConcurrent::blockingMappedReduced(QThreadPool *pool, Sequence &&sequence, MapFunctor &&mapFunction, ReduceFunctor &&reduceFunction, BobUIConcurrent::ReduceOptions reduceOptions)
-=======
-    \fn template <typename ResultType, typename Sequence, typename MapFunctor, typename ReduceFunctor> ResultType BobUIConcurrent::blockingMappedReduced(BOBUIhreadPool *pool, Sequence &&sequence, MapFunctor &&mapFunction, ReduceFunctor &&reduceFunction, BobUIConcurrent::ReduceOptions reduceOptions)
->>>>>>> origin/dev:src/concurrent/bobuiconcurrentmap.cpp
 
     Calls \a mapFunction once for each item in \a sequence.
     All calls to \a mapFunction are invoked from the threads taken from the BOBUIhreadPool \a pool.
@@ -764,11 +696,7 @@
 */
 
 /*!
-<<<<<<< HEAD:src/concurrent/qtconcurrentmap.cpp
     \fn template <typename ResultType, typename Sequence, typename MapFunctor, typename ReduceFunctor, typename InitialValueType> ResultType BobUIConcurrent::blockingMappedReduced(QThreadPool *pool, Sequence &&sequence, MapFunctor &&mapFunction, ReduceFunctor &&reduceFunction, InitialValueType &&initialValue, BobUIConcurrent::ReduceOptions reduceOptions)
-=======
-    \fn template <typename ResultType, typename Sequence, typename MapFunctor, typename ReduceFunctor, typename InitialValueType> ResultType BobUIConcurrent::blockingMappedReduced(BOBUIhreadPool *pool, Sequence &&sequence, MapFunctor &&mapFunction, ReduceFunctor &&reduceFunction, InitialValueType &&initialValue, BobUIConcurrent::ReduceOptions reduceOptions)
->>>>>>> origin/dev:src/concurrent/bobuiconcurrentmap.cpp
 
     Calls \a mapFunction once for each item in \a sequence.
     All calls to \a mapFunction are invoked from the threads taken from the BOBUIhreadPool \a pool.
@@ -805,11 +733,7 @@
 */
 
 /*!
-<<<<<<< HEAD:src/concurrent/qtconcurrentmap.cpp
     \fn template <typename ResultType, typename Iterator, typename MapFunctor, typename ReduceFunctor> ResultType BobUIConcurrent::blockingMappedReduced(QThreadPool *pool, Iterator begin, Iterator end, MapFunctor &&mapFunction, ReduceFunctor &&reduceFunction, BobUIConcurrent::ReduceOptions reduceOptions)
-=======
-    \fn template <typename ResultType, typename Iterator, typename MapFunctor, typename ReduceFunctor> ResultType BobUIConcurrent::blockingMappedReduced(BOBUIhreadPool *pool, Iterator begin, Iterator end, MapFunctor &&mapFunction, ReduceFunctor &&reduceFunction, BobUIConcurrent::ReduceOptions reduceOptions)
->>>>>>> origin/dev:src/concurrent/bobuiconcurrentmap.cpp
 
     Calls \a mapFunction once for each item from \a begin to \a end.
     All calls to \a mapFunction are invoked from the threads taken from the BOBUIhreadPool \a pool.
@@ -842,11 +766,7 @@
 */
 
 /*!
-<<<<<<< HEAD:src/concurrent/qtconcurrentmap.cpp
     \fn template <typename ResultType, typename Iterator, typename MapFunctor, typename ReduceFunctor, typename InitialValueType> ResultType BobUIConcurrent::blockingMappedReduced(QThreadPool *pool, Iterator begin, Iterator end, MapFunctor &&mapFunction, ReduceFunctor &&reduceFunction, InitialValueType &&initialValue, BobUIConcurrent::ReduceOptions reduceOptions)
-=======
-    \fn template <typename ResultType, typename Iterator, typename MapFunctor, typename ReduceFunctor, typename InitialValueType> ResultType BobUIConcurrent::blockingMappedReduced(BOBUIhreadPool *pool, Iterator begin, Iterator end, MapFunctor &&mapFunction, ReduceFunctor &&reduceFunction, InitialValueType &&initialValue, BobUIConcurrent::ReduceOptions reduceOptions)
->>>>>>> origin/dev:src/concurrent/bobuiconcurrentmap.cpp
 
     Calls \a mapFunction once for each item from \a begin to \a end.
     All calls to \a mapFunction are invoked from the threads taken from the BOBUIhreadPool \a pool.

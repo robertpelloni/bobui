@@ -56,20 +56,12 @@ static const char propertiesInterfaceXml[] =
     "    <method name=\"GetAll\">\n"
     "      <arg name=\"interface_name\" type=\"s\" direction=\"in\"/>\n"
     "      <arg name=\"values\" type=\"a{sv}\" direction=\"out\"/>\n"
-<<<<<<< HEAD
     "      <annotation name=\"org.qtproject.BobUIDBus.QtTypeName.Out0\" value=\"QVariantMap\"/>\n"
-=======
-    "      <annotation name=\"org.bobuiproject.BobUIDBus.BobUITypeName.Out0\" value=\"QVariantMap\"/>\n"
->>>>>>> origin/dev
     "    </method>\n"
     "    <signal name=\"PropertiesChanged\">\n"
     "      <arg name=\"interface_name\" type=\"s\" direction=\"out\"/>\n"
     "      <arg name=\"changed_properties\" type=\"a{sv}\" direction=\"out\"/>\n"
-<<<<<<< HEAD
     "      <annotation name=\"org.qtproject.BobUIDBus.QtTypeName.Out1\" value=\"QVariantMap\"/>\n"
-=======
-    "      <annotation name=\"org.bobuiproject.BobUIDBus.BobUITypeName.Out1\" value=\"QVariantMap\"/>\n"
->>>>>>> origin/dev
     "      <arg name=\"invalidated_properties\" type=\"as\" direction=\"out\"/>\n"
     "    </signal>\n"
     "  </interface>\n";

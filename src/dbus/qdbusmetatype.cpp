@@ -112,11 +112,7 @@ Q_GLOBAL_STATIC(QDBusCustomTypes, customTypes)
 /*!
     \class QDBusMetaType
     \inmodule BobUIDBus
-<<<<<<< HEAD
     \brief Meta-type registration system for the Qt D-Bus module.
-=======
-    \brief Meta-type registration system for the BobUI D-Bus module.
->>>>>>> origin/dev
     \internal
 
     The QDBusMetaType class allows you to register class types for

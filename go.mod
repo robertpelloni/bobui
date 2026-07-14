@@ -1,4 +1,4 @@
-module github.com/robertpelloni/bobui
+module github.com/robertpelloni/bqt
 
 go 1.26.1
 

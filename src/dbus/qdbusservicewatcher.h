@@ -5,14 +5,9 @@
 #ifndef QDBUSSERVICEWATCHER_H
 #define QDBUSSERVICEWATCHER_H
 
-<<<<<<< HEAD
 #include <QtCore/QObject>
 #include <QtCore/qcontainerfwd.h> // Q(String)List
-=======
-#include <BobUICore/QObject>
-#include <BobUICore/qcontainerfwd.h> // Q(String)List
->>>>>>> origin/dev
-#include <BobUIDBus/bobuidbusglobal.h>
+#include <QtDBus/qtdbusglobal.h>
 
 #if !defined(BOBUI_NO_DBUS) && !defined(BOBUI_NO_QOBJECT)
 

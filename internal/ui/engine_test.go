@@ -35,13 +35,13 @@ func TestEngineInitializeDemoConfiguresExecutableWebViewRuntime(t *testing.T) {
 	if e.demo.WebView.Bridge == nil {
 		t.Fatal("expected WebView bridge to be initialized")
 	}
-	if e.demo.WebView.LastEvaluatedJS != "window.bobuiReady = true" {
+	if e.demo.WebView.LastEvaluatedJS != "window.bqtReady = true" {
 		t.Fatalf("expected LastEvaluatedJS to be initialized, got %q", e.demo.WebView.LastEvaluatedJS)
 	}
-	if e.demo.WebView.LastEvalResult != "evaluated:window.bobuiReady = true" {
+	if e.demo.WebView.LastEvalResult != "evaluated:window.bqtReady = true" {
 		t.Fatalf("expected LastEvalResult to be initialized, got %q", e.demo.WebView.LastEvalResult)
 	}
-	if e.demo.WebView.Title != "about:bobui runtime" {
+	if e.demo.WebView.Title != "about:bqt runtime" {
 		t.Fatalf("expected title to be updated by runtime handler, got %q", e.demo.WebView.Title)
 	}
 	if e.demo.WebView.QueueDepth() != 0 {

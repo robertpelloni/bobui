@@ -12,9 +12,10 @@ type AudioNode interface {
 }
 
 type AudioGraph struct {
-	mu    sync.RWMutex
-	nodes map[string]AudioNode
-	links map[string][]string // SrcID -> DestIDs
+	mu        sync.RWMutex
+	nodes     map[string]AudioNode
+	links     map[string][]string // SrcID -> DestIDs
+	isRunning bool
 }
 
 var (
@@ -43,9 +44,13 @@ func (ag *AudioGraph) AddNode(node AudioNode) {
 func (ag *AudioGraph) Connect(srcName, destName string) error {
 	ag.mu.Lock()
 	defer ag.mu.Unlock()
-	
-	if _, ok := ag.nodes[srcName]; !ok { return fmt.Errorf("node %s not found", srcName) }
-	if _, ok := ag.nodes[destName]; !ok { return fmt.Errorf("node %s not found", destName) }
+
+	if _, ok := ag.nodes[srcName]; !ok {
+		return fmt.Errorf("node %s not found", srcName)
+	}
+	if _, ok := ag.nodes[destName]; !ok {
+		return fmt.Errorf("node %s not found", destName)
+	}
 
 	ag.links[srcName] = append(ag.links[srcName], destName)
 	return nil
@@ -54,9 +59,29 @@ func (ag *AudioGraph) Connect(srcName, destName string) error {
 func (ag *AudioGraph) ProcessBlock(buffer []float32) {
 	ag.mu.RLock()
 	defer ag.mu.RUnlock()
-	
+
 	// Native Go Parallel DSP Processing
 	for _, node := range ag.nodes {
 		node.Process(buffer)
 	}
+}
+
+func (ag *AudioGraph) Start() {
+	ag.mu.Lock()
+	defer ag.mu.Unlock()
+	if ag.isRunning {
+		return
+	}
+	ag.isRunning = true
+	fmt.Println("AudioGraph: Audio processing thread STARTED. (Simulating JUCE DeviceManager)")
+}
+
+func (ag *AudioGraph) Stop() {
+	ag.mu.Lock()
+	defer ag.mu.Unlock()
+	if !ag.isRunning {
+		return
+	}
+	ag.isRunning = false
+	fmt.Println("AudioGraph: Audio processing thread STOPPED.")
 }

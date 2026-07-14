@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 #include "JuceHeader.h"
 #include <iostream>
 
@@ -34,13 +33,5 @@ namespace juce {
         void StateVariableTPTFilter::setCutoffFrequency(double freq) {}
         void StateVariableTPTFilter::setResonance(double res) {}
         void StateVariableTPTFilter::process(float* left, float* right, int numSamples) {}
-=======
-// juce_mock.cpp
-#include <iostream>
-
-namespace juce {
-    void MessageManager::getInstance() {
-        std::cout << "JUCE MessageManager mock initialized" << std::endl;
->>>>>>> feature/omni-ui-framework-18001284211800334382
     }
 }

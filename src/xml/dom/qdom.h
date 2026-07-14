@@ -4,7 +4,7 @@
 #ifndef QDOM_H
 #define QDOM_H
 
-#include <BobUIXml/bobuixmlglobal.h>
+#include <QtXml/qtxmlglobal.h>
 
 #include <BobUICore/qcompare.h>
 #include <BobUICore/qcontainertools_impl.h>

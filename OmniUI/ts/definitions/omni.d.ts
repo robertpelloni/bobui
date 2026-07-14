@@ -11,7 +11,6 @@ declare namespace Omni {
     export class Application {
         static instance(): Application;
         quit(): void;
-<<<<<<< HEAD
 
         // Multi-Input methods
         getDevices(): InputDevice[];
@@ -24,8 +23,6 @@ declare namespace Omni {
         name: string;
         type: "mouse" | "keyboard" | "touch" | "gamepad";
         cursorPosition?: { x: number; y: number };
-=======
->>>>>>> feature/omni-ui-framework-18001284211800334382
     }
 
     export class Button implements Widget {

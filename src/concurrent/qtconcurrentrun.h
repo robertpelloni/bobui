@@ -9,12 +9,12 @@
 #pragma qt_class(BobUIConcurrentRun)
 #endif
 
-#include <BobUIConcurrent/bobuiconcurrentcompilertest.h>
+#include <QtConcurrent/qtconcurrentcompilertest.h>
 
 #if !defined(QT_NO_CONCURRENT) || defined(Q_QDOC)
 
-#include <BobUIConcurrent/bobuiconcurrentrunbase.h>
-#include <BobUIConcurrent/bobuiconcurrentstoredfunctioncall.h>
+#include <QtConcurrent/qtconcurrentrunbase.h>
+#include <QtConcurrent/qtconcurrentstoredfunctioncall.h>
 
 BOBUI_BEGIN_NAMESPACE
 

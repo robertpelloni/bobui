@@ -3,7 +3,7 @@
 
 #define BOBUI_XML_BUILD_REMOVED_API
 
-#include "bobuixmlglobal.h"
+#include "qtxmlglobal.h"
 
 BOBUI_USE_NAMESPACE
 

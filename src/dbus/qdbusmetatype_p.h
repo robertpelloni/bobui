@@ -16,7 +16,7 @@
 // We mean it.
 //
 
-#include <BobUIDBus/private/bobuidbusglobal_p.h>
+#include <QtDBus/private/qtdbusglobal_p.h>
 #include <qdbusmetatype.h>
 
 #include <qdbusmessage.h>

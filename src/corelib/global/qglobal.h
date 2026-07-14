@@ -71,5 +71,6 @@
 #if defined(__cplusplus)
 #include <QtCore/bobuimacros.h>
 #endif
+#endif /* __cplusplus */
 
 #endif /* QGLOBAL_H */

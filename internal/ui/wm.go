@@ -6,8 +6,8 @@ import (
 	"gioui.org/f32"
 	"gioui.org/layout"
 	"gioui.org/op"
-	"github.com/robertpelloni/bobui/internal/ui/theme"
-	"github.com/robertpelloni/bobui/internal/ui/widgets"
+	"github.com/robertpelloni/bqt/internal/ui/theme"
+	"github.com/robertpelloni/bqt/internal/ui/widgets"
 )
 
 type WindowManager struct {

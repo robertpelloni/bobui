@@ -5,15 +5,10 @@
 #ifndef QDBUSPENDINGCALL_H
 #define QDBUSPENDINGCALL_H
 
-#include <BobUIDBus/bobuidbusglobal.h>
-#include <BobUIDBus/qdbusmessage.h>
-<<<<<<< HEAD
+#include <QtDBus/qtdbusglobal.h>
+#include <QtDBus/qdbusmessage.h>
 #include <QtCore/qobject.h>
 #include <QtCore/qshareddata.h>
-=======
-#include <BobUICore/qobject.h>
-#include <BobUICore/qshareddata.h>
->>>>>>> origin/dev
 
 #ifndef BOBUI_NO_DBUS
 

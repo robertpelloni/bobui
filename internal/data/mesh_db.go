@@ -2,7 +2,7 @@ package data
 
 import (
 	"log"
-	"github.com/robertpelloni/bobui/internal/net"
+	"github.com/robertpelloni/bqt/internal/net"
 )
 
 type DistributedDB struct {

@@ -128,7 +128,6 @@ The `omni` CLI is a Node.js wrapper around CMake and Ninja.
 - `Oscilloscope`: Real-time waveform visualizer.
 
 ### Layouts (OmniLayout 1.0)
-<<<<<<< HEAD
 - `DockArea`: A flexible docking container.
 - `SplitView`: A resizable split pane.
 
@@ -137,8 +136,6 @@ The `omni` CLI is a Node.js wrapper around CMake and Ninja.
 - `AudioProcessor`: Wraps a JUCE `AudioProcessor` graph.
 - `AudioGraph`: Allows connecting multiple processors together.
 - `AudioSource`: Plays sample files (supports looping).
-=======
->>>>>>> feature/omni-ui-framework-18001284211800334382
 - `DockArea`: A flexible docking container (supports detachable windows).
 - `SplitView`: A resizable split pane.
 

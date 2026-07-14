@@ -5,14 +5,9 @@
 #ifndef QDBUSSERVER_H
 #define QDBUSSERVER_H
 
-#include <BobUIDBus/bobuidbusglobal.h>
-<<<<<<< HEAD
+#include <QtDBus/qtdbusglobal.h>
 #include <QtCore/qobject.h>
 #include <QtCore/qstring.h>
-=======
-#include <BobUICore/qobject.h>
-#include <BobUICore/qstring.h>
->>>>>>> origin/dev
 
 #ifndef BOBUI_NO_DBUS
 

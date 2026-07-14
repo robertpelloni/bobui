@@ -5,7 +5,7 @@
 #ifndef BOBUICONCURRENT_RUNBASE_H
 #define BOBUICONCURRENT_RUNBASE_H
 
-#include <BobUIConcurrent/bobuiconcurrent_global.h>
+#include <QtConcurrent/qtconcurrent_global.h>
 
 #ifndef BOBUI_NO_CONCURRENT
 

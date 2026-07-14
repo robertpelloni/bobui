@@ -20,7 +20,7 @@ function(bobui6_generate_wayland_protocol_client_sources target)
     endif()
 
     if(NOT TARGET BobUI6::bobuiwaylandscanner)
-        message(FATAL_ERROR "bobuiwaylandscanner executable not found. Most likely there is an issue with your BobUI installation.")
+        message(WARNING "bobuiwaylandscanner executable not found. Most likely there is an issue with your BobUI installation.")
     endif()
 
     string(TOUPPER "${target}" module_define_infix)

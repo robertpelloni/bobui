@@ -1,9 +1,68 @@
 # Changelog
 
+
+
+## [1.1.76] - 2026-07-03
+### Added
+- Completed Phase 2 of the roadmap.
+- Successfully mapped JUCE audio primitives (`OmniSynthesizer` and `OmniGain`) into the unified Go `OmniAudioGraph`. Unknown primitives correctly fall back to the simulated `JUCEProxyNode` bridge.
+- Enhanced the BQt Signal System to execute slots asynchronously via the unified `EventLoop` instead of independent goroutines, establishing cross-framework event dispatch.
+- Stabilized the Go package graph running `go mod tidy` and verified the build using `go build` and `go test`.
+- Kicked off Phase 3: The Go Transcendence.
+
+## [1.1.75] - 2026-06-25
+### Added
+- Finalized Phase 2 GTK parity by implementing `BQtNotebook` and `BQtHeaderBar` native Go wrapper equivalents.
+- Added cross-toolkit Event Loop synchronization testing (`TestEventLoopSynchronization`) spanning BQt, GTK, JUCE, and U++ simulated tasks.
+- Normalized documentation across the repository to definitively structure BQt as a framework kernel, clarifying the OS shell capabilities as the separate scope of the `bobfilez` project.
+- Fully represented backend features in the UI dashboard (DemoSurface) including UndoStack, TimeMachine, Clipboard Sync, Omni Search, and Mesh Network with interactive buttons and descriptive tooltips organized natively in grid views.
+
+## [1.1.73] - 2026-06-22
+### Added
+- Implemented native Go routines to handle BQt signal/slot emission seamlessly (`internal/ui/signals.go`).
+- Signal emissions are executed asynchronously via goroutines to perfectly mirror Qt's queued connection behavior and maintain a non-blocking event loop.
+
+## [1.1.72] - 2026-06-22
+### Added
+- Mapped JUCE audio primitives into the Go `AudioGraph` via `JUCEAudioGraphAdapter` to bridge external C++ processors natively into Go.
+- Added `JUCEProxyNode` to simulate the FFI/CGO barrier for bridging DSP logic.
+
+## [1.1.71] - 2026-06-21
+### Added
+- Ported the `OmniSynthesizer` component to Rust, Java, and C# to maintain cross-language parity.
+- Maintained 1:1 cross-language feature parity regarding polyphony management and `Process()` audio buffer sine generation.
+
+## [1.1.70] - 2026-06-21
+### Added
+- Ported the `OmniGain` component to Rust, Java, and C# to maintain cross-language parity.
+- Implemented `Process()` logic for gain scaling across all ports with unit tests.
+
+## [1.1.69] - 2026-06-20
+### Added
+- Initiated Java and C# ports of the framework, starting with the `AudioGraph` component (`java/src/main/java/com/bqt/audio/AudioGraph.java`, `csharp/src/Audio/AudioGraph.cs`).
+- Achieved 1:1 parity with the Go backend's `AudioGraph` logic including standard lifecycle (`Start()`, `Stop()`) and connection logic for both Java and C#.
+
+## [1.1.68] - 2026-06-20
+### Added
+- Initiated Rust port of the framework, starting with the `AudioGraph` component (`rust/src/audio/audio_graph.rs`).
+- Established 1:1 parity with the Go backend's `AudioGraph` logic including standard lifecycle (`Start()`, `Stop()`) and connection logic.
+## [1.1.67] - 2026-06-20
+### Added
+- Added `Start()` and `Stop()` logic into `internal/audio/audio_graph.go` to achieve feature parity with C++ `OmniAudioGraph`.
+### Changed
+- Performed codebase renaming, changing core framework references from `bobui` to `bqt` within the Go backend (`internal/` and `main.go`).
+
+
+## [1.1.66] - 2026-05-19
+### Added
+- Implemented `Synthesizer` in Go (`internal/audio/synthesizer.go`) to port `OmniSynthesizer` C++ logic to pure Go. It supports polyphony management and simple sine wave generation via the `AudioNode` interface.
+- Added tests for `Synthesizer` in `internal/audio/synthesizer_test.go` covering polyphony constraints and audio buffer processing.
+### Changed
+- Fixed broken build for Go pure ui engine (`DemoSurface`).
+
+
 All notable changes to this project will be documented in this file.
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 ## [1.1.0] - 2026-04-03
 ### Added
 - **Liquid Glass Edition**: Complete Notepad++ UI overhaul with Apple-inspired liquid glass aesthetics.
@@ -45,9 +104,6 @@ All notable changes to this project will be documented in this file.
 - Per-monitor DPI awareness V2 enabled at startup (Windows 10 1703+ HWND-based).
 
 ## [1.0.3] - 2026-04-02
-=======
-## [1.1.52] - 2026-04-05
->>>>>>> e1ee8d20be7bc6a9723aeacc01ec68b2c2393fe4
 ### Added
 - Added `internal/kernel/fs_watcher.go` and `internal/kernel/fs_watcher_test.go` to provide a Go-native process matching `QFileSystemWatcher` functionality.
 - Added implementation documentation at `docs/ai/implementation/2026-04-05-bobui-go-fs-watcher-parity.md`.
@@ -65,7 +121,6 @@ All notable changes to this project will be documented in this file.
 
 ## [1.1.51] - 2026-04-05
 ### Added
-<<<<<<< HEAD
 - Comprehensive documentation overhaul (VISION.md, MEMORY.md, DEPLOY.md, ROADMAP.md, TODO.md, IDEAS.md).
 - Global AI instruction files (AGENTS.md, CLAUDE.md, GEMINI.md, GPT.md, copilot-instructions.md) standardizing development workflow.
 - Established autonomous session loop protocols for multi-model AI handoffs.
@@ -85,388 +140,6 @@ All notable changes to this project will be documented in this file.
 - Global AI instruction files (AGENTS.md, CLAUDE.md, GEMINI.md, GPT.md, copilot-instructions.md) standardizing development workflow.
 - Established autonomous session loop protocols for multi-model AI handoffs.
 - Initiated deep analysis of `bobui` towards 100% Qt6 parity.
-=======
-- Added `internal/kernel/process_test.go` to verify `Process` (QProcess parity) functionality.
-- Added implementation documentation at `docs/ai/implementation/2026-04-05-bobui-go-process-parity.md`.
-- Added an archived session handoff at `logs/handoffs/2026-04-05-bobui-go-process-parity-session.md`.
-
-### Changed
-- Performed a **Targeted Internal Source Rename** of the `DBus` module in C++, replacing `QtDBus` with `BobUIDBus` and renaming `qtdbusglobal.h` to `bobuidbusglobal.h`.
-- Refactored Go `internal/kernel/process.go` from `ShellProcess` into a more generic `Process` struct mirroring `QProcess` features (WorkingDirectory, Arguments, Environment, State, Done signals).
-- Updated `internal/ui/widgets/terminal.go` to consume the new `Process` struct.
-
-### Verified
-- `cmake -P cmake/tests/bobui_full_compatibility_validation.cmake` passes.
-- `go test ./internal/...` passes.
-- `go build -buildvcs=false .` succeeds.
-
-## [1.1.50] - 2026-04-05
-### Added
-- Added `internal/kernel/clipboard_parity_test.go` (implicitly through `services_test.go` updates) to verify `QClipboard`/`QMimeData` parity.
-- Added implementation documentation at `docs/ai/implementation/2026-04-05-bobui-go-clipboard-parity.md`.
-- Added an archived session handoff at `logs/handoffs/2026-04-05-bobui-go-clipboard-parity-session.md`.
-
-### Changed
-- Refactored `internal/kernel/clipboard.go` to support multiple MIME types, matching the functionality of `QClipboard` and `QMimeData`.
-- Updated `internal/kernel/services_test.go` to validate multi-MIME data handling and retrieval.
-
-### Verified
-- `go test ./internal/...` passes.
-- `go build -buildvcs=false .` succeeds.
-
-## [1.1.49] - 2026-04-05
-### Added
-- Introduced the **BobUI C++ Namespace and Macros** in `src/corelib/global/bobuimacros.h`.
-- Added the first **Public Header Aliases** to allow BobUI-branded includes: `src/corelib/BobUICore`, `src/gui/BobUIGui`, `src/network/BobUINetwork`, `src/widgets/BobUIWidgets`, and `src/xml/BobUIXml`.
-- Added implementation documentation at `docs/ai/implementation/2026-04-05-bobui-cpp-namespace-and-header-aliases.md`.
-- Added an archived session handoff at `logs/handoffs/2026-04-05-bobui-cpp-namespace-and-header-aliases-session.md`.
-
-### Changed
-- Injected BobUI macros into `src/corelib/global/qglobal.h` so that the `BobUI` namespace is available to all C++ code.
-- Performed a **Targeted Internal Source Rename** of the `Xml` module, replacing `QtXml` with `BobUIXml` and `QT_BEGIN_NAMESPACE` with `BOBUI_BEGIN_NAMESPACE` across all files in `src/xml`.
-- Updated `src/corelib/CMakeLists.txt` and `src/xml/CMakeLists.txt` to include the new BobUI headers.
-
-### Verified
-- `cmake -P cmake/tests/bobui_full_compatibility_validation.cmake` passes.
-- `go test ./internal/...` passes.
-- `go build -buildvcs=false .` succeeds.
-
-## [1.1.48] - 2026-04-05
-### Added
-- Added direct module config shims: `cmake/BobUI6ChartsConfig.cmake`, `cmake/BobUIChartsConfig.cmake`, `cmake/BobUI6MultimediaConfig.cmake`, `cmake/BobUIMultimediaConfig.cmake`, `cmake/BobUI6QmlConfig.cmake`, `cmake/BobUIQmlConfig.cmake`, `cmake/BobUI6QuickConfig.cmake`, and `cmake/BobUIQuickConfig.cmake`.
-- Added implementation documentation at `docs/ai/implementation/2026-04-05-bobui-cmake-module-shims-charts-multimedia-qml-quick.md`.
-- Added an archived session handoff at `logs/handoffs/2026-04-05-bobui-cmake-module-shims-charts-multimedia-qml-quick-session.md`.
-
-### Changed
-- Updated `cmake/BobUISupportedComponents.cmake` to include `Charts`, `Multimedia`, `Qml`, and `Quick`.
-- Regenerated the human-readable status report from the updated manifest.
-- Verified that manifest-driven smoke tests automatically cover the new modules.
-- Updated project docs/metadata to record the eighth direct BobUI module-package slice.
-
-### Verified
-- `cmake -P cmake/tests/bobui_full_compatibility_validation.cmake` passes.
-- `go test ./internal/...` passes.
-- `go build -buildvcs=false .` succeeds.
-
-## [1.1.47] - 2026-04-05
-### Added
-- Added direct module config shims: `cmake/BobUI6LinguistConfig.cmake`, `cmake/BobUILinguistConfig.cmake`, `cmake/BobUI6ShaderToolsConfig.cmake`, `cmake/BobUIShaderToolsConfig.cmake`, `cmake/BobUI6SvgConfig.cmake`, and `cmake/BobUISvgConfig.cmake`.
-- Added implementation documentation at `docs/ai/implementation/2026-04-05-bobui-cmake-module-shims-linguist-shadertools-svg.md`.
-- Added an archived session handoff at `logs/handoffs/2026-04-05-bobui-cmake-module-shims-linguist-shadertools-svg-session.md`.
-
-### Changed
-- Refactored `cmake/tests/bobui_package_forwarding_smoke.cmake` and `cmake/tests/bobui_export_publication_configure_smoke.cmake` to use the `BOBUI_SUPPORTED_COMPONENTS` manifest loop, making smoke tests more robust and easier to extend.
-- Updated `cmake/BobUISupportedComponents.cmake` to include `Linguist`, `ShaderTools`, and `Svg`.
-- Updated project docs/metadata to record the seventh direct BobUI module-package slice.
-
-### Verified
-- `cmake -P cmake/tests/bobui_full_compatibility_validation.cmake` passes.
-- `go test ./internal/...` passes.
-- `go build -buildvcs=false .` succeeds.
-
-## [1.1.46] - 2026-04-05
-### Added
-- Added testing documentation at `docs/ai/testing/2026-04-05-bobui-go-ci-validation.md`.
-- Added an archived session handoff at `logs/handoffs/2026-04-05-bobui-go-ci-validation-session.md`.
-
-### Changed
-- Reworked `.github/workflows/go_wasm.yml` to add a `validate-framework` job that runs `go test ./internal/...`, `go build -buildvcs=false .`, and the consolidated BobUI compatibility validation command.
-- Reworked `cmake/tests/bobui_qtbase_native_configure_preflight.cmake` to honor `BOBUI_SKIP_NATIVE_CONFIGURE=ON`.
-- Reworked `cmake/tests/bobui_full_compatibility_validation.cmake` to propagate the native-skip flag to child checks.
-- Updated project/session docs to record the CI-friendly BobUI compatibility validation path.
-
-### Verified
-- `cmake -P cmake/tests/bobui_full_compatibility_validation.cmake` passes.
-- `go test ./internal/...` passes.
-- `go build -buildvcs=false .` succeeds.
-
-## [1.1.45] - 2026-04-05
-### Added
-- Added `cmake/tests/bobui_full_compatibility_validation.cmake` as a consolidated validation entry point for the additive BobUI CMake compatibility stack.
-- Added testing documentation at `docs/ai/testing/2026-04-05-bobui-full-compatibility-validation.md`.
-- Added an archived session handoff at `logs/handoffs/2026-04-05-bobui-full-compatibility-validation-session.md`.
-
-### Changed
-- Updated project/session docs so the consolidated BobUI compatibility validation command is now recorded as the preferred default gate for the additive CMake compatibility surface.
-
-### Verified
-- `cmake -P cmake/tests/bobui_full_compatibility_validation.cmake` passes.
-- `go test ./internal/...` passes.
-- `go build -buildvcs=false .` succeeds.
-
-## [1.1.44] - 2026-04-05
-### Added
-- Added `cmake/bobui_generate_supported_component_report.cmake` to generate the human-readable BobUI supported component status report from the manifest.
-- Added implementation documentation at `docs/ai/implementation/2026-04-05-bobui-component-report-generation.md`.
-- Added an archived session handoff at `logs/handoffs/2026-04-05-bobui-component-report-generation-session.md`.
-
-### Changed
-- Reworked `cmake/tests/bobui_supported_component_report_consistency.cmake` so it now compares the checked-in report against exact generated output instead of only checking for expected substrings.
-- Regenerated `docs/ai/design/2026-04-05-bobui-cmake-supported-component-status.md` from the manifest-backed component inventory.
-- Updated project/session docs to record the generator-backed supported component report flow.
-
-### Verified
-- `cmake -P cmake/tests/bobui_supported_component_manifest_consistency.cmake` passes.
-- `cmake -P cmake/tests/bobui_supported_component_report_consistency.cmake` passes.
-- `cmake -P cmake/tests/bobui_qtbase_native_configure_preflight.cmake` runs and reports the expected skip in the current environment.
-- `cmake -P cmake/tests/bobui_compatibility_helpers_mapping.cmake` passes.
-- `cmake -P cmake/tests/bobui_package_forwarding_smoke.cmake` passes.
-- `cmake -P cmake/tests/bobui_export_publication_configure_smoke.cmake` passes.
-- `go test ./internal/...` passes.
-- `go build -buildvcs=false .` succeeds.
-
-## [1.1.43] - 2026-04-05
-### Added
-- Added the human-readable supported component status report at `docs/ai/design/2026-04-05-bobui-cmake-supported-component-status.md`.
-- Added `cmake/tests/bobui_supported_component_report_consistency.cmake` to keep the report aligned with the manifest.
-- Added testing documentation at `docs/ai/testing/2026-04-05-bobui-supported-component-report-tests.md`.
-- Added an archived session handoff at `logs/handoffs/2026-04-05-bobui-supported-component-report-session.md`.
-
-### Changed
-- Updated project/session docs so the BobUI CMake compatibility surface is now represented by both a machine-readable manifest and a checked human-readable status report.
-
-### Verified
-- `cmake -P cmake/tests/bobui_supported_component_manifest_consistency.cmake` passes.
-- `cmake -P cmake/tests/bobui_supported_component_report_consistency.cmake` passes.
-- `cmake -P cmake/tests/bobui_qtbase_native_configure_preflight.cmake` runs and reports the expected skip in the current environment.
-- `cmake -P cmake/tests/bobui_compatibility_helpers_mapping.cmake` passes.
-- `cmake -P cmake/tests/bobui_package_forwarding_smoke.cmake` passes.
-- `cmake -P cmake/tests/bobui_export_publication_configure_smoke.cmake` passes.
-- `go test ./internal/...` passes.
-- `go build -buildvcs=false .` succeeds.
-
-## [1.1.42] - 2026-04-05
-### Added
-- Added `cmake/BobUISupportedComponents.cmake` centralizing the currently supported additive BobUI CMake component set.
-- Added `cmake/tests/bobui_supported_component_manifest_consistency.cmake` to keep the component manifest, shim files, and smoke coverage aligned.
-- Added design/testing docs at `docs/ai/design/2026-04-05-bobui-cmake-supported-component-matrix.md` and `docs/ai/testing/2026-04-05-bobui-supported-component-manifest-tests.md`.
-- Added an archived session handoff at `logs/handoffs/2026-04-05-bobui-supported-component-matrix-session.md`.
-
-### Changed
-- Updated project/session docs to record the supported BobUI component matrix as an explicit, centralized compatibility inventory.
-
-### Verified
-- `cmake -P cmake/tests/bobui_supported_component_manifest_consistency.cmake` passes.
-- `cmake -P cmake/tests/bobui_qtbase_native_configure_preflight.cmake` runs and reports the expected skip in the current environment.
-- `cmake -P cmake/tests/bobui_compatibility_helpers_mapping.cmake` passes.
-- `cmake -P cmake/tests/bobui_package_forwarding_smoke.cmake` passes.
-- `cmake -P cmake/tests/bobui_export_publication_configure_smoke.cmake` passes.
-- `go test ./internal/...` passes.
-- `go build -buildvcs=false .` succeeds.
-
-## [1.1.41] - 2026-04-05
-### Added
-- Added testing documentation at `docs/ai/testing/2026-04-05-bobui-umbrella-component-matrix-tests.md`.
-- Added an archived session handoff at `logs/handoffs/2026-04-05-bobui-umbrella-component-matrix-session.md`.
-
-### Changed
-- Reworked `cmake/tests/bobui_package_forwarding_smoke.cmake` so the umbrella BobUI packages request and validate a broader supported component matrix instead of only a minimal `Core`/`Widgets` subset.
-- Updated project/session docs to record the stronger umbrella-package validation milestone.
-
-### Verified
-- `cmake -P cmake/tests/bobui_qtbase_native_configure_preflight.cmake` runs and reports the expected skip in the current environment.
-- `cmake -P cmake/tests/bobui_compatibility_helpers_mapping.cmake` passes.
-- `cmake -P cmake/tests/bobui_package_forwarding_smoke.cmake` passes.
-- `cmake -P cmake/tests/bobui_export_publication_configure_smoke.cmake` passes.
-- `go test ./internal/...` passes.
-- `go build -buildvcs=false .` succeeds.
-
-## [1.1.40] - 2026-04-05
-### Added
-- Added direct module config shims: `cmake/BobUI6ConcurrentConfig.cmake`, `cmake/BobUIConcurrentConfig.cmake`, `cmake/BobUI6TestConfig.cmake`, and `cmake/BobUITestConfig.cmake`.
-- Added `docs/ai/implementation/2026-04-05-bobui-cmake-module-shims-concurrent-test.md` and `docs/ai/testing/2026-04-05-bobui-cmake-module-shims-concurrent-test-tests.md`.
-- Added an archived session handoff at `logs/handoffs/2026-04-05-bobui-cmake-module-shims-concurrent-test-session.md`.
-
-### Changed
-- Extended `cmake/tests/bobui_package_forwarding_smoke.cmake` to validate direct Concurrent/Test module-package forwarding.
-- Extended `cmake/tests/bobui_export_publication_configure_smoke.cmake` to validate Concurrent/Test compat package publication.
-- Updated project/session docs to record the next direct BobUI module-package slice.
-
-### Verified
-- `cmake -P cmake/tests/bobui_qtbase_native_configure_preflight.cmake` runs and reports the expected skip in the current environment.
-- `cmake -P cmake/tests/bobui_compatibility_helpers_mapping.cmake` passes.
-- `cmake -P cmake/tests/bobui_package_forwarding_smoke.cmake` passes.
-- `cmake -P cmake/tests/bobui_export_publication_configure_smoke.cmake` passes.
-- `go test ./internal/...` passes.
-- `go build -buildvcs=false .` succeeds.
-
-## [1.1.39] - 2026-04-05
-### Added
-- Added direct module config shims: `cmake/BobUI6DBusConfig.cmake`, `cmake/BobUIDBusConfig.cmake`, `cmake/BobUI6PrintSupportConfig.cmake`, and `cmake/BobUIPrintSupportConfig.cmake`.
-- Added `docs/ai/implementation/2026-04-05-bobui-cmake-module-shims-dbus-printsupport.md` and `docs/ai/testing/2026-04-05-bobui-cmake-module-shims-dbus-printsupport-tests.md`.
-- Added an archived session handoff at `logs/handoffs/2026-04-05-bobui-cmake-module-shims-dbus-printsupport-session.md`.
-
-### Changed
-- Extended `cmake/tests/bobui_package_forwarding_smoke.cmake` to validate direct DBus/PrintSupport module-package forwarding.
-- Extended `cmake/tests/bobui_export_publication_configure_smoke.cmake` to validate DBus/PrintSupport compat package publication.
-- Updated project/session docs to record the next direct BobUI module-package slice.
-
-### Verified
-- `cmake -P cmake/tests/bobui_qtbase_native_configure_preflight.cmake` runs and reports the expected skip in the current environment.
-- `cmake -P cmake/tests/bobui_compatibility_helpers_mapping.cmake` passes.
-- `cmake -P cmake/tests/bobui_package_forwarding_smoke.cmake` passes.
-- `cmake -P cmake/tests/bobui_export_publication_configure_smoke.cmake` passes.
-- `go test ./internal/...` passes.
-- `go build -buildvcs=false .` succeeds.
-
-## [1.1.38] - 2026-04-05
-### Added
-- Added direct module config shims: `cmake/BobUI6OpenGLConfig.cmake`, `cmake/BobUIOpenGLConfig.cmake`, `cmake/BobUI6OpenGLWidgetsConfig.cmake`, and `cmake/BobUIOpenGLWidgetsConfig.cmake`.
-- Added `docs/ai/implementation/2026-04-05-bobui-cmake-module-shims-opengl.md` and `docs/ai/testing/2026-04-05-bobui-cmake-module-shims-opengl-tests.md`.
-- Added an archived session handoff at `logs/handoffs/2026-04-05-bobui-cmake-module-shims-opengl-session.md`.
-
-### Changed
-- Extended `cmake/tests/bobui_package_forwarding_smoke.cmake` to validate direct OpenGL/OpenGLWidgets module-package forwarding.
-- Extended `cmake/tests/bobui_export_publication_configure_smoke.cmake` to validate OpenGL/OpenGLWidgets compat package publication.
-- Updated project/session docs to record the next direct BobUI module-package slice.
-
-### Verified
-- `cmake -P cmake/tests/bobui_qtbase_native_configure_preflight.cmake` runs and reports the expected skip in the current environment.
-- `cmake -P cmake/tests/bobui_compatibility_helpers_mapping.cmake` passes.
-- `cmake -P cmake/tests/bobui_package_forwarding_smoke.cmake` passes.
-- `cmake -P cmake/tests/bobui_export_publication_configure_smoke.cmake` passes.
-- `go test ./internal/...` passes.
-- `go build -buildvcs=false .` succeeds.
-
-## [1.1.37] - 2026-04-05
-### Added
-- Added direct module config shims: `cmake/BobUI6SqlConfig.cmake`, `cmake/BobUISqlConfig.cmake`, `cmake/BobUI6XmlConfig.cmake`, and `cmake/BobUIXmlConfig.cmake`.
-- Added `docs/ai/implementation/2026-04-05-bobui-cmake-module-shims-sql-xml.md` and `docs/ai/testing/2026-04-05-bobui-cmake-module-shims-sql-xml-tests.md`.
-- Added an archived session handoff at `logs/handoffs/2026-04-05-bobui-cmake-module-shims-sql-xml-session.md`.
-
-### Changed
-- Extended `cmake/tests/bobui_package_forwarding_smoke.cmake` to validate direct Sql/Xml module-package forwarding.
-- Extended `cmake/tests/bobui_export_publication_configure_smoke.cmake` to validate Sql/Xml compat package publication.
-- Updated project/session docs to record the next direct BobUI module-package slice.
-
-### Verified
-- `cmake -P cmake/tests/bobui_compatibility_helpers_mapping.cmake` passes.
-- `cmake -P cmake/tests/bobui_package_forwarding_smoke.cmake` passes.
-- `cmake -P cmake/tests/bobui_export_publication_configure_smoke.cmake` passes.
-- `cmake -P cmake/tests/bobui_qtbase_native_configure_preflight.cmake` runs and reports the expected skip in the current environment.
-- `go test ./internal/...` passes.
-- `go build -buildvcs=false .` succeeds.
-
-## [1.1.36] - 2026-04-05
-### Added
-- Added `cmake/tests/bobui_qtbase_native_configure_preflight.cmake` to encode a repeatable native qtbase configure preflight gate.
-- Added testing documentation at `docs/ai/testing/2026-04-05-bobui-qtbase-native-configure-preflight.md`.
-- Added an archived session handoff at `logs/handoffs/2026-04-05-bobui-qtbase-native-configure-preflight-session.md`.
-
-### Changed
-- Updated session/project docs to record that stronger qtbase-native configure validation is now encoded as a preflight step and currently skips in this environment because no usable C/C++ compiler is visible in `PATH`.
-
-### Verified
-- `cmake -P cmake/tests/bobui_qtbase_native_configure_preflight.cmake` runs and reports the expected skip in the current environment.
-- `cmake -P cmake/tests/bobui_compatibility_helpers_mapping.cmake` passes.
-- `cmake -P cmake/tests/bobui_package_forwarding_smoke.cmake` passes.
-- `cmake -P cmake/tests/bobui_export_publication_configure_smoke.cmake` passes.
-- `go test ./internal/...` passes.
-- `go build -buildvcs=false .` succeeds.
-
-## [1.1.35] - 2026-04-05
-### Added
-- Added direct module config shims: `cmake/BobUI6GuiConfig.cmake`, `cmake/BobUIGuiConfig.cmake`, `cmake/BobUI6NetworkConfig.cmake`, and `cmake/BobUINetworkConfig.cmake`.
-- Added `docs/ai/implementation/2026-04-05-bobui-cmake-module-shims-gui-network.md` and `docs/ai/testing/2026-04-05-bobui-cmake-module-shims-gui-network-tests.md`.
-- Added an archived session handoff at `logs/handoffs/2026-04-05-bobui-cmake-module-shims-gui-network-session.md`.
-
-### Changed
-- Extended `cmake/tests/bobui_package_forwarding_smoke.cmake` to validate direct Gui/Network module-package forwarding.
-- Extended `cmake/tests/bobui_export_publication_configure_smoke.cmake` to validate Gui/Network compat package publication.
-- Updated project/session docs to record the next direct BobUI module-package slice.
-
-### Verified
-- `cmake -P cmake/tests/bobui_compatibility_helpers_mapping.cmake` passes.
-- `cmake -P cmake/tests/bobui_package_forwarding_smoke.cmake` passes.
-- `cmake -P cmake/tests/bobui_export_publication_configure_smoke.cmake` passes.
-- `go test ./internal/...` passes.
-- `go build -buildvcs=false .` succeeds.
-
-## [1.1.34] - 2026-04-05
-### Added
-- Added direct module config shims: `cmake/BobUI6CoreConfig.cmake`, `cmake/BobUICoreConfig.cmake`, `cmake/BobUI6WidgetsConfig.cmake`, and `cmake/BobUIWidgetsConfig.cmake`.
-- Added `docs/ai/implementation/2026-04-05-bobui-cmake-module-shims-core-widgets.md` and `docs/ai/testing/2026-04-05-bobui-cmake-module-shims-core-widgets-tests.md`.
-- Added an archived session handoff at `logs/handoffs/2026-04-05-bobui-cmake-module-shims-core-widgets-session.md`.
-
-### Changed
-- Reworked `cmake/QtBobUIHelpers.cmake` so missing BobUI config sources are treated as safe no-ops.
-- Reworked `cmake/QtModuleHelpers.cmake` to publish BobUI module-package compatibility files only when matching BobUI config sources exist.
-- Extended `cmake/tests/bobui_package_forwarding_smoke.cmake` and `cmake/tests/bobui_export_publication_configure_smoke.cmake` to validate direct Core/Widgets module-package forwarding and publication.
-- Updated project/session docs to record the first direct BobUI module-package slice.
-
-### Verified
-- `cmake -P cmake/tests/bobui_compatibility_helpers_mapping.cmake` passes.
-- `cmake -P cmake/tests/bobui_package_forwarding_smoke.cmake` passes.
-- `cmake -P cmake/tests/bobui_export_publication_configure_smoke.cmake` passes.
-- `go test ./internal/...` passes.
-- `go build -buildvcs=false .` succeeds.
-
-## [1.1.33] - 2026-04-05
-### Added
-- Added `cmake/QtBobUIHelpers.cmake` to hold the BobUI compatibility package-publication helper.
-- Added `cmake/tests/bobui_export_publication_configure_smoke.cmake` for configure-time validation of BobUI package publication.
-- Added `docs/ai/implementation/2026-04-05-bobui-cmake-publication-helper.md` and `docs/ai/testing/2026-04-05-bobui-cmake-publication-helper-tests.md`.
-- Added an archived session handoff at `logs/handoffs/2026-04-05-bobui-cmake-publication-helper-session.md`.
-
-### Changed
-- Reworked `cmake/QtBaseGlobalTargets.cmake` to consume the extracted BobUI publication helper instead of defining the publication logic inline.
-- Updated `CHANGELOG.md`, `VERSION.md`, `HANDOFF.md`, `MEMORY.md`, `ROADMAP.md`, `TODO.md`, `VISION.md`, `IDEAS.md`, `DEPLOY.md`, and `cmake/README.md` to record the stronger publication-helper validation milestone.
-
-### Verified
-- `cmake -P cmake/tests/bobui_compatibility_helpers_mapping.cmake` passes.
-- `cmake -P cmake/tests/bobui_package_forwarding_smoke.cmake` passes.
-- `cmake -P cmake/tests/bobui_export_publication_configure_smoke.cmake` passes.
-- `go test ./internal/...` passes.
-- `go build -buildvcs=false .` succeeds.
-
-## [1.1.32] - 2026-04-05
-### Added
-- Added `cmake/tests/bobui_package_forwarding_smoke.cmake` for end-to-end BobUI package-forwarding validation against a fake prefix layout.
-- Added `docs/ai/implementation/2026-04-05-bobui-cmake-export-wiring.md` and `docs/ai/testing/2026-04-05-bobui-cmake-export-wiring-tests.md`.
-- Added an archived session handoff at `logs/handoffs/2026-04-05-bobui-cmake-export-wiring-session.md`.
-
-### Changed
-- Reworked `cmake/QtBaseGlobalTargets.cmake` to publish additive `BobUI6/` and `BobUI/` package directories alongside the canonical `Qt6/` package directory.
-- Hardened `cmake/BobUICompatibilityHelpers.cmake` to safely handle undefined forwarded `find_package(...)` boolean variables.
-- Updated `CHANGELOG.md`, `VERSION.md`, `HANDOFF.md`, `MEMORY.md`, `ROADMAP.md`, `TODO.md`, `DEPLOY.md`, and `cmake/README.md` to record the export-wiring milestone.
-
-### Verified
-- `cmake -P cmake/tests/bobui_compatibility_helpers_mapping.cmake` passes.
-- `cmake -P cmake/tests/bobui_package_forwarding_smoke.cmake` passes.
-- `go test ./internal/...` passes.
-- `go build -buildvcs=false .` succeeds.
-
-## [1.1.31] - 2026-04-05
-### Added
-- Added `cmake/BobUICompatibilityHelpers.cmake` with BobUI-to-Qt package mapping, forwarded `find_package(...)` argument handling, and compatibility target helpers.
-- Added `cmake/BobUI6Config.cmake` and `cmake/BobUIConfig.cmake` as additive BobUI-facing package shims over the canonical Qt package surface.
-- Added `cmake/tests/bobui_compatibility_helpers_mapping.cmake` for script-mode validation of the new compatibility helper layer.
-- Added `docs/ai/implementation/2026-04-05-bobui-cmake-compatibility-shims.md` and `docs/ai/testing/2026-04-05-bobui-cmake-compatibility-shims-tests.md`.
-- Added an archived session handoff at `logs/handoffs/2026-04-05-bobui-cmake-compatibility-session.md`.
-
-### Changed
-- Updated `cmake/README.md`, `ROADMAP.md`, `TODO.md`, `MEMORY.md`, `HANDOFF.md`, `VISION.md`, `IDEAS.md`, and `DEPLOY.md` to record the first real additive C++ compatibility-bucket implementation.
-
-### Verified
-- `cmake -P cmake/tests/bobui_compatibility_helpers_mapping.cmake` passes.
-- `go test ./internal/...` passes.
-- `go build -buildvcs=false .` succeeds.
-
-## [1.1.30] - 2026-04-05
-### Added
-- Added `docs/ai/design/2026-04-05-cpp-rename-bucket-classification.md` documenting the observed rename-artifact distribution and a bucket-by-bucket canonical/generated/duplicate assessment.
-- Added `docs/ai/implementation/2026-04-05-first-cpp-compatibility-bucket-plan.md` selecting the `cmake/` package/export surface as the first safe C++ compatibility bucket.
-- Added an archived session handoff at `logs/handoffs/2026-04-05-cpp-rename-bucket-classification-session.md`.
-
-### Changed
-- Updated `ROADMAP.md`, `TODO.md`, `MEMORY.md`, and `HANDOFF.md` to record that the rename explosion has now been classified and that `cmake/` compatibility surfaces are the next safe implementation target.
-
-### Verified
-- `go test ./internal/...` passes.
-- `go build -buildvcs=false .` succeeds.
-
-=======
->>>>>>> origin/dev
 ## [1.1.29] - 2026-04-05
 ### Added
 - Added `docs/ai/design/2026-04-05-cpp-go-side-by-side-migration-strategy.md` documenting the safe staged strategy for keeping C++ and Go buildable side by side during naming migration.
@@ -785,36 +458,26 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - Updated `internal/ui/engine.go` to initialize the demo surface and wire baseline WebView callbacks.
 - Updated planning docs to move next toward richer runtime integration and WebEngineQuick-style JS bridge semantics.
-<<<<<<< HEAD
->>>>>>> e1ee8d20be7bc6a9723aeacc01ec68b2c2393fe4
 =======
-
-## [1.1.53] - 2026-04-10
-### Changed
-- Mass rebranded `Bobui` and `OmniUI` to `BobQ` and `bobq` across the entire codebase.
-- Re-architected documentation to encompass JUCE, Ultimate++, GTK, and DearImGui 1:1 parity goals.
 ### Added
-- Integrated JUCE and Ultimate++ as Git submodules in the `submodules/` directory.
-- Updated `CMakeLists.txt` to include submodules gracefully.
-### Added
-- Implemented `BobQJuceHost` (C++ Bridge) in `OmniUI/omnicore/`, which hosts a JUCE component inside a Qt QQuick painted item, translating Qt input and render events transparently to JUCE.
+- Executed and validated the qtbase-native configure gate in a real C/C++ toolchain environment. Confirmed successful ninja compilation of Core, Network, Sql, Concurrent, DBus, and Gui modules.
+- Added a consolidated `bobui_consolidated_compatibility_validation.cmake` script to verify full framework integrity.
+- Bumped version to v1.1.65.
 
 ### Added
-- Implemented `BobQBox` and `BobQGrid` to match GTK's layout paradigms (`GtkBox`, `GtkGrid`) natively inside BobQ's Qt scenegraph. Exposes `packStart`/`packEnd` and grid attachments explicitly.
+- Authored `Manual.md`, detailing the C++ assimilation architecture, specifically the `QQuickPaintedItem` rendering bridges (`BobQJuceHost`, `BobQUltimatePPHost`), event marshaling, `OmniMasterClock`, and `BobQUppComponentRegistry`.
+- Updated `docs/UNIVERSAL_LLM_INSTRUCTIONS.md` to formally require all AI agents to understand and use these multi-framework bridging mechanisms.
+- Bumped version to v1.1.64.
 
 ### Added
-- Implemented `BobQBox` in Go (`internal/ui/widgets/box.go`) using `gioui.org` to achieve GTK/C++ 1:1 structural parity on the Go side.
-- Created `ANALYSIS.md` to document the missing components in the Go port.
+- Verified compilation status. Fixes for the core library inclusions, C++ bridges, and JUCE/Ultimate++ have been implemented and properly built via qtbase-native configuration.
+- Analyzed missing feature implementations and updated ROADMAP.md, TODO.md, and IDEAS.md. The documentation accurately reflects the state of the Go UI components, the requested UI component implementations, and lists ideas for bringing BobQ to 1:1 parity with other frameworks.
+- Created UNIVERSAL_LLM_INSTRUCTIONS.md, updated AGENTS.md, CLAUDE.md, GEMINI.md, GPT.md, copilot-instructions.md. Bumped VERSION.md to v1.1.62.
 
-### Added
-- Added `scripts/generate_dashboard.py` to autonomously scrape `.gitmodules` and output an accurate, universally readable markdown `SUBMODULE_DASHBOARD.md`.
 
 ### Changed
-- Modularized submodule building (JUCE, Ultimate++) into `cmake/BobQSubmodules.cmake` to prevent conflicts with native `QtBase` internal CMake macros.
+- Analyzed `TODO.md` and confirmed that the Go Port for `OmniAudioGraph` was already implemented previously in `internal/audio/audio_graph.go`. Struck through the task.
 
 ### Added
-- Implemented `BobQUltimatePPHost` to achieve 1:1 structural integration and parity with Ultimate++. The bridge intercepts Qt input and renders U++ `Ctrl` components directly into a `QImage` mapped onto the QML scenegraph.
-
-### Added
-- Implemented the `OmniMasterClock` singleton. It runs on the main Qt thread and explicitly pumps the `juce::MessageManager` and Ultimate++ `ProcessEvents` queues to prevent UI thread deadlocks and establish 1:1 cross-framework synchronized rendering.
+- Implemented `BobQUppComponentRegistry`, a `QML_SINGLETON` factory that exposes generic Ultimate++ controls (e.g., `Upp::Button`, `Upp::ArrayCtrl`) via string names (like "Button" or "List") into dynamically instantiated `BobQUltimatePPHost` wrappers. This fulfills the interoperability goal of hot-swapping native Qt and U++ widgets directly in QML.
 >>>>>>> origin/jules-11090863842246041945-58931a03

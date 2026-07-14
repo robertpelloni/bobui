@@ -15,7 +15,7 @@ func GetDiscoveryBeacon() *DiscoveryBeacon {
 	return &DiscoveryBeacon{Active: true}
 }
 
-// StartBroadcasting pings the network so other BobUI nodes can find us.
+// StartBroadcasting pings the network so other BQt nodes can find us.
 func (db *DiscoveryBeacon) StartBroadcasting(port int) {
 	addr, _ := net.ResolveUDPAddr("udp", "255.255.255.255:9999")
 	conn, _ := net.DialUDP("udp", nil, addr)

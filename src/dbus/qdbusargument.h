@@ -5,8 +5,7 @@
 #ifndef QDBUSARGUMENT_H
 #define QDBUSARGUMENT_H
 
-#include <BobUIDBus/bobuidbusglobal.h>
-<<<<<<< HEAD
+#include <QtDBus/qtdbusglobal.h>
 #include <QtCore/qbytearray.h>
 #include <QtCore/qhash.h>
 #include <QtCore/qglobal.h>
@@ -15,17 +14,7 @@
 #include <QtCore/qstring.h>
 #include <QtCore/qstringlist.h>
 #include <QtCore/qvariant.h>
-=======
-#include <BobUICore/qbytearray.h>
-#include <BobUICore/qhash.h>
-#include <BobUICore/qglobal.h>
-#include <BobUICore/qlist.h>
-#include <BobUICore/qmap.h>
-#include <BobUICore/qstring.h>
-#include <BobUICore/qstringlist.h>
-#include <BobUICore/qvariant.h>
->>>>>>> origin/dev
-#include <BobUIDBus/qdbusextratypes.h>
+#include <QtDBus/qdbusextratypes.h>
 
 #include <tuple>
 
@@ -156,11 +145,7 @@ private:
 Q_DECLARE_SHARED(QDBusArgument)
 
 BOBUI_END_NAMESPACE
-<<<<<<< HEAD
 QT_DECL_METATYPE_EXTERN(QDBusArgument, Q_DBUS_EXPORT)
-=======
-BOBUI_DECL_METATYPE_EXTERN(QDBusArgument, Q_DBUS_EXPORT)
->>>>>>> origin/dev
 BOBUI_BEGIN_NAMESPACE
 
 template<typename T> inline T qdbus_cast(const QDBusArgument &arg)

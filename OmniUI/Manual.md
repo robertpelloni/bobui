@@ -329,7 +329,6 @@ The **OmniML** module simulates the training and inference processes of a Deep L
 *   **Deep Learning Tensor Studio UI**: A dedicated `OmniMLTrainer/assets/main.qml` application was created.
     *   **Telemetry Panel**: Displays the current Epoch iteration, the precise loss calculation, and an animated progress bar showcasing the model's rising validation accuracy. Users can dynamically pause training or fully reset the model to initial random weights.
     *   **Convergence Graph `<Canvas>`**: A massive, interactive 2D graph that paints the real-time C++ tracking history. It plots Loss in red (scaling downwards) and Accuracy in blue (scaling upwards), mapping the classic neural net convergence pattern exactly as it happens.
-<<<<<<< HEAD
 
 ### OmniNexus Module Details (v42.0.0 Update)
 The **OmniNexus** module represents the final integration phase of the OmniUI project. It acts as the master desktop environment or "Command Bridge" that ties all 30 disparate scientific, cybernetic, and metaphysical simulations together into a single cohesive runtime.
@@ -350,5 +349,3 @@ Triggering the crisis fires a massive `OMNI_CRISIS` event over the IPC bus.
 *   **OmniEtherealPlane Response**: Automatically triggers three simulated "Dark Rituals", massively draining the Boundary Veil thickness, which triggers the high-probability spawning of Eldritch entities.
 *   **OmniAbyss Response**: Ingests 50,000 solar masses of "Catastrophic Debris" instantly and activates the `stareInto()` function, aggressively pulling the simulated observer's horizon proximity toward 0.0 (Spaghettification).
 *   **OmniTimeMachine / OmniSimulationEngine Response**: The central physics engine chokes its CPU tick rate down to 10Hz, and the Time Machine (if playing forward) violently reverses its progression speed to `-50.0x`.
-=======
->>>>>>> feature/omni-ui-framework-18001284211800334382

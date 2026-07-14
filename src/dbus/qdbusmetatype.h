@@ -5,8 +5,8 @@
 #ifndef QDBUSMETATYPE_H
 #define QDBUSMETATYPE_H
 
-#include <BobUIDBus/bobuidbusglobal.h>
-#include <BobUIDBus/qdbusargument.h>
+#include <QtDBus/qtdbusglobal.h>
+#include <QtDBus/qdbusargument.h>
 
 #include <BobUICore/qmetatype.h>
 

@@ -82,11 +82,7 @@ static QString generateInterfaceXml(const QMetaObject *mo, int flags, int method
 
             if (!QDBusMetaType::signatureToMetaType(signature).isValid()) {
                 const char *typeName = type.name();
-<<<<<<< HEAD
                 retval += ">\n      <annotation name=\"org.qtproject.BobUIDBus.QtTypeName\" value=\"%3\"/>\n    </property>\n"_L1
-=======
-                retval += ">\n      <annotation name=\"org.bobuiproject.BobUIDBus.BobUITypeName\" value=\"%3\"/>\n    </property>\n"_L1
->>>>>>> origin/dev
                           .arg(typeNameToXml(typeName));
             } else {
                 retval += "/>\n"_L1;
@@ -136,11 +132,7 @@ static QString generateInterfaceXml(const QMetaObject *mo, int flags, int method
 
                 // do we need to describe this argument?
                 if (!QDBusMetaType::signatureToMetaType(typeName).isValid())
-<<<<<<< HEAD
                     xml += "      <annotation name=\"org.qtproject.BobUIDBus.QtTypeName.Out0\" value=\"%1\"/>\n"_L1
-=======
-                    xml += "      <annotation name=\"org.bobuiproject.BobUIDBus.BobUITypeName.Out0\" value=\"%1\"/>\n"_L1
->>>>>>> origin/dev
                         .arg(typeNameToXml(QMetaType(typeId).name()));
             } else {
                 qWarning() << "Unsupported return type" << typeId.id() << typeId.name() << "in method" << mm.name();
@@ -188,11 +180,7 @@ static QString generateInterfaceXml(const QMetaObject *mo, int flags, int method
             // do we need to describe this argument?
             if (!QDBusMetaType::signatureToMetaType(signature).isValid()) {
                 const char *typeName = QMetaType(types.at(j)).name();
-<<<<<<< HEAD
                 xml += QString::fromLatin1("      <annotation name=\"org.qtproject.BobUIDBus.QtTypeName.%1%2\" value=\"%3\"/>\n")
-=======
-                xml += QString::fromLatin1("      <annotation name=\"org.bobuiproject.BobUIDBus.BobUITypeName.%1%2\" value=\"%3\"/>\n")
->>>>>>> origin/dev
                        .arg(isOutput ? "Out"_L1 : "In"_L1)
                        .arg(isOutput && !isSignal ? j - inputCount : j - 1)
                        .arg(typeNameToXml(typeName));

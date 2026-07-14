@@ -5,14 +5,9 @@
 #ifndef QDBUSERROR_H
 #define QDBUSERROR_H
 
-#include <BobUIDBus/bobuidbusglobal.h>
-<<<<<<< HEAD
+#include <QtDBus/qtdbusglobal.h>
 #include <QtCore/qobjectdefs.h>
 #include <QtCore/qstring.h>
-=======
-#include <BobUICore/qobjectdefs.h>
-#include <BobUICore/qstring.h>
->>>>>>> origin/dev
 
 #ifndef BOBUI_NO_DBUS
 
@@ -115,9 +110,5 @@ BOBUI_DECL_METATYPE_EXTERN(QDBusError, Q_DBUS_EXPORT)
 BOBUI_BEGIN_NAMESPACE
 class Q_DBUS_EXPORT QDBusError {}; // dummy class for moc
 BOBUI_END_NAMESPACE
-<<<<<<< HEAD
 #endif // QT_NO_DBUS
-=======
-#endif // BOBUI_NO_DBUS
->>>>>>> origin/dev
 #endif

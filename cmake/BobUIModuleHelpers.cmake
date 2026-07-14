@@ -1086,13 +1086,7 @@ endfunction()
 #
 # If PRIVATE is specified, write BobUI6FooPrivate.
 # Otherwise write its public counterpart.
-<<<<<<< HEAD:cmake/QtModuleHelpers.cmake
-function(qt_internal_write_basic_module_package target target_private)
-    include("${QT_CMAKE_DIR}/QtBobUIHelpers.cmake")
-
-=======
 function(bobui_internal_write_basic_module_package target target_private)
->>>>>>> origin/dev:cmake/BobUIModuleHelpers.cmake
     set(no_value_options
         FIND_PRIVATE_MODULE
         IS_STATIC_LIB
@@ -1186,14 +1180,7 @@ set(__bobui_${target}_always_load_private_module ON)
         set(_bobui6_module_config "${CMAKE_CURRENT_SOURCE_DIR}/cmake/BobUI6${target}Config.cmake")
         set(_bobui_module_config "${CMAKE_CURRENT_SOURCE_DIR}/cmake/BobUI${target}Config.cmake")
 
-        qt_internal_install_bobui_compat_package(
-            "BobUI6${target}"
-            "${_bobui6_module_config}"
-        )
-        qt_internal_install_bobui_compat_package(
-            "BobUI${target}"
-            "${_bobui_module_config}"
-        )
+
 
         set(_bobui_module_configure_depends "")
         if(EXISTS "${_bobui6_module_config}")

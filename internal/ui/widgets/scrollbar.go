@@ -9,7 +9,7 @@ import (
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	giowidget "gioui.org/widget"
-	"github.com/robertpelloni/bobui/internal/ui/theme"
+	"github.com/robertpelloni/bqt/internal/ui/theme"
 )
 
 type ScrollOrientation int
@@ -21,7 +21,7 @@ const (
 
 // ScrollBar is a lightweight QuickControls2-style scrollbar baseline.
 // It now includes interactive click/drag behavior while preserving a small,
-// compile-safe BobUI surface.
+// compile-safe BQt surface.
 type ScrollBar struct {
 	Orientation ScrollOrientation
 	Position    float32 // 0..1

@@ -71,11 +71,7 @@ BobUIConcurrent::task(std::ref(object))
 //! [8]
 
 //! [9]
-<<<<<<< HEAD:src/concurrent/doc/snippets/code/src_concurrent_qtconcurrenttask.cpp
 QThreadPool pool;
-=======
-BOBUIhreadPool pool;
->>>>>>> origin/dev:src/concurrent/doc/snippets/code/src_concurrent_bobuiconcurrenttask.cpp
 BobUIConcurrent::task([]{ return 42; }).onThreadPool(pool).spawn();
 //! [9]
 

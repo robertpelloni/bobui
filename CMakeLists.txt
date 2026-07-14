@@ -7,6 +7,10 @@
 #
 # The absolute minimum version for building BobUI is 3.16 because for metatype.json generation, we
 # depend on being able to find the location of json files created by AUTOMOC/moc.
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION.md" PROJECT_VERSION)
+string(STRIP "${PROJECT_VERSION}" PROJECT_VERSION)
+string(REGEX REPLACE "^v" "" PROJECT_VERSION "${PROJECT_VERSION}")
+
 cmake_minimum_required(VERSION 3.16)
 
 # Get the repo version and CMake policy details
@@ -21,7 +25,7 @@ bobui_internal_bobuibase_run_autodetect()
 
 # This call will load any provided cmake toolchain file.
 project(BobUIBase
-    VERSION "${BOBUI_REPO_MODULE_VERSION}"
+    VERSION "${PROJECT_VERSION}"
     DESCRIPTION "BobUI Base Libraries"
     HOMEPAGE_URL "https://bobui.io/"
     LANGUAGES CXX C
@@ -33,10 +37,7 @@ endif()
 
 set(BOBUI_BUILD_EXTRA_IDE_FILE_PATTERNS bin/* libexec/*)
 
-<<<<<<< HEAD
 bobui_internal_bobuibase_build_repo()
-=======
-qt_internal_qtbase_build_repo()
 
 
 # BobQ Bridge: Safely load external submodules (JUCE, Ultimate++)
@@ -44,4 +45,3 @@ qt_internal_qtbase_build_repo()
 # environments are fully established before third-party code pollutes them.
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/BobQSubmodules.cmake)
 bobq_integrate_submodules()
->>>>>>> origin/jules-11090863842246041945-58931a03

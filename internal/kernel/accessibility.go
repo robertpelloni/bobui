@@ -38,7 +38,7 @@ func (am *AccessibilityManager) UpdateTree(domPayload string) {
 
 	// In a full implementation, we tokenize the JSON from OmniNeural
 	// and register virtual handles with the OS Accessibility API (e.g. Win32 UI Automation).
-	log.Printf("BOBUI ACCESSIBILITY: Exposing visual DOM to system screen readers (%d chars)", len(domPayload))
+	log.Printf("BQT ACCESSIBILITY: Exposing visual DOM to system screen readers (%d chars)", len(domPayload))
 }
 
 func (am *AccessibleElement) Speak() {

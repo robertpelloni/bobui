@@ -298,7 +298,11 @@ endfunction()
 function(bobui_internal_upgrade_cmake_policies)
     bobui_internal_get_min_new_policy_cmake_version(lower_version)
     bobui_internal_get_max_new_policy_cmake_version(upper_version)
-    cmake_minimum_required(VERSION ${lower_version}...${upper_version})
+    if("${lower_version}" STREQUAL "" OR "${upper_version}" STREQUAL "")
+        cmake_minimum_required(VERSION 3.16)
+    else()
+        cmake_minimum_required(VERSION ${lower_version}...${upper_version})
+    endif()
 endfunction()
 
 # Get which version to use for CMAKE_POLICY_VERSION_MINIMUM on Android.

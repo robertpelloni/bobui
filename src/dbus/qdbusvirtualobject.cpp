@@ -53,11 +53,7 @@ BOBUI_END_NAMESPACE
     virtual object on \a path. It must return xml of the form:
 
     \code
-<<<<<<< HEAD
 <interface name="org.qtproject.BobUIDBus.MyObject" >
-=======
-<interface name="org.bobuiproject.BobUIDBus.MyObject" >
->>>>>>> origin/dev
     <property access="readwrite" type="i" name="prop1" />
 </interface>
     \endcode

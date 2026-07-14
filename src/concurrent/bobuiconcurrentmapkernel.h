@@ -5,13 +5,13 @@
 #ifndef BOBUICONCURRENT_MAPKERNEL_H
 #define BOBUICONCURRENT_MAPKERNEL_H
 
-#include <BobUIConcurrent/bobuiconcurrent_global.h>
+#include <QtConcurrent/qtconcurrent_global.h>
 
 #if !defined(BOBUI_NO_CONCURRENT) || defined (Q_QDOC)
 
-#include <BobUIConcurrent/bobuiconcurrentiteratekernel.h>
-#include <BobUIConcurrent/bobuiconcurrentreducekernel.h>
-#include <BobUIConcurrent/bobuiconcurrentfunctionwrappers.h>
+#include <QtConcurrent/qtconcurrentiteratekernel.h>
+#include <QtConcurrent/qtconcurrentreducekernel.h>
+#include <QtConcurrent/qtconcurrentfunctionwrappers.h>
 
 BOBUI_BEGIN_NAMESPACE
 
@@ -172,7 +172,7 @@ public:
     }
 };
 
-//! [bobuiconcurrentmapkernel-1]
+//! [qtconcurrentmapkernel-1]
 template <typename Iterator, typename Functor>
 inline ThreadEngineStarter<void> startMap(BOBUIhreadPool *pool, Iterator begin,
                                           Iterator end, Functor &&functor)
@@ -181,7 +181,7 @@ inline ThreadEngineStarter<void> startMap(BOBUIhreadPool *pool, Iterator begin,
             pool, begin, end, std::forward<Functor>(functor)));
 }
 
-//! [bobuiconcurrentmapkernel-2]
+//! [qtconcurrentmapkernel-2]
 template <typename T, typename Iterator, typename Functor>
 inline ThreadEngineStarter<T> startMapped(BOBUIhreadPool *pool, Iterator begin,
                                           Iterator end, Functor &&functor)
@@ -212,7 +212,7 @@ struct SequenceHolder1 : private BobUIPrivate::SequenceHolder<Sequence>, public 
     }
 };
 
-//! [bobuiconcurrentmapkernel-3]
+//! [qtconcurrentmapkernel-3]
 template <typename T, typename Sequence, typename Functor>
 inline ThreadEngineStarter<T> startMapped(BOBUIhreadPool *pool, Sequence &&sequence,
                                           Functor &&functor)
@@ -228,7 +228,7 @@ inline ThreadEngineStarter<T> startMapped(BOBUIhreadPool *pool, Sequence &&seque
                                                     std::forward<Functor>(functor)));
 }
 
-//! [bobuiconcurrentmapkernel-4]
+//! [qtconcurrentmapkernel-4]
 template <typename IntermediateType, typename ResultType, typename Sequence, typename MapFunctor,
           typename ReduceFunctor>
 inline ThreadEngineStarter<ResultType> startMappedReduced(BOBUIhreadPool *pool,
@@ -252,7 +252,7 @@ inline ThreadEngineStarter<ResultType> startMappedReduced(BOBUIhreadPool *pool,
                                                     options));
 }
 
-//! [bobuiconcurrentmapkernel-5]
+//! [qtconcurrentmapkernel-5]
 template <typename IntermediateType, typename ResultType, typename Iterator, typename MapFunctor,
           typename ReduceFunctor>
 inline ThreadEngineStarter<ResultType> startMappedReduced(BOBUIhreadPool *pool,
@@ -272,7 +272,7 @@ inline ThreadEngineStarter<ResultType> startMappedReduced(BOBUIhreadPool *pool,
                                                   options));
 }
 
-//! [bobuiconcurrentmapkernel-6]
+//! [qtconcurrentmapkernel-6]
 template <typename IntermediateType, typename ResultType, typename Sequence, typename MapFunctor,
           typename ReduceFunctor>
 inline ThreadEngineStarter<ResultType> startMappedReduced(BOBUIhreadPool *pool,
@@ -298,7 +298,7 @@ inline ThreadEngineStarter<ResultType> startMappedReduced(BOBUIhreadPool *pool,
                                    std::forward<ResultType>(initialValue), options));
 }
 
-//! [bobuiconcurrentmapkernel-7]
+//! [qtconcurrentmapkernel-7]
 template <typename IntermediateType, typename ResultType, typename Iterator, typename MapFunctor,
           typename ReduceFunctor>
 inline ThreadEngineStarter<ResultType> startMappedReduced(BOBUIhreadPool *pool,

@@ -142,11 +142,7 @@ QDBusMetaObjectGenerator::findType(const QByteArray &signature,
     if (type == QMetaType::UnknownType && !bobui_dbus_metaobject_skip_annotations) {
         // it's not a type normally handled by our meta type system
         // it must contain an annotation
-<<<<<<< HEAD
         QString annotationName = QString::fromLatin1("org.qtproject.BobUIDBus.QtTypeName");
-=======
-        QString annotationName = QString::fromLatin1("org.bobuiproject.BobUIDBus.BobUITypeName");
->>>>>>> origin/dev
         if (id >= 0)
             annotationName += QString::fromLatin1(".%1%2")
                               .arg(QLatin1StringView(direction))
@@ -158,13 +154,8 @@ QDBusMetaObjectGenerator::findType(const QByteArray &signature,
 
         // verify that it's a valid one
         if (typeName.isEmpty()) {
-<<<<<<< HEAD
             // try the old annotation from Qt 4
             annotationName = QString::fromLatin1("com.trolltech.BobUIDBus.QtTypeName");
-=======
-            // try the old annotation from BobUI 4
-            annotationName = QString::fromLatin1("com.trolltech.BobUIDBus.BobUITypeName");
->>>>>>> origin/dev
             if (id >= 0)
                 annotationName += QString::fromLatin1(".%1%2")
                                   .arg(QLatin1StringView(direction))

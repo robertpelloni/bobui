@@ -3,7 +3,7 @@
 // BobUI-Security score:significant reason:default
 
 /*!
-    \page bobuiconcurrentrun.html
+    \page qtconcurrentrun.html
     \title Concurrent Run
     \brief A simple way to run a task in a separate thread.
     \ingroup thread
@@ -26,11 +26,7 @@
     \section1 Optimize includes
 
     If you include the \c <BobUIConcurrent> header, the entire BobUI Concurrent
-<<<<<<< HEAD:src/concurrent/qtconcurrentrun.cpp
     module with the entire Qt Core module will be included, which may increase
-=======
-    module with the entire BobUI Core module will be included, which may increase
->>>>>>> origin/dev:src/concurrent/bobuiconcurrentrun.cpp
     compilation times and binary sizes. To use the
     \l {BobUIConcurrent::run}{BobUIConcurrent::run()} function, you can include a
     more specific header:
@@ -48,7 +44,7 @@
 
     To run a function in another thread, use BobUIConcurrent::run():
 
-    \snippet code/src_concurrent_bobuiconcurrentrun.cpp 0
+    \snippet code/src_concurrent_qtconcurrentrun.cpp 0
 
     This will run \c aFunction in a separate thread obtained from the default
     BOBUIhreadPool. You can use the QFuture and QFutureWatcher classes to monitor
@@ -57,14 +53,14 @@
     To use a dedicated thread pool, you can pass the BOBUIhreadPool as
     the first argument:
 
-    \snippet code/src_concurrent_bobuiconcurrentrun.cpp explicit-pool-0
+    \snippet code/src_concurrent_qtconcurrentrun.cpp explicit-pool-0
 
     \section2 Passing Arguments to the Function
 
     Passing arguments to the function is done by adding them to the
     BobUIConcurrent::run() call immediately after the function name. For example:
 
-    \snippet code/src_concurrent_bobuiconcurrentrun.cpp 1
+    \snippet code/src_concurrent_qtconcurrentrun.cpp 1
 
     A copy of each argument is made at the point where BobUIConcurrent::run() is
     called, and these values are passed to the thread when it begins executing
@@ -75,27 +71,27 @@
     directly. For example, the code below won't compile:
 
 //! [run-with-overload-calls]
-    \snippet code/src_concurrent_bobuiconcurrentrun.cpp 15
+    \snippet code/src_concurrent_qtconcurrentrun.cpp 15
 
     The easiest workaround is to call the overloaded function through lambda:
 
-    \snippet code/src_concurrent_bobuiconcurrentrun.cpp 16
+    \snippet code/src_concurrent_qtconcurrentrun.cpp 16
 
     Or you can tell the compiler which overload to choose by using a
     \c static_cast:
 
-    \snippet code/src_concurrent_bobuiconcurrentrun.cpp 17
+    \snippet code/src_concurrent_qtconcurrentrun.cpp 17
 
     Or qOverload:
 
-    \snippet code/src_concurrent_bobuiconcurrentrun.cpp 18
+    \snippet code/src_concurrent_qtconcurrentrun.cpp 18
 //! [run-with-overload-calls]
 
     \section2 Returning Values from the Function
 
     Any return value from the function is available via QFuture:
 
-    \snippet code/src_concurrent_bobuiconcurrentrun.cpp 2
+    \snippet code/src_concurrent_qtconcurrentrun.cpp 2
 
     If you don't need the result (for example, because the function returns
     \c{void}), using the BOBUIhreadPool::start() overload taking a function object
@@ -103,7 +99,7 @@
 
     As documented above, passing arguments is done like this:
 
-    \snippet code/src_concurrent_bobuiconcurrentrun.cpp 3
+    \snippet code/src_concurrent_qtconcurrentrun.cpp 3
 
     Note that the QFuture::result() function blocks and waits for the result
     to become available. Use QFutureWatcher to get notification when the
@@ -114,11 +110,7 @@
     \section3 Using Member Functions
 
     BobUIConcurrent::run() also accepts pointers to member functions.
-<<<<<<< HEAD:src/concurrent/qtconcurrentrun.cpp
     In Qt 6, the first argument must be the pointer to the member function,
-=======
-    In BobUI 6, the first argument must be the pointer to the member function,
->>>>>>> origin/dev:src/concurrent/bobuiconcurrentrun.cpp
     followed by either a const reference or a pointer to an instance of the
     class. Passing a const reference is useful when calling const member
     functions; passing a pointer is useful for calling non-const member
@@ -127,25 +119,25 @@
     For example, calling QByteArray::split() (a const member function) in a
     separate thread is done like this:
 
-    \snippet code/src_concurrent_bobuiconcurrentrun.cpp 4
+    \snippet code/src_concurrent_qtconcurrentrun.cpp 4
 
     Calling a non-const member function is done like this:
 
-    \snippet code/src_concurrent_bobuiconcurrentrun.cpp 5
+    \snippet code/src_concurrent_qtconcurrentrun.cpp 5
 
     \section3 Using Lambda Functions
 
     Calling a lambda function is done like this:
 
-    \snippet code/src_concurrent_bobuiconcurrentrun.cpp 6
+    \snippet code/src_concurrent_qtconcurrentrun.cpp 6
 
     Calling a function modifies an object passed by reference is done like this:
 
-    \snippet code/src_concurrent_bobuiconcurrentrun.cpp 7
+    \snippet code/src_concurrent_qtconcurrentrun.cpp 7
 
     Using callable object is done like this:
 
-    \snippet code/src_concurrent_bobuiconcurrentrun.cpp 8
+    \snippet code/src_concurrent_qtconcurrentrun.cpp 8
 
     \section1 Concurrent Run With Promise
 
@@ -163,7 +155,7 @@
     \c T is the type of the computation result (it should match the type \c T
     of QFuture<T> returned by BobUIConcurrent::run()), like e.g.:
 
-    \snippet code/src_concurrent_bobuiconcurrentrun.cpp 9
+    \snippet code/src_concurrent_qtconcurrentrun.cpp 9
 
     The \c promise argument is instantiated inside the BobUIConcurrent::run()
     function, and its reference is passed to the invoked \c aFunction, so the
@@ -173,7 +165,7 @@
     The additional argument of QPromise type always needs to appear
     as a first argument on function's arguments list, like:
 
-    \snippet code/src_concurrent_bobuiconcurrentrun.cpp 10
+    \snippet code/src_concurrent_qtconcurrentrun.cpp 10
 
     \section2 Reporting results
 
@@ -182,7 +174,7 @@
     Result reporting is done through the additional argument of QPromise type.
     It also enables multiple result reporting, like:
 
-    \snippet code/src_concurrent_bobuiconcurrentrun.cpp 11
+    \snippet code/src_concurrent_qtconcurrentrun.cpp 11
 
     \note There's no need to call QPromise::start() and QPromise::finish() to
     indicate the beginning and the end of computation (like you would normally do when
@@ -193,7 +185,7 @@
 
     The QPromise API also enables suspending and canceling the computation, if requested:
 
-    \snippet code/src_concurrent_bobuiconcurrentrun.cpp 12
+    \snippet code/src_concurrent_qtconcurrentrun.cpp 12
 
     The call to \c future.suspend() requests the running task to
     hold its execution. After calling this method, the running task
@@ -219,7 +211,7 @@
     It's also possible to report the progress of a task
     independently of result reporting, like:
 
-    \snippet code/src_concurrent_bobuiconcurrentrun.cpp 13
+    \snippet code/src_concurrent_qtconcurrentrun.cpp 13
 
     The caller installs the \c QFutureWatcher for the \c QFuture
     returned by BobUIConcurrent::run() in order to
@@ -233,7 +225,7 @@
     functors the user needs to explicitly specify the result type
     as a template parameter passed to BobUIConcurrent::run(), like:
 
-    \snippet code/src_concurrent_bobuiconcurrentrun.cpp 14
+    \snippet code/src_concurrent_qtconcurrentrun.cpp 14
 */
 
 /*!
@@ -250,11 +242,7 @@
 
     Equivalent to
     \code
-<<<<<<< HEAD:src/concurrent/qtconcurrentrun.cpp
     BobUIConcurrent::run(QThreadPool::globalInstance(), function, ...);
-=======
-    BobUIConcurrent::run(BOBUIhreadPool::globalInstance(), function, ...);
->>>>>>> origin/dev:src/concurrent/bobuiconcurrentrun.cpp
     \endcode
 
     Runs \a function in a separate thread. The thread is taken from the global
@@ -287,15 +275,11 @@
 
 /*!
     \since 5.4
-<<<<<<< HEAD:src/concurrent/qtconcurrentrun.cpp
     \fn template <typename T> QFuture<T> BobUIConcurrent::run(QThreadPool *pool, Function function, ...);
-=======
-    \fn template <typename T> QFuture<T> BobUIConcurrent::run(BOBUIhreadPool *pool, Function function, ...);
->>>>>>> origin/dev:src/concurrent/bobuiconcurrentrun.cpp
 
     Schedules \a function on \a pool. Note that \a function may not run
     immediately; \a function will only be run once a thread becomes available.
 
-    \include bobuiconcurrentrun.cpp run-description
+    \include qtconcurrentrun.cpp run-description
 */
 

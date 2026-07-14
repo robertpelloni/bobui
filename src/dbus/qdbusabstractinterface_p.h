@@ -18,7 +18,7 @@
 #ifndef QDBUSABSTRACTINTERFACE_P_H
 #define QDBUSABSTRACTINTERFACE_P_H
 
-#include <BobUIDBus/private/bobuidbusglobal_p.h>
+#include <QtDBus/private/qtdbusglobal_p.h>
 #include <qdbusabstractinterface.h>
 #include <qdbusconnection.h>
 #include <qdbuserror.h>

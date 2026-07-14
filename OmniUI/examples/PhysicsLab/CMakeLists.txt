@@ -40,10 +40,3 @@ add_executable(PhysicsLab
 target_link_libraries(PhysicsLab PRIVATE
     BobUI6::Core BobUI6::Gui BobUI6::Widgets BobUI6::Qml BobUI6::Quick
 )
-<<<<<<< HEAD
-=======
-
-if(EMSCRIPTEN)
-    target_link_options(HelloOmni PRIVATE -s USE_PTHREADS=0)
-endif()
->>>>>>> feature/omni-ui-framework-18001284211800334382

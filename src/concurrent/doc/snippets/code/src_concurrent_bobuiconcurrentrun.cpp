@@ -9,11 +9,7 @@ QFuture<void> future = BobUIConcurrent::run(aFunction);
 
 //! [explicit-pool-0]
 extern void aFunction();
-<<<<<<< HEAD:src/concurrent/doc/snippets/code/src_concurrent_qtconcurrentrun.cpp
 QThreadPool pool;
-=======
-BOBUIhreadPool pool;
->>>>>>> origin/dev:src/concurrent/doc/snippets/code/src_concurrent_bobuiconcurrentrun.cpp
 QFuture<void> future = BobUIConcurrent::run(&pool, aFunction);
 //! [explicit-pool-0]
 

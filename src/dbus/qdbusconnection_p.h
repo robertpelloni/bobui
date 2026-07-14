@@ -18,7 +18,7 @@
 #ifndef QDBUSCONNECTION_P_H
 #define QDBUSCONNECTION_P_H
 
-#include <BobUIDBus/private/bobuidbusglobal_p.h>
+#include <QtDBus/private/qtdbusglobal_p.h>
 #include <qdbuserror.h>
 #include <qdbusconnection.h>
 
@@ -35,7 +35,7 @@
 
 #include <qdbusmessage.h>
 #include <qdbusservicewatcher.h>    // for the WatchMode enum
-Q_MOC_INCLUDE(<BobUIDBus/private/qdbuspendingcall_p.h>)
+Q_MOC_INCLUDE(<QtDBus/private/qdbuspendingcall_p.h>)
 
 #ifndef BOBUI_NO_DBUS
 

@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 #!/usr/bin/env node
 
 const fs = require('fs');
@@ -231,8 +230,6 @@ program
   });
 
 program.parse(process.argv);
-=======
->>>>>>> feature/omni-ui-framework-18001284211800334382
 const fs = require('fs');
 const path = require('path');
 const readline = require('readline');

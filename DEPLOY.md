@@ -1,91 +1,28 @@
-# Deployment Instructions
+# BobQ Deployment and Setup Instructions
 
-## Scope
-This file covers the `bobui` framework repository.
+## 1. Environment Requirements
+- **Go:** >= 1.22
+- **CMake:** >= 3.16
+- **C++ Toolchain:** GCC 13+ or equivalent MSVC/Clang environment.
+- **System Libraries (Linux):** `libvulkan-dev`, `libegl1-mesa-dev`, `libxkbcommon-x11-dev`, `libwayland-dev` required for Go Gio.org compilation.
 
-The interactive shell / desktop experience belongs to the adjacent `bobfilez` project.
+## 2. Secrets & API Keys
+No API keys should ever be hard-coded into the repository.
+- If adding external web services, utilize `.env` files.
+- Copy `.env.example` to `.env` locally before running deployment pipelines.
 
-## Verified Go Baseline
-### Commands that currently work
+## 3. Go Compilation (Preferred)
+The easiest way to execute the engine is using the native Go port, which bypasses legacy Qt/CMake evaluation bugs.
 ```bash
-go test ./internal/...
+go mod tidy
 go build -buildvcs=false .
+./bobui
 ```
 
-## Go Runtime Requirements
-- Go toolchain matching `go.mod`
-- Gio-compatible platform support for the UI runtime
-- The Go path now opens a real Gio window/frame loop in `internal/ui/engine.go`
-- No external browser runtime is currently required for the verified Go `WebView` baseline; the current bridge execution model remains local and compile-safe
-
-## C++ / BobUI Track
-The repository still contains the older C++ / BobUI / OmniUI track in `OmniUI/`.
-Treat it as a separate implementation path from the Go tree.
-
-Current migration policy for the C++ track:
-- do not perform a global `qt` -> `bobui` replacement,
-- classify rename artifacts before merging them,
-- start with additive `cmake/` package/export compatibility surfaces,
-- preserve the verified Go baseline while the C++ compatibility story is clarified.
-
-Current additive compatibility files:
-- `cmake/BobUICompatibilityHelpers.cmake`
-- `cmake/BobUI6Config.cmake`
-- `cmake/BobUIConfig.cmake`
-- `cmake/BobUI6CoreConfig.cmake`
-- `cmake/BobUICoreConfig.cmake`
-- `cmake/BobUI6GuiConfig.cmake`
-- `cmake/BobUIGuiConfig.cmake`
-- `cmake/BobUI6NetworkConfig.cmake`
-- `cmake/BobUINetworkConfig.cmake`
-- `cmake/BobUI6ConcurrentConfig.cmake`
-- `cmake/BobUIConcurrentConfig.cmake`
-- `cmake/BobUI6DBusConfig.cmake`
-- `cmake/BobUIDBusConfig.cmake`
-- `cmake/BobUI6OpenGLConfig.cmake`
-- `cmake/BobUIOpenGLConfig.cmake`
-- `cmake/BobUI6OpenGLWidgetsConfig.cmake`
-- `cmake/BobUIOpenGLWidgetsConfig.cmake`
-- `cmake/BobUI6PrintSupportConfig.cmake`
-- `cmake/BobUIPrintSupportConfig.cmake`
-- `cmake/BobUI6SqlConfig.cmake`
-- `cmake/BobUISqlConfig.cmake`
-- `cmake/BobUI6WidgetsConfig.cmake`
-- `cmake/BobUIWidgetsConfig.cmake`
-- `cmake/BobUI6XmlConfig.cmake`
-- `cmake/BobUIXmlConfig.cmake`
-
-Current additive export wiring:
-- `cmake/QtBaseGlobalTargets.cmake` now publishes additive `BobUI6/` and `BobUI/` package directories alongside the canonical `Qt6/` package directory.
-- `cmake/QtBobUIHelpers.cmake` isolates the BobUI package-publication logic.
-- `cmake/BobUISupportedComponents.cmake` centralizes the currently supported BobUI CMake compatibility matrix.
-- `cmake/bobui_generate_supported_component_report.cmake` generates the human-readable component status report from that matrix.
-- `docs/ai/design/2026-04-05-bobui-cmake-supported-component-status.md` provides the generated human-readable status report.
-- `cmake/tests/bobui_package_forwarding_smoke.cmake` provides an install-layout-style forwarding validation path and now exercises a broader supported umbrella component matrix.
-- `cmake/tests/bobui_export_publication_configure_smoke.cmake` provides configure-time publication validation.
-- `cmake/tests/bobui_supported_component_manifest_consistency.cmake` keeps the manifest and smoke coverage aligned.
-- `cmake/tests/bobui_supported_component_report_consistency.cmake` keeps the status report aligned with the manifest and generator output.
-- `cmake/tests/bobui_qtbase_native_configure_preflight.cmake` provides a repeatable native configure readiness gate.
-- `cmake/tests/bobui_full_compatibility_validation.cmake` provides the consolidated BobUI CMake compatibility validation command.
-
-These changes preserve the canonical Qt package surface while layering BobUI discovery on top.
-
-## CI/CD
-Current workflows exist for:
-- BobUI/C++ native builds
-- BobUI/C++ WASM builds
-- Go validation + WASM builds
-
-The Go workflow now runs:
+## 4. Native C++ Compilation (Legacy)
+Due to aggressive macro refactoring during the BobUI -> BobQ rename, the CMake configuration script currently has known macro evaluation errors (e.g. `RE_shared`). Native C++ builds should only be attempted if explicitly maintaining the `BobQJuceHost` or `BobQUltimatePPHost` bridges.
 ```bash
-go test ./internal/...
-go build -buildvcs=false .
-cmake -DBOBUI_SKIP_NATIVE_CONFIGURE=ON -P cmake/tests/bobui_full_compatibility_validation.cmake
-```
-
-The native skip flag in CI is intentional while native compiler/toolchain visibility remains an environment-specific concern.
-
-## Release Verification
-```bash
-python scripts/check_release.py
+mkdir build && cd build
+cmake -GNinja ..
+ninja
 ```

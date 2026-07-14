@@ -4,11 +4,7 @@
 
 int main(int argc, char *argv[])
 {
-<<<<<<< HEAD
     OmniApp app(argc, argv);
-=======
-    OmniApplication app(argc, argv);
->>>>>>> feature/omni-ui-framework-18001284211800334382
     app.initializeJuce();
 
     // In QML mode, we don't need to manually create QWidgets here.

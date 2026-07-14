@@ -17,7 +17,7 @@
 #ifndef QDBUSABSTRACTADAPTOR_P_H
 #define QDBUSABSTRACTADAPTOR_P_H
 
-#include <BobUIDBus/private/bobuidbusglobal_p.h>
+#include <QtDBus/private/qtdbusglobal_p.h>
 #include <qdbusabstractadaptor.h>
 
 #include <BobUICore/qbytearrayview.h>

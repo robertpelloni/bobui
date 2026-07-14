@@ -5,7 +5,7 @@
 #ifndef BOBUICONCURRENT_COMPILERTEST_H
 #define BOBUICONCURRENT_COMPILERTEST_H
 
-#include <BobUIConcurrent/bobuiconcurrent_global.h>
+#include <QtConcurrent/qtconcurrent_global.h>
 
 #ifndef BOBUI_NO_CONCURRENT
 

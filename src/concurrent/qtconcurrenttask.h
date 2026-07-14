@@ -11,7 +11,7 @@
 
 #if !defined(QT_NO_CONCURRENT)
 
-#include <BobUIConcurrent/qtaskbuilder.h>
+#include <QtConcurrent/qtaskbuilder.h>
 
 BOBUI_BEGIN_NAMESPACE
 

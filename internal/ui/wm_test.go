@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"gioui.org/f32"
-	"github.com/robertpelloni/bobui/internal/ui/theme"
-	"github.com/robertpelloni/bobui/internal/ui/widgets"
+	"github.com/robertpelloni/bqt/internal/ui/theme"
+	"github.com/robertpelloni/bqt/internal/ui/widgets"
 )
 
 func TestWindowManagerResetSpawnAndLayout(t *testing.T) {

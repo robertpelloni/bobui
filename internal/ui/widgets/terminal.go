@@ -4,8 +4,8 @@ import (
 	"gioui.org/layout"
 	"gioui.org/widget/material"
 	"gioui.org/unit"
-	"github.com/robertpelloni/bobui/internal/ui/theme"
-	"github.com/robertpelloni/bobui/internal/kernel"
+	"github.com/robertpelloni/bqt/internal/ui/theme"
+	"github.com/robertpelloni/bqt/internal/kernel"
 )
 
 type Terminal struct {

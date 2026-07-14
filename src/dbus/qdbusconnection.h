@@ -6,14 +6,9 @@
 #ifndef QDBUSCONNECTION_H
 #define QDBUSCONNECTION_H
 
-#include <BobUIDBus/bobuidbusglobal.h>
-<<<<<<< HEAD
+#include <QtDBus/qtdbusglobal.h>
 #include <QtCore/qobjectdefs.h>
 #include <QtCore/qstring.h>
-=======
-#include <BobUICore/qobjectdefs.h>
-#include <BobUICore/qstring.h>
->>>>>>> origin/dev
 
 #ifndef BOBUI_NO_DBUS
 
@@ -47,7 +42,7 @@ class QDBusConnectionPrivate;
 class Q_DBUS_EXPORT QDBusConnection
 {
     Q_GADGET
-    Q_MOC_INCLUDE(<BobUIDBus/qdbuspendingcall.h>)
+    Q_MOC_INCLUDE(<QtDBus/qdbuspendingcall.h>)
 
 public:
     enum BusType { SessionBus, SystemBus, ActivationBus };

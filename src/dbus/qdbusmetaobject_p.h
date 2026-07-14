@@ -17,12 +17,8 @@
 //
 //
 
-#include <BobUIDBus/private/bobuidbusglobal_p.h>
-<<<<<<< HEAD
+#include <QtDBus/private/qtdbusglobal_p.h>
 #include <QtCore/qmetaobject.h>
-=======
-#include <BobUICore/qmetaobject.h>
->>>>>>> origin/dev
 
 #ifndef BOBUI_NO_DBUS
 

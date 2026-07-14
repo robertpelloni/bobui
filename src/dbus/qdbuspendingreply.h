@@ -5,9 +5,9 @@
 #ifndef QDBUSPENDINGREPLY_H
 #define QDBUSPENDINGREPLY_H
 
-#include <BobUIDBus/bobuidbusglobal.h>
-#include <BobUIDBus/qdbusargument.h>
-#include <BobUIDBus/qdbuspendingcall.h>
+#include <QtDBus/qtdbusglobal.h>
+#include <QtDBus/qdbusargument.h>
+#include <QtDBus/qdbuspendingcall.h>
 
 #ifndef BOBUI_NO_DBUS
 

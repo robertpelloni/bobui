@@ -7,11 +7,8 @@
 
 bobui_internal_add_module(Xml
     SOURCES
-        bobuixmlglobal.h
-<<<<<<< HEAD
+        qtxmlglobal.h
         BobUIXml
-=======
->>>>>>> origin/dev
     DEFINES
         BOBUI_NO_CONTEXTLESS_CONNECT
         BOBUI_NO_FOREACH

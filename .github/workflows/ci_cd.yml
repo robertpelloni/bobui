@@ -28,9 +28,10 @@ jobs:
       uses: jurplel/install-qt-action@v4
       with:
         version: ${{ matrix.qt_ver }}
+        setup-python: 'true'
         host: ${{ matrix.os == 'windows-latest' && 'windows' || 'linux' }}
         target: desktop
-        modules: 'qtdeclarative qtwebsockets qt5compat qtshadertools qtmultimedia qtsvg'
+        modules: 'qtwebsockets qt5compat qtshadertools qtmultimedia'
 
     - name: Setup Ninja
       uses: seanmiddleditch/gha-setup-ninja@master
@@ -83,10 +84,11 @@ jobs:
       uses: jurplel/install-qt-action@v4
       with:
         version: '6.6.0'
+        setup-python: 'false'
         host: 'linux'
         target: 'desktop'
-        arch: 'wasm_32'
-        modules: 'qtdeclarative qtwebsockets qt5compat'
+        arch: 'wasm_singlethread'
+        modules: 'qtwebsockets qt5compat'
 
     - name: Setup Emscripten
       uses: mymindstorm/setup-emsdk@v14

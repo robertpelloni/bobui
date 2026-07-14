@@ -17,7 +17,7 @@
 #ifndef QDBUSCONTEXT_P_H
 #define QDBUSCONTEXT_P_H
 
-#include <BobUIDBus/private/bobuidbusglobal_p.h>
+#include <QtDBus/private/qtdbusglobal_p.h>
 
 #ifndef BOBUI_NO_DBUS
 

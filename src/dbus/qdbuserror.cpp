@@ -44,19 +44,11 @@ static constexpr const auto errorMessages = qOffsetStringArray(
     "org.freedesktop.DBus.Error.UnknownObject",
     "org.freedesktop.DBus.Error.UnknownProperty",
     "org.freedesktop.DBus.Error.PropertyReadOnly",
-<<<<<<< HEAD
     "org.qtproject.BobUIDBus.Error.InternalError",
     "org.qtproject.BobUIDBus.Error.InvalidService",
     "org.qtproject.BobUIDBus.Error.InvalidObjectPath",
     "org.qtproject.BobUIDBus.Error.InvalidInterface",
     "org.qtproject.BobUIDBus.Error.InvalidMember",
-=======
-    "org.bobuiproject.BobUIDBus.Error.InternalError",
-    "org.bobuiproject.BobUIDBus.Error.InvalidService",
-    "org.bobuiproject.BobUIDBus.Error.InvalidObjectPath",
-    "org.bobuiproject.BobUIDBus.Error.InvalidInterface",
-    "org.bobuiproject.BobUIDBus.Error.InvalidMember",
->>>>>>> origin/dev
     ""
 );
 

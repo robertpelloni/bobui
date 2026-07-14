@@ -7,6 +7,7 @@ add_library(OmniCore STATIC
     src/BobQGrid.cpp
     src/BobQUltimatePPHost.cpp
     src/OmniMasterClock.cpp
+    src/BobQUppComponentRegistry.cpp
 )
 target_include_directories(OmniCore PUBLIC include)
 

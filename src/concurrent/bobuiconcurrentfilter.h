@@ -6,19 +6,15 @@
 #define BOBUICONCURRENT_FILTER_H
 
 #if 0
-<<<<<<< HEAD:src/concurrent/qtconcurrentfilter.h
 #pragma qt_class(BobUIConcurrentFilter)
-=======
-#pragma bobui_class(BobUIConcurrentFilter)
->>>>>>> origin/dev:src/concurrent/bobuiconcurrentfilter.h
 #endif
 
-#include <BobUIConcurrent/bobuiconcurrent_global.h>
+#include <QtConcurrent/qtconcurrent_global.h>
 
 #if !defined(BOBUI_NO_CONCURRENT) || defined(Q_QDOC)
 
-#include <BobUIConcurrent/bobuiconcurrentfilterkernel.h>
-#include <BobUIConcurrent/bobuiconcurrentfunctionwrappers.h>
+#include <QtConcurrent/qtconcurrentfilterkernel.h>
+#include <QtConcurrent/qtconcurrentfunctionwrappers.h>
 
 BOBUI_BEGIN_NAMESPACE
 

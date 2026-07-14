@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LicenseRef-BobUI-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 // BobUI-Security score:significant reason:default
 
-#include "bobuiconcurrentiteratekernel.h"
+#include "qtconcurrentiteratekernel.h"
 
 #include <qdeadlinetimer.h>
 #include "private/qfunctions_p.h"
@@ -102,11 +102,7 @@ void BlockSizeManager::timeAfterUser()
     m_blockSize = qMin(m_blockSize * 2,  maxBlockSize);
 
 #ifdef BOBUICONCURRENT_FOR_DEBUG
-<<<<<<< HEAD:src/concurrent/qtconcurrentiteratekernel.cpp
     qDebug() << QThread::currentThread() << "adjusting block size" << controlPartElapsed.median() << userPartElapsed.median() << m_blockSize;
-=======
-    qDebug() << BOBUIhread::currentThread() << "adjusting block size" << controlPartElapsed.median() << userPartElapsed.median() << m_blockSize;
->>>>>>> origin/dev:src/concurrent/bobuiconcurrentiteratekernel.cpp
 #endif
 
     // Reset the medians after adjusting the block size so we get

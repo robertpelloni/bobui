@@ -7,7 +7,7 @@
 
 #if !defined(BOBUI_NO_CONCURRENT) || defined(Q_QDOC)
 
-#include <BobUIConcurrent/bobuiconcurrentstoredfunctioncall.h>
+#include <QtConcurrent/qtconcurrentstoredfunctioncall.h>
 
 BOBUI_BEGIN_NAMESPACE
 

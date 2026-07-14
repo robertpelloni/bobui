@@ -7,16 +7,10 @@
 
 // define some useful types for D-Bus
 
-#include <BobUIDBus/bobuidbusglobal.h>
-<<<<<<< HEAD
+#include <QtDBus/qtdbusglobal.h>
 #include <QtCore/qvariant.h>
 #include <QtCore/qstring.h>
 #include <QtCore/qhashfunctions.h>
-=======
-#include <BobUICore/qvariant.h>
-#include <BobUICore/qstring.h>
-#include <BobUICore/qhashfunctions.h>
->>>>>>> origin/dev
 
 #ifndef BOBUI_NO_DBUS
 

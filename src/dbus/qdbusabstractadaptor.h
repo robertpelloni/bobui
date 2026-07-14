@@ -5,12 +5,8 @@
 #ifndef QDBUSABSTRACTADAPTOR_H
 #define QDBUSABSTRACTADAPTOR_H
 
-#include <BobUIDBus/bobuidbusglobal.h>
-<<<<<<< HEAD
+#include <QtDBus/qtdbusglobal.h>
 #include <QtCore/qobject.h>
-=======
-#include <BobUICore/qobject.h>
->>>>>>> origin/dev
 
 #ifndef BOBUI_NO_DBUS
 

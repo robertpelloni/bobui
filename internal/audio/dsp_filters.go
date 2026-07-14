@@ -47,3 +47,13 @@ func (f *BiquadFilter) ProcessBlock(samples []float32) {
 		samples[i] = float32(out)
 	}
 }
+
+// Name returns the node name for the AudioGraph.
+func (f *BiquadFilter) Name() string {
+	return "OmniFilter"
+}
+
+// Process conforms to the AudioNode interface.
+func (f *BiquadFilter) Process(buffer []float32) {
+	f.ProcessBlock(buffer)
+}

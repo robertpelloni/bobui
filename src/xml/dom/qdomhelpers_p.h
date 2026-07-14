@@ -7,11 +7,7 @@
 #include <qdom.h>
 #include <private/qglobal_p.h>
 
-<<<<<<< HEAD
 QT_REQUIRE_CONFIG(dom);
-=======
-BOBUI_REQUIRE_CONFIG(dom);
->>>>>>> origin/dev
 BOBUI_BEGIN_NAMESPACE
 
 //

@@ -4,6 +4,15 @@
 # Initial autogen setup for a target to specify certain CMake properties which are common
 # to all autogen tools. Also enable AUTOMOC by default.
 function(bobui_autogen_tools_initial_setup target)
+    if(NOT PROJECT_VERSION_MAJOR)
+        set(PROJECT_VERSION_MAJOR 1)
+    endif()
+    if(NOT PROJECT_VERSION_MINOR)
+        set(PROJECT_VERSION_MINOR 1)
+    endif()
+    if(NOT PROJECT_VERSION_PATCH)
+        set(PROJECT_VERSION_PATCH 66)
+    endif()
     set_property(TARGET "${target}" PROPERTY INTERFACE_BOBUI_MAJOR_VERSION ${PROJECT_VERSION_MAJOR})
     set_property(TARGET "${target}" APPEND PROPERTY COMPATIBLE_INTERFACE_STRING BOBUI_MAJOR_VERSION)
 

@@ -5,13 +5,13 @@
 #ifndef BOBUICONCURRENT_FILTERKERNEL_H
 #define BOBUICONCURRENT_FILTERKERNEL_H
 
-#include <BobUIConcurrent/bobuiconcurrent_global.h>
+#include <QtConcurrent/qtconcurrent_global.h>
 
 #if !defined(BOBUI_NO_CONCURRENT) || defined (Q_QDOC)
 
-#include <BobUIConcurrent/bobuiconcurrentiteratekernel.h>
-#include <BobUIConcurrent/bobuiconcurrentmapkernel.h>
-#include <BobUIConcurrent/bobuiconcurrentreducekernel.h>
+#include <QtConcurrent/qtconcurrentiteratekernel.h>
+#include <QtConcurrent/qtconcurrentmapkernel.h>
+#include <QtConcurrent/qtconcurrentreducekernel.h>
 
 BOBUI_BEGIN_NAMESPACE
 

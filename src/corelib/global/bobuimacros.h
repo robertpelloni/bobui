@@ -11,7 +11,7 @@
 #define BOBUI_USE_NAMESPACE QT_USE_NAMESPACE
 
 #ifdef __cplusplus
-namespace BobUI = Qt;
+
 
 // Core Class Aliases
 namespace BobUI {

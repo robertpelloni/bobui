@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"gioui.org/f32"
-	"github.com/robertpelloni/bobui/internal/ui/theme"
+	"github.com/robertpelloni/bqt/internal/ui/theme"
 )
 
 func TestWindowMoveResizeCloseAndActivationRequest(t *testing.T) {

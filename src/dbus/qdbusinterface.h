@@ -5,9 +5,9 @@
 #ifndef QDBUSINTERFACE_H
 #define QDBUSINTERFACE_H
 
-#include <BobUIDBus/bobuidbusglobal.h>
-#include <BobUIDBus/qdbusabstractinterface.h>
-#include <BobUIDBus/qdbusconnection.h>
+#include <QtDBus/qtdbusglobal.h>
+#include <QtDBus/qdbusabstractinterface.h>
+#include <QtDBus/qdbusconnection.h>
 
 #ifndef BOBUI_NO_DBUS
 

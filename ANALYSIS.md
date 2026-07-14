@@ -12,7 +12,7 @@
 
 ## Missing Go Parity
 Based on the massive structural refactor occurring in the C++ base, the following modules exist natively but have no equivalent Go counterpart:
-1. **GTK Parity Layouts:** No pure Go equivalent for `BobQBox` (Sequential Packing) exists natively aside from manual Gio `layout.Flex` operations.
-2. **Audio/DSP:** The entire Audio stack (`OmniAudioGraph`, `OmniSynthesizer`, `OmniSequencer`, `OmniVoiceEngine`, `OmniSpatialAudio`) has zero pure Go implementation.
+1. **GTK Parity Layouts:** Pure Go equivalent `BobQBox` exists in `internal/ui/widgets/box.go` implementing `PackStart` and `PackEnd` wrapping `layout.Flex`. Additional equivalents `BQtNotebook` and `BQtHeaderBar` also exist.
+2. **Audio/DSP:** The Go Audio stack (`OmniAudioGraph`, `OmniSynthesizer`, `OmniFilter`, `OmniGain`) has been ported natively, but some components (`OmniSequencer`, `OmniSpatialAudio`) are still missing 1:1 representations.
 3. **JUCE Host Bridge:** While `BobQJuceHost` bridges JUCE to C++, the Go layer lacks a CGO bridge to access JUCE plugin interfaces (`OmniJuceView`, `JuceWidget`).
 4. **Data/Systems:** `OmniTimeMachine`, `OmniNeuralEngine`, `OmniMeshNode`, and `OmniValueTree` lack 1:1 representations in `internal/ui/` (though some logic might exist in `internal/data/`).

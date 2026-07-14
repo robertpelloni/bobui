@@ -18,7 +18,7 @@
 #ifndef QDBUSCONNECTIONMANAGER_P_H
 #define QDBUSCONNECTIONMANAGER_P_H
 
-#include <BobUIDBus/private/bobuidbusglobal_p.h>
+#include <QtDBus/private/qtdbusglobal_p.h>
 #include "qdbusconnection_p.h"
 #include "private/bobuihread_p.h"
 

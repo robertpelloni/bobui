@@ -16,20 +16,12 @@
 // We mean it.
 //
 
-#include <BobUIDBus/private/bobuidbusglobal_p.h>
-<<<<<<< HEAD
+#include <QtDBus/private/qtdbusglobal_p.h>
 #include <QtCore/qlist.h>
 #include <QtCore/qmap.h>
 #include <QtCore/qshareddata.h>
 #include <QtCore/qstring.h>
 #include <QtCore/qstringlist.h>
-=======
-#include <BobUICore/qlist.h>
-#include <BobUICore/qmap.h>
-#include <BobUICore/qshareddata.h>
-#include <BobUICore/qstring.h>
-#include <BobUICore/qstringlist.h>
->>>>>>> origin/dev
 
 #ifndef BOBUI_NO_DBUS
 

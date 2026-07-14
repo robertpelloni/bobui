@@ -28,7 +28,6 @@
 *   **OmniDash**: Built 1Hz system diagnostic engine utilizing QSysInfo. Rewrote `OmniDash` UI.
 *   **OmniScribe**: Built ECMAScript 7 engine wrapping QJSEngine. Rewrote `OmniScribe` UI.
 *   **OmniStudio**: Built custom C++ painted item for infinite spatial logic node routing. Rewrote `OmniStudio` UI.
-<<<<<<< HEAD
 
 ## [v42.0.0] - The OmniNexus Integration Phase
 *   **OmniSimulationEngine (Master Clock)**: Overhauled the C++ physics/simulation clock to act as a global signal dispatcher (`globalTick(dt)`). Modules like `OmniPhysicsWorld`, `OmniKernel`, and `OmniGenesis` have abandoned their isolated internal BOBUIimers to bind directly to this global clock. Altering the `tickRate` or `timeDilation` in the engine now globally affects the speed of orbital mechanics, hardware PWM, quantum algorithms, and AGI growth simultaneously.
@@ -39,5 +38,3 @@
 *   **QML Reusability**: Extracted the massive block of repetitive `ToolBar` code across 30 applications into a single, global `OmniGlobalHeader.qml` reusable component within `core/src/theme/`.
 *   **Master Clock Porting**: Successfully ported `OmniAGI` (Singularity), `OmniSimulationLoop` (Genesis), `OmniAbyss` (Void), and `OmniEtherealPlane` (Spirit) off of isolated internal BOBUIimers. They now exclusively listen to `OmniSimulationEngine::instance()->globalTick(dt)`, meaning altering time dilation scales their physics natively.
 *   **Omni Crisis Mode**: Designed an overarching gamified failure state testing the IPC router. Emitting `OMNI_CRISIS` from the Nexus UI triggers a catastrophic cascading failure across the framework. It spikes the Void's mass, tears the Spirit veil, emergency halts the AGI, violently reverses the Time Machine, and throttles the Master Clock to 10Hz to simulate CPU load.
-=======
->>>>>>> feature/omni-ui-framework-18001284211800334382

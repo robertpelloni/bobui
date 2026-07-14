@@ -5,14 +5,9 @@
 #ifndef QDBUSVIRTUALOBJECT_H
 #define QDBUSVIRTUALOBJECT_H
 
-#include <BobUIDBus/bobuidbusglobal.h>
-<<<<<<< HEAD
+#include <QtDBus/qtdbusglobal.h>
 #include <QtCore/qstring.h>
 #include <QtCore/qobject.h>
-=======
-#include <BobUICore/qstring.h>
-#include <BobUICore/qobject.h>
->>>>>>> origin/dev
 
 #ifndef BOBUI_NO_DBUS
 

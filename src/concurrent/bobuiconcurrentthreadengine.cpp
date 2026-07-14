@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LicenseRef-BobUI-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 // BobUI-Security score:significant reason:default
 
-#include "bobuiconcurrentthreadengine.h"
+#include "qtconcurrentthreadengine.h"
 
 #if !defined(BOBUI_NO_CONCURRENT) || defined(Q_QDOC)
 
@@ -46,7 +46,7 @@ namespace BobUIConcurrent {
 */
 
 /*!
-  \fn [bobuiconcurrentthreadengine-1] template <typename ThreadEngine> ThreadEngineStarter<typename ThreadEngine::ResultType> BobUIConcurrent::startThreadEngine(ThreadEngine *threadEngine)
+  \fn [qtconcurrentthreadengine-1] template <typename ThreadEngine> ThreadEngineStarter<typename ThreadEngine::ResultType> BobUIConcurrent::startThreadEngine(ThreadEngine *threadEngine)
   \internal
 */
 

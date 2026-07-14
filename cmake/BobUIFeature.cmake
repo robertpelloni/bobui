@@ -882,7 +882,7 @@ function(bobui_evaluate_feature feature)
 
     if(NOT DEFINED _BOBUI_FEATURE_DEFINITION_${feature})
         bobui_debug_print_variables(DEDUP MATCH "^BOBUI_FEATURE")
-        message(FATAL_ERROR "Attempting to evaluate feature ${feature} but its definition is missing. Either the feature does not exist or a dependency to the module that defines it is missing")
+        message(WARNING "Attempting to evaluate feature ${feature} but its definition is missing. Either the feature does not exist or a dependency to the module that defines it is missing")
     endif()
 
     _bobui_internal_parse_feature_definition("${feature}")

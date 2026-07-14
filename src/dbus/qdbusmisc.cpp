@@ -52,11 +52,7 @@ QString qDBusInterfaceFromMetaObject(const QMetaObject *mo)
         interface.replace("::"_L1, "."_L1);
 
         if (interface.startsWith("QDBus"_L1)) {
-<<<<<<< HEAD
             interface.prepend("org.qtproject.BobUIDBus."_L1);
-=======
-            interface.prepend("org.bobuiproject.BobUIDBus."_L1);
->>>>>>> origin/dev
         } else if (interface.startsWith(u'Q') &&
                    interface.size() >= 2 && interface.at(1).isUpper()) {
             // assume it's BobUI

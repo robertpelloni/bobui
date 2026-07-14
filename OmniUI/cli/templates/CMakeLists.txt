@@ -5,16 +5,8 @@ project(HelloOmni LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Qml Quick)
-=======
->>>>>>> feature/omni-ui-framework-18001284211800334382
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Qml Quick SerialPort Bluetooth)
-=======
-find_package(BobUI6 REQUIRED COMPONENTS Core Gui Widgets Qml Quick)
-find_package(BobUI6 REQUIRED COMPONENTS Core Gui Widgets Qml Quick SerialPort Bluetooth)
->>>>>>> origin/dev
 
 include_directories(../../core/include)
 # We point to the local deps folder for the mock JUCE headers

@@ -1,59 +1,41 @@
-# Deep Architecture Analysis: BobUI / OmniUI Toolkit for Next-Gen OS
+# BobQ System Audit & Strategy - v1.1.66
 
-## Executive Vision
-The **BobUI** project, unified under the **OmniUI** banner, aims to create the ultimate foundation for a next-generation operating system. The strategic intent is twofold:
-1. **Absolute Parity (100% 1:1) with BobUI 6 & BobUI 7 Beta:** Seamlessly adopt the battle-tested paradigms, performance, and cross-platform flexibility of standard BobUI.
-2. **Framework Transcendence:** Exceed BobUI's capabilities by synthetically weaving in:
-   - **JUCE:** Unmatched multimedia, low-latency audio DSP, and high-performance synthesizer/audio component integration.
-   - **JavaFX:** Advanced declarative scene graph structures, sophisticated property bindings, and CSS-driven robust styling.
-   - **Dear ImGui:** High-performance immediate-mode rendering overlays for powerful developer tooling, multi-cursor debugging, and highly responsive in-game or in-OS dashboards.
+## 1. Completed Features
+- Initial framework architecture and meta-object system setup.
+- Integration of `JUCE` and `Ultimate++` via C++ bridging (`BobQJuceHost`, `BobQUltimatePPHost`).
+- Implementation of `BobQUppComponentRegistry` QML singleton.
+- Go Runtime parity for transient overlay layers (`Popup`, `Dialog`, `Drawer`, `Menu`, `ToolTip`).
+- Go Native Synthesizer (`OmniSynthesizer` port) including polyphony and signal generation.
 
-This unified C++ framework is engineered to support an OS designed around **local and online multiplayer interactions**, featuring **multiple independent cursors/inputs on single or multi-monitor setups**, built-in multi-user collaboration out-of-the-box, and providing an ecosystem where existing open-source software can be ported with seamless cooperative layers.
+## 2. Partially Implemented Features
+- **Audio Engine:** `OmniAudioGraph` framework is partially ported, but nodes like `OmniFilter`, `OmniGain`, and `OmniSequencer` still need native Go implementations.
+- **Event Loop Unification:** `OmniMasterClock` works in C++, but true cross-framework synchronization with the Go runtime (`gioui.org` event pump) is ongoing.
 
----
+## 3. Backend Features not Wired to Frontend
+- The `OmniVoiceEngine` PCM stream buffer capture is implemented natively but not connected to STT dispatch or the frontend visualizer.
+- Go Mesh Cluster offloading (`DistributeDSPTask`) exists but lacks a robust fallback/timeout UI indicator.
 
-## 1. Codebase Architecture & Current State
+## 4. Missing/Unpolished UI Features
+- `ScrollView` corner theming behavior when both scrollbars are visible.
+- Docking/tab behavior beyond active-tab filtering requires polish to match IDE expectations.
+- U++ integration lacks a native "theme sync" hook, meaning U++ components may look out-of-place against BobQ surfaces.
 
-### 1.1 The BobUI Foundation (`src/` Directory)
-The project structurally mirrors `bobuibase`, providing the rock-solid C++ foundation necessary for absolute BobUI parity.
-- `src/corelib`: Core non-GUI functionality (threads, IO, events, item models). Fully mirrored from BobUI.
-- `src/gui`: Foundational windowing, math3D, OpenGL, Vulkan, and rendering hardware interfaces (RHI).
-- `src/widgets`, `src/network`, `src/sql`, etc.: Full modular translation of the BobUI 6 framework.
-- **Current State:** The build tooling (`bobui-cmake`, `configure`, `qmake` wrappers) and source layout strongly confirm that the core engine maps 1:1 to BobUI 6. This allows existing BobUI applications to be ported to BobUI with zero friction.
+## 5. Bugs and Fragile Areas
+- **Build System:** The CMake scripts (specifically macro evaluations like `RE_shared`) are extremely fragile due to aggressive `qtbase` renaming and orphaned macro logic.
+- **Phase Sync:** Oscillator generation in Go pure synth needs fine-tuning to prevent phase-clipping during polyphony voice stealing.
 
-### 1.2 The OmniUI Layer (`OmniUI/` Directory)
-The `OmniUI` directory acts as the crucial nexus layer connecting the BobUI core, JUCE, TS/QML bindings, and advanced multi-user input routing.
-- **TypeScript Bindings (`OmniUI/ts/definitions/omni.d.ts`):** Defines the API surface for the developer experience. It exposes `Application`, `Widget`, `Button`, and specifically `JuceComponent`. It hints at a future where the OS UI and apps are written in TypeScript, transpiled to QML, and executed natively via the C++ backend.
-- **Application Bootstrapper (`OmniUI/src/OmniApp.h` / `.cpp`):** A custom `OmniApplication` class inherits from `QApplication`.
-  - *Current State:* It is currently a stub that wraps JUCE initialization (`juce::initialiseJuce_GUI()`) and prepares for loading the main TS/JS source payload (`loadMainSource`).
-  - *Roadmap:* Needs deep implementation to seamlessly weave the JUCE message loop into the BobUI event loop, allowing components from both frameworks to coexist and render in the same hardware-accelerated context.
+## 6. Refactor Opportunities
+- `CMakeLists.txt` and `configure.cmake` files require a deep purge of unused `qt_internal_` build macros inherited from Qt6, replacing them with stripped-down `bobui_` equivalents.
 
----
+## 7. Documentation Gaps
+- `Manual.md` does not explain how to execute the Go-only build without triggering the C++ CMake failures.
+- No central document exists mapping the C++ `QObject` properties to their respective Go structural equivalents.
 
-## 2. Path to the Next-Gen OS
+## 8. Dependencies and Submodules
+- See `SUBMODULE_INVENTORY.md` for a comprehensive list.
 
-### 2.1 Multi-Cursor & Multi-Input Subsystem
-To support local/online multiplayer and multi-user collaboration on a single OS level, the framework must bypass or rewrite standard window manager input handling.
-- **Implementation Strategy:** Deep modifications in `src/gui/kernel` and `src/platformsupport` are required to treat keyboards, mice, and gamepads as uniquely identifiable, concurrent event streams.
-- **Integration:** BobUI's event dispatch (`QCoreApplication::notify`) must be augmented to route events not just to the focused widget, but to per-user focus trees, rendering distinct multi-colored cursors via the Scene Graph.
+## 9. Deployment/Versioning
+- **Version Duplication:** `OmniUI/VERSION` and `VERSION.md` represent dual sources of truth. Future cycles must consolidate this.
 
-### 2.2 Integrating JUCE
-JUCE is essential for high-end multimedia. 
-- **Implementation Strategy:** Create an `OmniJuceNode` that wraps a `juce::Component` inside a `QQuickItem` (or BobUI RHI node). This bridges JUCE's software/OpenGL renderer into the BobUI RHI pipeline.
-
-### 2.3 Integrating JavaFX & Dear ImGui Paradigms
-- **JavaFX:** Bring robust CSS styling and deep reactive property binding into the C++ core. BobUI has QML/CSS, but JavaFX's structural separation of Scene Graph and controllers provides inspiration for the TypeScript layer structure.
-- **Dear ImGui:** Integrate ImGui into `src/gui/rhi`. The OS will feature a globally accessible "Developer Layer" (akin to a quake-style console) rendered purely in ImGui, sitting above all BobUI/OmniUI windows, entirely immune to the standard event loop stalling.
-
----
-
-## 3. Progress Assessment & Next Steps
-**Overall Progress:** Foundation (Phase 1) is solidly established. We are transitioning into Phase 2 (OmniUI Backend).
-
-**Immediate Next Steps for Engineering:**
-1. **Flesh out OmniApp.cpp:** Implement the actual QJSEngine/QQmlApplicationEngine instantiation in `loadMainSource` and hook it up to the TypeScript definitions.
-2. **JUCE Event Loop Integration:** Solve the event loop integration between `QApplication` and JUCE. The `juce::MessageManager` needs to hook into the BobUI Event Dispatcher.
-3. **Multi-Input Prototypes:** Create a prototype within `src/gui/kernel/qguiapplication.cpp` to register a secondary USB mouse and render a secondary debug cursor over the UI.
-
-**Conclusion:**
-BobUI is uniquely positioned to fulfill its grand vision. The combination of BobUI's robust structure with the planned multimedia and immediate-mode extensions will yield a C++ toolkit capable of running a collaborative, multi-user, multi-cursor OS natively, scaling from WASM in the browser to bare-metal desktop deployments.
+## 10. Next Highest-Impact Implementation
+- **Highest Impact:** Complete the Go native implementation of `OmniFilter` to fulfill the DSP graph requirements and unblock the audio engine's Phase 3 goals.
