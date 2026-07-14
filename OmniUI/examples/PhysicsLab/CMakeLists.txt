@@ -28,8 +28,6 @@ add_executable(PhysicsLab
     ../../core/src/layout/OmniSplitView.cpp
     ../../core/src/net/OmniHttpClient.cpp
     ../../core/src/net/OmniWebSocket.cpp
-    ../../core/src/audio/dsp/OmniGain.cpp
-    ../../core/src/audio/dsp/OmniFilter.cpp
     ../../core/src/physics/OmniPhysicsWorld.cpp
     ../../core/src/physics/OmniRigidBody.cpp
     ../../core/src/gfx/shadergraph/OmniShaderNode.cpp

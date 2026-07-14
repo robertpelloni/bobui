@@ -18,21 +18,14 @@
 #include "OmniTilePane.h"
 #include "OmniImGuiCanvas.h"
 #include "OmniPlot.h"
-#include "OmniFilter.h"
-#include "OmniGain.h"
-#include "OmniAudioGraph.h"
 #include "OmniJuceView.h"
 #include "OmniDockArea.h"
 #include "OmniSplitView.h"
-#include "OmniMidiHandler.h"
 #include "OmniSequencer.h"
-#include "OmniAudioPlayer.h"
-#include "OmniSynthesizer.h"
 #include "OmniDatabase.h"
 #include "OmniHttpClient.h"
 #include "OmniWebSocket.h"
 #include "OmniPluginManager.h"
-#include "OmniMasterClock.h"
 #include "OmniIPC.h"
 #include "OmniFileSystem.h"
 #include "OmniThemeManager.h"
@@ -65,7 +58,6 @@ void OmniUI::registerQmlTypes() {
     // Singletons
     qmlRegisterSingletonType<OmniInputManager>("OmniUI", 1, 0, "InputManager", [](QQmlEngine *e, QJSEngine *s) -> QObject* { return OmniInputManager::instance(); });
     qmlRegisterSingletonType<OmniPluginManager>("OmniUI", 1, 0, "PluginManager", [](QQmlEngine *e, QJSEngine *s) -> QObject* { return OmniPluginManager::instance(); });
-    qmlRegisterSingletonType<OmniMasterClock>("OmniAudio", 1, 0, "MasterClock", [](QQmlEngine *e, QJSEngine *s) -> QObject* { return OmniMasterClock::instance(); });
     qmlRegisterSingletonType<OmniFileSystem>("OmniData", 1, 0, "FileSystem", [](QQmlEngine *e, QJSEngine *s) -> QObject* { return OmniFileSystem::instance(); });
     qmlRegisterSingletonType<OmniTimeMachine>("OmniData", 1, 0, "TimeMachine", [](QQmlEngine *e, QJSEngine *s) -> QObject* { return OmniTimeMachine::instance(); });
     qmlRegisterSingletonType<OmniAssetManager>("OmniData", 1, 0, "AssetManager", [](QQmlEngine *e, QJSEngine *s) -> QObject* { return OmniAssetManager::instance(); });
@@ -114,13 +106,7 @@ void OmniUI::registerQmlTypes() {
     qmlRegisterType<OmniTilePane>("OmniLayout", 1, 0, "TilePane");
 
     // Audio
-    qmlRegisterType<OmniFilter>("OmniAudio", 1, 0, "Filter");
-    qmlRegisterType<OmniGain>("OmniAudio", 1, 0, "Gain");
-    qmlRegisterType<OmniAudioGraph>("OmniAudio", 1, 0, "AudioGraph");
-    qmlRegisterType<OmniMidiHandler>("OmniAudio", 1, 0, "MidiHandler");
     qmlRegisterType<OmniSequencer>("OmniAudio", 1, 0, "Sequencer");
-    qmlRegisterType<OmniAudioPlayer>("OmniAudio", 1, 0, "AudioPlayer");
-    qmlRegisterType<OmniSynthesizer>("OmniAudio", 1, 0, "Synthesizer");
 
     // Data & Networking
     qmlRegisterType<OmniDatabase>("OmniData", 1, 0, "Database");

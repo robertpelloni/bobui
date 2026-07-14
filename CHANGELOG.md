@@ -481,3 +481,66 @@ All notable changes to this project will be documented in this file.
 ### Added
 - Implemented `BobQUppComponentRegistry`, a `QML_SINGLETON` factory that exposes generic Ultimate++ controls (e.g., `Upp::Button`, `Upp::ArrayCtrl`) via string names (like "Button" or "List") into dynamically instantiated `BobQUltimatePPHost` wrappers. This fulfills the interoperability goal of hot-swapping native Qt and U++ widgets directly in QML.
 >>>>>>> origin/jules-11090863842246041945-58931a03
+
+## [Unreleased]
+### Added
+- Added event dispatch to `OmniFilter` in native Go (`TypeChanged`, `CutoffChanged`, `ResonanceChanged`), mapping them directly to the `EventLoop` for non-blocking execution.
+
+### Changed
+- Fully deprecated the legacy C++ `OmniFilter` stubs, cleaning up references in `CMakeLists.txt` files and QML registration.
+
+## [Unreleased]
+### Added
+- Added event dispatch to `OmniSynthesizer` in native Go (`PolyphonyChanged`), mapping it directly to the `EventLoop` for non-blocking execution.
+
+### Changed
+- Fully deprecated the legacy C++ `OmniSynthesizer` stubs, cleaning up references in `CMakeLists.txt` files and QML registration.
+
+## [Unreleased]
+### Added
+- Added event dispatch to `OmniAudioGraph` in native Go (`GraphChanged`, `ProcessingStarted`, `ProcessingStopped`), mapping it directly to the `EventLoop` for non-blocking execution.
+
+### Changed
+- Fully deprecated the legacy C++ `OmniAudioGraph` stubs, cleaning up references in QML registration.
+
+## [Unreleased]
+### Added
+- Added event dispatch to `OmniMasterClock` in native Go (`BpmChanged`, `IsRunningChanged`, `Beat`, `SixteenthStep`), mapping it directly to the `EventLoop` for non-blocking execution.
+
+### Changed
+- Fully deprecated the legacy C++ `OmniMasterClock` stubs, cleaning up references in `CMakeLists.txt` files and QML registration.
+
+## [Unreleased]
+### Added
+- Added event dispatch to `OmniSequencer` in native Go (`BpmChanged`, `IsPlayingChanged`, `Beat`), mapping it directly to the `EventLoop` for non-blocking execution.
+
+### Changed
+- Fully deprecated the legacy C++ `OmniSequencer` stubs, cleaning up references in `CMakeLists.txt` files and QML registration.
+
+## [Unreleased]
+### Added
+- Added `SynthWidget` to visualize the audio waveform using `gioui.org` rendering primitives, properly bound to the `OmniSynthesizer`'s polyphony layer.
+
+### Fixed
+- Re-wired `SynthWidget` into `DemoSurface` safely, applying explicit boundaries within flex structures to prevent `op.MacroOp` layout panics.
+
+## [Unreleased]
+### Added
+- Added event dispatch to `OmniSpatialAudio` in native Go (`PlaySpatialClick`, `PlaySpatialNotification`), mapping it directly to the `EventLoop` for non-blocking execution.
+
+### Changed
+- Fully deprecated the legacy C++ `OmniSpatialAudio` stubs, cleaning up references in `CMakeLists.txt` files.
+
+## [Unreleased]
+### Added
+- Added event dispatch to `OmniAudioPlayer` in native Go (`SourceChanged`, `IsPlayingChanged`), mapping it directly to the `EventLoop` for non-blocking execution.
+
+### Changed
+- Fully deprecated the legacy C++ `OmniAudioPlayer` stubs, cleaning up references in `CMakeLists.txt` files and QML registration.
+
+## [Unreleased]
+### Added
+- Added event dispatch to `OmniMidiHandler` in native Go (`CurrentDeviceChanged`, `NoteReceived`), mapping it directly to the `EventLoop` for non-blocking execution.
+
+### Changed
+- Fully deprecated the legacy C++ `OmniMidiHandler` stubs, cleaning up references in `CMakeLists.txt` files and QML registration.

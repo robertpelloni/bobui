@@ -28,8 +28,6 @@ add_executable(VisualBuilder
     ../../core/src/layout/OmniSplitView.cpp
     ../../core/src/net/OmniHttpClient.cpp
     ../../core/src/net/OmniWebSocket.cpp
-    ../../core/src/audio/dsp/OmniGain.cpp
-    ../../core/src/audio/dsp/OmniFilter.cpp
     ../../core/src/nodes/OmniNodeCanvas.cpp
     ../../core/src/nodes/OmniNode.cpp
     ../../core/src/nodes/OmniConnectionLine.cpp

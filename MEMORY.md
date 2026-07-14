@@ -82,3 +82,28 @@
 - 2026-04-05: `.github/workflows/go_wasm.yml` now includes a `validate-framework` job that runs the exact verified Go baseline plus the consolidated BobUI compatibility command.
 - 2026-04-05: `BOBUI_SKIP_NATIVE_CONFIGURE=ON` is now the CI-friendly way to keep the compatibility gate green while native compiler/toolchain provisioning remains a separate environment concern.
 >>>>>>> 677b0f352ad2c50efba02126daac7b26465b876d
+The OmniGain C++ stub has been fully ported to native Go and tested, ensuring that cross-framework signal-slot dispatch uses the event loop and remains non-blocking. The experimental C++ stubs (OmniGain.cpp and OmniGain.h) can be successfully deprecated.
+The OmniFilter C++ stub has been fully ported to native Go and tested, ensuring that cross-framework signal-slot dispatch uses the event loop and remains non-blocking. The experimental C++ stubs (OmniFilter.cpp and OmniFilter.h) can be successfully deprecated.
+The OmniSynthesizer C++ stub has been fully ported to native Go and tested, ensuring that cross-framework signal-slot dispatch uses the event loop and remains non-blocking. The experimental C++ stubs (OmniSynthesizer.cpp and OmniSynthesizer.h) can be successfully deprecated.
+The OmniAudioGraph C++ stub has been fully ported to native Go and tested, ensuring that cross-framework signal-slot dispatch uses the event loop and remains non-blocking. The experimental C++ stubs (OmniAudioGraph.cpp and OmniAudioGraph.h) can be successfully deprecated.
+The OmniMasterClock C++ stub has been fully ported to native Go and tested, ensuring that cross-framework signal-slot dispatch uses the event loop and remains non-blocking. The experimental C++ stubs (OmniMasterClock.cpp and OmniMasterClock.h) can be successfully deprecated.
+The OmniSequencer C++ stub has been fully ported to native Go and tested, ensuring that cross-framework signal-slot dispatch uses the event loop and remains non-blocking. The experimental C++ stubs (OmniSequencer.cpp and OmniSequencer.h) can be successfully deprecated.
+When implementing `gioui.org` rendering hooks for BQt widgets (e.g., waveform rendering in `SynthWidget`), do not override `gtx.Constraints` directly inside flex/stack layouts as it can cause `op` macro check panics. Use `layout.Spacer` or provide safe default dimensions with strict constraints checking instead.
+The OmniSpatialAudio C++ stub has been fully ported to native Go and tested, ensuring that cross-framework signal-slot dispatch uses the event loop and remains non-blocking. The experimental C++ stubs (OmniSpatialAudio.cpp and OmniSpatialAudio.h) can be successfully deprecated.
+
+## Missing Go Kernel Ports (C++ Legacy Stubs to be Deprecated)
+The following DSP components and subsystems remain as legacy C++ stubs (e.g. in `OmniUI/omnicore/src/audio/dsp/`) and are missing from the fully verified Go kernel (`internal/audio/`). These gaps must be bridged to achieve 100% native Go parity:
+- `OmniOscilloscope`: Real-time visual DSP data gathering.
+- `OmniVoiceEngine`: Voice streaming and capturing.
+- `OmniPluginManager` / `OmniPluginInterface`: VST/AU plugin wrapping.
+
+These legacy components are considered unstable. The goal of Phase 3 is to systematically port these remaining components into `internal/audio/` and bind their state updates to the unified `ui.EventLoop`, subsequently deprecating the C++ files.
+The OmniAudioPlayer C++ stub has been fully ported to native Go and tested, ensuring that cross-framework signal-slot dispatch uses the event loop and remains non-blocking. The experimental C++ stubs (OmniAudioPlayer.cpp and OmniAudioPlayer.h) can be successfully deprecated.
+The OmniMidiHandler C++ stub has been fully ported to native Go and tested, ensuring that cross-framework signal-slot dispatch uses the event loop and remains non-blocking. The experimental C++ stubs (OmniMidiHandler.cpp and OmniMidiHandler.h) can be successfully deprecated.
+
+Phase 4 ("World Domination") is now complete as the shell integration API (`ShellBridge`) correctly exposes the BQt kernel. The new focus is Phase 5, concentrating on the `bobfilez` native UI shells for specific platforms (web, desktop).
+
+## JavaFX Parity Observations
+- The initial JavaFX spike maps the `Scene` and `Node` hierarchy natively into BQt via `internal/shell/javafx_bridge.go`.
+- Impedance mismatches: JavaFX fundamentally relies on its own robust application thread (`Platform.runLater`). Routing `JavaFX` native events down into BQt requires effectively marshaling state transitions through BQt's own non-blocking `ui.EventLoop` to ensure that standard GUI deadlocks (common in dual-framework architectures) do not occur.
+- BQt correctly processes these external shell events asynchronously.

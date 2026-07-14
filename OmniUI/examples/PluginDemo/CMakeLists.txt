@@ -53,19 +53,12 @@ add_executable(PluginDemo
     ../../omnicore/src/OmniUndoStack.cpp
     ../../omnicore/src/layout/OmniFlowPane.cpp
     ../../omnicore/src/layout/OmniTilePane.cpp
-    ../../omnicore/src/audio/dsp/OmniSpatialAudio.cpp
     ../../omnicore/src/data/OmniValueTree.cpp
     ../../omnicore/src/gfx/OmniDropShadow.cpp
     ../../omnicore/src/gfx/OmniRhiNode.cpp
     ../../omnicore/src/widgets/OmniPlot.cpp
-    ../../omnicore/src/audio/dsp/OmniGain.cpp
-    ../../omnicore/src/audio/dsp/OmniMasterClock.cpp
-    ../../omnicore/src/audio/dsp/OmniMidiHandler.cpp
     ../../omnicore/src/audio/dsp/OmniSequencer.cpp
-    ../../omnicore/src/audio/dsp/OmniAudioPlayer.cpp
-    ../../omnicore/src/audio/dsp/OmniSynthesizer.cpp
     ../../omnicore/src/audio/OmniVoiceEngine.cpp
-    ../../omnicore/src/audio/dsp/OmniFilter.cpp
     ../../omnicore/src/plugin/OmniPluginManager.cpp
     ../../omnicore/src/data/OmniDatabase.cpp
     ../../omnicore/src/data/OmniFileSystem.cpp
@@ -95,8 +88,6 @@ add_executable(PluginDemo
     ../../core/src/layout/OmniSplitView.cpp
     ../../core/src/net/OmniHttpClient.cpp
     ../../core/src/net/OmniWebSocket.cpp
-    ../../core/src/audio/dsp/OmniGain.cpp
-    ../../core/src/audio/dsp/OmniFilter.cpp
     ../../core/src/plugin/OmniPluginManager.cpp
     ../../core/src/data/OmniDatabase.cpp
     ../../core/src/gfx/OmniShaderEffect.cpp
