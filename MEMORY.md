@@ -107,9 +107,11 @@ Phase 4 ("World Domination") is now complete as the shell integration API (`Shel
 - The initial JavaFX spike maps the `Scene` and `Node` hierarchy natively into BQt via `internal/shell/javafx_bridge.go`.
 - Impedance mismatches: JavaFX fundamentally relies on its own robust application thread (`Platform.runLater`). Routing `JavaFX` native events down into BQt requires effectively marshaling state transitions through BQt's own non-blocking `ui.EventLoop` to ensure that standard GUI deadlocks (common in dual-framework architectures) do not occur.
 - BQt correctly processes these external shell events asynchronously.
-Verified Technical Problems:
+## Verified Technical Problems:
+- The kernel/shell boundary has been definitively tested via `internal/shell/bobfilez_bridge.go`. `bobfilez` exclusively consumes the `BQt` engine without requiring scope creep from the kernel for service integrations.
 - The shell integration commit hash (cadbf18597e) mentioned in the instructions is not found in the current git history. The instructions seem to refer to a detached or non-existent commit for the minimal shell shim.
 - To ensure no goroutine leaks persist, we must re-verify that the concurrent audio graph test safely utilizes the EventLoop's non-blocking Stop() logic.
-Verified Technical Problems:
+## Verified Technical Problems:
+- The kernel/shell boundary has been definitively tested via `internal/shell/bobfilez_bridge.go`. `bobfilez` exclusively consumes the `BQt` engine without requiring scope creep from the kernel for service integrations.
 - The shell integration commit hash (cadbf18597e) mentioned in the instructions is not found in the current git history. The instructions seem to refer to a detached or non-existent commit for the minimal shell shim.
 - To ensure no goroutine leaks persist, we must re-verify that the concurrent audio graph test safely utilizes the EventLoop's non-blocking Stop() logic.

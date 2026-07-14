@@ -10,6 +10,8 @@
 No API keys should ever be hard-coded into the repository.
 - If adding external web services, utilize `.env` files.
 - Copy `.env.example` to `.env` locally before running deployment pipelines.
+- Note that the `bobfilez` shell project handles user-facing web services and OS-level integrations. The BQt kernel itself should remain agnostic to external service keys unless explicitly bridging core telemetry.
+
 
 ## 3. Go Compilation (Preferred)
 The easiest way to execute the engine is using the native Go port, which bypasses legacy Qt/CMake evaluation bugs.
