@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"github.com/robertpelloni/bqt/internal/ui"
 )
 
 // BobfilezBridge maps the BQt kernel's ShellBridge into specific endpoints
