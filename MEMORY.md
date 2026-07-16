@@ -103,8 +103,8 @@ The OmniMidiHandler C++ stub has been fully ported to native Go and tested, ensu
 
 Phase 4 ("World Domination") is now complete as the shell integration API (`ShellBridge`) correctly exposes the BQt kernel. The new focus is Phase 5, concentrating on the `bobfilez` native UI shells for specific platforms (web, desktop).
 
-## JavaFX Parity Observations
-- The initial JavaFX spike maps the `Scene` and `Node` hierarchy natively into BQt via `internal/shell/javafx_bridge.go`.
+## Cross-Framework Parity Observations
+- The initial Phase 4 parity spikes natively map external UI hierarchies (JavaFX `Scene`, WinUI `HWND`, DearImGui `Context`) into BQt via `internal/shell/javafx_bridge.go`, `winui_bridge.go`, and `dearimgui_bridge.go` respectively. These remain exploratory wrappers that exercise the BQt `EventLoop` bridge.
 - Impedance mismatches: JavaFX fundamentally relies on its own robust application thread (`Platform.runLater`). Routing `JavaFX` native events down into BQt requires effectively marshaling state transitions through BQt's own non-blocking `ui.EventLoop` to ensure that standard GUI deadlocks (common in dual-framework architectures) do not occur.
 - BQt correctly processes these external shell events asynchronously.
 Verified Technical Problems:

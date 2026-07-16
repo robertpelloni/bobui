@@ -3,7 +3,7 @@
 BQt is an interoperable engine and framework kernel crossing C++, Go, Rust, Java, and C#. It provides a unified cross-framework architecture for UI and DSP.
 
 ## Note on Scope
-BQt is the **framework kernel**, it is *not* a full OS shell. The OS shell capabilities are the separate scope of the `bobfilez` project.
+BQt is strictly the **framework kernel** and foundation. It is *not* a full OS shell. The full OS shell capabilities and user-facing desktop/web implementations are the explicit scope of the separate `bobfilez` project. Cross-framework integration layers for JavaFX, WinUI, and DearImGui exist as exploratory wrappers feeding into the BQt EventLoop.
 
 ## Go Port State
 The Go port of BQt represents the primary runtime kernel, featuring:
