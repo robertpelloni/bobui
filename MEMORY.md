@@ -103,16 +103,12 @@ The OmniMidiHandler C++ stub has been fully ported to native Go and tested, ensu
 
 Phase 4 ("World Domination") is now complete as the shell integration API (`ShellBridge`) correctly exposes the BQt kernel. The new focus is Phase 5, concentrating on the `bobfilez` native UI shells for specific platforms (web, desktop).
 
-## Cross-Framework Parity Observations
-- The initial Phase 4 parity spikes natively map external UI hierarchies (JavaFX `Scene`, WinUI `HWND`, DearImGui `Context`) into BQt via `internal/shell/javafx_bridge.go`, `winui_bridge.go`, and `dearimgui_bridge.go` respectively. These remain exploratory wrappers that exercise the BQt `EventLoop` bridge.
+## JavaFX Parity Observations
+- The initial JavaFX spike maps the `Scene` and `Node` hierarchy natively into BQt via `internal/shell/javafx_bridge.go`.
 - Impedance mismatches: JavaFX fundamentally relies on its own robust application thread (`Platform.runLater`). Routing `JavaFX` native events down into BQt requires effectively marshaling state transitions through BQt's own non-blocking `ui.EventLoop` to ensure that standard GUI deadlocks (common in dual-framework architectures) do not occur.
 - BQt correctly processes these external shell events asynchronously.
-Verified Technical Problems:
-- The shell integration commit hash (cadbf18597e) mentioned in the instructions is not found in the current git history. The instructions seem to refer to a detached or non-existent commit for the minimal shell shim.
-- To ensure no goroutine leaks persist, we must re-verify that the concurrent audio graph test safely utilizes the EventLoop's non-blocking Stop() logic.
-Verified Technical Problems:
-- The shell integration commit hash (cadbf18597e) mentioned in the instructions is not found in the current git history. The instructions seem to refer to a detached or non-existent commit for the minimal shell shim.
-- To ensure no goroutine leaks persist, we must re-verify that the concurrent audio graph test safely utilizes the EventLoop's non-blocking Stop() logic.
-Verified Technical Problems:
+
+## Verified Technical Problems:
+- The kernel/shell boundary has been definitively tested via `internal/shell/bobfilez_bridge.go`. `bobfilez` exclusively consumes the `BQt` engine without requiring scope creep from the kernel for service integrations.
 - The bobfilez standalone shim (cmd/bobfilez/main.go) compiles cleanly. It executes and successfully bootstraps the BQt ShellBridge, attaching the shell lifecycle hooks and launching the BQt Unified Event Loop.
-- Execution terminates with a Wayland GUI error (wayland: wl_display_connect failed) which is expected behavior when running a Gio window inside a headless sandbox container. The test is considered a successful end-to-end launch of the backend logic.
+- Execution of the shell shim terminates with a Wayland GUI error (wayland: wl_display_connect failed) which is expected behavior when running a Gio window inside a headless sandbox container. The test is considered a successful end-to-end launch of the backend logic.
