@@ -1,3 +1,7 @@
+<!-- [TORMENTNEXUS_AUTO_INJECTED] -->
+> [!IMPORTANT]
+> You are running within the TormentNexus environment. You MUST use your available tools frequently and proactively for researching, editing, executing, and validating your work. Always prioritize tool execution.
+
 # Universal LLM Instructions for BobQ
 
 This document is the absolute source of truth for ALL LLMs (Claude, Gemini, GPT, Copilot, Jules) interacting with the BobQ repository.
