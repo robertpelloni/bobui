@@ -8,4 +8,4 @@ The current paradigm is transitioning from complex C++ render-bridges (`QQuickPa
 
 ## Scope & Boundaries
 - **BQt (formerly BobUI):** The core framework kernel and unified event loop. This is the Go-first rendering and system services engine.
-- **bobfilez:** The external OS shell that consumes BQt via the Shell Integration API layer. BQt is explicitly *not* a full OS shell.
+- **bobfilez:** The external OS shell that consumes BQt via the Shell Integration API layer. `bobfilez` exclusively manages user-facing web services, OS-level integrations, and external `.env` secrets. BQt is strictly the framework kernel and remains completely agnostic to these external service responsibilities to prevent scope drift.

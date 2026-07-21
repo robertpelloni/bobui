@@ -23,6 +23,7 @@ add_executable(KitchenSink
     ../../core/src/widgets/OmniComboBox.cpp
     ../../core/src/widgets/OmniProgressBar.cpp
     ../../core/src/charts/OmniLineChart.cpp
+    ../../core/src/charts/OmniOscilloscope.cpp
     ../../core/src/layout/OmniDockArea.cpp
     ../../core/src/layout/OmniSplitView.cpp
     ../../core/src/net/OmniHttpClient.cpp
@@ -38,6 +39,7 @@ add_executable(KitchenSink
     ../../core/src/3d/OmniMesh.cpp
     ../../core/src/3d/OmniLight.cpp
     ../../core/src/3d/OmniCamera.cpp
+    ../../core/src/charts/OmniOscilloscope.cpp
     ../../core/src/debug/OmniProfiler.cpp
     ../../core/src/debug/OmniCrashHandler.cpp
     ../../core/src/devtools/OmniInspector.cpp

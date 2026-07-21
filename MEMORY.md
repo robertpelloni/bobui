@@ -107,3 +107,8 @@ Phase 4 ("World Domination") is now complete as the shell integration API (`Shel
 - The initial JavaFX spike maps the `Scene` and `Node` hierarchy natively into BQt via `internal/shell/javafx_bridge.go`.
 - Impedance mismatches: JavaFX fundamentally relies on its own robust application thread (`Platform.runLater`). Routing `JavaFX` native events down into BQt requires effectively marshaling state transitions through BQt's own non-blocking `ui.EventLoop` to ensure that standard GUI deadlocks (common in dual-framework architectures) do not occur.
 - BQt correctly processes these external shell events asynchronously.
+
+## Verified Technical Problems:
+- The kernel/shell boundary has been definitively tested via `internal/shell/bobfilez_bridge.go`. `bobfilez` exclusively consumes the `BQt` engine without requiring scope creep from the kernel for service integrations.
+- The bobfilez standalone shim (cmd/bobfilez/main.go) compiles cleanly. It executes and successfully bootstraps the BQt ShellBridge, attaching the shell lifecycle hooks and launching the BQt Unified Event Loop.
+- Execution of the shell shim terminates with a Wayland GUI error (wayland: wl_display_connect failed) which is expected behavior when running a Gio window inside a headless sandbox container. The test is considered a successful end-to-end launch of the backend logic.

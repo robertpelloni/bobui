@@ -36,6 +36,7 @@ add_executable(PluginDemo
     ../../omnicore/src/widgets/OmniComboBox.cpp
     ../../omnicore/src/widgets/OmniProgressBar.cpp
     ../../omnicore/src/charts/OmniLineChart.cpp
+    ../../omnicore/src/charts/OmniOscilloscope.cpp
     ../../omnicore/src/layout/OmniDockArea.cpp
     ../../omnicore/src/layout/OmniSplitView.cpp
     ../../omnicore/src/net/OmniHttpClient.cpp
@@ -56,7 +57,6 @@ add_executable(PluginDemo
     ../../omnicore/src/gfx/OmniDropShadow.cpp
     ../../omnicore/src/gfx/OmniRhiNode.cpp
     ../../omnicore/src/widgets/OmniPlot.cpp
-    ../../omnicore/src/audio/dsp/OmniSequencer.cpp
     ../../omnicore/src/audio/OmniVoiceEngine.cpp
     ../../omnicore/src/plugin/OmniPluginManager.cpp
     ../../omnicore/src/data/OmniDatabase.cpp
@@ -82,6 +82,7 @@ add_executable(PluginDemo
     ../../core/src/widgets/OmniComboBox.cpp
     ../../core/src/widgets/OmniProgressBar.cpp
     ../../core/src/charts/OmniLineChart.cpp
+    ../../core/src/charts/OmniOscilloscope.cpp
     ../../core/src/layout/OmniDockArea.cpp
     ../../core/src/layout/OmniSplitView.cpp
     ../../core/src/net/OmniHttpClient.cpp

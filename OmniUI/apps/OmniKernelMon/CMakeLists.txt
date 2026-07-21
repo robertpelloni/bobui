@@ -18,6 +18,7 @@ add_executable(OmniKernelMon
     ../../core/src/kernel/OmniProcess.cpp
     ../../core/src/kernel/OmniScheduler.cpp
     ../../core/src/kernel/OmnieBPF.cpp
+    ../../core/src/charts/OmniOscilloscope.cpp
     ../../core/src/widgets/OmniButton.cpp
     ../../core/src/widgets/OmniProgressBar.cpp
     ../../core/src/debug/OmniCrashHandler.cpp
